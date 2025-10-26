@@ -1,0 +1,107 @@
+{
+  "experiment_name": "vietnam_traffic_study",
+  "description": "Vietnam urban traffic scenario with 12 intersections - chaotic, motorcycle-heavy traffic",
+  "num_episodes": 30,
+  "eval_episodes": 10,
+  "max_steps_per_episode": 7200,
+  "use_gui": false,
+  "train_dqn": true,
+  "train_ppo": false,
+  "use_fixed_time": true,
+  "use_actuated": true,
+  "use_adaptive": true,
+  "use_random": false,
+  
+  "network_config": {
+    "type": "grid",
+    "grid_size": "4x3",
+    "num_intersections": 12,
+    "edge_length": 150.0,
+    "num_lanes_per_direction": 3,
+    "description": "Urban Vietnamese intersection network (4x3 grid)"
+  },
+  
+  "traffic_config": {
+    "description": "Vietnamese traffic characteristics - high motorcycle ratio, dense, chaotic",
+    "vehicle_composition": {
+      "motorcycle": 0.65,
+      "car": 0.25,
+      "bus": 0.05,
+      "truck": 0.03,
+      "three_wheeler": 0.02
+    },
+    "flow_patterns": {
+      "peak_morning": {
+        "start_time": 0,
+        "end_time": 2400,
+        "vehicles_per_hour": 2800,
+        "description": "Morning rush hour - very high density"
+      },
+      "midday": {
+        "start_time": 2400,
+        "end_time": 4800,
+        "vehicles_per_hour": 1800,
+        "description": "Midday moderate traffic"
+      },
+      "peak_evening": {
+        "start_time": 4800,
+        "end_time": 7200,
+        "vehicles_per_hour": 3200,
+        "description": "Evening rush hour - highest density"
+      }
+    },
+    "behavioral_parameters": {
+      "lane_discipline": "low",
+      "aggressive_lane_change": true,
+      "motorcycle_filtering": true,
+      "ignore_small_gaps": true,
+      "speed_variance": "high"
+    }
+  },
+  
+  "env_config": {
+    "reward_function": "combined",
+    "max_steps": 7200,
+    "step_length": 1.0,
+    "multi_intersection": true,
+    "coordination_enabled": true
+  },
+  
+  "dqn_config": {
+    "learning_rate": 3e-4,
+    "gamma": 0.99,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.01,
+    "epsilon_decay": 0.995,
+    "target_update_freq": 2000,
+    "batch_size": 256,
+    "buffer_capacity": 50000,
+    "hidden_layers": [512, 256, 128],
+    "device": "cpu",
+    "description": "Larger network for complex 12-intersection scenario"
+  },
+  
+  "baseline_configs": {
+    "fixed_time": {
+      "phase_duration": 45,
+      "description": "Longer cycles for heavy traffic"
+    },
+    "actuated": {
+      "threshold": 15.0,
+      "min_green_time": 20,
+      "max_green_time": 90,
+      "yellow_time": 3,
+      "description": "Adapted for high-density Vietnamese traffic"
+    },
+    "adaptive": {
+      "base_green_time": 30,
+      "max_green_time": 90,
+      "vehicle_threshold": 10.0,
+      "congestion_threshold": 25.0,
+      "description": "Tuned for chaotic traffic patterns"
+    }
+  },
+  
+  "results_dir": "./results/vietnam_scenario/"
+}
+

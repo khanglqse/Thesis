@@ -1,0 +1,23 @@
+	- Introduction
+		○ Background
+		○ Problem statement
+		○ Contribution
+		○ Propose method
+		○ Structure remain
+		○ Figure n example
+	- Literature review / related work
+		○ 50-70 references
+		○ < 3 years
+		○ 5-7 references directly + technical to topic
+		○ 15-25 reference related work
+		○ 30 general of topic
+		○ Insight of limitation in comparing method
+	- Methods
+		○ Private method name
+		○ Problem formulation
+		○ Architecture
+			§ Revise base on … basic level
+		○ Describe method
+			§ Method details
+	- Experiments / result
+Discussion

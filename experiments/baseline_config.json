@@ -1,0 +1,39 @@
+{
+  "experiment_name": "baseline_comparison",
+  "num_episodes": 20,
+  "eval_episodes": 10,
+  "max_steps_per_episode": 3600,
+  "use_gui": false,
+  "train_dqn": false,
+  "train_ppo": false,
+  "use_fixed_time": true,
+  "use_actuated": true,
+  "use_adaptive": true,
+  "use_random": true,
+  "env_config": {
+    "reward_function": "combined",
+    "max_steps": 3600,
+    "step_length": 1.0
+  },
+  "baseline_configs": {
+    "fixed_time": {
+      "phase_duration": 30
+    },
+    "actuated": {
+      "threshold": 10.0,
+      "min_green_time": 15,
+      "max_green_time": 60,
+      "yellow_time": 3
+    },
+    "adaptive": {
+      "base_green_time": 20,
+      "max_green_time": 60,
+      "vehicle_threshold": 5.0,
+      "congestion_threshold": 15.0
+    },
+    "random": {
+      "switch_probability": 0.1
+    }
+  },
+  "results_dir": "./results/"
+}
