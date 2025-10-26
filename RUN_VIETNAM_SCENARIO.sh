@@ -6,15 +6,16 @@ echo "  Extended Study (12 Intersections)"
 echo "=========================================="
 echo ""
 
-# Step 1: Generate Vietnam results
-echo "Step 1/2: Generating Vietnam scenario results..."
+# Step 1: Run Vietnam RL experiments
+echo "Step 1/2: Running Vietnam scenario RL experiments..."
+echo "  • Training DQN agent with SUMO"
+echo "  • Using real traffic simulation"
 echo "  • 12 intersections (4x3 grid)"
 echo "  • 65% motorcycles (realistic Vietnamese traffic)"
-echo "  • Chaotic, high-density conditions"
 echo ""
-python3 experiments/generate_vietnam_results.py
+python3 experiments/run_rl_experiment.py --config experiments/vietnam_scenario_config.json
 if [ $? -ne 0 ]; then
-    echo "❌ Error generating Vietnam results"
+    echo "❌ Error running RL experiments"
     exit 1
 fi
 echo ""

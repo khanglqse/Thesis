@@ -84,7 +84,7 @@ class ExperimentRunner:
             agents['dqn'] = create_dqn_agent(state_dim, action_dim, **self.dqn_config)
 
         if self.config.get('train_ppo', False):
-            agents['ppo'] = create_ppo_agent(env, **self.ppo_config)
+            agents['ppo'] = create_ppo_agent(env, config=self.ppo_config)
 
         # Baselines
         for baseline_name in self.baseline_configs.keys():

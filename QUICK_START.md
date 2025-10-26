@@ -5,7 +5,7 @@
 ### Step 1: Generate Results (2 seconds)
 ```bash
 cd /Users/khanglq1/workplace/Thesis/traffic-rl
-python3 experiments/generate_demo_results.py
+python3 experiments/run_comprehensive_study.py
 ```
 
 **✅ Creates:**
@@ -118,7 +118,7 @@ python3 demo_sumo_gui.py --rl-only --duration 180
 
 | Script | Purpose | When to Use |
 |--------|---------|-------------|
-| `generate_demo_results.py` | Create results fast | ✅ Start here! |
+| `run_comprehensive_study.py` | Run experiments with SUMO | ✅ Start here! |
 | `comprehensive_visualization.py` | Create all figures | After results |
 | `run_comprehensive_study.py` | Full experiments | If you have SUMO |
 | `demo_sumo_gui.py` | Visual demo | For presentation |
@@ -128,9 +128,9 @@ python3 demo_sumo_gui.py --rl-only --duration 180
 ## 🔍 Troubleshooting
 
 ### "SUMO not found"
-**Solution:** Use demo results (already done!)
+**Solution:** Run comprehensive study with SUMO!
 ```bash
-python3 experiments/generate_demo_results.py
+python3 experiments/run_comprehensive_study.py
 ```
 
 ### "No figures found"

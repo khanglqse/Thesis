@@ -464,7 +464,7 @@ def main():
         print("\n✓ Vietnam scenario visualization complete!")
     else:
         print("\n✗ Visualization failed. Make sure to run:")
-        print("  python3 experiments/generate_vietnam_results.py")
+        print("  python3 experiments/run_rl_experiment.py --config experiments/vietnam_scenario_config.json")
         return 1
     
     return 0

@@ -5,11 +5,11 @@ echo "  COMPLETE THESIS WORKFLOW"
 echo "=========================================="
 echo ""
 
-# Step 1: Generate results
-echo "Step 1/3: Generating results..."
-python3 experiments/generate_demo_results.py
+# Step 1: Run RL experiments
+echo "Step 1/3: Running RL experiments..."
+python3 experiments/run_comprehensive_study.py
 if [ $? -ne 0 ]; then
-    echo "❌ Error generating results"
+    echo "❌ Error running experiments"
     exit 1
 fi
 echo "✅ Results generated"

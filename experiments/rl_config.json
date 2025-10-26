@@ -5,7 +5,7 @@
   "max_steps_per_episode": 3600,
   "use_gui": false,
   "train_dqn": true,
-  "train_ppo": true,
+  "train_ppo": false,
   "use_fixed_time": true,
   "use_actuated": true,
   "use_adaptive": true,

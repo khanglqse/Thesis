@@ -59,8 +59,8 @@ results/vietnam_scenario/
 ### 1. Generate Vietnam Results
 
 ```bash
-# Generate results for Vietnam scenario
-python3 experiments/generate_vietnam_results.py
+# Run RL experiments for Vietnam scenario
+python3 experiments/run_rl_experiment.py --config experiments/vietnam_scenario_config.json
 ```
 
 **Output:**
@@ -298,8 +298,8 @@ Vietnam Scenario (12 intersections):
 ## 🚀 Quick Commands
 
 ```bash
-# Generate everything for Vietnam scenario
-python3 experiments/generate_vietnam_results.py && \
+# Run RL experiments and generate visualizations
+python3 experiments/run_rl_experiment.py --config experiments/vietnam_scenario_config.json && \
 python3 visualization/visualize_vietnam_scenario.py
 
 # View results

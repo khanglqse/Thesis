@@ -271,15 +271,19 @@ class PPOAgentWrapper:
         return np.zeros(self.agent.env.action_space.n)
 
 
-def create_ppo_agent(env, **kwargs) -> PPOAgentWrapper:
+def create_ppo_agent(env, config: Dict[str, Any] = None, **kwargs) -> PPOAgentWrapper:
     """
     Factory function to create PPO agent.
 
     Args:
         env: Environment to train on
+        config: Agent configuration (will be merged with kwargs)
         **kwargs: Additional arguments for PPOAgent
 
     Returns:
         Configured PPOAgentWrapper instance
     """
-    return PPOAgentWrapper(env, **kwargs)
+    # Merge config and kwargs
+    merged_config = config.copy() if config else {}
+    merged_config.update(kwargs)
+    return PPOAgentWrapper(env, merged_config)

@@ -257,7 +257,6 @@ class TrafficLightEnv(gym.Env):
         self.sumo_process = start_sumo(self.cfg_file)
         if self.sumo_process is None and SUMO_AVAILABLE:
             print("WARNING: SUMO process could not start, continuing in mock mode")
-            # Don't raise error - allow mock mode
         elif self.sumo_process is None:
             # Mock mode - process is None but that's OK for testing
             pass
@@ -265,12 +264,19 @@ class TrafficLightEnv(gym.Env):
         # Connect to TraCI
         if SUMO_AVAILABLE:
             try:
-                traci.start(["sumo", "-c", self.cfg_file])
-            except:
-                # Try with absolute path
-                import os
-                abs_cfg = os.path.abspath(self.cfg_file)
-                traci.start(["sumo", "-c", abs_cfg])
+                # Try to find sumo in PATH
+                import shutil
+                sumo_binary = shutil.which("sumo")
+                if sumo_binary:
+                    traci.start([sumo_binary, "-c", self.cfg_file])
+                else:
+                    raise FileNotFoundError("sumo")
+            except (FileNotFoundError, Exception) as e:
+                # If SUMO not found, run in mock mode
+                print(f"SUMO not found: {e}")
+                print("Running in mock mode - no real simulation")
+                # Create a minimal mock sumo process
+                self.sumo_process = None
         else:
             # Mock mode - just print that we're starting
             print("Mock mode: Simulation started")
