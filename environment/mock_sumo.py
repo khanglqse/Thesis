@@ -6,6 +6,7 @@ in a controlled environment. It mimics SUMO's TraCI interface but generates
 realistic traffic patterns algorithmically.
 """
 
+import os
 import numpy as np
 import random
 import time
@@ -282,3 +283,19 @@ class SimulationOperations:
 
 # Global mock TraCI instance
 mock_traci = MockTraCI()
+
+# Vietnam mock TraCI instance
+vietnam_mock_traci = None
+
+def get_vietnam_mock_traci():
+    """Get Vietnam mock TraCI instance."""
+    global vietnam_mock_traci
+    if vietnam_mock_traci is None:
+        # Import here to avoid circular imports
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("vietnam_traffic_env",
+                                                     os.path.join(os.path.dirname(__file__), "vietnam_traffic_env.py"))
+        vietnam_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(vietnam_module)
+        vietnam_mock_traci = vietnam_module.VietnamMockTraCI()
+    return vietnam_mock_traci

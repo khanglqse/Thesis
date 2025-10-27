@@ -167,3 +167,129 @@ def calculate_efficiency_reward(waiting_times: np.ndarray,
 
     efficiency = throughput / (1 + np.sum(waiting_times) / max_waiting_time)
     return efficiency * 10.0  # Scale the reward
+
+
+def calculate_vietnam_reward(waiting_times: np.ndarray,
+                           queue_lengths: np.ndarray,
+                           throughput: int,
+                           motorcycle_waiting: Optional[np.ndarray] = None,
+                           time_elapsed: float = 0.0,
+                           vehicle_types: Optional[List[str]] = None) -> float:
+    """
+    Vietnam-specific reward function prioritizing motorcycles and urban efficiency.
+
+    This reward function is optimized for Vietnamese traffic characteristics:
+    - High motorcycle density (65%)
+    - Chaotic traffic patterns
+    - Priority for motorcycles
+    - Higher penalties for congestion during rush hours
+
+    Args:
+        waiting_times: Current waiting times for all lanes
+        queue_lengths: Current queue lengths for all lanes
+        throughput: Number of vehicles that passed through
+        motorcycle_waiting: Motorcycle-specific waiting times
+        time_elapsed: Time elapsed in simulation (for rush hour detection)
+        vehicle_types: Types of vehicles in each lane
+
+    Returns:
+        Vietnam-optimized reward value
+    """
+    # Base weights (higher for Vietnam traffic intensity)
+    weights = {
+        'waiting_time': 0.6,    # Higher penalty for waiting
+        'queue_length': 0.3,    # Moderate penalty for queues
+        'throughput': 0.1,      # Lower bonus for throughput
+        'motorcycle_priority': 0.8  # High priority for motorcycles
+    }
+
+    # Rush hour detection (Vietnam has longer rush hours)
+    hour = (time_elapsed / 3600) % 24
+    is_rush_hour = (6 <= hour <= 9) or (11 <= hour <= 14) or (16 <= hour <= 20)
+
+    # Rush hour multiplier
+    rush_multiplier = 1.8 if is_rush_hour else 1.0
+
+    # Base reward calculation
+    waiting_penalty = weights['waiting_time'] * np.sum(waiting_times)
+    queue_penalty = weights['queue_length'] * np.sum(queue_lengths)
+    throughput_bonus = weights['throughput'] * throughput
+
+    # Vietnam-specific: motorcycle priority
+    motorcycle_penalty = 0
+    if motorcycle_waiting is not None:
+        motorcycle_penalty = weights['motorcycle_priority'] * np.sum(motorcycle_waiting)
+
+    # Congestion penalty (more severe in Vietnam)
+    total_vehicles = np.sum(queue_lengths)
+    congestion_penalty = 0.2 * (total_vehicles ** 1.3)  # Exponential penalty
+
+    # Combine rewards
+    vietnam_reward = -waiting_penalty - queue_penalty - motorcycle_penalty + throughput_bonus
+    vietnam_reward -= congestion_penalty
+
+    # Apply rush hour scaling
+    vietnam_reward *= rush_multiplier
+
+    return vietnam_reward
+
+
+def calculate_vietnam_motorcycle_priority_reward(waiting_times: np.ndarray,
+                                               queue_lengths: np.ndarray,
+                                               motorcycle_waiting: np.ndarray,
+                                               car_waiting: np.ndarray) -> float:
+    """
+    Reward function specifically prioritizing motorcycle flow in Vietnamese traffic.
+
+    Args:
+        waiting_times: All waiting times
+        queue_lengths: All queue lengths
+        motorcycle_waiting: Motorcycle waiting times
+        car_waiting: Car waiting times
+
+    Returns:
+        Motorcycle-priority reward
+    """
+    # Base reward
+    base_reward = calculate_combined_reward(waiting_times, queue_lengths, 0)
+
+    # Motorcycle priority bonus
+    motorcycle_priority = 2.0  # Motorcycles 2x more important
+
+    # Penalty ratio: if motorcycles wait longer than cars, higher penalty
+    if np.sum(car_waiting) > 0:
+        waiting_ratio = np.sum(motorcycle_waiting) / np.sum(car_waiting)
+        motorcycle_penalty = motorcycle_priority * waiting_ratio
+    else:
+        motorcycle_penalty = motorcycle_priority * np.sum(motorcycle_waiting)
+
+    return base_reward - motorcycle_penalty
+
+
+def calculate_vietnam_urban_efficiency_reward(waiting_times: np.ndarray,
+                                            throughput: int,
+                                            intersection_efficiency: float = 1.0) -> float:
+    """
+    Calculate reward for urban traffic efficiency in Vietnamese context.
+
+    Args:
+        waiting_times: Current waiting times
+        throughput: Current throughput
+        intersection_efficiency: Intersection efficiency factor
+
+    Returns:
+        Urban efficiency reward
+    """
+    # Vietnam urban efficiency considers high-density traffic
+    total_waiting = np.sum(waiting_times)
+
+    if throughput == 0:
+        return -total_waiting * 0.3  # Higher penalty when no throughput
+
+    # Efficiency calculation for dense urban traffic
+    urban_efficiency = throughput / (1 + total_waiting / 50.0)  # Normalize by 50s average waiting
+
+    # Scale for Vietnamese traffic density
+    vietnam_factor = 1.5  # Vietnamese traffic is more challenging
+
+    return urban_efficiency * 15.0 * vietnam_factor * intersection_efficiency
