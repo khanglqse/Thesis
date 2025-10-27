@@ -266,10 +266,6 @@ class PPOAgentWrapper:
         self.training_mode = training
         self.agent.set_training_mode(training)
 
-    def get_q_values(self, state: np.ndarray) -> np.ndarray:
-        """Get action values (not implemented for PPO)."""
-        return np.zeros(self.agent.env.action_space.n)
-
 
 def create_ppo_agent(env, config: Dict[str, Any] = None, **kwargs) -> PPOAgentWrapper:
     """

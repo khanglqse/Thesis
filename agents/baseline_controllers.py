@@ -20,7 +20,7 @@ except ImportError:
         @staticmethod
         def lane(*args, **kwargs): return MockLane()
     traci = MockTraCI()
-from typing import Dict, List, Tuple, Optional, Any, Protocol
+from typing import Dict, List, Tuple, Optional, Any
 from abc import ABC, abstractmethod
 
 

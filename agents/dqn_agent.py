@@ -283,21 +283,6 @@ class DQNAgent:
         if not training:
             self.epsilon = 0.0  # No exploration during evaluation
 
-    def get_q_values(self, state: np.ndarray) -> np.ndarray:
-        """
-        Get Q-values for a given state.
-
-        Args:
-            state: Input state
-
-        Returns:
-            Q-values for all actions
-        """
-        with torch.no_grad():
-            state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-            q_values = self.policy_net(state_tensor)
-            return q_values.cpu().numpy()[0]
-
 
 def create_dqn_agent(state_dim: int, action_dim: int, **kwargs) -> DQNAgent:
     """
