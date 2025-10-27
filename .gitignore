@@ -20,8 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-miniconda/
-miniconda.sh
+
 # Virtual environments
 .env
 .venv
@@ -49,12 +48,13 @@ Thumbs.db
 
 # Project specific
 *.log
-results/
 models/
 *.xml
 *.sumocfg
 *.rou.xml
 *.net.xml
-docs/figures/*.png
-docs/figures/*.pdf
-!docs/figures/README.md
+
+# Generated results and figures
+results/
+*.png
+*.pdf
