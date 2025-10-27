@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<net version="1.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+  <!-- Vietnam Three Intersection Network (Linear Chain) -->
+  
+  <!-- Nodes (Intersections) -->
+  <node id="center1" x="-200" y="0" type="traffic_light" />
+  <node id="center2" x="0" y="0" type="traffic_light" />
+  <node id="center3" x="200" y="0" type="traffic_light" />
+  
+  <!-- End nodes -->
+  <node id="west_end" x="-400" y="0" type="priority" />
+  <node id="east_end" x="400" y="0" type="priority" />
+  
+  <!-- North-South nodes for intersections -->
+  <node id="north1" x="-200" y="100" type="priority" />
+  <node id="south1" x="-200" y="-100" type="priority" />
+  
+  <node id="north2" x="0" y="100" type="priority" />
+  <node id="south2" x="0" y="-100" type="priority" />
+  
+  <node id="north3" x="200" y="100" type="priority" />
+  <node id="south3" x="200" y="-100" type="priority" />
+  
+  <!-- Edges for Intersection 1 -->
+  <edge id="west_end_center1" from="west_end" to="center1" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="west_end_center1_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="west_end_center1_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center1_center2" from="center1" to="center2" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center1_center2_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center1_center2_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center1_west_end" from="center1" to="west_end" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center1_west_end_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center1_west_end_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="north1_center1" from="north1" to="center1" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="north1_center1_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="north1_center1_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center1_south1" from="center1" to="south1" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center1_south1_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center1_south1_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="south1_center1" from="south1" to="center1" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="south1_center1_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="south1_center1_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center1_north1" from="center1" to="north1" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center1_north1_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center1_north1_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <!-- Edges for Intersection 2 -->
+  <edge id="center2_center1" from="center2" to="center1" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center2_center1_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center2_center1_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center2_center3" from="center2" to="center3" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center2_center3_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center2_center3_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center3_center2" from="center3" to="center2" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center3_center2_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center3_center2_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="north2_center2" from="north2" to="center2" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="north2_center2_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="north2_center2_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center2_south2" from="center2" to="south2" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center2_south2_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center2_south2_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="south2_center2" from="south2" to="center2" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="south2_center2_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="south2_center2_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center2_north2" from="center2" to="north2" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center2_north2_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center2_north2_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <!-- Edges for Intersection 3 -->
+  <edge id="center3_center2" from="center3" to="center2" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center3_center2_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center3_center2_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center3_east_end" from="center3" to="east_end" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center3_east_end_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center3_east_end_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="east_end_center3" from="east_end" to="center3" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="east_end_center3_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="east_end_center3_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="north3_center3" from="north3" to="center3" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="north3_center3_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="north3_center3_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center3_south3" from="center3" to="south3" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center3_south3_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center3_south3_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="south3_center3" from="south3" to="center3" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="south3_center3_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="south3_center3_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <edge id="center3_north3" from="center3" to="north3" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center3_north3_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+    <lane index="1" id="center3_north3_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail"/>
+  </edge>
+  
+  <!-- Traffic light junctions -->
+  <junction id="center1" type="traffic_light" incLanes="west_end_center1_0 west_end_center1_1 north1_center1_0 north1_center1_1 south1_center1_0 south1_center1_1 center1_center2_0 center1_center2_1" intLanes=":center1_0 :center1_1 :center1_2 :center1_3 :center1_4 :center1_5 :center1_6 :center1_7" shape="-200,-5 -205,0 -200,5 -195,0"/>
+  <junction id="center2" type="traffic_light" incLanes="center1_center2_0 center1_center2_1 center2_center1_0 center2_center1_1 north2_center2_0 north2_center2_1 south2_center2_0 south2_center2_1 center2_center3_0 center2_center3_1" intLanes=":center2_0 :center2_1 :center2_2 :center2_3 :center2_4 :center2_5" shape="0,-5 -5,0 0,5 5,0"/>
+  <junction id="center3" type="traffic_light" incLanes="center2_center3_0 center2_center3_1 center3_center2_0 center3_center2_1 north3_center3_0 north3_center3_1 south3_center3_0 south3_center3_1 east_end_center3_0 east_end_center3_1" intLanes=":center3_0 :center3_1 :center3_2 :center3_3 :center3_4 :center3_5" shape="200,-5 195,0 200,5 205,0"/>
+  
+  <!-- Traffic light phases -->
+  <tlLogic id="center1" type="static" programID="default" offset="0">
+    <phase duration="30" state="GGGrrrr"/>
+    <phase duration="3" state="yyyyyyy"/>
+    <phase duration="30" state="rrrGGGrrr"/>
+    <phase duration="3" state="rrryyyyrrr"/>
+  </tlLogic>
+  
+  <tlLogic id="center2" type="static" programID="default" offset="0">
+    <phase duration="30" state="GGGrrrr"/>
+    <phase duration="3" state="yyyyyyy"/>
+    <phase duration="30" state="rrrGGGrrr"/>
+    <phase duration="3" state="rrryyyyrrr"/>
+  </tlLogic>
+  
+  <tlLogic id="center3" type="static" programID="default" offset="0">
+    <phase duration="30" state="GGGrrrr"/>
+    <phase duration="3" state="yyyyyyy"/>
+    <phase duration="30" state="rrrGGGrrr"/>
+    <phase duration="3" state="rrryyyyrrr"/>
+  </tlLogic>
+  
+</net>
+

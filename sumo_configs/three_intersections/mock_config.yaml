@@ -1,0 +1,386 @@
+# Mock SUMO Configuration for Three Intersections
+# Used when SUMO/TraCI is not available for testing
+
+network:
+  intersections:
+    - id: "center1"
+      position: [-200, 0]
+      type: "traffic_light"
+      
+    - id: "center2"
+      position: [0, 0]
+      type: "traffic_light"
+      
+    - id: "center3"
+      position: [200, 0]
+      type: "traffic_light"
+      
+  lanes:
+    # Main arterial road (West to East)
+    - id: "west_end_center1_0"
+      from: "west_end"
+      to: "center1"
+      direction: "east"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "west_end_center1_1"
+      from: "west_end"
+      to: "center1"
+      direction: "east"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center1_center2_0"
+      from: "center1"
+      to: "center2"
+      direction: "east"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center1_center2_1"
+      from: "center1"
+      to: "center2"
+      direction: "east"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center2_center3_0"
+      from: "center2"
+      to: "center3"
+      direction: "east"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center2_center3_1"
+      from: "center2"
+      to: "center3"
+      direction: "east"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center3_east_end_0"
+      from: "center3"
+      to: "east_end"
+      direction: "east"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center3_east_end_1"
+      from: "center3"
+      to: "east_end"
+      direction: "east"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    # Opposite direction (East to West)
+    - id: "center1_west_end_0"
+      from: "center1"
+      to: "west_end"
+      direction: "west"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center1_west_end_1"
+      from: "center1"
+      to: "west_end"
+      direction: "west"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center2_center1_0"
+      from: "center2"
+      to: "center1"
+      direction: "west"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center2_center1_1"
+      from: "center2"
+      to: "center1"
+      direction: "west"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center3_center2_0"
+      from: "center3"
+      to: "center2"
+      direction: "west"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center3_center2_1"
+      from: "center3"
+      to: "center2"
+      direction: "west"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "east_end_center3_0"
+      from: "east_end"
+      to: "center3"
+      direction: "west"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "east_end_center3_1"
+      from: "east_end"
+      to: "center3"
+      direction: "west"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    # North-South lanes for Intersection 1
+    - id: "north1_center1_0"
+      from: "north1"
+      to: "center1"
+      direction: "south"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "north1_center1_1"
+      from: "north1"
+      to: "center1"
+      direction: "south"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center1_north1_0"
+      from: "center1"
+      to: "north1"
+      direction: "north"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center1_north1_1"
+      from: "center1"
+      to: "north1"
+      direction: "north"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "south1_center1_0"
+      from: "south1"
+      to: "center1"
+      direction: "north"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "south1_center1_1"
+      from: "south1"
+      to: "center1"
+      direction: "north"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center1_south1_0"
+      from: "center1"
+      to: "south1"
+      direction: "south"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center1_south1_1"
+      from: "center1"
+      to: "south1"
+      direction: "south"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    # North-South lanes for Intersection 2
+    - id: "north2_center2_0"
+      from: "north2"
+      to: "center2"
+      direction: "south"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "north2_center2_1"
+      from: "north2"
+      to: "center2"
+      direction: "south"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center2_north2_0"
+      from: "center2"
+      to: "north2"
+      direction: "north"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center2_north2_1"
+      from: "center2"
+      to: "north2"
+      direction: "north"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "south2_center2_0"
+      from: "south2"
+      to: "center2"
+      direction: "north"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "south2_center2_1"
+      from: "south2"
+      to: "center2"
+      direction: "north"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center2_south2_0"
+      from: "center2"
+      to: "south2"
+      direction: "south"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center2_south2_1"
+      from: "center2"
+      to: "south2"
+      direction: "south"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    # North-South lanes for Intersection 3
+    - id: "north3_center3_0"
+      from: "north3"
+      to: "center3"
+      direction: "south"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "north3_center3_1"
+      from: "north3"
+      to: "center3"
+      direction: "south"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center3_north3_0"
+      from: "center3"
+      to: "north3"
+      direction: "north"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center3_north3_1"
+      from: "center3"
+      to: "north3"
+      direction: "north"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "south3_center3_0"
+      from: "south3"
+      to: "center3"
+      direction: "north"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "south3_center3_1"
+      from: "south3"
+      to: "center3"
+      direction: "north"
+      vehicle_types: ["truck", "bus", "passenger"]
+      
+    - id: "center3_south3_0"
+      from: "center3"
+      to: "south3"
+      direction: "south"
+      vehicle_types: ["passenger", "motorcycle", "taxi"]
+      
+    - id: "center3_south3_1"
+      from: "center3"
+      to: "south3"
+      direction: "south"
+      vehicle_types: ["truck", "bus", "passenger"]
+
+traffic_light:
+  intersections:
+    - id: "center1"
+      phases:
+        - id: 0
+          duration: 30
+          state: "GGGrrrr"  # East-West main road
+          
+        - id: 1
+          duration: 3
+          state: "yyyyyyy"  # Yellow transition
+          
+        - id: 2
+          duration: 30
+          state: "rrrGGGrrr"  # North-South
+          
+        - id: 3
+          duration: 3
+          state: "rrryyyyrrr"  # Yellow transition
+          
+      current_phase: 0
+      
+    - id: "center2"
+      phases:
+        - id: 0
+          duration: 30
+          state: "GGGrrrr"  # East-West main road
+          
+        - id: 1
+          duration: 3
+          state: "yyyyyyy"  # Yellow transition
+          
+        - id: 2
+          duration: 30
+          state: "rrrGGGrrr"  # North-South
+          
+        - id: 3
+          duration: 3
+          state: "rrryyyyrrr"  # Yellow transition
+          
+      current_phase: 0
+      
+    - id: "center3"
+      phases:
+        - id: 0
+          duration: 30
+          state: "GGGrrrr"  # East-West main road
+          
+        - id: 1
+          duration: 3
+          state: "yyyyyyy"  # Yellow transition
+          
+        - id: 2
+          duration: 30
+          state: "rrrGGGrrr"  # North-South
+          
+        - id: 3
+          duration: 3
+          state: "rrryyyyrrr"  # Yellow transition
+          
+      current_phase: 0
+
+vehicle_types:
+  passenger:
+    length: 4.5
+    max_speed: 13.89  # 50 km/h
+    speed_factor: 1.0
+    probability: 0.4
+    
+  motorcycle:
+    length: 2.0
+    max_speed: 11.11  # 40 km/h
+    speed_factor: 1.1
+    probability: 0.4
+    
+  truck:
+    length: 7.5
+    max_speed: 11.11  # 40 km/h
+    speed_factor: 0.9
+    probability: 0.1
+    
+  bus:
+    length: 12.0
+    max_speed: 11.11  # 40 km/h
+    speed_factor: 0.95
+    probability: 0.05
+    
+  taxi:
+    length: 4.5
+    max_speed: 13.89  # 50 km/h
+    speed_factor: 1.0
+    probability: 0.05
+
+traffic_patterns:
+  # Vietnam-style traffic: heavy motorcycle presence
+  base_flow_rate: 0.25  # vehicles per second per direction (higher density for 3 intersections)
+  motorcycle_ratio: 0.4  # 40% motorcycles
+  bus_frequency: 120  # seconds between buses
+  
+  flow_rates:
+    main_road_east_west: 0.25  # Main arterial
+    main_road_west_east: 0.25
+    side_road_north_south_1: 0.08
+    side_road_south_north_1: 0.08
+    side_road_north_south_2: 0.08
+    side_road_south_north_2: 0.08
+    side_road_north_south_3: 0.08
+    side_road_south_north_3: 0.08
+
+simulation:
+  step_length: 1  # seconds
+  total_time: 3600  # 1 hour
+  seed: 42
+
+metrics:
+  track:
+    - vehicle_count
+    - average_speed
+    - waiting_time
+    - queue_length
+    - delay
+    - intersection_coordination  # For multi-intersection scenarios
+

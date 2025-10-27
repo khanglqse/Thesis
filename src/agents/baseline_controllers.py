@@ -145,21 +145,25 @@ class ActuatedController(TrafficController):
                     self.green_timer = 0
                 return self.current_phase
 
-            # Check if we should switch phases
-            current_phase_lanes = self.phase_lanes[self.current_phase]
-            other_phase_lanes = self.phase_lanes[1 - self.current_phase]
-
-            # Calculate total vehicles in current phase vs other phase
+            # Use simplified logic based on state for mock environment
+            # State contains: [vehicle_count, waiting_time, queue_length] for each lane
+            # Extract vehicle counts from state
             current_vehicles = 0
             other_vehicles = 0
-
-            for lane_id in current_phase_lanes:
-                if lane_id in traci.lane.getIDList():
-                    current_vehicles += traci.lane.getLastStepVehicleNumber(lane_id)
-
-            for lane_id in other_phase_lanes:
-                if lane_id in traci.lane.getIDList():
-                    other_vehicles += traci.lane.getLastStepVehicleNumber(lane_id)
+            
+            if len(state) > 3:
+                # State contains lane data: [v1, w1, q1, v2, w2, q2, ...]
+                # Approximate: lanes 0-7 for phase 0, lanes 8-15 for phase 1
+                phase0_lanes = list(range(0, min(8, len(state) // 3)))
+                phase1_lanes = list(range(8, min(16, len(state) // 3)))
+                
+                for idx in phase0_lanes:
+                    if idx * 3 < len(state):
+                        current_vehicles += state[idx * 3]  # vehicle_count
+                
+                for idx in phase1_lanes:
+                    if idx * 3 < len(state):
+                        other_vehicles += state[idx * 3]  # vehicle_count
 
             # Increment green timer
             self.green_timer += 1
@@ -236,24 +240,28 @@ class AdaptiveController(TrafficController):
             Current phase
         """
         try:
-            current_phase_lanes = self.phase_lanes[self.current_phase]
-            other_phase_lanes = self.phase_lanes[1 - self.current_phase]
-
-            # Calculate congestion metrics
+            # Use simplified logic based on state for mock environment
+            # State contains: [vehicle_count, waiting_time, queue_length] for each lane
             current_congestion = 0
             other_congestion = 0
-
-            for lane_id in current_phase_lanes:
-                if lane_id in traci.lane.getIDList():
-                    vehicles = traci.lane.getLastStepVehicleNumber(lane_id)
-                    waiting_time = traci.lane.getWaitingTime(lane_id)
-                    current_congestion += vehicles + (waiting_time / 10.0)
-
-            for lane_id in other_phase_lanes:
-                if lane_id in traci.lane.getIDList():
-                    vehicles = traci.lane.getLastStepVehicleNumber(lane_id)
-                    waiting_time = traci.lane.getWaitingTime(lane_id)
-                    other_congestion += vehicles + (waiting_time / 10.0)
+            
+            if len(state) > 3:
+                # State contains lane data: [v1, w1, q1, v2, w2, q2, ...]
+                # Approximate: lanes 0-7 for phase 0, lanes 8-15 for phase 1
+                phase0_lanes = list(range(0, min(8, len(state) // 3)))
+                phase1_lanes = list(range(8, min(16, len(state) // 3)))
+                
+                for idx in phase0_lanes:
+                    if idx * 3 + 1 < len(state):
+                        vehicles = state[idx * 3]  # vehicle_count
+                        waiting_time = state[idx * 3 + 1]  # waiting_time
+                        current_congestion += vehicles + (waiting_time / 10.0)
+                
+                for idx in phase1_lanes:
+                    if idx * 3 + 1 < len(state):
+                        vehicles = state[idx * 3]  # vehicle_count
+                        waiting_time = state[idx * 3 + 1]  # waiting_time
+                        other_congestion += vehicles + (waiting_time / 10.0)
 
             self.green_timer += 1
 

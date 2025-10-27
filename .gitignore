@@ -19,42 +19,35 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
-# Virtual environments
-.env
-.venv
-env/
+# Virtual Environment
 venv/
+env/
 ENV/
-env.bak/
-venv.bak/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Results and logs
+logs/*.log
+results/experiments/*
+results/models/*
+results/plots/*
+!results/.gitkeep
+
 # OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# Project specific
-*.log
-models/
-*.xml
-*.sumocfg
-*.rou.xml
-*.net.xml
-
-# Generated results and figures
-results/
-*.png
-*.pdf
+# Experiment specific
+*.pkl
+*.h5
+checkpoints/

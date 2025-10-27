@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+  <!-- Vehicle types for Vietnam traffic -->
+  
+  <vType id="car" vClass="passenger" maxSpeed="13.89" speedFactor="1.0" length="4.5" guiShape="passenger" probability="0.4"/>
+  <vType id="motorcycle" vClass="motorcycle" maxSpeed="11.11" speedFactor="1.1" length="2.0" guiShape="motorcycle" probability="0.4"/>
+  <vType id="truck" vClass="truck" maxSpeed="11.11" speedFactor="0.9" length="7.5" guiShape="truck" probability="0.1"/>
+  <vType id="bus" vClass="bus" maxSpeed="11.11" speedFactor="0.95" length="12.0" guiShape="bus" probability="0.05"/>
+  <vType id="taxi" vClass="taxi" maxSpeed="13.89" speedFactor="1.0" length="4.5" guiShape="taxi" probability="0.05"/>
+  
+  <!-- Routes -->
+  <route id="north_south" edges="north_center center_south" />
+  <route id="south_north" edges="south_center center_north" />
+  <route id="east_west" edges="east_center center_west" />
+  <route id="west_east" edges="west_center center_east" />
+  
+  <!-- Vehicle flows for Vietnam traffic patterns -->
+  <flow id="north_to_south" type="car" route="north_south" begin="0" end="3600" period="5.5" departSpeed="random"/>
+  <flow id="south_to_north" type="car" route="south_north" begin="0" end="3600" period="5.5" departSpeed="random"/>
+  <flow id="east_to_west" type="car" route="east_west" begin="0" end="3600" period="5.5" departSpeed="random"/>
+  <flow id="west_to_east" type="car" route="west_east" begin="0" end="3600" period="5.5" departSpeed="random"/>
+  
+  <!-- Motorcycle flows (high percentage in Vietnam) -->
+  <flow id="north_to_south_moto" type="motorcycle" route="north_south" begin="0" end="3600" period="3.5" departSpeed="random"/>
+  <flow id="south_to_north_moto" type="motorcycle" route="south_north" begin="0" end="3600" period="3.5" departSpeed="random"/>
+  <flow id="east_to_west_moto" type="motorcycle" route="east_west" begin="0" end="3600" period="3.5" departSpeed="random"/>
+  <flow id="west_to_east_moto" type="motorcycle" route="west_east" begin="0" end="3600" period="3.5" departSpeed="random"/>
+  
+  <!-- Truck flows -->
+  <flow id="north_to_south_truck" type="truck" route="north_south" begin="0" end="3600" period="15" departSpeed="random"/>
+  <flow id="south_to_north_truck" type="truck" route="south_north" begin="0" end="3600" period="15" departSpeed="random"/>
+  <flow id="east_to_west_truck" type="truck" route="east_west" begin="0" end="3600" period="15" departSpeed="random"/>
+  <flow id="west_to_east_truck" type="truck" route="west_east" begin="0" end="3600" period="15" departSpeed="random"/>
+  
+  <!-- Bus flow -->
+  <flow id="north_to_south_bus" type="bus" route="north_south" begin="0" end="3600" period="180" departSpeed="random"/>
+  <flow id="south_to_north_bus" type="bus" route="south_north" begin="0" end="3600" period="180" departSpeed="random"/>
+  <flow id="east_to_west_bus" type="bus" route="east_west" begin="0" end="3600" period="180" departSpeed="random"/>
+  <flow id="west_to_east_bus" type="bus" route="west_east" begin="0" end="3600" period="180" departSpeed="random"/>
+  
+  <!-- Taxi flow -->
+  <flow id="north_to_south_taxi" type="taxi" route="north_south" begin="0" end="3600" period="20" departSpeed="random"/>
+  <flow id="south_to_north_taxi" type="taxi" route="south_north" begin="0" end="3600" period="20" departSpeed="random"/>
+  <flow id="east_to_west_taxi" type="taxi" route="east_west" begin="0" end="3600" period="20" departSpeed="random"/>
+  <flow id="west_to_east_taxi" type="taxi" route="west_east" begin="0" end="3600" period="20" departSpeed="random"/>
+  
+</routes>
+

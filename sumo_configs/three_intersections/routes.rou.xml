@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+  <!-- Vehicle types for Vietnam traffic -->
+  
+  <vType id="car" vClass="passenger" maxSpeed="13.89" speedFactor="1.0" length="4.5" guiShape="passenger" probability="0.4"/>
+  <vType id="motorcycle" vClass="motorcycle" maxSpeed="11.11" speedFactor="1.1" length="2.0" guiShape="motorcycle" probability="0.4"/>
+  <vType id="truck" vClass="truck" maxSpeed="11.11" speedFactor="0.9" length="7.5" guiShape="truck" probability="0.1"/>
+  <vType id="bus" vClass="bus" maxSpeed="11.11" speedFactor="0.95" length="12.0" guiShape="bus" probability="0.05"/>
+  <vType id="taxi" vClass="taxi" maxSpeed="13.89" speedFactor="1.0" length="4.5" guiShape="taxi" probability="0.05"/>
+  
+  <!-- Routes through all intersections (East-West main road) -->
+  <route id="west_east_all" edges="west_end_center1 center1_center2 center2_center3 center3_east_end" />
+  <route id="east_west_all" edges="east_end_center3 center3_center2 center2_center1 center1_west_end" />
+  
+  <!-- Routes through first intersection -->
+  <route id="west_center1" edges="west_end_center1" />
+  <route id="center1_west" edges="center1_west_end" />
+  <route id="west_center2" edges="west_end_center1 center1_center2" />
+  <route id="center2_west" edges="center2_center1 center1_west_end" />
+  
+  <!-- Routes through second intersection -->
+  <route id="center2_east_end" edges="center2_center3 center3_east_end" />
+  <route id="west_center3" edges="west_end_center1 center1_center2 center2_center3" />
+  
+  <!-- North-South routes for each intersection -->
+  <route id="north1_south1" edges="north1_center1 center1_south1" />
+  <route id="south1_north1" edges="south1_center1 center1_north1" />
+  
+  <route id="north2_south2" edges="north2_center2 center2_south2" />
+  <route id="south2_north2" edges="south2_center2 center2_north2" />
+  
+  <route id="north3_south3" edges="north3_center3 center3_south3" />
+  <route id="south3_north3" edges="south3_center3 center3_north3" />
+  
+  <!-- Vehicle flows (3 intersection scenario - higher density) -->
+  
+  <!-- Through traffic -->
+  <flow id="west_to_east_car" type="car" route="west_east_all" begin="0" end="3600" period="4.0" departSpeed="random"/>
+  <flow id="east_to_west_car" type="car" route="east_west_all" begin="0" end="3600" period="4.0" departSpeed="random"/>
+  
+  <flow id="west_to_east_moto" type="motorcycle" route="west_east_all" begin="0" end="3600" period="2.5" departSpeed="random"/>
+  <flow id="east_to_west_moto" type="motorcycle" route="east_west_all" begin="0" end="3600" period="2.5" departSpeed="random"/>
+  
+  <flow id="west_to_east_truck" type="truck" route="west_east_all" begin="0" end="3600" period="25" departSpeed="random"/>
+  <flow id="east_to_west_truck" type="truck" route="east_west_all" begin="0" end="3600" period="25" departSpeed="random"/>
+  
+  <flow id="west_to_east_bus" type="bus" route="west_east_all" begin="0" end="3600" period="120" departSpeed="random"/>
+  <flow id="east_to_west_bus" type="bus" route="east_west_all" begin="0" end="3600" period="120" departSpeed="random"/>
+  
+  <!-- Intersection 1 flows -->
+  <flow id="north1_south1_car" type="car" route="north1_south1" begin="0" end="3600" period="10" departSpeed="random"/>
+  <flow id="south1_north1_car" type="car" route="south1_north1" begin="0" end="3600" period="10" departSpeed="random"/>
+  <flow id="north1_south1_moto" type="motorcycle" route="north1_south1" begin="0" end="3600" period="6" departSpeed="random"/>
+  <flow id="south1_north1_moto" type="motorcycle" route="south1_north1" begin="0" end="3600" period="6" departSpeed="random"/>
+  
+  <!-- Intersection 2 flows -->
+  <flow id="north2_south2_car" type="car" route="north2_south2" begin="0" end="3600" period="10" departSpeed="random"/>
+  <flow id="south2_north2_car" type="car" route="south2_north2" begin="0" end="3600" period="10" departSpeed="random"/>
+  <flow id="north2_south2_moto" type="motorcycle" route="north2_south2" begin="0" end="3600" period="6" departSpeed="random"/>
+  <flow id="south2_north2_moto" type="motorcycle" route="south2_north2" begin="0" end="3600" period="6" departSpeed="random"/>
+  
+  <!-- Intersection 3 flows -->
+  <flow id="north3_south3_car" type="car" route="north3_south3" begin="0" end="3600" period="10" departSpeed="random"/>
+  <flow id="south3_north3_car" type="car" route="south3_north3" begin="0" end="3600" period="10" departSpeed="random"/>
+  <flow id="north3_south3_moto" type="motorcycle" route="north3_south3" begin="0" end="3600" period="6" departSpeed="random"/>
+  <flow id="south3_north3_moto" type="motorcycle" route="south3_north3" begin="0" end="3600" period="6" departSpeed="random"/>
+  
+</routes>
+

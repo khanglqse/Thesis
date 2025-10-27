@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<net version="1.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+  <!-- Vietnam Single Intersection Network -->
+  
+  <!-- Nodes (Intersections) -->
+  <node id="center" x="0" y="0" type="traffic_light" />
+  <node id="north" x="0" y="100" type="priority" />
+  <node id="south" x="0" y="-100" type="priority" />
+  <node id="east" x="100" y="0" type="priority" />
+  <node id="west" x="-100" y="0" type="priority" />
+  
+  <!-- Edges (Roads) -->
+  <edge id="north_center" from="north" to="center" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="north_center_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+    <lane index="1" id="north_center_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+  </edge>
+  
+  <edge id="center_south" from="center" to="south" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center_south_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+    <lane index="1" id="center_south_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+  </edge>
+  
+  <edge id="east_center" from="east" to="center" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="east_center_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+    <lane index="1" id="east_center_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+  </edge>
+  
+  <edge id="center_west" from="center" to="west" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center_west_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+    <lane index="1" id="center_west_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+  </edge>
+  
+  <edge id="south_center" from="south" to="center" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="south_center_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+    <lane index="1" id="south_center_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+  </edge>
+  
+  <edge id="center_north" from="center" to="north" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center_north_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+    <lane index="1" id="center_north_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+  </edge>
+  
+  <edge id="west_center" from="west" to="center" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="west_center_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+    <lane index="1" id="west_center_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+  </edge>
+  
+  <edge id="center_east" from="center" to="east" priority="1" numLanes="2" speed="13.89">
+    <lane index="0" id="center_east_0" allow="taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+    <lane index="1" id="center_east_1" allow="truck bus taxi delivery_passenger motorcycle bicycle" disallow="tram rail_fast rail_urban rail_railcar rail_light rail_electric_scooter rail citywide"/>
+  </edge>
+  
+  <!-- Connections -->
+  <junction id="center" type="traffic_light" incLanes="north_center_0 north_center_1 south_center_0 south_center_1 east_center_0 east_center_1 west_center_0 west_center_1" intLanes=":center_0 :center_1 :center_2 :center_3 :center_4 :center_5 :center_6 :center_7" shape="0,-5 -5,0 0,5 5,0">
+    <request index="0" response="00" foes="01" cont="0"/>
+    <request index="1" response="00" foes="00" cont="0"/>
+    <request index="2" response="00" foes="01" cont="0"/>
+    <request index="3" response="11" foes="00" cont="0"/>
+    <request index="4" response="00" foes="11" cont="0"/>
+    <request index="5" response="00" foes="00" cont="0"/>
+    <request index="6" response="00" foes="11" cont="0"/>
+    <request index="7" response="11" foes="00" cont="0"/>
+  </junction>
+  
+  <!-- Connections between edges -->
+  <connection from="north_center" to="center_south" fromLane="0" toLane="0" via=":center_0" dir="s" state="M"/>
+  <connection from="north_center" to="center_south" fromLane="1" toLane="1" via=":center_1" dir="s" state="M"/>
+  
+  <connection from="south_center" to="center_north" fromLane="0" toLane="0" via=":center_2" dir="s" state="M"/>
+  <connection from="south_center" to="center_north" fromLane="1" toLane="1" via=":center_3" dir="s" state="M"/>
+  
+  <connection from="east_center" to="center_west" fromLane="0" toLane="0" via=":center_4" dir="s" state="M"/>
+  <connection from="east_center" to="center_west" fromLane="1" toLane="1" via=":center_5" dir="s" state="M"/>
+  
+  <connection from="west_center" to="center_east" fromLane="0" toLane="0" via=":center_6" dir="s" state="M"/>
+  <connection from="west_center" to="center_east" fromLane="1" toLane="1" via=":center_7" dir="s" state="M"/>
+  
+  <!-- Traffic light phases -->
+  <tlLogic id="center" type="static" programID="default" offset="0">
+    <phase duration="30" state="GGGrrrr"/>
+    <phase duration="3" state="yyyyyyy"/>
+    <phase duration="30" state="rrrGGGrrr"/>
+    <phase duration="3" state="rrryyyyrrr"/>
+  </tlLogic>
+  
+</net>
+
