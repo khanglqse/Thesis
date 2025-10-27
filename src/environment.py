@@ -61,6 +61,13 @@ class TrafficEnv(gym.Env):
         if config_type == "three_intersections":
             self.num_lanes = 48  # 3 intersections
         
+        # Get actual number of lanes from environment (important for mock)
+        if not self.use_sumo:
+            actual_num_lanes = len(self.mock_env.get_lane_ids())
+            if actual_num_lanes != self.num_lanes:
+                # Use actual number of lanes from mock config
+                self.num_lanes = actual_num_lanes
+        
         obs_dim = (self.num_lanes * self.obs_features_per_lane) + 1
         
         self.observation_space = spaces.Box(

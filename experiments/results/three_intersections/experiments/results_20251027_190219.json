@@ -1,0 +1,47 @@
+{
+  "Fixed-Time": {
+    "avg_waiting_time": 5459.799300000016,
+    "total_waiting_time": 5459799.300000016,
+    "avg_vehicles": 63.443,
+    "max_vehicles": 99,
+    "avg_halting": 36.641,
+    "max_halting": 64,
+    "cumulative_reward": -5826.209300000017
+  },
+  "Actuated": {
+    "avg_waiting_time": 5448.407600000015,
+    "total_waiting_time": 5448407.600000015,
+    "avg_vehicles": 62.941,
+    "max_vehicles": 99,
+    "avg_halting": 36.289,
+    "max_halting": 67,
+    "cumulative_reward": -5811.297600000014
+  },
+  "Adaptive": {
+    "avg_waiting_time": 5691.526300000015,
+    "total_waiting_time": 5691526.300000015,
+    "avg_vehicles": 70.75,
+    "max_vehicles": 124,
+    "avg_halting": 42.248,
+    "max_halting": 84,
+    "cumulative_reward": -6114.0063000000155
+  },
+  "Random": {
+    "avg_waiting_time": 5256.522600000013,
+    "total_waiting_time": 5256522.600000013,
+    "avg_vehicles": 61.865,
+    "max_vehicles": 90,
+    "avg_halting": 35.32,
+    "max_halting": 55,
+    "cumulative_reward": -5609.722600000013
+  },
+  "DQN": {
+    "avg_waiting_time": 2653.055200000003,
+    "total_waiting_time": 1326527.6000000015,
+    "avg_vehicles": 70.078,
+    "max_vehicles": 106,
+    "avg_halting": 42.166,
+    "max_halting": 70,
+    "cumulative_reward": -1537.3576000000012
+  }
+}
