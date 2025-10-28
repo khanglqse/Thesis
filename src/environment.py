@@ -139,8 +139,11 @@ class TrafficEnv(gym.Env):
         obs = []
         
         if self.use_sumo:
-            # Get lane IDs
-            lane_ids = traci.lane.getIDList()
+            # Get lane IDs and filter out internal lanes (those starting with ':')
+            all_lane_ids = traci.lane.getIDList()
+            
+            # Filter out internal junction lanes
+            lane_ids = [lane_id for lane_id in all_lane_ids if not lane_id.startswith(':')]
             
             # Sort for consistency
             lane_ids = sorted(lane_ids)
@@ -167,16 +170,18 @@ class TrafficEnv(gym.Env):
     def _calculate_reward(self) -> float:
         """Calculate reward for current state."""
         if self.use_sumo:
+            # Get all lane IDs and filter out internal lanes
+            all_lane_ids = traci.lane.getIDList()
+            lane_ids = [lane_id for lane_id in all_lane_ids if not lane_id.startswith(':')]
+            
             # Negative of total waiting time (maximize efficiency)
-            total_waiting = sum(traci.lane.getWaitingTime(lane_id) 
-                              for lane_id in traci.lane.getIDList())
+            total_waiting = sum(traci.lane.getWaitingTime(lane_id) for lane_id in lane_ids)
             
             # Reward is negative normalized waiting time
             reward = -total_waiting / 1000.0
             
             # Penalize long queues
-            total_halting = sum(traci.lane.getLastStepHaltingNumber(lane_id) 
-                               for lane_id in traci.lane.getIDList())
+            total_halting = sum(traci.lane.getLastStepHaltingNumber(lane_id) for lane_id in lane_ids)
             reward -= total_halting / 100.0
         else:
             # Mock reward
@@ -192,12 +197,16 @@ class TrafficEnv(gym.Env):
     def _get_info(self) -> Dict:
         """Get additional information about current state."""
         if self.use_sumo:
+            # Get all lane IDs and filter out internal lanes
+            all_lane_ids = traci.lane.getIDList()
+            lane_ids = [lane_id for lane_id in all_lane_ids if not lane_id.startswith(':')]
+            
             total_vehicles = sum(traci.lane.getLastStepVehicleNumber(lane_id) 
-                                for lane_id in traci.lane.getIDList())
+                                for lane_id in lane_ids)
             total_waiting = sum(traci.lane.getWaitingTime(lane_id) 
-                              for lane_id in traci.lane.getIDList())
+                              for lane_id in lane_ids)
             total_halting = sum(traci.lane.getLastStepHaltingNumber(lane_id) 
-                              for lane_id in traci.lane.getIDList())
+                              for lane_id in lane_ids)
         else:
             total_vehicles = sum(self.mock_env.get_vehicle_count(lane_id) 
                                 for lane_id in self.mock_env.get_lane_ids())
