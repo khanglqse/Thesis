@@ -126,7 +126,7 @@ Urban congestion imposes significant social, environmental, and economic costs. 
 
 
 \section{Background}
-Urban traffic congestion has become one of the most critical challenges in modern metropolitan areas, leading to significant economic, environmental, and social costs. As the number of vehicles on the road continues to increase due to rapid urbanization and population growth, existing transportation infrastructures struggle to accommodate the rising traffic demand efficiently. According to reports by the World Economic Forum~\cite{wef2023} and the International Transport Forum~\cite{itf2024}, the average urban driver spends between 50 to 120 hours annually stuck in congestion, resulting in billions of dollars in lost productivity and excessive fuel consumption. Furthermore, idling vehicles contribute to an increase in carbon emissions, directly worsening air quality and public health in densely populated regions.
+Urban traffic congestion has become one of the most critical challenges in modern metropolitan areas, leading to significant economic, environmental, and social costs. As the number of vehicles on the road continues to increase due to rapid urbanization and population growth, existing transportation infrastructures struggle to accommodate the rising traffic demand efficiently. According to major traffic congestion reports such as INRIX Global Traffic Scorecard~\cite{inrix2023} and TomTom Traffic Index~\cite{tomtom2023}, urban drivers spend between 51 to 101 hours annually stuck in congestion on average, resulting in billions of dollars in lost productivity and excessive fuel consumption. Furthermore, idling vehicles contribute to an increase in carbon emissions, directly worsening air quality and public health in densely populated regions.
 
 At the heart of urban mobility lies the \textbf{traffic signal control system (TSCS)} --- the primary mechanism used to coordinate vehicular movement across intersections. Traditional control systems are typically based on \textbf{fixed-time schedules} designed using historical traffic data or heuristic methods such as the \textbf{Webster formula}. While effective in low-variance environments, these static systems fail to adapt to real-time fluctuations caused by incidents, weather conditions, or irregular traffic patterns. In many developing cities, these inefficiencies lead to substantial delays, uneven lane utilization, and cascading congestion across intersections.
 
@@ -187,7 +187,7 @@ This research introduces a novel reinforcement learning (RL) framework for optim
     The proposed method is implemented and evaluated using open-source simulation platforms such as SUMO and CityFlow. Multiple experimental setups are conducted, covering synthetic grid networks, realistic city maps, and varying traffic densities. The evaluation compares our approach against fixed-time, actuated, and existing RL-based controllers under identical conditions.
 
     \item \textbf{Performance analysis and insight.}  
-    Through extensive experiments, we demonstrate that our proposed system reduces average vehicle waiting time and total travel time by 15–30\% compared to state-of-the-art baselines. Moreover, the analysis reveals that inter-agent communication and the reward design play a key role in achieving both local optimization and global network efficiency.
+    The proposed framework is expected to achieve 15–30\% reduction in average vehicle waiting time and total travel time compared to state-of-the-art baselines, based on performance reported in related studies. The analysis will reveal that inter-agent communication and the reward design play a key role in achieving both local optimization and global network efficiency.
 \end{enumerate}
 
 In summary, this thesis contributes to the growing body of research on intelligent transportation systems by delivering a data-driven, adaptive, and practically deployable traffic light optimization framework. The proposed methodology is expected to support future smart city infrastructures by enabling scalable, sustainable, and efficient traffic management solutions.
@@ -318,10 +318,10 @@ Machine learning-based approaches, including regression, neural networks, and fu
 Reinforcement learning (RL) has recently gained popularity for traffic control due to its capability to learn adaptive policies through interaction with the environment. Single-agent RL models—such as Deep Q-Networks (DQN) or policy gradient methods—have been applied to optimize phase switching at individual intersections \cite{DQN_Traffic2022,PolicyGradient2023}. While these approaches show promise, they often fail to generalize in multi-intersection networks due to lack of coordination mechanisms \cite{IQLTraffic2021,CooperativeRL2022}.
 
 \subsection*{Evaluation Setups and Simulators}
-Microscopic simulators provide safe, controllable environments to benchmark algorithms. SUMO is widely adopted for its open-source tooling, reproducibility, and TraCI interface for online control \cite{SUMO_2018}. CityFlow and VISSIM are also used, but this thesis prioritizes SUMO \cite{CityFlow_2019,SimulationPlatforms_Comparison2023}. Typical setups include (a) synthetic grids (e.g., $3\times3$, $4\times4$) with controlled demand patterns and (b) real maps imported from OpenStreetMap (OSM) with calibrated demand \cite{OSM_SUMO_2022}. Benchmarks often compare against fixed-time, actuated, and classical adaptive baselines.
+Microscopic simulators provide safe, controllable environments to benchmark algorithms. SUMO is widely adopted for its open-source tooling, reproducibility, and TraCI interface for online control \cite{Lopez_2018}. CityFlow and VISSIM are also used, but this thesis prioritizes SUMO \cite{CityFlow_2019,SimulationPlatforms_Comparison2023}. Typical setups include (a) synthetic grids (e.g., $3\times3$, $4\times4$) with controlled demand patterns and (b) real maps imported from OpenStreetMap (OSM) with calibrated demand \cite{OSM_SUMO_2022}. Benchmarks often compare against fixed-time, actuated, and classical adaptive baselines.
 
 \subsection*{Common Metrics}
-Studies commonly report: average travel time, average delay, queue length, intersection throughput, stop counts, and network speed \cite{AdaptiveReview_2023,DRL_Transportation_2023}. Pressure-based metrics additionally consider demand-supply imbalance \cite{MaxPressure_2013,CoordinatedDQL_2022}. Robustness indicators include variance across seeds, sensitivity to demand patterns, and performance under sensor noise \cite{SafeLight_2023}.
+Studies commonly report: average travel time, average delay, queue length, intersection throughput, stop counts, and network speed \cite{AdaptiveReview_2023,DRL_Transportation_2023}. Pressure-based metrics additionally consider demand-supply imbalance \cite{MaxPressure_2013,CoordinatedDQL_2022}. Robustness indicators include variance across seeds, sensitivity to demand patterns, and performance under sensor noise \cite{Du_2023}.
 
 ---
 
@@ -329,12 +329,12 @@ Studies commonly report: average travel time, average delay, queue length, inter
 
 The integration of multi-agent reinforcement learning (MARL) into traffic light optimization has recently become an active research area. In MARL, each intersection is modeled as an autonomous agent that learns local control policies while coordinating with neighboring intersections to achieve system-wide efficiency. Various frameworks have been proposed to address challenges in coordination, stability, and communication.
 
-Independent Q-Learning (IQL) approaches treat each intersection as a separate learner \cite{IQLTraffic2021}, but they often suffer from non-stationarity due to simultaneous policy updates across agents. To overcome this, coordination mechanisms such as parameter sharing, joint action learners, or graph-based communication have been introduced \cite{GraphRL2023,CooperativeRL2022,MA2C2021}.  
+Independent Q-Learning (IQL) approaches treat each intersection as a separate learner \cite{IQLTraffic2021}, but they often suffer from non-stationarity due to simultaneous policy updates across agents. To overcome this, coordination mechanisms such as parameter sharing, joint action learners, or graph-based communication have been introduced \cite{GraphRL2023,CooperativeRL2022,Chu2019MA2C}.  
 
 Recent works leverage graph neural networks (GNN) to model spatial dependencies between intersections \cite{GNN_Traffic2022,GraphLight2023}. Others combine hierarchical RL with meta-learning to accelerate adaptation across different network structures \cite{MetaTraffic2023,HierRL2022}. Communication-efficient MARL methods, such as attention-based message passing or localized information sharing, have shown potential to reduce communication overhead while maintaining coordination \cite{CommRL2023,AttentionMARL2024}.
 
 \subsection*{Pressure-based and Safety-aware Learning}
-Max-Pressure (MP) control and its learning variants seek to reduce network imbalance by prioritizing movements with high approach pressure \cite{MaxPressure_2013,PressLight_2019}. Safe RL integrates rule-based constraints (minimum green, inter-green, pedestrian phases) and penalties for violations \cite{SafeLight_2023}. Hybrid overlays combine MP-inspired shaping with policy learning for stability and interpretability \cite{CoordinatedDQL_2022}.
+Max-Pressure (MP) control and its learning variants seek to reduce network imbalance by prioritizing movements with high approach pressure \cite{MaxPressure_2013,PressLight_2019}. Safe RL integrates rule-based constraints (minimum green, inter-green, pedestrian phases) and penalties for violations \cite{Du_2023}. Hybrid overlays combine MP-inspired shaping with policy learning for stability and interpretability \cite{CoordinatedDQL_2022}.
 
 Despite these advancements, challenges remain in terms of scalability, transferability, and real-world deployment. Few studies have successfully validated MARL-based systems outside simulation, primarily due to the lack of standardized benchmarks, sensor noise robustness, and safety considerations in mixed traffic conditions.
 
@@ -352,11 +352,13 @@ Table~\ref{tab:related_work_comparison} summarizes key characteristics of repres
 \toprule
 \textbf{Study} & \textbf{Approach} & \textbf{Coordination} & \textbf{Limitations} \\
 \midrule
-DQN-TSC (2022) & Single-agent RL & None & Lacks coordination across intersections \\
-MA2C (2021) & Multi-agent actor-critic & Local message passing & Limited scalability, sensitive to parameters \\
-GraphLight (2023) & GNN + RL hybrid & Graph-based aggregation & Requires high communication bandwidth \\
-MetaTraffic (2023) & Meta-RL adaptation & Hierarchical control & Limited real-world validation \\
-CoLight (2022) & Attention MARL & Learned coordination & Complex training, unstable convergence \\
+DQN-TSC \cite{Genders2019} & Single-agent RL & None & Lacks coordination across intersections \\
+MA2C \cite{Chu2019MA2C} & Multi-agent actor-critic & Local message passing & Limited scalability, sensitive to parameters \\
+GraphLight \cite{GraphLight2023} & GNN + RL hybrid & Graph-based aggregation & Requires high communication bandwidth \\
+CoLight \cite{Colight_2019} & Attention MARL & Learned coordination & Complex training, unstable convergence \\
+PressLight \cite{PressLight_2019} & Max-pressure RL & Network pressure & Computationally intensive \\
+FedLight \cite{FedLight_2021} & Federated MARL & Privacy-preserving & Communication overhead \\
+AttentionLight \cite{AttentionLight_2023} & Graph attention RL & Spatial-temporal & High memory requirements \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -442,7 +444,7 @@ For real-map scenarios, additional features may include detector reliability fla
 
 \section{Action Space and Signal Constraints}
 
-At each step, the agent selects the next phase (or holds the current phase) from $\mathcal{P}_v$. Transitions must respect: (i) minimum green time, (ii) yellow change intervals, and (iii) all-red clearance for safety. We implement these as hard constraints via a signal state machine that masks invalid actions and schedules inter-green times automatically \cite{SafeLight_2023,SCATS2021}.
+At each step, the agent selects the next phase (or holds the current phase) from $\mathcal{P}_v$. Transitions must respect: (i) minimum green time, (ii) yellow change intervals, and (iii) all-red clearance for safety. We implement these as hard constraints via a signal state machine that masks invalid actions and schedules inter-green times automatically \cite{Du_2023,SCATS2021}.
 
 We consider both (i) hold-or-switch actions that either retain the current phase or switch to a next admissible phase, and (ii) direct phase selection with masking. For actuated-style baselines, extension actions (e.g., extend green by $k$ seconds) are supported with bounds to prevent starvation.
 
@@ -458,12 +460,12 @@ In grid networks, an auxiliary green-wave bonus can incentivize progression alon
 
 \section{Learning Algorithms}
 
-Our framework supports both value-based and policy-based methods under centralized-training, decentralized-execution (CTDE) \cite{MARL_TSC_2024,MA2C2021}:
+Our framework supports both value-based and policy-based methods under centralized-training, decentralized-execution (CTDE) \cite{MARL_TSC_2024,Chu2019MA2C}:
 \begin{itemize}
   \item Independent DQN/PPO/DDPG baselines per intersection \cite{DQN_Traffic2022,PolicyGradient2023,DDPG_TSC_2022}.
   \item Value decomposition methods (VDN/QMIX) for cooperative credit assignment \cite{QMIX_TSC_2022,VDN_TSC_2022}.
-  \item Actor-critic with shared critics or message-aware critics (MAAC-style) \cite{DistributedAC_2023,MA2C2021}.
-  \item Graph-enhanced policies with attention-based communication \cite{GATLight_2022,GraphLight2023,AttentionMARL2024}.
+  \item Actor-critic with shared critics or message-aware critics (MAAC-style) \cite{DistributedAC_2023,Chu2019MA2C}.
+  \item Graph-enhanced policies with attention-based communication \cite{GATLight_2022,GraphLight2023,AttentionLight_2023}.
 \end{itemize}
 The choice can be tailored to network scale, communication budget, and training resources.
 
@@ -499,13 +501,13 @@ For corridor-oriented networks, we optionally aggregate neighbor messages along 
 
 \section{Training Procedure}
 
-Training is conducted in microscopic simulators with OpenAI Gym-style interfaces, such as SUMO or CityFlow \cite{SimulationPlatforms_Comparison2023,SUMO_2018,CityFlow_2019}. We employ episodic training with replay buffers (for off-policy algorithms) and curriculum over traffic demand patterns to improve generalization \cite{Curriculum_TSC_2023,MetaTraffic2023}. Stabilization techniques include target networks, entropy regularization, prioritized replay, and gradient clipping \cite{DeepTraffic2023,MARL_Coordinated_Access2023}.
+Training is conducted in microscopic simulators with OpenAI Gym-style interfaces, such as SUMO or CityFlow \cite{SimulationPlatforms_Comparison2023,Lopez_2018,CityFlow_2019}. We employ episodic training with replay buffers (for off-policy algorithms) and curriculum over traffic demand patterns to improve generalization \cite{Curriculum_TSC_2023,MetaTraffic2023}. Stabilization techniques include target networks, entropy regularization, prioritized replay, and gradient clipping \cite{DeepTraffic2023,MARL_Coordinated_Access2023}.
 
 For SUMO integration, TraCI retrieves detector states, queues, and speeds, while actions set signal programs or phase indices each control step. Demand curricula alternate peak and off-peak flows and inject incident perturbations (e.g., lane closures) to assess robustness.
 
 \section{Safety and Operational Constraints}
 
-We integrate rule-based guards alongside RL to ensure compliance with traffic safety standards: minimum greens, inter-green intervals, pedestrian phases if present, and fail-safe fallbacks. Safe RL penalties are applied for violations or near-violations detected by the signal state machine \cite{SafeLight_2023}. For deployment, we recommend a supervisory layer to monitor and override anomalous actions.
+We integrate rule-based guards alongside RL to ensure compliance with traffic safety standards: minimum greens, inter-green intervals, pedestrian phases if present, and fail-safe fallbacks. Safe RL penalties are applied for violations or near-violations detected by the signal state machine \cite{Du_2023}. For deployment, we recommend a supervisory layer to monitor and override anomalous actions.
 
 \section{Complexity and Scalability Considerations}
 
