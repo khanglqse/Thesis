@@ -40,15 +40,18 @@ def main():
     rn = RoadNet.load(str(data_dir / roadnet_file))
     engine = CityFlowEngine(str(cfg_path))
     env = MultiAgentTrafficEnv(rn, engine, action_interval=10, max_steps=1000)
-    controller = FixedTimeController(num_phases={aid: rn.num_phases(aid) for aid in env.agent_ids})
+    controller = FixedTimeController(num_actions=env.num_actions)
 
-    env.reset()
+    obs = env.reset()
     controller.reset()
     done = False
     info = {}
     while not done:
-        actions = controller.act()
-        _, _, done, info = env.step(actions)
+        ctx = {"observations": obs,
+               "waiting_counts": env.current_waiting_counts(),
+               "action_masks": env.action_masks()}
+        actions = controller.act(ctx)
+        obs, _, done, info = env.step(actions)
 
     metrics = {
         "controller": "FixedTime",
