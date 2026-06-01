@@ -16,7 +16,7 @@ dev = ["pytest"]
 where = ["src"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 markers = [
     "docker: integration tests that require the CityFlow Docker image",
 ]

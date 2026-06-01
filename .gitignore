@@ -59,3 +59,6 @@ osm_danang/*.geojson
 
 # Generated simulation data — all regenerable from scripts (OSM, nets, roadnet, flow, replay)
 data/
+
+# core dumps (CityFlow segfaults under emulation)
+core
