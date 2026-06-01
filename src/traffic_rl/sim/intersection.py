@@ -30,7 +30,10 @@ class IntersectionState:
 
 
 def pressure_reward(state: IntersectionState, waiting_counts: Dict[str, int]) -> float:
-    """Reward = -|incoming pressure - outgoing pressure| (max-pressure style)."""
+    """Signed max-pressure reward = -(incoming queue - outgoing queue).
+
+    Negative pressure (queues draining downstream) yields positive reward.
+    """
     inflow = sum(waiting_counts.get(l, 0) for l in state.incoming_lanes)
     outflow = sum(waiting_counts.get(l, 0) for l in state.outgoing_lanes)
-    return -float(abs(inflow - outflow))
+    return -float(inflow - outflow)
