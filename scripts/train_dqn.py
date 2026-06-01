@@ -48,7 +48,8 @@ def main():
                                     action_interval=cfg["action_interval"],
                                     max_steps=cfg["max_steps"],
                                     yellow_time=cfg["yellow_time"],
-                                    min_green=cfg["min_green"])
+                                    min_green=cfg["min_green"],
+                                    count_norm=cfg.get("count_norm", 10.0))
 
     train(env_factory, cfg,
           ckpt_path=str(results_dir / "dqn_{}.npz".format(area)),

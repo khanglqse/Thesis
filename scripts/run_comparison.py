@@ -10,6 +10,8 @@ import os
 import sys
 from pathlib import Path
 
+import yaml
+
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.engine import CityFlowEngine
 from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
@@ -26,6 +28,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # Evaluation horizon (engine steps). Longer horizons let congestion build so the
 # controllers separate more sharply; override with MAX_STEPS=<n>.
 EVAL_STEPS = int(os.environ.get("MAX_STEPS", "1000"))
+# count_norm MUST match training (same observation scaling), so read it from the
+# training config — the single source of truth.
+_TRAIN_CFG = yaml.safe_load((ROOT / "configs" / "training.yaml").read_text())
+COUNT_NORM = float(_TRAIN_CFG.get("count_norm", 10.0))
 
 
 def _env(rn, area, tag, results_dir):
@@ -39,7 +45,8 @@ def _env(rn, area, tag, results_dir):
     cfg_path.write_text(json.dumps(cfg))
     return MultiAgentTrafficEnv(rn, CityFlowEngine(str(cfg_path)),
                                 action_interval=10, max_steps=EVAL_STEPS,
-                                yellow_time=3, min_green=10)
+                                yellow_time=3, min_green=10,
+                                count_norm=COUNT_NORM)
 
 
 def main():
