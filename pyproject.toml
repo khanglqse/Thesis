@@ -20,4 +20,4 @@ pythonpath = ["src"]
 markers = [
     "docker: integration tests that require the CityFlow Docker image",
 ]
-addopts = "-m 'not docker'"
+addopts = ["-m", "not docker"]
