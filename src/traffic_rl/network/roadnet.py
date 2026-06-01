@@ -16,7 +16,8 @@ class RoadNet:
 
     @classmethod
     def load(cls, path: str) -> "RoadNet":
-        data = json.loads(open(path).read())
+        with open(path) as f:
+            data = json.load(f)
         by_id = {i["id"]: i for i in data["intersections"]}
         road_by_id = {r["id"]: r for r in data["roads"]}
         # Build road->road adjacency from every intersection's roadLinks.
@@ -24,7 +25,9 @@ class RoadNet:
         for inter in data["intersections"]:
             for link in inter.get("roadLinks", []):
                 start, end = link["startRoad"], link["endRoad"]
-                if end not in nxt[start]:
+                # setdefault guards against roadLinks referencing a road not in
+                # data["roads"] (possible with converter artifacts on large nets).
+                if end not in nxt.setdefault(start, []):
                     nxt[start].append(end)
         return cls(data["intersections"], data["roads"], by_id, road_by_id, nxt)
 
