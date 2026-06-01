@@ -1,9 +1,9 @@
 """Pure-Python per-intersection observation and pressure reward.
 
 Operates on plain dicts (lane_id -> count) so it is testable without CityFlow.
+Must stay importable under Python 3.6 (CityFlow Docker image): no
+`from __future__ import annotations`; `dataclasses` backport pip-installed there.
 """
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Dict, List
 

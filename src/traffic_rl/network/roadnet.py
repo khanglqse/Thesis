@@ -1,6 +1,9 @@
-"""Parse a CityFlow roadnet.json into convenient lookups for env + flow generation."""
-from __future__ import annotations
+"""Parse a CityFlow roadnet.json into convenient lookups for env + flow generation.
 
+NOTE: must stay importable under Python 3.6 (the CityFlow Docker image), so no
+`from __future__ import annotations`. The `dataclasses` backport is pip-installed
+in the container (see Makefile cf-test / the run_fixed_time invocation).
+"""
 import json
 from dataclasses import dataclass
 from typing import Dict, List
