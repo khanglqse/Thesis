@@ -22,7 +22,7 @@ from traffic_rl.report.loader import (  # noqa: E402
 st.set_page_config(page_title="Da Nang MARL Traffic", layout="wide")
 st.title("Da Nang Traffic-Signal Optimization — MARL vs Baselines")
 
-area = st.sidebar.selectbox("Scenario", ["full", "subarea"], index=0)
+area = st.sidebar.selectbox("Scenario", ["haichau", "full", "subarea"], index=0)
 results_dir = ROOT / "results" / area
 comparison_path = results_dir / "comparison.json"
 

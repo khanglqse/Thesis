@@ -53,10 +53,15 @@ def main():
         env = _env(rn, area, tag, results_dir)
         rows.append(run_episode(env, make(env)))
 
-    env = _env(rn, area, "dqn", results_dir)
-    net = SharedDQN(env.obs_dim, env.encoder.max_green)
-    net.load(str(results_dir / "dqn_{}.npz".format(area)))
-    rows.append(run_episode(env, DQNController(net, env.agent_ids)))
+    ckpt = results_dir / "dqn_{}.npz".format(area)
+    if ckpt.exists():
+        env = _env(rn, area, "dqn", results_dir)
+        net = SharedDQN(env.obs_dim, env.encoder.max_green)
+        net.load(str(ckpt))
+        rows.append(run_episode(env, DQNController(net, env.agent_ids)))
+    else:
+        print("NOTE: {} missing -> skipping DQN (baselines only). "
+              "Train it, then re-run this for the full comparison.".format(ckpt))
 
     report = compare.write_report(rows, str(results_dir / "comparison.json"))
     # matplotlib has no Python-3.6 wheel, so plotting may be unavailable in the

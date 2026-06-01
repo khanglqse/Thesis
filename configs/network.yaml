@@ -4,6 +4,9 @@ bbox:
   subarea: [108.215, 16.045, 108.235, 16.065]
   # Full central Da Nang.
   full: [108.12, 16.00, 108.28, 16.08]
+  # Hai Chau District only (Quan Hai Chau) — central district, smaller & far more
+  # watchable in the replay. bbox from OSM Nominatim: [W, S, E, N].
+  haichau: [108.1888, 16.0213, 108.2360, 16.1037]
 
 netconvert:
   # Options applied when converting OSM -> SUMO net (see osm_to_sumo.py).
