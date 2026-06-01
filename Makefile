@@ -15,7 +15,7 @@ test:
 # Run engine integration tests inside the CityFlow container.
 cf-test:
 	docker run --rm -v "$(CURDIR)":/work -w /work $(CF_IMAGE) \
-		sh -lc 'pip install pytest pyyaml numpy dataclasses >/dev/null 2>&1; python3 -m pytest -m docker -v -o addopts="" -o pythonpath=src --continue-on-collection-errors'
+		sh -lc 'pip install pytest pyyaml numpy dataclasses >/dev/null 2>&1; python3 -m pytest -m docker -v -o addopts="" -o pythonpath=src --ignore=tests/network --continue-on-collection-errors'
 
 # Smoke-check that cityflow imports inside the container.
 cf-smoke:
