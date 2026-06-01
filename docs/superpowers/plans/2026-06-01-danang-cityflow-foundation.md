@@ -17,6 +17,7 @@
 - `netconvert` (SUMO 1.24) is at `/opt/homebrew/bin/netconvert`; SUMO tools at `/opt/homebrew/share/sumo/tools/` (e.g. `osmGet.py`). `SUMO_HOME` is unset — set it to `/opt/homebrew/share/sumo`.
 - OSM already imported via `scripts/download_osm_danang.py` (osmnx graphml, for inspection only). `netconvert` needs raw `.osm` XML, downloaded separately with `osmGet.py` (Task 3).
 - Central Da Nang bbox: `(west, south, east, north) = (108.12, 16.00, 108.28, 16.08)`, ~37 OSM `traffic_signals`.
+- **The CityFlow Docker image is Python 3.6.5** (no `dataclasses` stdlib, no `from __future__ import annotations`). Any module that runs INSIDE the container — `sim/engine.py`, `sim/intersection.py`, `sim/multi_agent_env.py`, `network/roadnet.py`, `agents/fixed_time.py`, and `scripts/run_fixed_time.py` — MUST be 3.6-compatible: do NOT use `from __future__ import annotations`; `@dataclass` is fine via the pip-installed `dataclasses` backport. Host-only modules (`network/osm_to_sumo.py`, `network/sumo_to_cityflow.py`, `network/flow_gen.py`, `scripts/download_osm.py`) run on local Python 3.13 and may use modern syntax. The `cf-test` / `cf-run` Docker commands pip-install `dataclasses numpy pyyaml` before running.
 
 ## File structure (created by this plan)
 
