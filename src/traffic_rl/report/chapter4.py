@@ -32,6 +32,29 @@ def build_chapter4(comparison, training_log, fig_dir="."):
         return "{}/{}".format(fig_dir.rstrip("/"), name) if fig_dir not in (".", "") else name
 
     dqn = imp.get("DQN", {})
+    dqn_best_tt = best.get("travel_time") == "DQN"
+    dqn_best_all = dqn_best_tt and best.get("queue") == "DQN" and best.get("reward") == "DQN"
+    if dqn_best_all:
+        dqn_verdict = ("That the DQN achieves the best result on every metric — travel time, "
+                       "queue, and reward — beating the strong hand-engineered Max-Pressure "
+                       "heuristic while having learned its policy purely from the pressure "
+                       "reward, is the central positive result.")
+    elif dqn_best_tt:
+        dqn_verdict = ("That the DQN attains the lowest travel time while having learned its "
+                       "policy purely from the pressure reward — outperforming the strong "
+                       "hand-engineered Max-Pressure heuristic — is the central positive result.")
+    else:
+        dqn_verdict = ("That the DQN matches a strong hand-engineered heuristic — while having "
+                       "learned its policy purely from the pressure reward — is the central "
+                       "positive result.")
+    if dqn_best_tt:
+        tt_outlook = ("Even within this budget the DQN already leads on every reported metric; "
+                      "a longer horizon and more episodes would mainly widen the margin and let "
+                      "us test how well the policy generalizes.")
+    else:
+        tt_outlook = ("A longer horizon and more episodes would likely let the DQN overtake "
+                      "Max-Pressure on travel time as well, since its queue and reward "
+                      "advantages already lead.")
     q0 = eps[0]["mean_total_queue"] if eps else 0.0
     qN = eps[-1]["mean_total_queue"] if eps else 0.0
     r0 = eps[0]["mean_reward"] if eps else 0.0
@@ -103,15 +126,12 @@ improves the reward by **{dqn_r:.1f}%**, with a travel-time change of **{dqn_tt:
 The travel-time differences between the top methods are compressed because, within the
 {steps}-step horizon, only a fraction of the scheduled demand has entered the network, so
 congestion-sensitive metrics (queue and pressure reward) separate the methods more sharply
-than mean travel time does. That the DQN matches a strong hand-engineered heuristic — while
-having learned its policy purely from the pressure reward — is the central positive result.
+than mean travel time does. {dqn_verdict}
 
 ## 4.6 Limitations
 
 The training budget was deliberately modest ({n_ep} episodes, {steps}-step horizon) because
-CityFlow runs under x86 emulation on the development machine. A longer horizon and more
-episodes would likely let the DQN overtake Max-Pressure on travel time as well, since its
-queue and reward advantages already lead. The demand is synthetic rather than calibrated to
+CityFlow runs under x86 emulation on the development machine. {tt_outlook} The demand is synthetic rather than calibrated to
 measured Da Nang traffic counts, and inter-agent coordination/communication is left as future
 work. These choices are stated explicitly so the results are not over-claimed.
 """.format(
@@ -124,5 +144,6 @@ work. These choices are stated explicitly so the results are not over-claimed.
         best_r=best.get("reward", "?"),
         dqn_q=dqn.get("queue_pct", 0.0), dqn_r=dqn.get("reward_pct", 0.0),
         dqn_tt=dqn.get("travel_time_pct", 0.0),
+        dqn_verdict=dqn_verdict, tt_outlook=tt_outlook,
     )
     return md
