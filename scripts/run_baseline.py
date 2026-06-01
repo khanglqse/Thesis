@@ -39,9 +39,10 @@ def main():
     cfg_path = results_dir / "config_{}.json".format(which)
     cfg_path.write_text(json.dumps(cfg, indent=2))
 
+    max_steps = int(os.environ.get("MAX_STEPS", "1000"))
     rn = RoadNet.load(str(data_dir / "roadnet_{}.json".format(area)))
     env = MultiAgentTrafficEnv(rn, CityFlowEngine(str(cfg_path)),
-                               action_interval=10, max_steps=1000,
+                               action_interval=10, max_steps=max_steps,
                                yellow_time=3, min_green=10)
     ctrl = {"fixed_time": lambda: FixedTimeController(env.num_actions),
             "max_pressure": lambda: MaxPressureController(rn),

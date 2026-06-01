@@ -11,9 +11,13 @@ from traffic_rl.network.roadnet import RoadNet
 # CityFlow vehicle templates. Motorbike: shorter/narrower, common in Vietnam.
 VEHICLE_TEMPLATES = {
     "motorbike": {
-        "length": 2.0, "width": 1.0, "maxPosAcc": 3.0, "maxNegAcc": 5.0,
-        "usualPosAcc": 2.5, "usualNegAcc": 4.5, "minGap": 1.0,
-        "maxSpeed": 13.89, "headwayTime": 1.0,
+        # Vietnamese motorbike: short, narrow, aggressive car-following with a very
+        # small gap/headway so they pack tightly and weave — denser, more chaotic
+        # than a car-dominated flow. CityFlow is still lane-disciplined, so this
+        # approximates (not reproduces) real motorbike sub-lane filtering.
+        "length": 2.0, "width": 1.0, "maxPosAcc": 3.5, "maxNegAcc": 5.0,
+        "usualPosAcc": 3.0, "usualNegAcc": 4.5, "minGap": 0.5,
+        "maxSpeed": 13.89, "headwayTime": 0.8,
     },
     "car": {
         "length": 5.0, "width": 2.0, "maxPosAcc": 2.0, "maxNegAcc": 4.5,

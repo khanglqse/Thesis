@@ -23,6 +23,11 @@ from traffic_rl.eval import compare
 ROOT = Path(__file__).resolve().parent.parent
 
 
+# Evaluation horizon (engine steps). Longer horizons let congestion build so the
+# controllers separate more sharply; override with MAX_STEPS=<n>.
+EVAL_STEPS = int(os.environ.get("MAX_STEPS", "1000"))
+
+
 def _env(rn, area, tag, results_dir):
     cfg = {"interval": 1.0, "seed": 0, "dir": "data/danang/",
            "roadnetFile": "roadnet_{}.json".format(area),
@@ -33,7 +38,7 @@ def _env(rn, area, tag, results_dir):
     cfg_path = results_dir / "config_cmp_{}.json".format(tag)
     cfg_path.write_text(json.dumps(cfg))
     return MultiAgentTrafficEnv(rn, CityFlowEngine(str(cfg_path)),
-                                action_interval=10, max_steps=1000,
+                                action_interval=10, max_steps=EVAL_STEPS,
                                 yellow_time=3, min_green=10)
 
 

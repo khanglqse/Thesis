@@ -81,7 +81,8 @@ def main():
                seed=flow_cfg["seed"],
                motorbike_ratio=flow_cfg["motorbike_ratio"],
                start_time=flow_cfg["start_time"],
-               end_time=flow_cfg["end_time"])
+               end_time=flow_cfg["end_time"],
+               interval=flow_cfg.get("interval", 2.0))
     print("Wrote", ROOT / flow_rel)
     print("Signalized intersections:", len(rn.signalized_ids()))
     return 0

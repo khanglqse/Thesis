@@ -15,8 +15,9 @@ netconvert:
 flow:
   start_time: 0
   end_time: 3600        # 1 hour of generated demand
-  num_flows: 300        # number of distinct route-flows
-  route_length: 4       # roads per generated route (random walk depth)
+  num_flows: 500        # distinct route-flows (more entry pressure -> sustained load)
+  route_length: 6       # roads per route (longer trips cross more signals)
+  interval: 1.5         # seconds between vehicle emissions per flow (denser inflow)
   seed: 42
-  # Vehicle mix: motorbike-heavy, typical of Vietnam.
-  motorbike_ratio: 0.75
+  # Vehicle mix: motorbike-dominant chaos, like a Vietnamese city (Da Nang ~90% bikes).
+  motorbike_ratio: 0.92
