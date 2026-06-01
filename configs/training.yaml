@@ -1,0 +1,17 @@
+# DQN parameter-sharing training hyperparameters
+episodes: 100
+max_steps: 3600          # CityFlow seconds per episode
+action_interval: 10      # decision every 10 sim-seconds
+yellow_time: 3
+min_green: 10
+hidden: 64
+lr: 0.001
+gamma: 0.99
+batch_size: 64
+buffer_capacity: 100000
+train_start: 1000        # min transitions before learning
+target_sync: 500         # train-steps between target syncs
+epsilon_start: 1.0
+epsilon_end: 0.05
+epsilon_decay_steps: 50000   # linear decay over this many decisions
+seed: 42
