@@ -68,6 +68,38 @@ class RoadNet:
     def next_roads(self, road_id: str) -> List[str]:
         return self._next.get(road_id, [])
 
+    def _lightphases(self, inter_id: str) -> List[dict]:
+        return self._by_id[inter_id]["trafficLight"]["lightphases"]
+
+    def green_phases(self, inter_id: str) -> List[int]:
+        """Lightphase indices that actually let traffic move (non-empty availableRoadLinks)."""
+        return [idx for idx, ph in enumerate(self._lightphases(inter_id))
+                if ph.get("availableRoadLinks")]
+
+    def all_red_phase(self, inter_id: str):
+        """First all-red / yellow lightphase index (empty availableRoadLinks), or None."""
+        for idx, ph in enumerate(self._lightphases(inter_id)):
+            if not ph.get("availableRoadLinks"):
+                return idx
+        return None
+
+    def phase_movements(self, inter_id: str, phase_idx: int):
+        """Deduped (incoming_lanes, outgoing_lanes) served by a lightphase."""
+        inter = self._by_id[inter_id]
+        road_links = inter["roadLinks"]
+        ph = self._lightphases(inter_id)[phase_idx]
+        inc, out = [], []
+        for rl_idx in ph.get("availableRoadLinks", []):
+            rl = road_links[rl_idx]
+            for ll in rl["laneLinks"]:
+                il = "{}_{}".format(rl["startRoad"], ll["startLaneIndex"])
+                ol = "{}_{}".format(rl["endRoad"], ll["endLaneIndex"])
+                if il not in inc:
+                    inc.append(il)
+                if ol not in out:
+                    out.append(ol)
+        return inc, out
+
     def entry_roads(self) -> List[str]:
         """Roads starting at a virtual (boundary) intersection — flow spawn points."""
         virtual = {i["id"] for i in self.intersections if i.get("virtual")}
