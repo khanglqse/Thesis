@@ -1,0 +1,8 @@
+# Host-side (Python 3.13) dependencies for the results dashboard & reporting.
+# These are NOT used inside the CityFlow Docker image. Already present on the
+# dev machine; listed for reproducibility.
+streamlit>=1.51
+pandas>=2.0
+matplotlib>=3.7
+PyYAML>=6.0
+numpy>=1.24

@@ -13,3 +13,5 @@ tqdm==4.65.0
 scipy==1.11.1
 tensorboard==2.13.0
 PyYAML==6.0
+# OSM data (for scripts/download_osm_danang.py)
+osmnx>=1.9.0

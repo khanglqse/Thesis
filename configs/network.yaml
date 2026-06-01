@@ -1,0 +1,19 @@
+# Bounding boxes: [west, south, east, north]
+bbox:
+  # Small validation sub-area (a few signalized intersections near the center).
+  subarea: [108.215, 16.045, 108.235, 16.065]
+  # Full central Da Nang.
+  full: [108.12, 16.00, 108.28, 16.08]
+
+netconvert:
+  # Options applied when converting OSM -> SUMO net (see osm_to_sumo.py).
+  tls_default_type: actuated
+
+flow:
+  start_time: 0
+  end_time: 3600        # 1 hour of generated demand
+  num_flows: 300        # number of distinct route-flows
+  route_length: 4       # roads per generated route (random walk depth)
+  seed: 42
+  # Vehicle mix: motorbike-heavy, typical of Vietnam.
+  motorbike_ratio: 0.75

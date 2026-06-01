@@ -51,3 +51,17 @@ Thumbs.db
 *.pkl
 *.h5
 checkpoints/
+
+# OSM / osmnx cache (regenerable via scripts/download_osm_danang.py)
+cache/
+# Large GeoJSON exports (regenerable from graphml; kept for inspection only)
+osm_danang/*.geojson
+
+# Generated simulation data — all regenerable from scripts (OSM, nets, roadnet, flow, replay)
+data/
+
+# core dumps (CityFlow segfaults under emulation)
+core
+
+# Truncated demo replays (regenerate with scripts/truncate_replay.py)
+results/*/demo/

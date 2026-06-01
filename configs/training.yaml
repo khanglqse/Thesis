@@ -1,0 +1,22 @@
+# DQN parameter-sharing training hyperparameters.
+# Tuned to the emulated-CityFlow time budget (the simulator runs under amd64
+# emulation, so the horizon/episode count are kept modest). All values are
+# internally consistent: with max_steps=1000 (=100 decisions/episode) and
+# episodes=50 there are ~5000 decisions, so epsilon_decay_steps=3000 lets the
+# policy reach the exploit regime around episode 30 and exploit thereafter.
+episodes: 50
+max_steps: 1000          # engine steps per episode (= 100 decisions @ interval 10)
+action_interval: 10      # decision every 10 sim-seconds
+yellow_time: 3
+min_green: 10
+hidden: 64
+lr: 0.001
+gamma: 0.99
+batch_size: 64
+buffer_capacity: 100000
+train_start: 500         # min transitions before learning (filled in ~5 decisions @105 agents)
+target_sync: 200         # train-steps between target syncs (~ every 2 episodes)
+epsilon_start: 1.0
+epsilon_end: 0.05
+epsilon_decay_steps: 3000   # linear decay over decisions; reached ~episode 30
+seed: 42
