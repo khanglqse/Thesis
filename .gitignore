@@ -51,3 +51,8 @@ Thumbs.db
 *.pkl
 *.h5
 checkpoints/
+
+# OSM / osmnx cache (regenerable via scripts/download_osm_danang.py)
+cache/
+# Large GeoJSON exports (regenerable from graphml; kept for inspection only)
+osm_danang/*.geojson
