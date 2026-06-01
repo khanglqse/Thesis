@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traffic-rl"
+version = "0.1.0"
+description = "Da Nang traffic signal control with MARL on CityFlow"
+requires-python = ">=3.10"
+dependencies = ["numpy", "pyyaml"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+markers = [
+    "docker: integration tests that require the CityFlow Docker image",
+]
+addopts = "-m 'not docker'"

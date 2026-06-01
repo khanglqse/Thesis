@@ -56,3 +56,6 @@ checkpoints/
 cache/
 # Large GeoJSON exports (regenerable from graphml; kept for inspection only)
 osm_danang/*.geojson
+
+# Generated simulation data — all regenerable from scripts (OSM, nets, roadnet, flow, replay)
+data/
