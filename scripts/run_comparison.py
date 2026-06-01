@@ -59,11 +59,20 @@ def main():
     rows.append(run_episode(env, DQNController(net, env.agent_ids)))
 
     report = compare.write_report(rows, str(results_dir / "comparison.json"))
-    compare.plot_metrics(rows, str(results_dir / "comparison_metrics.png"))
-    train_log = results_dir / "train_log_{}.json".format(area)
-    if train_log.exists():
-        compare.plot_training_curve(json.loads(train_log.read_text()),
-                                    str(results_dir / "training_curve.png"))
+    # matplotlib has no Python-3.6 wheel, so plotting may be unavailable in the
+    # CityFlow container. The metrics JSON is already written above; if plotting
+    # fails here, regenerate the PNGs on the host:
+    #   PYTHONPATH=src python3 -c "import json; from traffic_rl.eval import compare; \
+    #     rows=json.load(open('results/full/comparison.json'))['table']; \
+    #     compare.plot_metrics(rows,'results/full/comparison_metrics.png')"
+    try:
+        compare.plot_metrics(rows, str(results_dir / "comparison_metrics.png"))
+        train_log = results_dir / "train_log_{}.json".format(area)
+        if train_log.exists():
+            compare.plot_training_curve(json.loads(train_log.read_text()),
+                                        str(results_dir / "training_curve.png"))
+    except ImportError as exc:
+        print("WARNING: plotting skipped (%s); run the plot step on the host." % exc)
     print(json.dumps(report, indent=2))
     return 0
 
