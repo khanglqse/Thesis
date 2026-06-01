@@ -1,68 +1,106 @@
-"""Multi-agent traffic-signal environment over a duck-typed engine.
+"""Multi-agent traffic-signal env over a duck-typed engine.
 
-`engine` must provide: reset(), step(), set_tl_phase(id, phase),
-lane_vehicle_counts(), lane_waiting_counts(), vehicle_count(),
-average_travel_time(). The real one is CityFlowEngine; tests use a fake.
+Actions are GREEN-phase choices (0..G_i-1). The env maps each to the real
+lightphase index, enforces min-green, and inserts the all-red phase for
+yellow_time engine-steps on a switch. Reward is signed max-pressure.
 
-Must stay importable under Python 3.6 (CityFlow Docker image): no
-`from __future__ import annotations`.
+3.6-safe: no `from __future__ import annotations`.
 """
-from typing import Dict, List, Tuple
-
-import numpy as np
-
 from traffic_rl.network.roadnet import RoadNet
+from traffic_rl.sim.encoder import ObservationEncoder
 from traffic_rl.sim.intersection import IntersectionState, pressure_reward
 
 
 class MultiAgentTrafficEnv:
-    def __init__(self, roadnet, engine, action_interval=10, max_steps=3600):
+    def __init__(self, roadnet, engine, action_interval=10, max_steps=3600,
+                 yellow_time=3, min_green=10, count_norm=10.0):
         self.roadnet = roadnet
         self.engine = engine
         self.action_interval = action_interval
         self.max_steps = max_steps
-        self.agent_ids = roadnet.signalized_ids()  # type: List[str]
+        self.yellow_time = yellow_time
+        self.min_green = min_green
+        self.agent_ids = roadnet.signalized_ids()
+        self.encoder = ObservationEncoder(roadnet, count_norm=count_norm)
+        self._green_phases = {a: roadnet.green_phases(a) for a in self.agent_ids}
+        self._all_red = {a: roadnet.all_red_phase(a) for a in self.agent_ids}
         self.states = {
-            aid: IntersectionState(
-                inter_id=aid,
-                incoming_lanes=roadnet.incoming_lanes(aid),
-                outgoing_lanes=roadnet.outgoing_lanes(aid),
-                num_phases=roadnet.num_phases(aid),
-            )
-            for aid in self.agent_ids
-        }  # type: Dict[str, IntersectionState]
-        self._phase = {aid: 0 for aid in self.agent_ids}  # type: Dict[str, int]
+            a: IntersectionState(a, roadnet.incoming_lanes(a),
+                                 roadnet.outgoing_lanes(a),
+                                 num_phases=len(self._green_phases[a]))
+            for a in self.agent_ids
+        }
+        self.num_actions = {a: len(self._green_phases[a]) for a in self.agent_ids}
+        self.obs_dim = self.encoder.obs_dim
+        self._green = {a: 0 for a in self.agent_ids}       # current green INDEX
+        self._since_switch = {a: 0 for a in self.agent_ids}
         self._t = 0
 
-    def obs_dims(self):
-        return {aid: s.obs_dim() for aid, s in self.states.items()}
+    # --- introspection used by controllers/runner ---
+    def action_masks(self):
+        return {a: self.encoder.action_mask(a) for a in self.agent_ids}
 
+    def current_waiting_counts(self):
+        return self.engine.lane_waiting_counts()
+
+    # --- lifecycle ---
     def reset(self):
         self.engine.reset()
-        self._phase = {aid: 0 for aid in self.agent_ids}
+        self._green = {a: 0 for a in self.agent_ids}
+        self._since_switch = {a: 0 for a in self.agent_ids}
         self._t = 0
+        for a in self.agent_ids:
+            self.engine.set_tl_phase(a, self._green_phases[a][0])
         return self._observations()
 
     def _observations(self):
         counts = self.engine.lane_vehicle_counts()
-        return {
-            aid: self.states[aid].observation(counts, self._phase[aid])
-            for aid in self.agent_ids
-        }
+        return {a: self.encoder.encode(a, counts, self._green[a]) for a in self.agent_ids}
 
-    def step(self, actions):
-        for aid, phase in actions.items():
-            self._phase[aid] = phase
-            self.engine.set_tl_phase(aid, phase)
-        for _ in range(self.action_interval):
+    def _engine_steps(self, n):
+        for _ in range(n):
             self.engine.step()
             self._t += 1
+        for a in self.agent_ids:
+            self._since_switch[a] += n
+
+    def step(self, actions):
+        # decide switches (respecting min-green + validity)
+        switching = {}
+        for a, choice in actions.items():
+            choice = int(choice)
+            if 0 <= choice < self.num_actions[a] and choice != self._green[a] \
+                    and self._since_switch[a] >= self.min_green:
+                switching[a] = choice
+
+        # yellow / all-red transition for switching agents
+        if switching and self.yellow_time > 0:
+            for a in switching:
+                ar = self._all_red[a]
+                if ar is not None:
+                    self.engine.set_tl_phase(a, ar)
+            self._engine_steps(self.yellow_time)
+            green_steps = self.action_interval - self.yellow_time
+        else:
+            green_steps = self.action_interval
+
+        # commit new greens
+        for a, choice in switching.items():
+            self._green[a] = choice
+            self._since_switch[a] = 0
+        for a in self.agent_ids:
+            self.engine.set_tl_phase(a, self._green_phases[a][self._green[a]])
+
+        if green_steps > 0:
+            self._engine_steps(green_steps)
+
         waiting = self.engine.lane_waiting_counts()
-        rewards = {aid: pressure_reward(self.states[aid], waiting) for aid in self.agent_ids}
+        rewards = {a: pressure_reward(self.states[a], waiting) for a in self.agent_ids}
         done = self._t >= self.max_steps
         info = {
             "average_travel_time": self.engine.average_travel_time(),
             "vehicle_count": self.engine.vehicle_count(),
+            "total_queue": float(sum(waiting.values())),
             "step": self._t,
         }
         return self._observations(), rewards, done, info
