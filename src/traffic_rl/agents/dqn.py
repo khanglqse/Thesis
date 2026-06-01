@@ -13,8 +13,15 @@ def _relu(x):
 
 
 class SharedDQN(object):
-    def __init__(self, obs_dim, n_actions, hidden=64, lr=1e-3, seed=0):
+    def __init__(self, obs_dim, n_actions, hidden=64, lr=1e-3, seed=0,
+                 grad_clip=None, huber_delta=1.0):
         rng = np.random.RandomState(seed)
+        # grad_clip: global L2-norm cap on the gradient (None = off). huber_delta:
+        # TD-error threshold beyond which the loss is linear (bounds the gradient
+        # so large rewards / TD errors can't blow Q-values up). Both stabilise
+        # training on the dense, large-reward Vietnamese-flow scenario.
+        self.grad_clip = grad_clip
+        self.huber_delta = float(huber_delta)
 
         def he(fan_in, fan_out):
             return (rng.randn(fan_in, fan_out) * np.sqrt(2.0 / fan_in)).astype(np.float32)
@@ -66,10 +73,15 @@ class SharedDQN(object):
 
         chosen = q[np.arange(B), actions]
         diff = (chosen - target).astype(np.float32)
-        loss = float(np.mean(diff ** 2))
+        # Huber loss: quadratic within +-delta, linear beyond -> bounded gradient.
+        d = self.huber_delta
+        absd = np.abs(diff)
+        quad = np.minimum(absd, d)
+        loss = float(np.mean(0.5 * quad ** 2 + d * (absd - quad)))
 
         dq = np.zeros_like(q)
-        dq[np.arange(B), actions] = (2.0 / B) * diff
+        # d/dpred Huber = clip(diff, -delta, delta)
+        dq[np.arange(B), actions] = (1.0 / B) * np.clip(diff, -d, d)
         dW3 = a2.T.dot(dq); db3 = dq.sum(axis=0)
         da2 = dq.dot(self.W3.T); dz2 = da2 * (z2 > 0)
         dW2 = a1.T.dot(dz2); db2 = dz2.sum(axis=0)
@@ -82,6 +94,12 @@ class SharedDQN(object):
 
     def _adam_step(self, grads, beta1=0.9, beta2=0.999, eps=1e-8):
         self._t += 1
+        if self.grad_clip is not None:
+            total = np.sqrt(sum(float(np.sum(grads[p] ** 2)) for p in self.params))
+            if total > self.grad_clip and total > 0:
+                scale = self.grad_clip / total
+                for p in self.params:
+                    grads[p] = grads[p] * scale
         for p in self.params:
             g = grads[p]
             m, v = self._adam[p]

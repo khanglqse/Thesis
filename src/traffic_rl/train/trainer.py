@@ -21,8 +21,10 @@ def train(env_factory, cfg, ckpt_path, log_path):
     n_actions = env.encoder.max_green
     rng = np.random.RandomState(cfg["seed"])
 
-    net = SharedDQN(obs_dim, n_actions, hidden=cfg["hidden"], lr=cfg["lr"], seed=cfg["seed"])
+    net = SharedDQN(obs_dim, n_actions, hidden=cfg["hidden"], lr=cfg["lr"], seed=cfg["seed"],
+                    grad_clip=cfg.get("grad_clip"), huber_delta=cfg.get("huber_delta", 1.0))
     buf = ReplayBuffer(cfg["buffer_capacity"], obs_dim, n_actions, seed=cfg["seed"])
+    reward_scale = cfg.get("reward_scale", 1.0)
     masks = env.action_masks()
 
     decisions = 0
@@ -45,7 +47,9 @@ def train(env_factory, cfg, ckpt_path, log_path):
                     actions[a] = net.greedy_action(obs[a], masks[a])
             next_obs, rewards, done, info = env.step(actions)
             for a in env.agent_ids:
-                buf.add(obs[a], actions[a], rewards[a], next_obs[a],
+                # Store scaled rewards so TD targets stay O(1) (stability); the log
+                # below keeps the raw reward for comparability with the baselines.
+                buf.add(obs[a], actions[a], rewards[a] * reward_scale, next_obs[a],
                         1.0 if done else 0.0, masks[a])
             obs = next_obs
             decisions += 1
