@@ -57,12 +57,19 @@ def main():
               "to create results/{}/demo/".format(args.area, args.area))
     print("Press Ctrl+C to stop.")
 
-    if not args.no_browser:
-        webbrowser.open(url)
-
     handler = functools.partial(http.server.SimpleHTTPRequestHandler,
                                 directory=str(ROOT))
-    with socketserver.TCPServer(("", args.port), handler) as httpd:
+
+    class _ReuseServer(socketserver.TCPServer):
+        # Avoid "Address already in use" while the port lingers in TIME_WAIT
+        # after a previous Ctrl+C.
+        allow_reuse_address = True
+
+    with _ReuseServer(("", args.port), handler) as httpd:
+        # Only open the browser once the socket is actually bound, so we never
+        # point a tab at a server that failed to start.
+        if not args.no_browser:
+            webbrowser.open(url)
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

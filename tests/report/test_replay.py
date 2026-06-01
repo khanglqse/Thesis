@@ -13,6 +13,14 @@ def test_truncate_keeps_first_n_lines(tmp_path):
     assert lines[-1] == "step 119"
 
 
+def test_truncate_zero_steps(tmp_path):
+    src = tmp_path / "big.txt"
+    src.write_text("step 0\nstep 1\n")
+    dst = tmp_path / "empty.txt"
+    assert replay.truncate_replay(str(src), str(dst), 0) == 0
+    assert dst.read_text() == ""
+
+
 def test_truncate_shorter_than_n(tmp_path):
     src = tmp_path / "small.txt"
     src.write_text("a\nb\nc\n")

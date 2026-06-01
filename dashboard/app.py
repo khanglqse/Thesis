@@ -65,10 +65,12 @@ if train_log_path.exists():
     eps = load_json(str(train_log_path)).get("episodes", [])
     if eps:
         tdf = pd.DataFrame(eps).set_index("episode")
-        metric = st.selectbox(
-            "Metric", ["mean_reward", "mean_total_queue", "mean_loss",
-                       "final_average_travel_time", "epsilon"])
-        st.line_chart(tdf[metric])
+        available = [m for m in ["mean_reward", "mean_total_queue", "mean_loss",
+                                 "final_average_travel_time", "epsilon"]
+                     if m in tdf.columns]
+        metric = st.selectbox("Metric", available)
+        if metric:
+            st.line_chart(tdf[metric])
 
 st.header("3. Watch the replay")
 st.markdown(
