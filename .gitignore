@@ -62,3 +62,6 @@ data/
 
 # core dumps (CityFlow segfaults under emulation)
 core
+
+# Truncated demo replays (regenerate with scripts/truncate_replay.py)
+results/*/demo/
