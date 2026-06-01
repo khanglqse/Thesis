@@ -4,7 +4,9 @@
 - **Bối cảnh:** Thesis. Dựng thành phố ảo từ dữ liệu OpenStreetMap (OSM) Đà Nẵng, mô phỏng bằng CityFlow, huấn luyện Multi-Agent Reinforcement Learning (MARL) để tối ưu đèn tín hiệu, và hiển thị kết quả trên UI.
 - **Quyết định nền tảng đã chốt:**
   - Simulator: **CityFlow** (viết lại từ đầu, archive code SUMO/DQN cũ).
-  - Phạm vi mạng: **toàn trung tâm Đà Nẵng (100+ nút)**, làm theo tầng (sub-area trước → full network).
+  - Phạm vi mạng: **toàn bộ trung tâm Đà Nẵng** — các ngã tư có đèn tín hiệu thực tế (~37 nút tagged
+    `traffic_signals`, có thể nhiều hơn sau khi netconvert sinh tín hiệu). Không ép buộc đủ 100 nút;
+    làm theo tầng (sub-area trước → full network).
   - Kiến trúc RL: **MARL + parameter sharing** (mỗi ngã tư = 1 agent, dùng chung 1 mạng policy).
   - UI: **CityFlow web replay + dashboard so sánh** (training curves + bảng metrics).
   - Reward: **pressure-based**. Baselines: **Fixed-Time, Max-Pressure, Random**.
@@ -106,9 +108,11 @@ Code SUMO/DQN cũ: archive vào branch git (vd `legacy-sumo`) rồi xóa khỏi 
 
 ## 5. Thiết kế dữ liệu mạng & luồng
 
-- **Network:** trích bbox trung tâm Đà Nẵng từ OSM (tái dùng `scripts/download_osm_danang.py` hiện có
-  làm điểm khởi đầu). Convert qua netconvert → CityFlow converter. Chỉ giữ các ngã tư có đèn tín hiệu
-  làm agent; ngã tư không đèn để mặc định.
+- **Network:** trích bbox trung tâm Đà Nẵng từ OSM (`scripts/download_osm_danang.py`, đã import lại:
+  11.345 nodes / 29.633 edges thô, trong đó **37 nút tagged `traffic_signals`**). Convert qua
+  netconvert → CityFlow converter; netconvert sẽ consolidate cụm node hình học thành junction thật và
+  có thể sinh thêm tín hiệu (`--tls.guess`). **Chỉ các ngã tư có đèn mới là agent** (~37+ nút) — phủ
+  toàn thành phố Đà Nẵng, không cần đạt mốc 100 nút; ngã tư không đèn để mặc định.
 - **Flow (`flow.json`):** sinh luồng tổng hợp (synthetic) với tỉ lệ xe máy cao đặc trưng VN. Định
   nghĩa route theo OD đơn giản trên mạng + tần suất xuất phát. Calibrate ở mức hợp lý (mật độ tạo
   được tắc nghẽn quan sát được, không cần khớp số liệu thực tế tuyệt đối — nêu rõ là synthetic trong thesis).
