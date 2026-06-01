@@ -37,3 +37,14 @@ def test_replay_buffer_sample_shapes():
     assert batch["actions"].shape == (16,)
     assert batch["next_mask"].shape == (16, 2)
     assert len(buf) == 50
+
+
+from traffic_rl.agents.dqn import DQNController
+
+def test_dqn_controller_greedy_actions_are_masked():
+    net = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=0)
+    ctrl = DQNController(net, agent_ids=["A"])
+    import numpy as np
+    ctx = {"observations": {"A": np.ones(5, np.float32)},
+           "waiting_counts": {}, "action_masks": {"A": np.array([True, False, False])}}
+    assert ctrl.act(ctx) == {"A": 0}          # only valid action

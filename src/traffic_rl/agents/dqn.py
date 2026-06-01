@@ -129,3 +129,19 @@ class ReplayBuffer(object):
 
     def __len__(self):
         return self._n
+
+
+from traffic_rl.agents.base import Controller
+
+
+class DQNController(Controller):
+    """Greedy (eval-time) wrapper around a trained SharedDQN."""
+    name = "DQN"
+
+    def __init__(self, net, agent_ids):
+        self.net = net
+        self.agent_ids = list(agent_ids)
+
+    def act(self, context):
+        obs = context["observations"]; masks = context["action_masks"]
+        return {a: self.net.greedy_action(obs[a], masks[a]) for a in self.agent_ids}
