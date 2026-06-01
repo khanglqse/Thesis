@@ -566,6 +566,22 @@ def test_signalized_intersections(tmp_path):
     assert rn.num_phases("int_A") == 2
 
 
+def test_single_phase_junctions_are_not_agents(tmp_path):
+    # The CityFlow converter emits a trivial 1-phase trafficLight for every
+    # non-signalized junction. Those must NOT be treated as agents.
+    sample = json.loads(json.dumps(SAMPLE))
+    sample["intersections"].append({
+        "id": "int_trivial", "virtual": False,
+        "roads": ["road_in"],
+        "trafficLight": {"lightphases": [{"availableRoadLinks": [0]}]},
+        "roadLinks": [],
+    })
+    p = tmp_path / "roadnet.json"
+    p.write_text(json.dumps(sample))
+    rn = RoadNet.load(str(p))
+    assert rn.signalized_ids() == ["int_A"]   # int_trivial (1 phase) excluded
+
+
 def test_incoming_lane_ids(tmp_path):
     p = tmp_path / "roadnet.json"
     p.write_text(json.dumps(SAMPLE))
@@ -624,10 +640,13 @@ class RoadNet:
         return cls(data["intersections"], data["roads"], by_id, road_by_id, nxt)
 
     def signalized_ids(self) -> List[str]:
+        # A real controllable signal has >1 phase. The CityFlow converter emits a
+        # trivial single-phase trafficLight for every non-signalized junction;
+        # those are excluded so they don't become bogus agents.
         return [
             i["id"] for i in self.intersections
             if not i.get("virtual") and i.get("trafficLight")
-            and i["trafficLight"].get("lightphases")
+            and len(i["trafficLight"].get("lightphases", [])) > 1
         ]
 
     def num_phases(self, inter_id: str) -> int:
