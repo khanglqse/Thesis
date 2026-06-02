@@ -27,7 +27,9 @@ DATA = ROOT / "data" / "danang"
 HORIZON = 1000
 PEAK_START, PEAK_END = 250, 600
 BASE_NUM, BASE_INTERVAL = 120, 4.0      # light background all hour
-PEAK_NUM, PEAK_INTERVAL = 450, 0.6      # dense rush-hour burst
+# CityFlow requires interval >= 1; create the surge with many concurrent peak
+# flows at the minimum interval rather than a sub-second rate.
+PEAK_NUM, PEAK_INTERVAL = 800, 1.0      # dense rush-hour burst
 ROUTE_LEN, MOTORBIKE = 6, 0.92
 
 
