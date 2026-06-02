@@ -1,0 +1,16 @@
+docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'sh scripts/exp_batch.sh haichau 800'
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+mesg: ttyname failed: Inappropriate ioctl for device
+===== TRAIN area=haichau tag=queue reward=queue dueling=0 =====
+Saved checkpoint + log to /work/results/haichau/exp_queue
+===== EVAL area=haichau tag=queue =====
+variant: reward_type=queue dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 0.543080446215179
+}
+  MaxPressure  queue=3690.6 tt=383.9 reward=-17.62
+  DQN          queue=3916.9 tt=384.2 reward=-21.17
+  Random       queue=4178.3 tt=385.3 reward=-25.65
+  FixedTime    queue=4628.7 tt=386.3 reward=-30.06
+===== TRAIN area=haichau tag=queue_norm reward=queue_norm dueling=0 =====

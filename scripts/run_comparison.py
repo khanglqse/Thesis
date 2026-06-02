@@ -32,6 +32,8 @@ EVAL_STEPS = int(os.environ.get("MAX_STEPS", "1000"))
 # training config — the single source of truth.
 _TRAIN_CFG = yaml.safe_load((ROOT / "configs" / "training.yaml").read_text())
 COUNT_NORM = float(_TRAIN_CFG.get("count_norm", 10.0))
+# Fixed-Time green per phase (s). FIXED_GREEN env overrides the config for sweeps.
+FIXED_GREEN = float(os.environ.get("FIXED_GREEN", _TRAIN_CFG.get("fixed_green_duration", 40)))
 
 
 def _env(rn, area, tag, results_dir):
@@ -59,7 +61,9 @@ def main():
 
     rows = []
     for tag, make in [
-        ("fixed_time", lambda e: FixedTimeController(e.num_actions)),
+        ("fixed_time", lambda e: FixedTimeController(e.num_actions,
+                                                     green_duration=FIXED_GREEN,
+                                                     action_interval=10)),
         ("max_pressure", lambda e: MaxPressureController(rn)),
         ("random", lambda e: RandomController(e.num_actions, seed=0))]:
         env = _env(rn, area, tag, results_dir)

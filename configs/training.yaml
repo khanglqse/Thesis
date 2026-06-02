@@ -18,6 +18,7 @@ huber_delta: 1.0         # Huber loss threshold; bounds gradient on large TD err
 gamma: 0.99
 reward_type: pressure    # pressure | queue | queue_norm | pressure_norm (see sim/intersection.py)
 dueling: false           # dueling DQN head (value + advantage streams); experiment toggle
+fixed_green_duration: 40 # seconds of green per phase for the Fixed-Time baseline (realistic 25-50s)
 batch_size: 64
 buffer_capacity: 100000
 train_start: 500         # min transitions before learning (filled in ~7 decisions @73 agents)
