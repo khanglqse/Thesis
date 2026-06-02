@@ -1,0 +1,36 @@
+{
+  "area": "haichau",
+  "eval_steps": 800,
+  "results": [
+    {
+      "green_duration": 10,
+      "mean_total_queue": 4628.7,
+      "final_average_travel_time": 386.3078649155722
+    },
+    {
+      "green_duration": 25,
+      "mean_total_queue": 4104.6625,
+      "final_average_travel_time": 385.0098761726079
+    },
+    {
+      "green_duration": 30,
+      "mean_total_queue": 4141.7625,
+      "final_average_travel_time": 385.0636848030019
+    },
+    {
+      "green_duration": 40,
+      "mean_total_queue": 4185.675,
+      "final_average_travel_time": 385.16294183864915
+    },
+    {
+      "green_duration": 50,
+      "mean_total_queue": 4211.1125,
+      "final_average_travel_time": 385.26620262664164
+    }
+  ],
+  "best": {
+    "green_duration": 25,
+    "mean_total_queue": 4104.6625,
+    "final_average_travel_time": 385.0098761726079
+  }
+}

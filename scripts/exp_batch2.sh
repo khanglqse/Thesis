@@ -11,6 +11,14 @@ train_eval() {  # area tag reward dueling eval_steps
   MAX_STEPS="$5" EXP_TAG="$2" PYTHONPATH=src python3 scripts/run_experiment_eval.py "$1"
 }
 
+# Regenerate the canonical baselines FIRST with the strengthened Fixed-Time (best
+# green per scenario from the sweep), so the experiment evals below reuse the
+# strong Fixed-Time row. Overwrites results/<area>/comparison.json; the original
+# 10s-Fixed-Time numbers stay frozen in results/references/.
+echo "===== REGEN baselines (strong Fixed-Time) ====="
+FIXED_GREEN=25 MAX_STEPS=800  PYTHONPATH=src python3 scripts/run_comparison.py haichau
+FIXED_GREEN=40 MAX_STEPS=1000 PYTHONPATH=src python3 scripts/run_comparison.py haichau_peak
+
 train_eval haichau       combo       queue_norm  1  800
 train_eval haichau_peak  queue_norm  queue_norm  0  1000
 train_eval haichau_peak  combo       queue_norm  1  1000

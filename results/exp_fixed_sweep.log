@@ -1,3 +1,18 @@
 docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'sh scripts/exp_sweep_fixed.sh'
 WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
 mesg: ttyname failed: Inappropriate ioctl for device
+===== SWEEP haichau =====
+green=10s  queue=4628.7  tt=386.3
+green=25s  queue=4104.7  tt=385.0
+green=30s  queue=4141.8  tt=385.1
+green=40s  queue=4185.7  tt=385.2
+green=50s  queue=4211.1  tt=385.3
+BEST green=25s (queue=4104.7) -> set fixed_green_duration in training.yaml
+===== SWEEP haichau_peak =====
+green=10s  queue=4925.7  tt=551.8
+green=25s  queue=4340.1  tt=550.0
+green=30s  queue=4348.3  tt=550.0
+green=40s  queue=4314.0  tt=550.1
+green=50s  queue=4420.5  tt=550.4
+BEST green=40s (queue=4314.0) -> set fixed_green_duration in training.yaml
+SWEEP_DONE
