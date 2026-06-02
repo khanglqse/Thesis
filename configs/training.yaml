@@ -12,7 +12,7 @@ min_green: 10
 count_norm: 40           # lane-count normaliser; raised for the dense VN flow (~13k veh)
 hidden: 128              # more capacity for the harder, congested scenario
 lr: 0.0003
-reward_scale: 0.25       # scale pressure reward (~-4 dense) to O(1) -> stable TD targets
+reward_scale: 0.05       # arterial net pressure reward is ~-15..-25; scale to O(1) for stable TD targets
 grad_clip: 10.0          # global grad-norm cap; stops Q-value divergence
 huber_delta: 1.0         # Huber loss threshold; bounds gradient on large TD errors
 gamma: 0.99
