@@ -4,8 +4,8 @@
 # ~step 300, so a 600-step horizon already exercises the full congested regime
 # while keeping wall-clock feasible. 40 episodes x 60 decisions = 2400 decisions,
 # so epsilon_decay_steps=1800 reaches the exploit regime around episode 30.
-episodes: 40
-max_steps: 600           # engine steps per episode (= 60 decisions @ interval 10)
+episodes: 60
+max_steps: 800           # match the eval horizon (= 80 decisions @ interval 10)
 action_interval: 10      # decision every 10 sim-seconds
 yellow_time: 3
 min_green: 10
@@ -19,8 +19,8 @@ gamma: 0.99
 batch_size: 64
 buffer_capacity: 100000
 train_start: 500         # min transitions before learning (filled in ~7 decisions @73 agents)
-target_sync: 150         # train-steps between target syncs
+target_sync: 200         # train-steps between target syncs
 epsilon_start: 1.0
 epsilon_end: 0.05
-epsilon_decay_steps: 1800   # linear decay over decisions; reached ~episode 30
+epsilon_decay_steps: 3000   # linear decay over decisions; 60ep x 80dec=4800, exploit ~ep37
 seed: 42

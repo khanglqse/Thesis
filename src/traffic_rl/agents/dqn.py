@@ -67,9 +67,15 @@ class SharedDQN(object):
         q, cache = self._forward(obs, self.W1, self.b1, self.W2, self.b2, self.W3, self.b3)
         X, z1, a1, z2, a2 = cache
 
-        nq = self._target_q(next_obs).copy()
-        nq[~np.asarray(next_mask, dtype=bool)] = NEG
-        target = rewards + (1.0 - dones) * gamma * np.max(nq, axis=1)
+        # Double DQN: pick next action with the ONLINE net, evaluate it with the
+        # TARGET net -> reduces Q-value overestimation, usually a stronger policy.
+        mask = np.asarray(next_mask, dtype=bool)
+        online_nq = self.q_values(next_obs).copy()
+        online_nq[~mask] = NEG
+        next_act = np.argmax(online_nq, axis=1)
+        tnq = self._target_q(next_obs)
+        next_val = tnq[np.arange(B), next_act]
+        target = rewards + (1.0 - dones) * gamma * next_val
 
         chosen = q[np.arange(B), actions]
         diff = (chosen - target).astype(np.float32)
