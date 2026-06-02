@@ -48,3 +48,37 @@ def test_dqn_controller_greedy_actions_are_masked():
     ctx = {"observations": {"A": np.ones(5, np.float32)},
            "waiting_counts": {}, "action_masks": {"A": np.array([True, False, False])}}
     assert ctrl.act(ctx) == {"A": 0}          # only valid action
+
+
+def test_dueling_qvalues_shape_and_params():
+    net = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=0, dueling=True)
+    assert net.dueling and "Wv" in net.params and "Wa" in net.params
+    q = net.q_values(np.zeros((4, 5), dtype=np.float32))
+    assert q.shape == (4, 3)
+
+
+def test_dueling_train_step_reduces_loss():
+    net = SharedDQN(obs_dim=4, n_actions=2, hidden=16, seed=1, lr=1e-2, dueling=True)
+    rng = np.random.RandomState(0)
+    obs = rng.randn(32, 4).astype(np.float32)
+    next_obs = rng.randn(32, 4).astype(np.float32)
+    acts = rng.randint(0, 2, size=32)
+    rew = rng.randn(32).astype(np.float32)
+    done = np.zeros(32, dtype=np.float32)
+    nmask = np.ones((32, 2), dtype=np.bool_)
+    net.sync_target()
+    first = net.train_step(obs, acts, rew, next_obs, done, nmask, gamma=0.9)
+    for _ in range(200):
+        last = net.train_step(obs, acts, rew, next_obs, done, nmask, gamma=0.9)
+    assert last < first * 0.5
+
+
+def test_dueling_save_load_roundtrip(tmp_path):
+    net = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=0, dueling=True)
+    x = np.ones((2, 5), dtype=np.float32)
+    before = net.q_values(x)
+    p = str(tmp_path / "d.npz")
+    net.save(p)
+    net2 = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=7, dueling=True)
+    net2.load(p)
+    assert np.allclose(before, net2.q_values(x))

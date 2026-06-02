@@ -37,3 +37,55 @@ def pressure_reward(state: IntersectionState, waiting_counts: Dict[str, int]) ->
     inflow = sum(waiting_counts.get(l, 0) for l in state.incoming_lanes)
     outflow = sum(waiting_counts.get(l, 0) for l in state.outgoing_lanes)
     return -float(inflow - outflow)
+
+
+def queue_reward(state: IntersectionState, waiting_counts: Dict[str, int]) -> float:
+    """Direct queue-minimisation reward = -(incoming queue).
+
+    Unlike max-pressure (which rewards draining downstream relative to upstream),
+    this rewards an agent purely for keeping its own incoming queues short — i.e.
+    it optimises the SAME quantity the thesis reports (total waiting vehicles).
+    """
+    inflow = sum(waiting_counts.get(l, 0) for l in state.incoming_lanes)
+    return -float(inflow)
+
+
+def queue_norm_reward(state: IntersectionState, waiting_counts: Dict[str, int]) -> float:
+    """Per-lane average incoming queue, negated.
+
+    Normalising by lane count stops large intersections from dominating the
+    pooled (parameter-shared) gradient, so the shared policy weights every
+    junction comparably regardless of how many incoming lanes it has.
+    """
+    n = max(1, len(state.incoming_lanes))
+    inflow = sum(waiting_counts.get(l, 0) for l in state.incoming_lanes)
+    return -float(inflow) / n
+
+
+def pressure_norm_reward(state: IntersectionState, waiting_counts: Dict[str, int]) -> float:
+    """Max-pressure reward normalised by the intersection's lane count.
+
+    Same sign/intent as pressure_reward but scale-invariant across junctions of
+    different sizes (helps the shared net and keeps TD targets O(1)).
+    """
+    n = max(1, len(state.incoming_lanes) + len(state.outgoing_lanes))
+    inflow = sum(waiting_counts.get(l, 0) for l in state.incoming_lanes)
+    outflow = sum(waiting_counts.get(l, 0) for l in state.outgoing_lanes)
+    return -float(inflow - outflow) / n
+
+
+_REWARDS = {
+    "pressure": pressure_reward,
+    "queue": queue_reward,
+    "queue_norm": queue_norm_reward,
+    "pressure_norm": pressure_norm_reward,
+}
+
+
+def make_reward(reward_type="pressure"):
+    """Return the reward function for `reward_type` (see _REWARDS keys)."""
+    try:
+        return _REWARDS[reward_type]
+    except KeyError:
+        raise ValueError("unknown reward_type %r; choose from %s"
+                         % (reward_type, sorted(_REWARDS)))

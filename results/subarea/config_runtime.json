@@ -1,0 +1,12 @@
+{
+  "interval": 1.0,
+  "seed": 0,
+  "dir": "data/danang/",
+  "roadnetFile": "roadnet_subarea.json",
+  "flowFile": "flow_subarea.json",
+  "rlTrafficLight": true,
+  "laneChange": false,
+  "saveReplay": true,
+  "roadnetLogFile": "replay_roadnet_subarea.json",
+  "replayLogFile": "replay_subarea.txt"
+}

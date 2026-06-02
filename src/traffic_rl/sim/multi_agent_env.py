@@ -8,18 +8,21 @@ yellow_time engine-steps on a switch. Reward is signed max-pressure.
 """
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.encoder import ObservationEncoder
-from traffic_rl.sim.intersection import IntersectionState, pressure_reward
+from traffic_rl.sim.intersection import IntersectionState, make_reward
 
 
 class MultiAgentTrafficEnv:
     def __init__(self, roadnet, engine, action_interval=10, max_steps=3600,
-                 yellow_time=3, min_green=10, count_norm=10.0):
+                 yellow_time=3, min_green=10, count_norm=10.0,
+                 reward_type="pressure"):
         self.roadnet = roadnet
         self.engine = engine
         self.action_interval = action_interval
         self.max_steps = max_steps
         self.yellow_time = yellow_time
         self.min_green = min_green
+        self.reward_type = reward_type
+        self._reward_fn = make_reward(reward_type)
         self.agent_ids = roadnet.signalized_ids()
         self.encoder = ObservationEncoder(roadnet, count_norm=count_norm)
         self._green_phases = {a: roadnet.green_phases(a) for a in self.agent_ids}
@@ -95,7 +98,7 @@ class MultiAgentTrafficEnv:
             self._engine_steps(green_steps)
 
         waiting = self.engine.lane_waiting_counts()
-        rewards = {a: pressure_reward(self.states[a], waiting) for a in self.agent_ids}
+        rewards = {a: self._reward_fn(self.states[a], waiting) for a in self.agent_ids}
         done = self._t >= self.max_steps
         info = {
             "average_travel_time": self.engine.average_travel_time(),

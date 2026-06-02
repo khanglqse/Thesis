@@ -30,9 +30,18 @@ def main():
         cfg["episodes"] = int(os.environ["EPISODES"])
     if os.environ.get("MAX_STEPS"):
         cfg["max_steps"] = int(os.environ["MAX_STEPS"])
+    # Experiment overrides (keep references intact): pick a reward, toggle dueling,
+    # and route outputs into results/<area>/exp_<tag>/ so nothing overwrites the
+    # frozen baseline checkpoint in results/<area>/.
+    if os.environ.get("REWARD_TYPE"):
+        cfg["reward_type"] = os.environ["REWARD_TYPE"]
+    if os.environ.get("DUELING"):
+        cfg["dueling"] = os.environ["DUELING"] not in ("0", "", "false", "False")
 
     data_dir = ROOT / "data" / "danang"
-    results_dir = ROOT / "results" / area
+    exp_tag = os.environ.get("EXP_TAG")
+    results_dir = ROOT / "results" / area / ("exp_" + exp_tag) if exp_tag \
+        else ROOT / "results" / area
     results_dir.mkdir(parents=True, exist_ok=True)
 
     rn = RoadNet.load(str(data_dir / "roadnet_{}.json".format(area)))
@@ -49,7 +58,8 @@ def main():
                                     max_steps=cfg["max_steps"],
                                     yellow_time=cfg["yellow_time"],
                                     min_green=cfg["min_green"],
-                                    count_norm=cfg.get("count_norm", 10.0))
+                                    count_norm=cfg.get("count_norm", 10.0),
+                                    reward_type=cfg.get("reward_type", "pressure"))
 
     train(env_factory, cfg,
           ckpt_path=str(results_dir / "dqn_{}.npz".format(area)),

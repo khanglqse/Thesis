@@ -1,0 +1,1 @@
+{"interval": 1.0, "seed": 0, "dir": "data/danang/", "roadnetFile": "roadnet_full.json", "flowFile": "flow_full.json", "rlTrafficLight": true, "laneChange": false, "saveReplay": true, "roadnetLogFile": "replay_roadnet_full.json", "replayLogFile": "replay_max_pressure_full.txt"}

@@ -1,4 +1,8 @@
-from traffic_rl.sim.intersection import IntersectionState, pressure_reward
+import pytest
+
+from traffic_rl.sim.intersection import (
+    IntersectionState, pressure_reward, queue_reward, queue_norm_reward,
+    pressure_norm_reward, make_reward)
 
 
 def test_observation_concatenates_incoming_counts_and_phase():
@@ -36,3 +40,29 @@ def test_pressure_reward_positive_when_outflow_dominates():
     st = IntersectionState("A", ["i0"], ["o0", "o1"], num_phases=2)
     # incoming 1, outgoing 4 -> pressure -3 -> reward +3 (signed, not abs)
     assert pressure_reward(st, {"i0": 1, "o0": 1, "o1": 3}) == 3.0
+
+
+def test_queue_reward_ignores_outflow():
+    st = IntersectionState("A", ["i0", "i1"], ["o0"], num_phases=2)
+    # only incoming counts: -(3+2) = -5, regardless of outgoing queue
+    assert queue_reward(st, {"i0": 3, "i1": 2, "o0": 99}) == -5.0
+
+
+def test_queue_norm_reward_divides_by_incoming_lane_count():
+    st = IntersectionState("A", ["i0", "i1"], ["o0"], num_phases=2)
+    # -(3+2)/2 incoming lanes = -2.5
+    assert queue_norm_reward(st, {"i0": 3, "i1": 2, "o0": 1}) == -2.5
+
+
+def test_pressure_norm_reward_divides_by_total_lane_count():
+    st = IntersectionState("A", ["i0", "i1"], ["o0"], num_phases=2)
+    # pressure -(5-2)= -3 over (2 in + 1 out)=3 lanes -> -1.0
+    assert pressure_norm_reward(st, {"i0": 3, "i1": 2, "o0": 2}) == -1.0
+
+
+def test_make_reward_dispatches_and_rejects_unknown():
+    assert make_reward("pressure") is pressure_reward
+    assert make_reward("queue") is queue_reward
+    assert make_reward() is pressure_reward
+    with pytest.raises(ValueError):
+        make_reward("nope")

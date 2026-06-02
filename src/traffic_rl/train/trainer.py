@@ -22,14 +22,19 @@ def train(env_factory, cfg, ckpt_path, log_path):
     rng = np.random.RandomState(cfg["seed"])
 
     net = SharedDQN(obs_dim, n_actions, hidden=cfg["hidden"], lr=cfg["lr"], seed=cfg["seed"],
-                    grad_clip=cfg.get("grad_clip"), huber_delta=cfg.get("huber_delta", 1.0))
+                    grad_clip=cfg.get("grad_clip"), huber_delta=cfg.get("huber_delta", 1.0),
+                    dueling=cfg.get("dueling", False))
     buf = ReplayBuffer(cfg["buffer_capacity"], obs_dim, n_actions, seed=cfg["seed"])
     reward_scale = cfg.get("reward_scale", 1.0)
     masks = env.action_masks()
 
     decisions = 0
     train_steps = 0
-    log = {"episodes": []}
+    # Record what this run optimised so the comparison/report can label the variant.
+    log = {"meta": {"reward_type": getattr(env, "reward_type", "pressure"),
+                    "dueling": bool(cfg.get("dueling", False)),
+                    "hidden": cfg["hidden"], "lr": cfg["lr"]},
+           "episodes": []}
 
     for ep in range(cfg["episodes"]):
         obs = env.reset()
