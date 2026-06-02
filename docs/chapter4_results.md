@@ -31,10 +31,10 @@ the parameter count constant as the network scales.
 
 ## 4.3 Training
 
-The DQN was trained for **40 episodes**. Learning is evident in the per-episode
-statistics: the mean total queue fell from **3345.97** in the first episode to
-**3002.93** by the end (a 10.3% reduction), while the mean reward improved from
-**-22.354** to **-17.270** as the exploration rate decayed. The training curves are
+The DQN was trained for **60 episodes**. Learning is evident in the per-episode
+statistics: the mean total queue fell from **4223.89** in the first episode to
+**3912.90** by the end (a 7.4% reduction), while the mean reward improved from
+**-26.729** to **-18.292** as the exploration rate decayed. The training curves are
 shown in Figure 4.1.
 
 ![Training curves](../results/haichau/training_curve.png)
@@ -50,7 +50,7 @@ travel time (lower is better). Figure 4.2 visualizes travel time and mean queue.
 | Controller | Avg travel time (s) | Mean total queue | Mean reward | Active vehicles |
 |---|---|---|---|---|
 | MaxPressure | 383.86 | 3690.62 | -17.6189 | 11267 |
-| DQN | 384.68 | 4052.29 | -20.5790 | 11858 |
+| DQN | 384.15 | 3905.88 | -17.7446 | 11637 |
 | Random | 385.29 | 4178.29 | -25.6538 | 11422 |
 | FixedTime | 386.31 | 4628.70 | -30.0590 | 11986 |
 
@@ -62,8 +62,8 @@ travel time (lower is better). Figure 4.2 visualizes travel time and mean queue.
 On this scenario, **MaxPressure** achieves the lowest average travel time, while **MaxPressure**
 achieves the lowest mean queue and **MaxPressure** the best reward. The learned DQN is highly
 competitive with the Max-Pressure heuristic and clearly dominates the Fixed-Time and Random
-baselines: relative to Fixed-Time it reduces the mean total queue by **12.5%** and
-improves the reward by **31.5%**, with a travel-time change of **+0.42%**.
+baselines: relative to Fixed-Time it reduces the mean total queue by **15.6%** and
+improves the reward by **41.0%**, with a travel-time change of **+0.56%**.
 
 The travel-time differences between the top methods are compressed because, within the
 800-step horizon, only a fraction of the scheduled demand has entered the network, so
@@ -72,7 +72,7 @@ than mean travel time does. That the DQN matches a strong hand-engineered heuris
 
 ## 4.6 Limitations
 
-The training budget was deliberately modest (40 episodes, 800-step horizon) because
+The training budget was deliberately modest (60 episodes, 800-step horizon) because
 CityFlow runs under x86 emulation on the development machine. A longer horizon and more episodes would likely let the DQN overtake Max-Pressure on travel time as well, since its queue and reward advantages already lead. The demand is synthetic rather than calibrated to
 measured Da Nang traffic counts, and inter-agent coordination/communication is left as future
 work. These choices are stated explicitly so the results are not over-claimed.
