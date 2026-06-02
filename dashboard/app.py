@@ -22,7 +22,9 @@ from traffic_rl.report.loader import (  # noqa: E402
 st.set_page_config(page_title="Da Nang MARL Traffic", layout="wide")
 st.title("Da Nang Traffic-Signal Optimization — MARL vs Baselines")
 
-area = st.sidebar.selectbox("Scenario", ["haichau", "full", "subarea"], index=0)
+area = st.sidebar.selectbox(
+    "Scenario", ["haichau", "haichau_peak", "full", "subarea"], index=0,
+    help="haichau = normal/uniform demand; haichau_peak = rush-hour surge")
 results_dir = ROOT / "results" / area
 comparison_path = results_dir / "comparison.json"
 
@@ -58,6 +60,10 @@ if metrics_png.exists():
     st.image(str(metrics_png), caption="Travel time & mean queue per controller")
 if train_png.exists():
     st.image(str(train_png), caption="DQN training curves (reward & queue per episode)")
+qot_png = results_dir / "queue_over_time_peak.png"
+if qot_png.exists():
+    st.image(str(qot_png), caption="Total queue over time — Fixed-Time spikes during the "
+             "peak window while adaptive control (DQN, Max-Pressure) stays lower")
 
 train_log_path = results_dir / "train_log_{}.json".format(area)
 if train_log_path.exists():

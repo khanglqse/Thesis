@@ -26,7 +26,8 @@ def main():
     # Figures live in results/<area>/; the doc lives in docs/ -> ../results/<area>
     fig_dir = "../results/{}".format(area)
     md = build_chapter4(comparison, train_log, fig_dir=fig_dir)
-    out = ROOT / "docs" / "chapter4_results.md"
+    name = "chapter4_results.md" if area == "haichau" else "chapter4_results_{}.md".format(area)
+    out = ROOT / "docs" / name
     out.write_text(md)
     print("wrote {} ({} chars)".format(out, len(md)))
     return 0
