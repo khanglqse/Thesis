@@ -36,6 +36,53 @@ def plot_metrics(rows, out_png):
     fig.tight_layout(); fig.savefig(out_png, dpi=120); plt.close(fig)
 
 
+def cumulative_wait_hours(queue_series, action_interval=10):
+    """Cumulative waiting time (vehicle-hours) from a per-decision queue trace.
+
+    Each decision covers action_interval seconds during which ~queue vehicles are
+    waiting, so waiting vehicle-seconds accumulate as queue * action_interval.
+    Returns the running total in vehicle-hours (one value per decision).
+    """
+    cum, acc = [], 0.0
+    for q in queue_series:
+        acc += q * action_interval / 3600.0
+        cum.append(acc)
+    return cum
+
+
+def plot_cumulative_wait_time(rows, out_png, action_interval=10, peak_window=None):
+    """Plot cumulative waiting time (vehicle-hours) per controller over time.
+
+    This is the time-based view of the improvement: the gap between Fixed-Time
+    and a controller's curve is the waiting time that controller saves. Unlike
+    mean travel time (diluted by free-flowing vehicles), it separates clearly.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(figsize=(11, 5))
+    finals = {}
+    for r in rows:
+        cum = cumulative_wait_hours(r.get("queue_series") or [], action_interval)
+        if cum:
+            ax.plot(range(len(cum)), cum, label=r["controller"])
+            finals[r["controller"]] = cum[-1]
+    if peak_window:
+        ax.axvspan(peak_window[0], peak_window[1], color="red", alpha=0.10,
+                   label="peak window")
+    if "FixedTime" in finals and "DQN" in finals and finals["FixedTime"]:
+        saved = finals["FixedTime"] - finals["DQN"]
+        ax.annotate("DQN saves {:.0f} veh-h (-{:.1f}%) vs Fixed-Time".format(
+            saved, 100 * saved / finals["FixedTime"]),
+            xy=(0.40, 0.12), xycoords="axes fraction", fontsize=11,
+            bbox=dict(boxstyle="round", fc="wheat", alpha=0.7))
+    ax.set_xlabel("decision (every action_interval)")
+    ax.set_ylabel("cumulative waiting time (vehicle-hours)")
+    ax.set_title("Cumulative waiting time - lower is better (gap to Fixed-Time = time saved)")
+    ax.legend()
+    fig.tight_layout(); fig.savefig(out_png, dpi=120); plt.close(fig)
+
+
 def plot_queue_over_time(rows, out_png, peak_window=None):
     """Plot each controller's total-queue trace over decisions.
 

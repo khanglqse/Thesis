@@ -66,6 +66,10 @@ for qot_name in ("queue_over_time_peak.png", "queue_over_time.png"):
         st.image(str(qot_png), caption="Total queue over time — Fixed-Time accumulates the "
                  "most congestion; adaptive control (DQN, Max-Pressure) stays lower")
         break
+cwt_png = results_dir / "cumulative_wait.png"
+if cwt_png.exists():
+    st.image(str(cwt_png), caption="Cumulative waiting time (vehicle-hours) — the gap to "
+             "Fixed-Time is the waiting time the controller saves")
 
 train_log_path = results_dir / "train_log_{}.json".format(area)
 if train_log_path.exists():
