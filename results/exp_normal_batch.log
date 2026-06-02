@@ -14,3 +14,27 @@ variant: reward_type=queue dueling=False hidden=128
   Random       queue=4178.3 tt=385.3 reward=-25.65
   FixedTime    queue=4628.7 tt=386.3 reward=-30.06
 ===== TRAIN area=haichau tag=queue_norm reward=queue_norm dueling=0 =====
+Saved checkpoint + log to /work/results/haichau/exp_queue_norm
+===== EVAL area=haichau tag=queue_norm =====
+variant: reward_type=queue_norm dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 0.5476806908790355
+}
+  MaxPressure  queue=3690.6 tt=383.9 reward=-17.62
+  DQN          queue=3838.9 tt=384.2 reward=-20.25
+  Random       queue=4178.3 tt=385.3 reward=-25.65
+  FixedTime    queue=4628.7 tt=386.3 reward=-30.06
+===== TRAIN area=haichau tag=dueling reward=pressure dueling=1 =====
+Saved checkpoint + log to /work/results/haichau/exp_dueling
+===== EVAL area=haichau tag=dueling =====
+variant: reward_type=pressure dueling=True hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 0.5561031405159224
+}
+  MaxPressure  queue=3690.6 tt=383.9 reward=-17.62
+  DQN          queue=3895.9 tt=384.2 reward=-18.77
+  Random       queue=4178.3 tt=385.3 reward=-25.65
+  FixedTime    queue=4628.7 tt=386.3 reward=-30.06
+ALL_DONE_haichau
