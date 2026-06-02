@@ -36,6 +36,30 @@ def plot_metrics(rows, out_png):
     fig.tight_layout(); fig.savefig(out_png, dpi=120); plt.close(fig)
 
 
+def plot_queue_over_time(rows, out_png, peak_window=None):
+    """Plot each controller's total-queue trace over decisions.
+
+    Shows how Fixed-Time spikes during a demand surge while adaptive control
+    (DQN, Max-Pressure) stays lower. peak_window=(start,end) shades the peak.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(figsize=(11, 5))
+    for r in rows:
+        series = r.get("queue_series") or []
+        if series:
+            ax.plot(range(len(series)), series, label=r["controller"])
+    if peak_window:
+        ax.axvspan(peak_window[0], peak_window[1], color="red", alpha=0.10,
+                   label="peak window")
+    ax.set_xlabel("decision (every action_interval)")
+    ax.set_ylabel("total queued vehicles")
+    ax.set_title("Network queue over time - lower is better")
+    ax.legend()
+    fig.tight_layout(); fig.savefig(out_png, dpi=120); plt.close(fig)
+
+
 def plot_training_curve(train_log, out_png):
     import matplotlib
     matplotlib.use("Agg")

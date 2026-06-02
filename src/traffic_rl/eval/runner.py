@@ -32,4 +32,7 @@ def run_episode(env, controller, max_decisions=None):
         "final_vehicle_count": info.get("vehicle_count"),
         "mean_total_queue": sum(queues) / n,
         "mean_reward": (sum(rewards) / len(rewards)) if rewards else 0.0,
+        # Per-decision total-queue trace, so peak-window congestion can be
+        # analysed/plotted (one value per action_interval).
+        "queue_series": [float(q) for q in queues],
     }
