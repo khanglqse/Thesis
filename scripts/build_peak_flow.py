@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Build a peak-hour demand profile for the Hai Chau arterial network.
+"""Build the peak-hour scenario for the Hai Chau arterial network.
 
   PYTHONPATH=src python3 scripts/build_peak_flow.py
 
+Creates a separate scenario `haichau_peak` (sharing the same arterial roadnet)
+so the normal `haichau` scenario is kept intact for side-by-side comparison.
 Models a rush-hour surge: a light background flow over the whole horizon plus a
-dense burst concentrated in a peak window. This is where adaptive control
-(DQN / Max-Pressure) is expected to beat Fixed-Time the most, because Fixed-Time
-cannot re-time its phases for the surge.
+dense burst concentrated in a peak window — where adaptive control (DQN /
+Max-Pressure) is expected to beat Fixed-Time the most, because Fixed-Time cannot
+re-time its phases for the surge.
 
-Writes data/danang/flow_haichau.json (the active scenario) and keeps the previous
-uniform flow as flow_haichau_uniform.json for reference. The peak window (in
-engine steps, = sim-seconds at interval 1.0) is printed so the eval can shade it.
+Writes data/danang/flow_haichau_peak.json and copies roadnet_haichau.json ->
+roadnet_haichau_peak.json. The peak window (engine steps = sim-seconds) is
+printed so the eval can shade it.
 """
 import json
 import os
@@ -44,12 +46,11 @@ def main():
                          end_time=PEAK_END, interval=PEAK_INTERVAL)
     flows = base + peak
 
-    out = DATA / "flow_haichau.json"
-    uniform_backup = DATA / "flow_haichau_uniform.json"
-    if out.exists() and not uniform_backup.exists():
-        shutil.copy(str(out), str(uniform_backup))
-        print("backed up uniform flow ->", uniform_backup.name)
+    # Separate scenario sharing the arterial roadnet.
+    shutil.copy(str(DATA / "roadnet_haichau.json"), str(DATA / "roadnet_haichau_peak.json"))
+    out = DATA / "flow_haichau_peak.json"
     out.write_text(json.dumps(flows, indent=2))
+    print("copied roadnet_haichau.json -> roadnet_haichau_peak.json")
     print("wrote {} ({} flows: {} background + {} peak)".format(
         out.name, len(flows), BASE_NUM, PEAK_NUM))
     print("peak window (decisions @interval 10): {}-{}".format(

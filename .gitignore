@@ -65,3 +65,6 @@ core
 
 # Truncated demo replays (regenerate with scripts/truncate_replay.py)
 results/*/demo/
+
+# Peak scenario roadnet is a copy of roadnet_haichau.json (regenerate via build_peak_flow.py)
+data/danang/roadnet_haichau_peak.json
