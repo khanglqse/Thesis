@@ -11,6 +11,12 @@ bbox:
 netconvert:
   # Options applied when converting OSM -> SUMO net (see osm_to_sumo.py).
   tls_default_type: actuated
+  # Scope the network to its arterial grid: drop residential alleys so demand is
+  # forced through the signal-controlled intersections (see
+  # docs/network_demand_analysis.md). Kept: trunk/primary/secondary/tertiary
+  # (+links), unclassified, living_street.
+  drop_road_types:
+    - highway.residential
 
 flow:
   start_time: 0

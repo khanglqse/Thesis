@@ -64,7 +64,9 @@ def main():
 
     sumo_net = OSM_DIR / "danang_{}.net.xml".format(area)
     if not sumo_net.exists():
-        run_netconvert(str(osm_xml), str(sumo_net))
+        run_netconvert(str(osm_xml), str(sumo_net),
+                       tls_default_type=net_cfg.get("netconvert", {}).get("tls_default_type", "actuated"),
+                       drop_road_types=net_cfg.get("netconvert", {}).get("drop_road_types"))
 
     # paths relative to repo root (== mount point /work inside the container)
     sumo_net_rel = "data/osm/danang_{}.net.xml".format(area)
