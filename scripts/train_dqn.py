@@ -35,6 +35,8 @@ def main():
     # frozen baseline checkpoint in results/<area>/.
     if os.environ.get("REWARD_TYPE"):
         cfg["reward_type"] = os.environ["REWARD_TYPE"]
+    if os.environ.get("STATE_MODE"):
+        cfg["state_mode"] = os.environ["STATE_MODE"]
     if os.environ.get("DUELING"):
         cfg["dueling"] = os.environ["DUELING"] not in ("0", "", "false", "False")
 
@@ -59,7 +61,8 @@ def main():
                                     yellow_time=cfg["yellow_time"],
                                     min_green=cfg["min_green"],
                                     count_norm=cfg.get("count_norm", 10.0),
-                                    reward_type=cfg.get("reward_type", "pressure"))
+                                    reward_type=cfg.get("reward_type", "pressure"),
+                                    state_mode=cfg.get("state_mode", "basic"))
 
     train(env_factory, cfg,
           ckpt_path=str(results_dir / "dqn_{}.npz".format(area)),

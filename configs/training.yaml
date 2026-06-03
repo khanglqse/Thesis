@@ -16,7 +16,8 @@ reward_scale: 0.05       # arterial net pressure reward is ~-15..-25; scale to O
 grad_clip: 10.0          # global grad-norm cap; stops Q-value divergence
 huber_delta: 1.0         # Huber loss threshold; bounds gradient on large TD errors
 gamma: 0.99
-reward_type: pressure    # pressure | queue | queue_norm | pressure_norm (see sim/intersection.py)
+reward_type: pressure    # pressure | queue | queue_norm | pressure_norm | efficient_pressure
+state_mode: basic        # basic | ats (Advanced-XLight: adds running-vehicle / approaching-demand channel)
 dueling: false           # dueling DQN head (value + advantage streams); experiment toggle
 fixed_green_duration: 40 # seconds of green per phase for the Fixed-Time baseline (realistic 25-50s)
 batch_size: 64

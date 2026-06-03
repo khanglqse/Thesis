@@ -14,7 +14,7 @@ from traffic_rl.sim.intersection import IntersectionState, make_reward
 class MultiAgentTrafficEnv:
     def __init__(self, roadnet, engine, action_interval=10, max_steps=3600,
                  yellow_time=3, min_green=10, count_norm=10.0,
-                 reward_type="pressure"):
+                 reward_type="pressure", state_mode="basic"):
         self.roadnet = roadnet
         self.engine = engine
         self.action_interval = action_interval
@@ -22,9 +22,11 @@ class MultiAgentTrafficEnv:
         self.yellow_time = yellow_time
         self.min_green = min_green
         self.reward_type = reward_type
+        self.state_mode = state_mode
         self._reward_fn = make_reward(reward_type)
         self.agent_ids = roadnet.signalized_ids()
-        self.encoder = ObservationEncoder(roadnet, count_norm=count_norm)
+        self.encoder = ObservationEncoder(roadnet, count_norm=count_norm,
+                                          state_mode=state_mode)
         self._green_phases = {a: roadnet.green_phases(a) for a in self.agent_ids}
         self._all_red = {a: roadnet.all_red_phase(a) for a in self.agent_ids}
         self.states = {
@@ -58,7 +60,10 @@ class MultiAgentTrafficEnv:
 
     def _observations(self):
         counts = self.engine.lane_vehicle_counts()
-        return {a: self.encoder.encode(a, counts, self._green[a]) for a in self.agent_ids}
+        # ats state needs queued counts too (running = all - queued); fetch once.
+        waiting = self.engine.lane_waiting_counts() if self.state_mode == "ats" else None
+        return {a: self.encoder.encode(a, counts, self._green[a], waiting)
+                for a in self.agent_ids}
 
     def _engine_steps(self, n):
         for _ in range(n):

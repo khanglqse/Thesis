@@ -74,11 +74,25 @@ def pressure_norm_reward(state: IntersectionState, waiting_counts: Dict[str, int
     return -float(inflow - outflow) / n
 
 
+def efficient_pressure_reward(state: IntersectionState, waiting_counts: Dict[str, int]) -> float:
+    """Efficient pressure (arXiv 2112.02336): mean incoming queue minus mean
+    outgoing queue, i.e. pressure computed on PER-LANE AVERAGES instead of raw
+    sums. This is scale-invariant to how many lanes a movement has and is the
+    reward that lets Efficient-/Advanced-MPLight edge past Max-Pressure.
+    """
+    nin = max(1, len(state.incoming_lanes))
+    nout = max(1, len(state.outgoing_lanes))
+    inflow = sum(waiting_counts.get(l, 0) for l in state.incoming_lanes)
+    outflow = sum(waiting_counts.get(l, 0) for l in state.outgoing_lanes)
+    return -float(inflow / nin - outflow / nout)
+
+
 _REWARDS = {
     "pressure": pressure_reward,
     "queue": queue_reward,
     "queue_norm": queue_norm_reward,
     "pressure_norm": pressure_norm_reward,
+    "efficient_pressure": efficient_pressure_reward,
 }
 
 

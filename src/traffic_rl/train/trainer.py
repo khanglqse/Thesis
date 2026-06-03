@@ -32,6 +32,7 @@ def train(env_factory, cfg, ckpt_path, log_path):
     train_steps = 0
     # Record what this run optimised so the comparison/report can label the variant.
     log = {"meta": {"reward_type": getattr(env, "reward_type", "pressure"),
+                    "state_mode": getattr(env, "state_mode", "basic"),
                     "dueling": bool(cfg.get("dueling", False)),
                     "hidden": cfg["hidden"], "lr": cfg["lr"]},
            "episodes": []}

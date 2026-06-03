@@ -58,6 +58,7 @@ def main():
         meta = json.loads(tlog.read_text()).get("meta", {})
     dueling = bool(meta.get("dueling", False))
     hidden = int(meta.get("hidden", _TRAIN_CFG.get("hidden", 64)))
+    state_mode = meta.get("state_mode", "basic")
 
     cfg = {"interval": 1.0, "seed": 0, "dir": "data/danang/",
            "roadnetFile": "roadnet_{}.json".format(area),
@@ -69,14 +70,15 @@ def main():
     # comparable across controllers; queue/travel time are reward-independent.
     env = MultiAgentTrafficEnv(rn, CityFlowEngine(str(cfg_path)),
                                action_interval=10, max_steps=EVAL_STEPS,
-                               yellow_time=3, min_green=10, count_norm=COUNT_NORM)
+                               yellow_time=3, min_green=10, count_norm=COUNT_NORM,
+                               state_mode=state_mode)
     net = SharedDQN(env.obs_dim, env.encoder.max_green, hidden=hidden, dueling=dueling)
     net.load(str(exp_dir / "dqn_{}.npz".format(area)))
     rows.append(run_episode(env, DQNController(net, env.agent_ids)))
 
     report = compare.write_report(rows, str(exp_dir / "comparison.json"))
-    print("variant: reward_type=%s dueling=%s hidden=%s"
-          % (meta.get("reward_type", "?"), dueling, hidden))
+    print("variant: reward_type=%s state_mode=%s dueling=%s hidden=%s"
+          % (meta.get("reward_type", "?"), state_mode, dueling, hidden))
     print(json.dumps({k: v for k, v in report.items() if k != "table"}, indent=2))
     for r in report["table"]:
         print("  %-12s queue=%.1f tt=%.1f reward=%.2f"
