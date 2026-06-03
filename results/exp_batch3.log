@@ -1,0 +1,40 @@
+docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'sh scripts/exp_batch3.sh'
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+mesg: ttyname failed: Inappropriate ioctl for device
+===== TRAIN area=haichau tag=ats_effp reward=efficient_pressure state=ats dueling=0 =====
+Saved checkpoint + log to /work/results/haichau/exp_ats_effp
+===== EVAL area=haichau tag=ats_effp =====
+variant: reward_type=efficient_pressure state_mode=ats dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 0.21064638365263424
+}
+  MaxPressure  queue=3690.6 tt=383.9 reward=-17.62
+  DQN          queue=3956.7 tt=384.2 reward=-18.60
+  FixedTime    queue=4104.7 tt=385.0 reward=-25.98
+  Random       queue=4178.3 tt=385.3 reward=-25.65
+===== TRAIN area=haichau tag=ats_qnorm reward=queue_norm state=ats dueling=0 =====
+Saved checkpoint + log to /work/results/haichau/exp_ats_qnorm
+===== EVAL area=haichau tag=ats_qnorm =====
+variant: reward_type=queue_norm state_mode=ats dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 0.02274057792744058
+}
+  MaxPressure  queue=3690.6 tt=383.9 reward=-17.62
+  DQN          queue=4111.1 tt=384.9 reward=-21.06
+  FixedTime    queue=4104.7 tt=385.0 reward=-25.98
+  Random       queue=4178.3 tt=385.3 reward=-25.65
+===== TRAIN area=haichau_peak tag=ats_effp reward=efficient_pressure state=ats dueling=0 =====
+Saved checkpoint + log to /work/results/haichau_peak/exp_ats_effp
+===== EVAL area=haichau_peak tag=ats_effp =====
+variant: reward_type=efficient_pressure state_mode=ats dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 0.20955599847254355
+}
+  MaxPressure  queue=3758.3 tt=548.2 reward=-18.72
+  DQN          queue=3926.6 tt=549.0 reward=-17.75
+  FixedTime    queue=4314.0 tt=550.1 reward=-27.79
+  Random       queue=4423.3 tt=550.4 reward=-27.27
+BATCH3_DONE

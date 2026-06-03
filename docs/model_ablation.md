@@ -66,6 +66,33 @@ net (3.6-safe), with backprop and save/load. `combo` = dueling + `queue_norm`.
 | DQN `queue_norm` | 4165.6 | +3.4 % | −10.8 % |
 | DQN `combo` | 4413.6 | −2.3 % | −17.4 % |
 
+## 4b. Advanced-XLight ATS state (running-vehicle channel)
+
+Following the research (Advanced-XLight, ICML 2022; Efficient-Pressure, 2021), we
+enriched the state instead of changing the algorithm. `state_mode="ats"` adds an
+**incoming running-vehicle channel** (`running = all − queued` per lane) — the
+*approaching demand* Max-Pressure is blind to — and we pair it with the
+`efficient_pressure` reward (per-lane-mean pressure). Layout:
+`[incoming queue | incoming running | outgoing queue | phase one-hot]`.
+
+| Scenario | Variant | Queue | vs Fixed-Time | vs Max-Pressure |
+|---|---|---|---|---|
+| Normal | DQN basic (best) | 3905.9 | +4.8 % | −5.8 % |
+| Normal | DQN `ats`+`efficient_pressure` | 3956.7 | +3.6 % | −7.2 % |
+| Normal | DQN `ats`+`queue_norm` | 4111.1 | −0.2 % | −11.4 % |
+| Peak | DQN basic (best) | 4085.2 | +5.3 % | −8.7 % |
+| **Peak** | **DQN `ats`+`efficient_pressure`** | **3926.6** | **+9.0 %** | **−4.5 %** |
+
+**ATS helps under surge, hurts under light demand.** On peak it is the best DQN
+we obtained (gap to Max-Pressure narrowed from −8.7 % to −4.5 %) — the
+approaching-demand signal is most valuable when queues are forming fast. On the
+lighter normal scenario the extra channel adds noise and slightly *hurts*. This
+matches the literature: the running-vehicle feature pays off in congested
+regimes. A sharper version (count only vehicles within an *effective range*
+`L = v_max × green` of the stop-line, not the whole lane) needs per-vehicle
+distance from the engine and is the natural next step to push the peak gap below
+zero.
+
 ## 5. Findings
 
 1. **No DQN variant beats Max-Pressure.** Every learned policy lands ~4–11 %
