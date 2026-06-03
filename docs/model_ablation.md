@@ -93,6 +93,44 @@ regimes. A sharper version (count only vehicles within an *effective range*
 distance from the engine and is the natural next step to push the peak gap below
 zero.
 
+## 4c. Algorithm-level techniques (n-step, Max-Pressure warm-start)
+
+Second research pass (RESCO benchmark; Rainbow ablation; FitLight/CRL-TSC) said
+policy-gradient (PPO/A2C) *underperforms* value-based DQN on traffic, so we did
+not pursue it. The two NumPy-feasible, evidence-backed levers we did implement:
+
+- **n-step returns** (`n_step`, here 3): `NStepAccumulator` pools n rewards and
+  bootstraps with `γ^n` — targets the long delay between a phase decision and the
+  queue clearing.
+- **Max-Pressure warm-start** (`warmstart_steps`): behaviour-clone Max-Pressure
+  (cross-entropy on its chosen phase) before RL, so training starts *at* the
+  heuristic, then RL fine-tunes at low ε.
+
+| Scenario | Variant | Queue | vs Fixed-Time | vs Max-Pressure |
+|---|---|---|---|---|
+| Normal | DQN warm-start + n-step (pressure) | 4158.9 | −1.3 % | −12.7 % |
+| Normal | DQN warm-start + n-step + queue_norm | 4146.9 | −1.0 % | −12.4 % |
+| Peak | DQN warm-start + n-step + ats | 4462.2 | −3.4 % | −18.7 % |
+
+**Negative result — warm-start + n-step degraded performance** (below even
+Fixed-Time). The clone reproduces Max-Pressure, but naive RL fine-tuning *erodes*
+the good initialisation (catastrophic forgetting of the cloned policy), and the
+larger n-step targets add instability under the existing reward scaling.
+Preserving the warm start would need **residual RL or a KL penalty to the teacher**
+(future work), not plain fine-tuning. We report this because a silent omission
+would misrepresent the search.
+
+## 4d. Consolidated ranking (best DQN per scenario)
+
+| Scenario | Best controller | Best **learned** DQN | Gap (DQN − MP) |
+|---|---|---|---|
+| Normal | Max-Pressure (3690.6) | `queue_norm` — 3838.9 (+6.5 % vs Fixed) | −4.0 % |
+| Peak | Max-Pressure (3758.3) | `ats`+`efficient_pressure` — 3926.6 (+9.0 % vs Fixed) | −4.5 % |
+
+Everything tried, ranked on normal (lower queue = better): MaxPressure < DQN
+queue_norm < dueling < basic < combo < queue < ats_effp < FixedTime < ats_qnorm <
+warm-start variants < Random.
+
 ## 5. Findings
 
 1. **No DQN variant beats Max-Pressure.** Every learned policy lands ~4–11 %
@@ -115,14 +153,32 @@ zero.
 
 ## 6. Thesis framing
 
-The honest, defensible story: with a parameter-shared DQN on **local**
-per-intersection observations, the learned controller **clears the Fixed-Time
-and Random baselines** (the realistic, tuned Fixed-Time included) and **converges
-to roughly Max-Pressure-level performance** without exceeding it. Beating
-Max-Pressure is left as future work and would require **neighbour-coordinated
-observations** (so the agent can act on information the greedy rule cannot see).
+We searched the design space **exhaustively** within the NumPy/Python-3.6
+constraint: 5 reward functions (`pressure`, `queue`, `queue_norm`,
+`pressure_norm`, `efficient_pressure`), a Dueling head, the Advanced-XLight
+**ATS state** (running-vehicle channel), **n-step returns**, and a **Max-Pressure
+warm-start** — plus their combinations, against a **tuned** Fixed-Time baseline.
 
-Reproduce: `scripts/sweep_fixed_time.py` (baseline), `scripts/exp_batch.sh` /
-`scripts/exp_batch2.sh` (variants), `scripts/run_experiment_eval.py` (eval one
-variant vs the frozen baselines). Headline metric: total/cumulative waiting time
-(see `docs/waiting_time_analysis.md`).
+The honest, defensible story: with a parameter-shared DQN on **local**
+per-intersection observations, the learned controller **clears the Fixed-Time and
+Random baselines** (the realistic, tuned Fixed-Time included) and **converges to
+roughly Max-Pressure-level performance** (within −4.0 % normal / −4.5 % peak)
+**without exceeding it**. This is consistent with the literature: Max-Pressure is
+provably throughput-optimal on the per-movement information a single intersection
+sees, so on a **small arterial network** it is very hard to beat; RL's documented
+wins over MP appear on **large grids with coordination and downstream spillback**
+(RESCO: IDQN 242.9 vs MP 551.4 on Ingolstadt region). The ATS state — which adds
+the approaching-demand signal MP lacks — gave the only direction of real
+improvement (best peak DQN), pointing the way.
+
+**Future work to beat MP:** neighbour-coordinated observations (CoLight-style
+mean-pooled neighbour features), an *effective-range* running-vehicle count, or
+**residual/KL-regularised RL** on top of the Max-Pressure warm-start (so RL
+corrects MP without forgetting it). A gradient-free **CMA-ES** on the small shared
+policy (optimising cumulative waiting time directly) is a promising lightweight
+alternative.
+
+Reproduce: `scripts/sweep_fixed_time.py` (baseline), `scripts/exp_batch*.sh`
+(variants: 1=reward/dueling, 2=combo/peak, 3=ATS, 4=warm-start/n-step),
+`scripts/run_experiment_eval.py` (eval one variant vs the frozen baselines).
+Headline metric: total/cumulative waiting time (see `docs/waiting_time_analysis.md`).
