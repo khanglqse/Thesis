@@ -13,8 +13,8 @@ lands within ~0.5% of the others:
 
 | Scenario | Fixed-Time | DQN | Difference |
 |---|---|---|---|
-| Normal | 386.3 s | 384.1 s | 2.2 s/veh (0.6%) |
-| Peak | ~386 s | ~384 s | ~2 s/veh |
+| Normal | 385.0 s | 384.2 s | <1 s/veh (~0.2%) |
+| Peak | ~550 s | ~549 s | ~1 s/veh |
 
 This is a known property of the metric, **not** evidence that control does not help.
 
@@ -30,15 +30,20 @@ waiting_vehicle_hours = Σ_decisions ( queued_vehicles × action_interval ) / 36
 
 (`cumulative_wait_hours` / `plot_cumulative_wait_time` in `src/traffic_rl/eval/compare.py`.)
 
-| Scenario (horizon) | Fixed-Time | DQN | Max-Pressure | DQN vs Fixed-Time |
-|---|---|---|---|---|
-| Normal (800 s) | 1029 veh-h | 868 veh-h | 820 veh-h | **−161 veh-h (−15.6%)** |
-| Peak (1000 s) | 1368 veh-h | 1135 veh-h | 1044 veh-h | **−233 veh-h (−17.1%)** |
-| Peak window only | — | — | — | **−20.0%** |
+Numbers below use the **strengthened, tuned Fixed-Time** (25 s green normal, 40 s peak — see
+`docs/model_ablation.md`) and the **best DQN variant per scenario** (`queue_norm` on normal,
+`pressure` on peak). The earlier −15.6 %/−17.1 % figures were measured against the naive 10 s
+Fixed-Time and are superseded by this fairer baseline.
 
-**Interpretation:** per simulated hour, the learned DQN removes ~160–230 vehicle-hours of
-waiting versus Fixed-Time, and the saving grows during the rush-hour peak. Max-Pressure is
-marginally better on queue; DQN matches or beats it on the pressure reward.
+| Scenario (horizon) | Fixed-Time | DQN (best) | Max-Pressure | DQN vs Fixed-Time |
+|---|---|---|---|---|
+| Normal (800 s) | 912 veh-h | 853 veh-h | 820 veh-h | **−59 veh-h (−6.5%)** |
+| Peak (1000 s) | 1198 veh-h | 1135 veh-h | 1044 veh-h | **−64 veh-h (−5.3%)** |
+
+**Interpretation:** against a realistically-tuned fixed plan, the learned DQN still removes
+~60 vehicle-hours of waiting per scenario (−5 to −7 %). Max-Pressure remains the strongest
+controller (−11 to −13 % vs Fixed-Time); the DQN approaches but does not surpass it — see
+`docs/model_ablation.md` for the full reward/architecture ablation.
 
 ## 3. Figures (for paper / report)
 
