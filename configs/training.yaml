@@ -19,6 +19,9 @@ gamma: 0.99
 reward_type: pressure    # pressure | queue | queue_norm | pressure_norm | efficient_pressure
 state_mode: basic        # basic | ats (Advanced-XLight: adds running-vehicle / approaching-demand channel)
 dueling: false           # dueling DQN head (value + advantage streams); experiment toggle
+n_step: 1                # n-step returns (1 = standard 1-step DQN); 3-5 helps delayed credit
+warmstart_steps: 0       # >0: behaviour-clone Max-Pressure for N decisions before RL (warm start)
+warmstart_epsilon: 0.3   # RL epsilon_start after a warm start (exploit the imitated policy)
 fixed_green_duration: 40 # seconds of green per phase for the Fixed-Time baseline (realistic 25-50s)
 batch_size: 64
 buffer_capacity: 100000

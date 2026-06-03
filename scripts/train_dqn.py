@@ -39,6 +39,10 @@ def main():
         cfg["state_mode"] = os.environ["STATE_MODE"]
     if os.environ.get("DUELING"):
         cfg["dueling"] = os.environ["DUELING"] not in ("0", "", "false", "False")
+    if os.environ.get("N_STEP"):
+        cfg["n_step"] = int(os.environ["N_STEP"])
+    if os.environ.get("WARMSTART_STEPS"):
+        cfg["warmstart_steps"] = int(os.environ["WARMSTART_STEPS"])
 
     data_dir = ROOT / "data" / "danang"
     exp_tag = os.environ.get("EXP_TAG")

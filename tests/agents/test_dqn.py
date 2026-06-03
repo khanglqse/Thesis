@@ -82,3 +82,48 @@ def test_dueling_save_load_roundtrip(tmp_path):
     net2 = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=7, dueling=True)
     net2.load(p)
     assert np.allclose(before, net2.q_values(x))
+
+
+from traffic_rl.agents.dqn import NStepAccumulator
+
+
+def test_nstep_emits_discounted_return_and_tplusn_state():
+    acc = NStepAccumulator(n=3, gamma=0.5)
+    m = np.array([True, True])
+    # push 2 transitions: not enough yet for a 3-step window
+    assert acc.push("s0", 0, 1.0, "s1", 0.0, m) == []
+    assert acc.push("s1", 1, 2.0, "s2", 0.0, m) == []
+    out = acc.push("s2", 0, 4.0, "s3", 0.0, m)        # window full
+    assert len(out) == 1
+    s, a, R, snext, done, mask = out[0]
+    assert s == "s0" and a == 0 and snext == "s3" and done == 0.0
+    assert abs(R - (1.0 + 0.5 * 2.0 + 0.25 * 4.0)) < 1e-9   # 1 + 1 + 1 = 3.0
+
+
+def test_nstep_flushes_tail_on_done():
+    acc = NStepAccumulator(n=3, gamma=1.0)
+    m = np.array([True])
+    acc.push("s0", 0, 1.0, "s1", 0.0, m)
+    out = acc.push("s1", 1, 2.0, "s2", 1.0, m)     # done -> flush remaining tail
+    # two transitions emitted: from s0 (1+2=3) and from s1 (2), both terminal
+    assert [(o[0], o[2], o[4]) for o in out] == [("s0", 3.0, 1.0), ("s1", 2.0, 1.0)]
+
+
+def test_nstep_n1_is_one_step():
+    acc = NStepAccumulator(n=1, gamma=0.9)
+    out = acc.push("s0", 1, 5.0, "s1", 0.0, np.array([True]))
+    assert len(out) == 1 and out[0][2] == 5.0 and out[0][3] == "s1"
+
+
+def test_imitate_step_pushes_q_argmax_toward_teacher():
+    net = SharedDQN(obs_dim=4, n_actions=3, hidden=16, seed=2, lr=5e-2)
+    rng = np.random.RandomState(0)
+    obs = rng.randn(16, 4).astype(np.float32)
+    target = rng.randint(0, 3, size=16)
+    mask = np.ones((16, 3), dtype=np.bool_)
+    first = net.imitate_step(obs, target, mask)
+    for _ in range(300):
+        last = net.imitate_step(obs, target, mask)
+    assert last < first
+    preds = np.argmax(net.q_values(obs), axis=1)
+    assert (preds == target).mean() > 0.9      # net learned to mimic the teacher

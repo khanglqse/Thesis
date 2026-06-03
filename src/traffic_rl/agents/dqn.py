@@ -3,9 +3,41 @@
 NumPy because the CityFlow Docker image is Python 3.6 (no modern PyTorch). The
 simulator is the bottleneck, so a NumPy net costs little. 3.6-safe.
 """
+from collections import deque
+
 import numpy as np
 
 NEG = -1e9
+
+
+class NStepAccumulator(object):
+    """Per-agent n-step return accumulator.
+
+    Buffers 1-step transitions and emits n-step transitions
+    (s_t, a_t, R^(n), s_{t+n}, done, next_mask) where R^(n)=Σ_{k<n} γ^k r_{t+k}.
+    The learner then bootstraps with γ^n from s_{t+n}. At episode end the tail is
+    flushed as shorter Monte-Carlo returns (done=1 zeroes the bootstrap, so the
+    same γ^n passed to train_step stays correct). n=1 reproduces 1-step DQN.
+    """
+    def __init__(self, n, gamma):
+        self.n = int(n); self.gamma = float(gamma); self.q = deque()
+
+    def _make(self, length):
+        R, g = 0.0, 1.0
+        for i in range(length):
+            R += g * self.q[i][2]; g *= self.gamma
+        first, last = self.q[0], self.q[length - 1]
+        return (first[0], first[1], R, last[3], last[4], last[5])
+
+    def push(self, obs, action, reward, next_obs, done, next_mask):
+        self.q.append((obs, action, reward, next_obs, done, next_mask))
+        out = []
+        if len(self.q) >= self.n:
+            out.append(self._make(self.n)); self.q.popleft()
+        if done:
+            while self.q:
+                out.append(self._make(len(self.q))); self.q.popleft()
+        return out
 
 
 def _relu(x):
@@ -109,7 +141,12 @@ class SharedDQN(object):
         dq = np.zeros_like(q)
         # d/dpred Huber = clip(diff, -delta, delta)
         dq[np.arange(B), actions] = (1.0 / B) * np.clip(diff, -d, d)
+        self._adam_step(self._backprop(dq, cache))
+        return loss
 
+    def _backprop(self, dq, cache):
+        """Backprop a dL/dq gradient through head + trunk; returns grad dict."""
+        X, z1, a1, z2, a2 = cache
         grads = {}
         if self.dueling:
             # Q = V + (A - mean_a A): dV = sum_a dQ ; dA = dQ - mean_a dQ
@@ -125,8 +162,28 @@ class SharedDQN(object):
         grads["W2"] = a1.T.dot(dz2); grads["b2"] = dz2.sum(axis=0)
         da1 = dz2.dot(self.W2.T); dz1 = da1 * (z1 > 0)
         grads["W1"] = X.T.dot(dz1); grads["b1"] = dz1.sum(axis=0)
+        return grads
 
-        self._adam_step(grads)
+    def imitate_step(self, obs, target_actions, masks):
+        """One supervised step making argmax_a Q(s,a) match a teacher's action.
+
+        Cross-entropy over the masked softmax of Q (treated as logits). Used to
+        warm-start the net from Max-Pressure so RL fine-tuning starts at the
+        heuristic's level instead of cold. Returns the cross-entropy loss.
+        """
+        obs = np.atleast_2d(obs).astype(np.float32)
+        B = obs.shape[0]
+        q, cache = self._forward(obs, self._online())
+        masks = np.asarray(masks, dtype=bool)
+        logits = np.where(masks, q, NEG)
+        logits = logits - logits.max(axis=1, keepdims=True)
+        ex = np.exp(logits); p = ex / ex.sum(axis=1, keepdims=True)
+        ta = np.asarray(target_actions, dtype=np.int64)
+        loss = float(np.mean(-np.log(p[np.arange(B), ta] + 1e-12)))
+        dq = p.copy()
+        dq[np.arange(B), ta] -= 1.0
+        dq /= B
+        self._adam_step(self._backprop(dq, cache))
         return loss
 
     def _adam_step(self, grads, beta1=0.9, beta2=0.999, eps=1e-8):
