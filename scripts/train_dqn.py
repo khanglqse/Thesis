@@ -41,6 +41,8 @@ def main():
         cfg["dueling"] = os.environ["DUELING"] not in ("0", "", "false", "False")
     if os.environ.get("COUNT_NORM"):
         cfg["count_norm"] = float(os.environ["COUNT_NORM"])
+    if os.environ.get("REWARD_SCALE"):
+        cfg["reward_scale"] = float(os.environ["REWARD_SCALE"])
     if os.environ.get("N_STEP"):
         cfg["n_step"] = int(os.environ["N_STEP"])
     if os.environ.get("WARMSTART_STEPS"):

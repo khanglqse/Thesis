@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 EVAL_STEPS = int(os.environ.get("MAX_STEPS", "1000"))
 _TRAIN_CFG = yaml.safe_load((ROOT / "configs" / "training.yaml").read_text())
-COUNT_NORM = float(_TRAIN_CFG.get("count_norm", 10.0))
+COUNT_NORM = float(os.environ.get("COUNT_NORM", _TRAIN_CFG.get("count_norm", 10.0)))
 
 
 def main():

@@ -1,0 +1,1 @@
+{"interval": 1.0, "seed": 0, "dir": "data/danang/", "roadnetFile": "roadnet_haichau_calib.json", "flowFile": "flow_haichau_calib.json", "rlTrafficLight": true, "laneChange": false, "saveReplay": true, "roadnetLogFile": "replay_roadnet_haichau_calib.json", "replayLogFile": "replay_random_haichau_calib.txt"}
