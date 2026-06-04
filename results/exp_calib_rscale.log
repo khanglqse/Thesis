@@ -4,3 +4,37 @@ mesg: ttyname failed: Inappropriate ioctl for device
 ===== TRAIN haichau_calib tag=rs03 rscale=0.3 =====
 Saved checkpoint + log to /work/results/haichau_calib/exp_rs03
 ===== EVAL haichau_calib tag=rs03 =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 5.135776129511965
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1077.2 tt=221.0 reward=-9.96
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=rs04 rscale=0.4 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_rs04
+===== EVAL haichau_calib tag=rs04 =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 5.820723459262048
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=979.4 tt=219.4 reward=-9.77
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=rs06 rscale=0.6 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_rs06
+===== EVAL haichau_calib tag=rs06 =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 6.31390843367976
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=965.5 tt=218.2 reward=-9.78
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+RSCALE_DONE

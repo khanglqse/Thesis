@@ -26,6 +26,9 @@
 |---|---|---|---|
 | MaxPressure | 234.2 | 843.1 | +31.0% |
 | DQN reward_scale=0.5 | 264.2 | 951.2 | +22.2% |
+| DQN reward_scale=0.6 | 268.2 | 965.5 | +21.0% |
+| DQN reward_scale=0.4 | 272.1 | 979.4 | +19.9% |
+| DQN reward_scale=0.3 | 299.2 | 1077.2 | +11.9% |
 | DQN (reference) | 302.9 | 1090.5 | +10.8% |
 | DQN reward_scale=1.0 | 307.4 | 1106.6 | +9.5% |
 | DQN ATS reward_scale=1.0 | 316.3 | 1138.6 | +6.9% |
