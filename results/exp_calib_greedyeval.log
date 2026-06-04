@@ -1,0 +1,28 @@
+docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'sh scripts/exp_calib_greedyeval.sh'
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+mesg: ttyname failed: Inappropriate ioctl for device
+===== TRAIN haichau_calib tag=ge_qnorm reward=queue_norm state=basic lr=0.0003 (greedy-eval ckpt) =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_ge_qnorm
+===== EVAL haichau_calib tag=ge_qnorm =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 6.527054949318932
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=965.3 tt=217.7 reward=-9.48
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=ge_ats reward=efficient_pressure state=ats lr=0.0003 (greedy-eval ckpt) =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_ge_ats
+===== EVAL haichau_calib tag=ge_ats =====
+variant: reward_type=efficient_pressure state_mode=ats dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 5.9036024132617815
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1034.0 tt=219.2 reward=-10.03
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+GREEDYEVAL_DONE

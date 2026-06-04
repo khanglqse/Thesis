@@ -26,3 +26,15 @@ variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
   FixedTime    queue=1222.6 tt=232.9 reward=-14.33
   Random       queue=1262.2 tt=238.0 reward=-14.22
 ===== TRAIN haichau_calib tag=best_ats reward=efficient_pressure state=ats ep=120 lr=0.0003 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_best_ats
+===== EVAL haichau_calib tag=best_ats =====
+variant: reward_type=efficient_pressure state_mode=ats dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 6.000975984524903
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1016.7 tt=218.9 reward=-9.93
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+BEST_DONE
