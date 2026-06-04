@@ -2,7 +2,8 @@
 # Fine-sweep reward_scale around 0.5 (the peak so far: 0.05->+10.8%, 0.5->+22.2%,
 # 1.0->+9.5%) to push the DQN past 25% vs Fixed-Time on haichau_calib.
 set -e
-pip install dataclasses numpy pyyaml >/dev/null 2>&1 || true
+# Required deps must install (retry once for transient network); no matplotlib here.
+pip install dataclasses numpy pyyaml >/dev/null 2>&1 || pip install dataclasses numpy pyyaml
 
 run() {  # tag reward_scale
   echo "===== TRAIN haichau_calib tag=$1 rscale=$2 ====="
