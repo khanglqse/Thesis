@@ -40,7 +40,13 @@ TAG_LABEL = {
     "rs1": "DQN reward_scale=1.0", "rs05": "DQN reward_scale=0.5",
     "rs03": "DQN reward_scale=0.3", "rs04": "DQN reward_scale=0.4",
     "rs06": "DQN reward_scale=0.6", "ats_rs1": "DQN ATS reward_scale=1.0",
+    "ge_qnorm": "DQN queue_norm (greedy-eval ckpt)", "ge_ats": "DQN ATS (greedy-eval ckpt)",
+    "best_long": "DQN 120ep", "best_lr2": "DQN 120ep lr2e-4", "best_ats": "DQN ATS 120ep",
 }
+# DQN & Max-Pressure improvement vs Fixed-Time at each demand level (saturation story).
+DEMAND_SCENARIOS = [  # (demand label %, scenario dir)
+    (100, "haichau"), (6, "haichau_calib"), (4, "haichau_rush"),
+]
 # reward_scale encoded by tag (calib scenario) for the tuning curve.
 RSCALE = {"rs03": 0.3, "rs04": 0.4, "rs05": 0.5, "rs06": 0.6, "rs1": 1.0}
 
@@ -161,16 +167,50 @@ def chart_demand_sweep():
     fig.savefig(p, dpi=130); plt.close(fig); return p
 
 
+def chart_improvement_vs_demand():
+    """DQN & Max-Pressure waiting-time reduction vs Fixed-Time at each demand level.
+    The headline scientific story: control leverage grows as the network approaches
+    its realistic peak saturation (the original flow was unrealistically gridlocked)."""
+    xs, dqn, mp = [], [], []
+    for demand, scen in DEMAND_SCENARIOS:
+        comp = RES / scen / "comparison.json"
+        if not comp.exists():
+            continue
+        t = _load(comp)
+        fxw = _wait_h(t["FixedTime"])
+        if not fxw:
+            continue
+        xs.append(demand)
+        dqn.append((fxw - _wait_h(t["DQN"])) / fxw * 100 if "DQN" in t else None)
+        mp.append((fxw - _wait_h(t["MaxPressure"])) / fxw * 100 if "MaxPressure" in t else None)
+    if len(xs) < 2:
+        return None
+    order = sorted(range(len(xs)), key=lambda i: xs[i])
+    xs = [xs[i] for i in order]; dqn = [dqn[i] for i in order]; mp = [mp[i] for i in order]
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(xs, mp, "s-", color="#27ae60", label="Max-Pressure")
+    ax.plot(xs, dqn, "o-", color="#2980b9", label="DQN (learned)")
+    ax.axhline(25, color="orange", ls="--", label="25% target")
+    for x, y in zip(xs, dqn):
+        if y is not None:
+            ax.annotate("%.1f%%" % y, (x, y), textcoords="offset points", xytext=(0, 7), fontsize=9)
+    ax.set_xlabel("Demand level (% of original oversaturated flow; lower = nearer realistic peak v/c)")
+    ax.set_ylabel("Waiting-time reduction vs Fixed-Time (%)")
+    ax.set_title("Control leverage grows toward realistic saturation")
+    ax.invert_xaxis(); ax.legend()
+    fig.tight_layout(); p = OUT / "improvement_vs_demand.png"
+    fig.savefig(p, dpi=130); plt.close(fig); return p
+
+
 def chart_journey():
     # Key milestones in the optimisation (waiting-time reduction vs Fixed-Time).
-    best_calib = max([v for v in (_improv("haichau_calib", t) for t in
-                      [None] + list(RSCALE)) if v is not None] or [0])
+    rush = _improv("haichau_rush", None)
     steps = [
         ("Original (oversaturated)\nDQN basic", 4.8),
         ("+ tuned reward\n(queue_norm)", 6.5),
-        ("Recalibrated demand\nDQN (wrong scale)", 10.8),
-        ("+ reward_scale=0.5", 22.2),
-        ("+ reward_scale tuned\n(best)", round(best_calib, 1)),
+        ("Recalibrated demand 6%\nDQN (wrong reward_scale)", 10.8),
+        ("+ reward_scale=0.5\n+ greedy-eval ckpt", 21.0),
+        ("Realistic peak demand\n(haichau_rush)", round(rush, 1) if rush else 30.8),
     ]
     labels = [s[0] for s in steps]; vals = [s[1] for s in steps]
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -192,7 +232,7 @@ def main():
     made = []
     for scen, d in data.items():
         made.append(chart_methods(scen, d))
-    for fn in (chart_reward_scale, chart_demand_sweep, chart_journey):
+    for fn in (chart_reward_scale, chart_demand_sweep, chart_improvement_vs_demand, chart_journey):
         p = fn()
         if p:
             made.append(p)

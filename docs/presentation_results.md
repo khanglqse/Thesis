@@ -26,12 +26,20 @@
 |---|---|---|---|
 | MaxPressure | 234.2 | 843.1 | +31.0% |
 | DQN reward_scale=0.5 | 264.2 | 951.2 | +22.2% |
+| DQN queue_norm (greedy-eval ckpt) | 268.1 | 965.3 | +21.0% |
 | DQN reward_scale=0.6 | 268.2 | 965.5 | +21.0% |
 | DQN reward_scale=0.4 | 272.1 | 979.4 | +19.9% |
+| DQN ATS 120ep | 282.4 | 1016.7 | +16.8% |
+| DQN ATS (greedy-eval ckpt) | 287.2 | 1034.0 | +15.4% |
 | DQN reward_scale=0.3 | 299.2 | 1077.2 | +11.9% |
+| DQN 120ep | 302.8 | 1090.1 | +10.8% |
 | DQN (reference) | 302.9 | 1090.5 | +10.8% |
+| DQN 120ep lr2e-4 | 304.5 | 1096.2 | +10.3% |
 | DQN reward_scale=1.0 | 307.4 | 1106.6 | +9.5% |
 | DQN ATS reward_scale=1.0 | 316.3 | 1138.6 | +6.9% |
+| DQN rs05_lr6 | 318.0 | 1144.8 | +6.4% |
+| DQN rs05_ep120 | 326.9 | 1177.0 | +3.7% |
+| DQN rs05_ats | 328.8 | 1183.8 | +3.2% |
 | FixedTime | 339.6 | 1222.6 | +0.0% |
 | Random | 350.6 | 1262.2 | -3.2% |
 
@@ -48,11 +56,22 @@
 | Random | 1228.7 | 4423.3 | -2.5% |
 | DQN: warm-start + n-step + ATS | 1239.5 | 4462.2 | -3.4% |
 
+## haichau_rush
+
+| Method | Waiting (veh-h) | Queue | vs Fixed-Time |
+|---|---|---|---|
+| MaxPressure | 107.8 | 388.2 | +40.1% |
+| DQN (reference) | 124.5 | 448.2 | +30.8% |
+| FixedTime | 179.9 | 647.6 | +0.0% |
+| Random | 196.9 | 708.8 | -9.5% |
+
 ## Charts
 
 - `results/presentation/methods_haichau.png`
 - `results/presentation/methods_haichau_calib.png`
 - `results/presentation/methods_haichau_peak.png`
+- `results/presentation/methods_haichau_rush.png`
 - `results/presentation/reward_scale_curve.png`
 - `results/presentation/demand_sweep.png`
+- `results/presentation/improvement_vs_demand.png`
 - `results/presentation/journey.png`
