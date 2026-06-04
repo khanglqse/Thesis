@@ -16,6 +16,20 @@ def _epsilon(step, cfg):
     return cfg["epsilon_start"] + frac * (cfg["epsilon_end"] - cfg["epsilon_start"])
 
 
+def _greedy_eval(env, net, masks):
+    """Roll the current GREEDY policy (no exploration, no learning) for one episode
+    and return the mean total queue. The honest signal for checkpoint selection —
+    training-episode queue (with exploration) does not track greedy quality."""
+    obs = env.reset()
+    done = False
+    qs = []
+    while not done:
+        actions = {a: net.greedy_action(obs[a], masks[a]) for a in env.agent_ids}
+        obs, _, done, info = env.step(actions)
+        qs.append(info["total_queue"])
+    return sum(qs) / max(1, len(qs))
+
+
 def _warmstart(env, net, masks, cfg):
     """Pre-train the net to imitate Max-Pressure for warmstart_steps decisions.
 
@@ -52,6 +66,7 @@ def train(env_factory, cfg, ckpt_path, log_path):
     rng = np.random.RandomState(cfg["seed"])
     n_step = int(cfg.get("n_step", 1))
     gamma_n = cfg["gamma"] ** n_step   # n-step bootstrap discount
+    eval_every = int(cfg.get("eval_every", 0))   # >0: greedy-eval checkpoint selection
 
     net = SharedDQN(obs_dim, n_actions, hidden=cfg["hidden"], lr=cfg["lr"], seed=cfg["seed"],
                     grad_clip=cfg.get("grad_clip"), huber_delta=cfg.get("huber_delta", 1.0),
@@ -127,20 +142,25 @@ def train(env_factory, cfg, ckpt_path, log_path):
             "final_average_travel_time": info.get("average_travel_time"),
             "epsilon": _epsilon(decisions, cfg),
         })
-        # Save the best policy seen once exploration has mostly annealed (epsilon
-        # low), so a late divergence can't overwrite a good checkpoint. Always save
-        # a "_last" copy for inspection.
-        eps_now = _epsilon(decisions, cfg)
-        if eps_now <= max(0.3, cfg["epsilon_end"]) and ep_queue < best_queue:
-            best_queue = ep_queue
-            net.save(ckpt_path)
-            log["best"] = {"episode": ep, "mean_total_queue": ep_queue}
+        # Checkpoint selection. DQN here peaks then diverges, so the LAST net is a
+        # poor choice; and the training-episode queue (with exploration) does not
+        # track greedy quality. When eval_every>0 we periodically roll the greedy
+        # policy and keep the best-by-greedy-eval net (proper early stopping).
+        if eval_every and (ep + 1) % eval_every == 0:
+            gq = _greedy_eval(env, net, masks)
+            log["episodes"][-1]["greedy_eval_queue"] = gq
+            if gq < best_queue:
+                best_queue = gq
+                net.save(ckpt_path)
+                log["best"] = {"episode": ep, "greedy_eval_queue": gq}
+        elif not eval_every:
+            net.save(ckpt_path)          # legacy: keep last
         net.save(ckpt_path[:-4] + "_last.npz" if ckpt_path.endswith(".npz")
                  else ckpt_path + "_last")
         with open(log_path, "w") as f:
             json.dump(log, f, indent=2)
 
-    # Safety net: if training never entered the exploit phase, keep the last net.
-    if best_queue == float("inf"):
+    # Safety net: if eval-based selection never fired, keep the last net.
+    if eval_every and best_queue == float("inf"):
         net.save(ckpt_path)
     return net

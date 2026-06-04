@@ -45,6 +45,8 @@ def main():
         cfg["reward_scale"] = float(os.environ["REWARD_SCALE"])
     if os.environ.get("LR"):
         cfg["lr"] = float(os.environ["LR"])
+    if os.environ.get("EVAL_EVERY"):
+        cfg["eval_every"] = int(os.environ["EVAL_EVERY"])
     if os.environ.get("N_STEP"):
         cfg["n_step"] = int(os.environ["N_STEP"])
     if os.environ.get("WARMSTART_STEPS"):

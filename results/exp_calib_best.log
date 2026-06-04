@@ -1,0 +1,28 @@
+docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'sh scripts/exp_calib_best.sh'
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+mesg: ttyname failed: Inappropriate ioctl for device
+===== TRAIN haichau_calib tag=best_long reward=queue_norm state=basic ep=120 lr=0.0003 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_best_long
+===== EVAL haichau_calib tag=best_long =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 4.463769692184623
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1090.1 tt=222.5 reward=-11.13
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=best_lr2 reward=queue_norm state=basic ep=120 lr=0.0002 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_best_lr2
+===== EVAL haichau_calib tag=best_lr2 =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 4.805957144589021
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1096.2 tt=221.7 reward=-11.09
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=best_ats reward=efficient_pressure state=ats ep=120 lr=0.0003 =====
