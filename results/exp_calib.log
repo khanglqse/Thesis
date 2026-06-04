@@ -1,0 +1,4 @@
+docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'sh scripts/exp_calib.sh'
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+mesg: ttyname failed: Inappropriate ioctl for device
+make: *** [cf-run] Error 1

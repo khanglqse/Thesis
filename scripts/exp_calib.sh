@@ -3,7 +3,9 @@
 # realistic congested regime where signal control has real leverage). Train the
 # DQN and run the full comparison so we can measure the true improvement %.
 set -e
-pip install dataclasses numpy pyyaml matplotlib >/dev/null 2>&1
+# matplotlib has no py3.6 wheel here; run_comparison skips plotting on ImportError
+# (we regenerate PNGs on the host). Keep pip non-fatal under `set -e`.
+pip install dataclasses numpy pyyaml >/dev/null 2>&1 || true
 
 # DQN: queue_norm reward (best on normal), count_norm=10 (queues are much smaller
 # at this demand than in the oversaturated original, so rescale the observation).
