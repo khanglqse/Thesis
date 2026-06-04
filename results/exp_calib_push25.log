@@ -1,0 +1,40 @@
+docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'sh scripts/exp_calib_push25.sh'
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+mesg: ttyname failed: Inappropriate ioctl for device
+===== TRAIN haichau_calib tag=rs05_ep120 reward=queue_norm state=basic ep=120 lr=0.0003 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_rs05_ep120
+===== EVAL haichau_calib tag=rs05_ep120 =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 3.7505077715885418
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1177.0 tt=224.2 reward=-10.59
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=rs05_ats reward=efficient_pressure state=ats ep=60 lr=0.0003 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_rs05_ats
+===== EVAL haichau_calib tag=rs05_ats =====
+variant: reward_type=efficient_pressure state_mode=ats dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 3.9578687065710874
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1183.8 tt=223.7 reward=-12.42
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=rs05_lr6 reward=queue_norm state=basic ep=60 lr=0.0006 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_rs05_lr6
+===== EVAL haichau_calib tag=rs05_lr6 =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 4.499730244746416
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1144.8 tt=222.4 reward=-11.39
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+PUSH25_DONE

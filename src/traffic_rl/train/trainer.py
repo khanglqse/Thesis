@@ -69,6 +69,10 @@ def train(env_factory, cfg, ckpt_path, log_path):
 
     decisions = 0
     train_steps = 0
+    # Best-checkpoint (early-stopping): DQN training can peak then diverge, so we
+    # keep the lowest-queue policy seen (during the exploit phase) instead of the
+    # last episode. eval loads ckpt_path, so ckpt_path must hold the BEST net.
+    best_queue = float("inf")
     # Record what this run optimised so the comparison/report can label the variant.
     log = {"meta": {"reward_type": getattr(env, "reward_type", "pressure"),
                     "state_mode": getattr(env, "state_mode", "basic"),
@@ -114,16 +118,29 @@ def train(env_factory, cfg, ckpt_path, log_path):
                 if train_steps % cfg["target_sync"] == 0:
                     net.sync_target()
 
+        ep_queue = float(np.mean(ep_queues)) if ep_queues else float("inf")
         log["episodes"].append({
             "episode": ep,
             "mean_reward": float(np.mean(ep_rewards)) if ep_rewards else 0.0,
-            "mean_total_queue": float(np.mean(ep_queues)) if ep_queues else 0.0,
+            "mean_total_queue": ep_queue,
             "mean_loss": float(np.mean(ep_losses)) if ep_losses else 0.0,
             "final_average_travel_time": info.get("average_travel_time"),
             "epsilon": _epsilon(decisions, cfg),
         })
-        net.save(ckpt_path)
+        # Save the best policy seen once exploration has mostly annealed (epsilon
+        # low), so a late divergence can't overwrite a good checkpoint. Always save
+        # a "_last" copy for inspection.
+        eps_now = _epsilon(decisions, cfg)
+        if eps_now <= max(0.3, cfg["epsilon_end"]) and ep_queue < best_queue:
+            best_queue = ep_queue
+            net.save(ckpt_path)
+            log["best"] = {"episode": ep, "mean_total_queue": ep_queue}
+        net.save(ckpt_path[:-4] + "_last.npz" if ckpt_path.endswith(".npz")
+                 else ckpt_path + "_last")
         with open(log_path, "w") as f:
             json.dump(log, f, indent=2)
 
+    # Safety net: if training never entered the exploit phase, keep the last net.
+    if best_queue == float("inf"):
+        net.save(ckpt_path)
     return net
