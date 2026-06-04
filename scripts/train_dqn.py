@@ -39,6 +39,8 @@ def main():
         cfg["state_mode"] = os.environ["STATE_MODE"]
     if os.environ.get("DUELING"):
         cfg["dueling"] = os.environ["DUELING"] not in ("0", "", "false", "False")
+    if os.environ.get("COUNT_NORM"):
+        cfg["count_norm"] = float(os.environ["COUNT_NORM"])
     if os.environ.get("N_STEP"):
         cfg["n_step"] = int(os.environ["N_STEP"])
     if os.environ.get("WARMSTART_STEPS"):

@@ -1,0 +1,12 @@
+docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'pip install dataclasses numpy pyyaml >/dev/null 2>&1; MAX_STEPS=1000 PYTHONPATH=src python3 scripts/sweep_demand.py haichau'
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+mesg: ttyname failed: Inappropriate ioctl for device
+factor demand%  Fixed_mean  MP_mean  gap_mean%  Fixed_steady MP_steady gap_steady%
+  1.0    100      4847.8   4416.9       8.9%       7688.7    7183.4       6.6%
+  2.0     50      4565.6   4085.8      10.5%       7279.0    6684.8       8.2%
+  3.0     33      4425.4   3894.3      12.0%       7062.5    6357.0      10.0%
+  4.0     25      4135.9   3605.4      12.8%       6691.8    5819.1      13.0%
+  6.0     17      3492.8   2973.0      14.9%       5718.4    4883.8      14.6%
+  8.0     12      2801.3   2280.6      18.6%       4619.8    3774.8      18.3%
+
+Max control gap (steady) at factor=8.0 (demand 12%): Fixed vs MP = 18.3%
