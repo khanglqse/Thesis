@@ -1,0 +1,40 @@
+docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work cityflowproject/cityflow:latest sh -lc 'sh scripts/exp_calib_retune.sh'
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+mesg: ttyname failed: Inappropriate ioctl for device
+===== TRAIN haichau_calib tag=rs1 reward=queue_norm state=basic rscale=1.0 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_rs1
+===== EVAL haichau_calib tag=rs1 =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 4.546260214974181
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1106.6 tt=222.3 reward=-11.42
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=rs05 reward=queue_norm state=basic rscale=0.5 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_rs05
+===== EVAL haichau_calib tag=rs05 =====
+variant: reward_type=queue_norm state_mode=basic dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 6.688233457788055
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=951.2 tt=217.3 reward=-9.17
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+===== TRAIN haichau_calib tag=ats_rs1 reward=efficient_pressure state=ats rscale=1.0 =====
+Saved checkpoint + log to /work/results/haichau_calib/exp_ats_rs1
+===== EVAL haichau_calib tag=ats_rs1 =====
+variant: reward_type=efficient_pressure state_mode=ats dueling=False hidden=128
+{
+  "best_controller": "MaxPressure",
+  "improvement_vs_fixed_pct": 4.523179223591427
+}
+  MaxPressure  queue=843.1 tt=214.1 reward=-8.67
+  DQN          queue=1138.6 tt=222.4 reward=-10.07
+  FixedTime    queue=1222.6 tt=232.9 reward=-14.33
+  Random       queue=1262.2 tt=238.0 reward=-14.22
+RETUNE_DONE
