@@ -2,8 +2,5 @@ docker run --rm -v "/Users/khanglq1/workplace/Thesis/traffic-rl":/work -w /work 
 WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
 mesg: ttyname failed: Inappropriate ioctl for device
 ===== TRAIN haichau_calib tag=rs03 rscale=0.3 =====
-Traceback (most recent call last):
-  File "scripts/train_dqn.py", line 15, in <module>
-    import yaml
-ModuleNotFoundError: No module named 'yaml'
-make: *** [cf-run] Error 1
+Saved checkpoint + log to /work/results/haichau_calib/exp_rs03
+===== EVAL haichau_calib tag=rs03 =====
