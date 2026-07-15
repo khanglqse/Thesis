@@ -16,18 +16,30 @@ def _epsilon(step, cfg):
     return cfg["epsilon_start"] + frac * (cfg["epsilon_end"] - cfg["epsilon_start"])
 
 
-def _greedy_eval(env, net, masks):
+def _greedy_eval(env, net, masks, eval_max_steps=None):
     """Roll the current GREEDY policy (no exploration, no learning) for one episode
     and return the mean total queue. The honest signal for checkpoint selection —
-    training-episode queue (with exploration) does not track greedy quality."""
-    obs = env.reset()
-    done = False
-    qs = []
-    while not done:
-        actions = {a: net.greedy_action(obs[a], masks[a]) for a in env.agent_ids}
-        obs, _, done, info = env.step(actions)
-        qs.append(info["total_queue"])
-    return sum(qs) / max(1, len(qs))
+    training-episode queue (with exploration) does not track greedy quality.
+
+    IMPORTANT: checkpoint selection must roll out at the SAME horizon the final
+    comparison reports on. On oversaturated regimes a net that looks good over the
+    (shorter) training horizon can destabilise over the longer report horizon, so
+    selecting on the training horizon picks a net that is worse-than-random at
+    report time. `eval_max_steps` overrides the env horizon for the roll-out."""
+    saved_max = env.max_steps
+    if eval_max_steps is not None:
+        env.max_steps = int(eval_max_steps)
+    try:
+        obs = env.reset()
+        done = False
+        qs = []
+        while not done:
+            actions = {a: net.greedy_action(obs[a], masks[a]) for a in env.agent_ids}
+            obs, _, done, info = env.step(actions)
+            qs.append(info["total_queue"])
+        return sum(qs) / max(1, len(qs))
+    finally:
+        env.max_steps = saved_max
 
 
 def _warmstart(env, net, masks, cfg):
@@ -147,7 +159,7 @@ def train(env_factory, cfg, ckpt_path, log_path):
         # track greedy quality. When eval_every>0 we periodically roll the greedy
         # policy and keep the best-by-greedy-eval net (proper early stopping).
         if eval_every and (ep + 1) % eval_every == 0:
-            gq = _greedy_eval(env, net, masks)
+            gq = _greedy_eval(env, net, masks, cfg.get("eval_max_steps", 1000))
             log["episodes"][-1]["greedy_eval_queue"] = gq
             if gq < best_queue:
                 best_queue = gq

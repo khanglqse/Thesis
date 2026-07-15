@@ -1,0 +1,1001 @@
+{
+  "meta": {
+    "reward_type": "queue_norm",
+    "state_mode": "basic",
+    "dueling": false,
+    "n_step": 1,
+    "warmstart_steps": 0,
+    "hidden": 128,
+    "lr": 0.0003
+  },
+  "episodes": [
+    {
+      "episode": 0,
+      "mean_reward": -2.309583231234174,
+      "mean_total_queue": 1081.1125,
+      "mean_loss": 0.48171906551005134,
+      "final_average_travel_time": 204.9258823529412,
+      "epsilon": 0.9746666666666667
+    },
+    {
+      "episode": 1,
+      "mean_reward": -2.3433876415775003,
+      "mean_total_queue": 1017.8625,
+      "mean_loss": 0.37435150826349856,
+      "final_average_travel_time": 203.29629411764705,
+      "epsilon": 0.9493333333333334
+    },
+    {
+      "episode": 2,
+      "mean_reward": -2.276538013218438,
+      "mean_total_queue": 1043.225,
+      "mean_loss": 0.5436843496747314,
+      "final_average_travel_time": 204.56076470588235,
+      "epsilon": 0.924
+    },
+    {
+      "episode": 3,
+      "mean_reward": -2.0987908141386917,
+      "mean_total_queue": 965.8875,
+      "mean_loss": 0.24351654034107922,
+      "final_average_travel_time": 201.00223529411764,
+      "epsilon": 0.8986666666666667
+    },
+    {
+      "episode": 4,
+      "mean_reward": -2.1159906596286313,
+      "mean_total_queue": 956.075,
+      "mean_loss": 0.17211777679622173,
+      "final_average_travel_time": 201.0044705882353,
+      "epsilon": 0.8733333333333333,
+      "greedy_eval_queue": 1398.79
+    },
+    {
+      "episode": 5,
+      "mean_reward": -2.093454227245501,
+      "mean_total_queue": 982.325,
+      "mean_loss": 0.3449434260837734,
+      "final_average_travel_time": 201.3905882352941,
+      "epsilon": 0.848
+    },
+    {
+      "episode": 6,
+      "mean_reward": -2.118338489340848,
+      "mean_total_queue": 962.3625,
+      "mean_loss": 0.17836557766422628,
+      "final_average_travel_time": 199.8090588235294,
+      "epsilon": 0.8226666666666667
+    },
+    {
+      "episode": 7,
+      "mean_reward": -2.035698426311634,
+      "mean_total_queue": 894.275,
+      "mean_loss": 0.3354100200114772,
+      "final_average_travel_time": 197.60047058823528,
+      "epsilon": 0.7973333333333333
+    },
+    {
+      "episode": 8,
+      "mean_reward": -2.1796164219690164,
+      "mean_total_queue": 968.1625,
+      "mean_loss": 0.18950482518412173,
+      "final_average_travel_time": 200.47270588235295,
+      "epsilon": 0.772
+    },
+    {
+      "episode": 9,
+      "mean_reward": -2.0901309166462467,
+      "mean_total_queue": 963.225,
+      "mean_loss": 0.20356367686763405,
+      "final_average_travel_time": 200.77476470588235,
+      "epsilon": 0.7466666666666667,
+      "greedy_eval_queue": 1278.74
+    },
+    {
+      "episode": 10,
+      "mean_reward": -2.110267780568488,
+      "mean_total_queue": 963.525,
+      "mean_loss": 0.3671091825235635,
+      "final_average_travel_time": 199.6990588235294,
+      "epsilon": 0.7213333333333334
+    },
+    {
+      "episode": 11,
+      "mean_reward": -2.1732049861825806,
+      "mean_total_queue": 956.7625,
+      "mean_loss": 0.2307464132551104,
+      "final_average_travel_time": 199.9120588235294,
+      "epsilon": 0.696
+    },
+    {
+      "episode": 12,
+      "mean_reward": -2.1874373196248196,
+      "mean_total_queue": 968.15,
+      "mean_loss": 0.4149888390675187,
+      "final_average_travel_time": 199.13270588235295,
+      "epsilon": 0.6706666666666667
+    },
+    {
+      "episode": 13,
+      "mean_reward": -2.0092789927577663,
+      "mean_total_queue": 924.8125,
+      "mean_loss": 0.2781744231469929,
+      "final_average_travel_time": 198.91017647058823,
+      "epsilon": 0.6453333333333333
+    },
+    {
+      "episode": 14,
+      "mean_reward": -2.1561604079882377,
+      "mean_total_queue": 978.475,
+      "mean_loss": 0.3376765252090991,
+      "final_average_travel_time": 200.63017647058822,
+      "epsilon": 0.62,
+      "greedy_eval_queue": 1351.05
+    },
+    {
+      "episode": 15,
+      "mean_reward": -2.1162528843012334,
+      "mean_total_queue": 988.575,
+      "mean_loss": 0.48887710804119705,
+      "final_average_travel_time": 199.398,
+      "epsilon": 0.5946666666666667
+    },
+    {
+      "episode": 16,
+      "mean_reward": -2.005077357129244,
+      "mean_total_queue": 923.275,
+      "mean_loss": 0.3397003746591508,
+      "final_average_travel_time": 198.493,
+      "epsilon": 0.5693333333333334
+    },
+    {
+      "episode": 17,
+      "mean_reward": -1.9144916567970813,
+      "mean_total_queue": 900.2125,
+      "mean_loss": 0.48797803493216635,
+      "final_average_travel_time": 197.28264705882353,
+      "epsilon": 0.544
+    },
+    {
+      "episode": 18,
+      "mean_reward": -1.957647660908274,
+      "mean_total_queue": 927.3625,
+      "mean_loss": 0.42297258926555514,
+      "final_average_travel_time": 198.40429411764705,
+      "epsilon": 0.5186666666666666
+    },
+    {
+      "episode": 19,
+      "mean_reward": -2.064387311456887,
+      "mean_total_queue": 934.3875,
+      "mean_loss": 0.4383233519271016,
+      "final_average_travel_time": 198.52388235294117,
+      "epsilon": 0.4933333333333334,
+      "greedy_eval_queue": 1420.44
+    },
+    {
+      "episode": 20,
+      "mean_reward": -2.005653349533066,
+      "mean_total_queue": 923.6125,
+      "mean_loss": 0.5143127297982574,
+      "final_average_travel_time": 198.65182352941176,
+      "epsilon": 0.46799999999999997
+    },
+    {
+      "episode": 21,
+      "mean_reward": -1.9498529601949415,
+      "mean_total_queue": 905.3875,
+      "mean_loss": 0.425082565844059,
+      "final_average_travel_time": 197.36241176470588,
+      "epsilon": 0.44266666666666665
+    },
+    {
+      "episode": 22,
+      "mean_reward": -2.0221146012006863,
+      "mean_total_queue": 927.7875,
+      "mean_loss": 0.5105627675540745,
+      "final_average_travel_time": 198.36335294117646,
+      "epsilon": 0.41733333333333344
+    },
+    {
+      "episode": 23,
+      "mean_reward": -1.8346522332489315,
+      "mean_total_queue": 848.3375,
+      "mean_loss": 0.647181511670351,
+      "final_average_travel_time": 194.63758823529412,
+      "epsilon": 0.392
+    },
+    {
+      "episode": 24,
+      "mean_reward": -2.0728773074409865,
+      "mean_total_queue": 932.8875,
+      "mean_loss": 0.6287352956831456,
+      "final_average_travel_time": 197.58111764705882,
+      "epsilon": 0.3666666666666667,
+      "greedy_eval_queue": 1393.9
+    },
+    {
+      "episode": 25,
+      "mean_reward": -1.7819136870728847,
+      "mean_total_queue": 835.625,
+      "mean_loss": 0.645960264839232,
+      "final_average_travel_time": 194.40405882352943,
+      "epsilon": 0.3413333333333334
+    },
+    {
+      "episode": 26,
+      "mean_reward": -2.001484947180702,
+      "mean_total_queue": 907.55,
+      "mean_loss": 0.5345034847036004,
+      "final_average_travel_time": 195.65076470588235,
+      "epsilon": 0.31600000000000006
+    },
+    {
+      "episode": 27,
+      "mean_reward": -1.8151594618693676,
+      "mean_total_queue": 841.2125,
+      "mean_loss": 0.7087307000532747,
+      "final_average_travel_time": 194.97717647058823,
+      "epsilon": 0.29066666666666663
+    },
+    {
+      "episode": 28,
+      "mean_reward": -1.9253309969642516,
+      "mean_total_queue": 903.7,
+      "mean_loss": 0.5718627870082855,
+      "final_average_travel_time": 197.26811764705883,
+      "epsilon": 0.2653333333333334
+    },
+    {
+      "episode": 29,
+      "mean_reward": -1.9132521474856383,
+      "mean_total_queue": 857.7,
+      "mean_loss": 0.7145697169005871,
+      "final_average_travel_time": 194.8950588235294,
+      "epsilon": 0.24,
+      "greedy_eval_queue": 1184.87
+    },
+    {
+      "episode": 30,
+      "mean_reward": -1.9544331114378284,
+      "mean_total_queue": 920.425,
+      "mean_loss": 0.6846128151752054,
+      "final_average_travel_time": 196.1534705882353,
+      "epsilon": 0.21466666666666667
+    },
+    {
+      "episode": 31,
+      "mean_reward": -2.28454713067331,
+      "mean_total_queue": 995.775,
+      "mean_loss": 0.7590779250487685,
+      "final_average_travel_time": 198.2965294117647,
+      "epsilon": 0.18933333333333335
+    },
+    {
+      "episode": 32,
+      "mean_reward": -1.902930492594408,
+      "mean_total_queue": 889.825,
+      "mean_loss": 0.6863973584026098,
+      "final_average_travel_time": 194.76629411764705,
+      "epsilon": 0.16400000000000003
+    },
+    {
+      "episode": 33,
+      "mean_reward": -1.8259027607612512,
+      "mean_total_queue": 893.025,
+      "mean_loss": 0.8151694979518652,
+      "final_average_travel_time": 195.41935294117647,
+      "epsilon": 0.13866666666666672
+    },
+    {
+      "episode": 34,
+      "mean_reward": -1.8351345666911705,
+      "mean_total_queue": 835.05,
+      "mean_loss": 0.6213106393814087,
+      "final_average_travel_time": 194.204,
+      "epsilon": 0.1133333333333334,
+      "greedy_eval_queue": 1260.93
+    },
+    {
+      "episode": 35,
+      "mean_reward": -1.8086692055324136,
+      "mean_total_queue": 868.5875,
+      "mean_loss": 0.6369605200365186,
+      "final_average_travel_time": 194.36811764705882,
+      "epsilon": 0.08800000000000008
+    },
+    {
+      "episode": 36,
+      "mean_reward": -1.7604304160200386,
+      "mean_total_queue": 853.9625,
+      "mean_loss": 0.7004981208592653,
+      "final_average_travel_time": 193.1960588235294,
+      "epsilon": 0.06266666666666665
+    },
+    {
+      "episode": 37,
+      "mean_reward": -1.9203633028397178,
+      "mean_total_queue": 902.625,
+      "mean_loss": 0.9786356344819069,
+      "final_average_travel_time": 194.66870588235295,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 38,
+      "mean_reward": -1.847808075703123,
+      "mean_total_queue": 874.9625,
+      "mean_loss": 0.8280681353062391,
+      "final_average_travel_time": 193.292,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 39,
+      "mean_reward": -1.8730667354134334,
+      "mean_total_queue": 894.875,
+      "mean_loss": 0.8571345983073115,
+      "final_average_travel_time": 194.05888235294117,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 987.93
+    },
+    {
+      "episode": 40,
+      "mean_reward": -1.8089820798959948,
+      "mean_total_queue": 841.175,
+      "mean_loss": 0.9390968095511198,
+      "final_average_travel_time": 192.8930588235294,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 41,
+      "mean_reward": -1.7365085746276783,
+      "mean_total_queue": 846.8625,
+      "mean_loss": 0.7823783511295914,
+      "final_average_travel_time": 194.08788235294116,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 42,
+      "mean_reward": -1.8279852943178416,
+      "mean_total_queue": 866.65,
+      "mean_loss": 0.7220081333070993,
+      "final_average_travel_time": 194.61805882352942,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 43,
+      "mean_reward": -1.7784203558496015,
+      "mean_total_queue": 849.7,
+      "mean_loss": 0.692956006526947,
+      "final_average_travel_time": 193.66376470588236,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 44,
+      "mean_reward": -1.7686645600206923,
+      "mean_total_queue": 844.3625,
+      "mean_loss": 0.8016970767639577,
+      "final_average_travel_time": 193.89923529411766,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1175.8
+    },
+    {
+      "episode": 45,
+      "mean_reward": -1.9223838877317647,
+      "mean_total_queue": 905.0375,
+      "mean_loss": 0.9893692664802074,
+      "final_average_travel_time": 196.51464705882353,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 46,
+      "mean_reward": -1.6434148765280838,
+      "mean_total_queue": 787.4625,
+      "mean_loss": 0.9626480516046285,
+      "final_average_travel_time": 191.855,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 47,
+      "mean_reward": -1.7414367478695307,
+      "mean_total_queue": 859.6375,
+      "mean_loss": 1.188784963451326,
+      "final_average_travel_time": 193.94652941176471,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 48,
+      "mean_reward": -1.7118259838955594,
+      "mean_total_queue": 815.0,
+      "mean_loss": 1.0658511843532323,
+      "final_average_travel_time": 193.59088235294118,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 49,
+      "mean_reward": -1.6705460858585859,
+      "mean_total_queue": 789.825,
+      "mean_loss": 0.9896072819828987,
+      "final_average_travel_time": 192.26529411764704,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1012.27
+    },
+    {
+      "episode": 50,
+      "mean_reward": -1.7380206291350155,
+      "mean_total_queue": 843.0125,
+      "mean_loss": 1.1074721651151775,
+      "final_average_travel_time": 194.00547058823528,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 51,
+      "mean_reward": -1.7062800852187643,
+      "mean_total_queue": 827.225,
+      "mean_loss": 0.9974750764667988,
+      "final_average_travel_time": 193.06088235294118,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 52,
+      "mean_reward": -1.694173447752457,
+      "mean_total_queue": 802.9625,
+      "mean_loss": 1.3234064150601625,
+      "final_average_travel_time": 191.78123529411764,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 53,
+      "mean_reward": -1.6927625820196575,
+      "mean_total_queue": 799.9,
+      "mean_loss": 0.8055882386863231,
+      "final_average_travel_time": 191.89135294117648,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 54,
+      "mean_reward": -1.7157826325927743,
+      "mean_total_queue": 814.025,
+      "mean_loss": 1.1069477312266827,
+      "final_average_travel_time": 193.40717647058824,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1125.89
+    },
+    {
+      "episode": 55,
+      "mean_reward": -1.7593270644449888,
+      "mean_total_queue": 860.5,
+      "mean_loss": 1.489486239477992,
+      "final_average_travel_time": 194.35688235294117,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 56,
+      "mean_reward": -1.7086698436521552,
+      "mean_total_queue": 833.7375,
+      "mean_loss": 1.0349704718217254,
+      "final_average_travel_time": 193.6605294117647,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 57,
+      "mean_reward": -1.618948650929783,
+      "mean_total_queue": 793.1625,
+      "mean_loss": 0.8527722671627999,
+      "final_average_travel_time": 192.7665294117647,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 58,
+      "mean_reward": -1.8297593182498844,
+      "mean_total_queue": 858.6375,
+      "mean_loss": 0.9786196533590555,
+      "final_average_travel_time": 193.23376470588235,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 59,
+      "mean_reward": -1.9065369411772715,
+      "mean_total_queue": 874.0375,
+      "mean_loss": 1.0115250010043382,
+      "final_average_travel_time": 193.18841176470588,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1217.04
+    },
+    {
+      "episode": 60,
+      "mean_reward": -1.8249778870238778,
+      "mean_total_queue": 859.4125,
+      "mean_loss": 1.285754680633545,
+      "final_average_travel_time": 194.78964705882353,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 61,
+      "mean_reward": -1.9256467641373303,
+      "mean_total_queue": 861.4875,
+      "mean_loss": 1.1303719505667686,
+      "final_average_travel_time": 193.66605882352943,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 62,
+      "mean_reward": -1.8991234787225353,
+      "mean_total_queue": 890.225,
+      "mean_loss": 1.1628470297902822,
+      "final_average_travel_time": 193.52823529411765,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 63,
+      "mean_reward": -1.7985132916088105,
+      "mean_total_queue": 840.6,
+      "mean_loss": 1.0861284993588924,
+      "final_average_travel_time": 193.35123529411766,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 64,
+      "mean_reward": -1.9138201591385553,
+      "mean_total_queue": 878.2125,
+      "mean_loss": 1.3864714298397303,
+      "final_average_travel_time": 194.02517647058824,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1042.27
+    },
+    {
+      "episode": 65,
+      "mean_reward": -1.7034114562062672,
+      "mean_total_queue": 819.9375,
+      "mean_loss": 1.1580635949969291,
+      "final_average_travel_time": 193.70458823529412,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 66,
+      "mean_reward": -1.8091319019031282,
+      "mean_total_queue": 845.975,
+      "mean_loss": 1.733871328830719,
+      "final_average_travel_time": 192.71758823529413,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 67,
+      "mean_reward": -1.9200852613057802,
+      "mean_total_queue": 871.3,
+      "mean_loss": 1.1446617633104323,
+      "final_average_travel_time": 193.56111764705884,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 68,
+      "mean_reward": -1.6319243138936534,
+      "mean_total_queue": 803.2875,
+      "mean_loss": 1.762034059688449,
+      "final_average_travel_time": 192.19958823529413,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 69,
+      "mean_reward": -1.6767835021372755,
+      "mean_total_queue": 820.2,
+      "mean_loss": 1.704147443547845,
+      "final_average_travel_time": 192.87435294117648,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 928.29
+    },
+    {
+      "episode": 70,
+      "mean_reward": -1.715601738408342,
+      "mean_total_queue": 827.475,
+      "mean_loss": 1.5472980458289385,
+      "final_average_travel_time": 192.67205882352943,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 71,
+      "mean_reward": -1.6788520481091236,
+      "mean_total_queue": 789.475,
+      "mean_loss": 1.519118869304657,
+      "final_average_travel_time": 191.84876470588236,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 72,
+      "mean_reward": -1.7073051777886683,
+      "mean_total_queue": 800.15,
+      "mean_loss": 1.3014196373522282,
+      "final_average_travel_time": 191.4545294117647,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 73,
+      "mean_reward": -1.856467454191511,
+      "mean_total_queue": 843.425,
+      "mean_loss": 1.751172062754631,
+      "final_average_travel_time": 192.4269411764706,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 74,
+      "mean_reward": -1.7680856322660568,
+      "mean_total_queue": 867.5,
+      "mean_loss": 1.5451159972697497,
+      "final_average_travel_time": 194.27035294117647,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1101.59
+    },
+    {
+      "episode": 75,
+      "mean_reward": -1.8538990052138637,
+      "mean_total_queue": 916.0,
+      "mean_loss": 1.6989232562482357,
+      "final_average_travel_time": 196.0038823529412,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 76,
+      "mean_reward": -1.7018834997549621,
+      "mean_total_queue": 833.2375,
+      "mean_loss": 1.2745627135038375,
+      "final_average_travel_time": 193.38458823529413,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 77,
+      "mean_reward": -1.6002601911976915,
+      "mean_total_queue": 802.2125,
+      "mean_loss": 1.1797368690371512,
+      "final_average_travel_time": 192.8115294117647,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 78,
+      "mean_reward": -1.7912104450842659,
+      "mean_total_queue": 845.925,
+      "mean_loss": 1.2571322243660688,
+      "final_average_travel_time": 192.016,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 79,
+      "mean_reward": -1.8328438784747747,
+      "mean_total_queue": 850.9125,
+      "mean_loss": 1.4688447818160058,
+      "final_average_travel_time": 192.7264705882353,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1184.28
+    },
+    {
+      "episode": 80,
+      "mean_reward": -1.892575519344387,
+      "mean_total_queue": 852.6125,
+      "mean_loss": 1.6382188733667136,
+      "final_average_travel_time": 193.1899411764706,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 81,
+      "mean_reward": -1.8144024731819541,
+      "mean_total_queue": 849.1875,
+      "mean_loss": 1.6718808960169553,
+      "final_average_travel_time": 192.3894705882353,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 82,
+      "mean_reward": -1.8370173007024424,
+      "mean_total_queue": 843.85,
+      "mean_loss": 2.0975021965801717,
+      "final_average_travel_time": 193.50735294117646,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 83,
+      "mean_reward": -1.847851867733943,
+      "mean_total_queue": 877.2625,
+      "mean_loss": 1.9912787038832902,
+      "final_average_travel_time": 194.1069411764706,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 84,
+      "mean_reward": -2.0448392448746224,
+      "mean_total_queue": 910.7375,
+      "mean_loss": 2.0064431108534335,
+      "final_average_travel_time": 195.23682352941177,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 947.94
+    },
+    {
+      "episode": 85,
+      "mean_reward": -1.916345990225707,
+      "mean_total_queue": 873.175,
+      "mean_loss": 1.680427293293178,
+      "final_average_travel_time": 195.15564705882352,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 86,
+      "mean_reward": -1.8015113313049635,
+      "mean_total_queue": 856.9125,
+      "mean_loss": 2.5656363859772684,
+      "final_average_travel_time": 193.49923529411765,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 87,
+      "mean_reward": -1.6414258658008656,
+      "mean_total_queue": 794.3375,
+      "mean_loss": 1.4900716789066792,
+      "final_average_travel_time": 191.2094117647059,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 88,
+      "mean_reward": -1.713670575362792,
+      "mean_total_queue": 832.075,
+      "mean_loss": 1.9437226310372353,
+      "final_average_travel_time": 193.1214705882353,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 89,
+      "mean_reward": -1.8181336273789106,
+      "mean_total_queue": 878.175,
+      "mean_loss": 2.0119893696159123,
+      "final_average_travel_time": 193.62035294117646,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 962.53
+    },
+    {
+      "episode": 90,
+      "mean_reward": -1.589278116406654,
+      "mean_total_queue": 776.85,
+      "mean_loss": 1.6123304218053818,
+      "final_average_travel_time": 192.48735294117648,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 91,
+      "mean_reward": -1.5347300583326529,
+      "mean_total_queue": 760.875,
+      "mean_loss": 2.271676518395543,
+      "final_average_travel_time": 191.12270588235293,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 92,
+      "mean_reward": -1.6294957067303766,
+      "mean_total_queue": 813.95,
+      "mean_loss": 1.4826857041567565,
+      "final_average_travel_time": 193.55711764705882,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 93,
+      "mean_reward": -1.5554198827901657,
+      "mean_total_queue": 799.6625,
+      "mean_loss": 2.189354084804654,
+      "final_average_travel_time": 192.91758823529412,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 94,
+      "mean_reward": -1.7367116073130222,
+      "mean_total_queue": 832.55,
+      "mean_loss": 1.5465159468352794,
+      "final_average_travel_time": 193.7604705882353,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1090.26
+    },
+    {
+      "episode": 95,
+      "mean_reward": -1.8105048548149962,
+      "mean_total_queue": 862.4375,
+      "mean_loss": 1.2556388944387435,
+      "final_average_travel_time": 194.65035294117646,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 96,
+      "mean_reward": -1.5932687385989273,
+      "mean_total_queue": 796.4875,
+      "mean_loss": 1.8799203041940928,
+      "final_average_travel_time": 192.3090588235294,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 97,
+      "mean_reward": -1.5101782736393585,
+      "mean_total_queue": 757.2875,
+      "mean_loss": 1.63222813680768,
+      "final_average_travel_time": 191.16047058823528,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 98,
+      "mean_reward": -1.653798207819434,
+      "mean_total_queue": 796.6875,
+      "mean_loss": 1.733630984649062,
+      "final_average_travel_time": 193.09217647058824,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 99,
+      "mean_reward": -1.7558085402542951,
+      "mean_total_queue": 813.5625,
+      "mean_loss": 1.6802645772695541,
+      "final_average_travel_time": 191.69258823529412,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 988.94
+    },
+    {
+      "episode": 100,
+      "mean_reward": -1.623581868210406,
+      "mean_total_queue": 800.25,
+      "mean_loss": 2.160245120152831,
+      "final_average_travel_time": 191.26017647058825,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 101,
+      "mean_reward": -1.7409718818916928,
+      "mean_total_queue": 822.55,
+      "mean_loss": 2.033793503791094,
+      "final_average_travel_time": 191.01170588235294,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 102,
+      "mean_reward": -1.7413089792806773,
+      "mean_total_queue": 822.175,
+      "mean_loss": 1.8552917800843716,
+      "final_average_travel_time": 192.07047058823528,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 103,
+      "mean_reward": -1.6476180946935663,
+      "mean_total_queue": 795.825,
+      "mean_loss": 1.9436016272753478,
+      "final_average_travel_time": 192.82782352941177,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 104,
+      "mean_reward": -1.8725583411609357,
+      "mean_total_queue": 830.3,
+      "mean_loss": 2.4739985413849355,
+      "final_average_travel_time": 191.85935294117647,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1089.07
+    },
+    {
+      "episode": 105,
+      "mean_reward": -1.6552326754744207,
+      "mean_total_queue": 798.5375,
+      "mean_loss": 2.0847401514649393,
+      "final_average_travel_time": 192.31629411764706,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 106,
+      "mean_reward": -1.7039415124969373,
+      "mean_total_queue": 802.125,
+      "mean_loss": 2.1286601394414904,
+      "final_average_travel_time": 192.00688235294118,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 107,
+      "mean_reward": -1.6315860934139237,
+      "mean_total_queue": 780.0,
+      "mean_loss": 2.3247897565364837,
+      "final_average_travel_time": 191.28388235294116,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 108,
+      "mean_reward": -1.6179983374853655,
+      "mean_total_queue": 787.1625,
+      "mean_loss": 2.181478329002857,
+      "final_average_travel_time": 192.88476470588236,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 109,
+      "mean_reward": -1.6678268449317977,
+      "mean_total_queue": 769.65,
+      "mean_loss": 2.8358693033456803,
+      "final_average_travel_time": 190.17623529411765,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1073.2
+    },
+    {
+      "episode": 110,
+      "mean_reward": -1.6152992441258949,
+      "mean_total_queue": 763.25,
+      "mean_loss": 1.52797946408391,
+      "final_average_travel_time": 191.65976470588237,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 111,
+      "mean_reward": -2.0469516934847123,
+      "mean_total_queue": 916.475,
+      "mean_loss": 2.1485952463001015,
+      "final_average_travel_time": 194.8950588235294,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 112,
+      "mean_reward": -1.7873068113752075,
+      "mean_total_queue": 814.8,
+      "mean_loss": 1.9521862886846066,
+      "final_average_travel_time": 192.2334705882353,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 113,
+      "mean_reward": -1.8625333779166326,
+      "mean_total_queue": 859.35,
+      "mean_loss": 2.070238522440195,
+      "final_average_travel_time": 193.45476470588235,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 114,
+      "mean_reward": -1.7474840980560322,
+      "mean_total_queue": 792.7,
+      "mean_loss": 2.151291009783745,
+      "final_average_travel_time": 191.47870588235295,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1167.11
+    },
+    {
+      "episode": 115,
+      "mean_reward": -1.8640003131040868,
+      "mean_total_queue": 877.425,
+      "mean_loss": 1.9625940930098296,
+      "final_average_travel_time": 194.1579411764706,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 116,
+      "mean_reward": -1.9289542153339323,
+      "mean_total_queue": 890.75,
+      "mean_loss": 2.0921635661274194,
+      "final_average_travel_time": 194.14241176470588,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 117,
+      "mean_reward": -1.893603436657682,
+      "mean_total_queue": 842.425,
+      "mean_loss": 2.1146712217479946,
+      "final_average_travel_time": 193.47564705882354,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 118,
+      "mean_reward": -1.7704133059026925,
+      "mean_total_queue": 799.35,
+      "mean_loss": 2.2430200330913066,
+      "final_average_travel_time": 192.6305294117647,
+      "epsilon": 0.050000000000000044
+    },
+    {
+      "episode": 119,
+      "mean_reward": -1.8102659512918948,
+      "mean_total_queue": 830.675,
+      "mean_loss": 2.4120611138641834,
+      "final_average_travel_time": 193.1069411764706,
+      "epsilon": 0.050000000000000044,
+      "greedy_eval_queue": 1021.78
+    }
+  ],
+  "best": {
+    "episode": 69,
+    "greedy_eval_queue": 928.29
+  }
+}

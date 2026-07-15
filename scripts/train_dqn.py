@@ -51,6 +51,8 @@ def main():
         cfg["n_step"] = int(os.environ["N_STEP"])
     if os.environ.get("WARMSTART_STEPS"):
         cfg["warmstart_steps"] = int(os.environ["WARMSTART_STEPS"])
+    if os.environ.get("SEED"):
+        cfg["seed"] = int(os.environ["SEED"])   # vary RL seed for multi-seed CI
 
     data_dir = ROOT / "data" / "danang"
     exp_tag = os.environ.get("EXP_TAG")

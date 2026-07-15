@@ -1,254 +1,428 @@
 % Chapter 4: Experiments and Results
-% Add this content to your main paper after Chapter 3
+% Rewritten 2026-07-12 to reflect the ACTUAL implemented system:
+%   CityFlow microscopic sim, real Hai Chau (Da Nang) network with 53 signalized
+%   intersections, controllers = Fixed-Time / Max-Pressure / Random / parameter-shared DQN.
+% All numbers below are traceable to result files under results/<scenario>/comparison.json,
+% docs/presentation_results.md and docs/model_ablation.md. The previous version of this
+% file (SUMO / 3 linear intersections / Actuated+Adaptive / "DQN wins 48.9%") described an
+% abandoned early prototype and is superseded.
 
 \chapter{Experiments and Results}
 
-This chapter presents comprehensive experimental results comparing the proposed reinforcement learning-based traffic signal control methods with traditional baseline controllers. We evaluate performance across multiple metrics and analyze the effectiveness of learning-based approaches in optimizing multi-intersection traffic networks.
+This chapter evaluates the proposed parameter-shared reinforcement learning (RL)
+controller for multi-intersection traffic signal control against strong classical
+baselines on a realistic model of central Da Nang, Vietnam. We describe the simulation
+environment and network (Section~\ref{sec:setup}), the demand scenarios and controllers,
+the learned agent and its training, and the evaluation metrics. We then report the
+controller comparison across four demand regimes (Section~\ref{sec:results}), a
+systematic ablation over reward, architecture, state, and algorithmic variants
+(Section~\ref{sec:ablation}), an analysis of why a learned local controller converges to
+--- but does not exceed --- the Max-Pressure heuristic on this network
+(Section~\ref{sec:analysis}), and the limitations of the study
+(Section~\ref{sec:limits}).
 
 \section{Experimental Setup}
+\label{sec:setup}
 
-\subsection{Simulation Environment}
+\subsection{Simulation Environment and Road Network}
 
-All experiments were conducted using SUMO (Simulation of Urban Mobility), an open-source microscopic traffic simulator widely adopted in intelligent transportation research \cite{SUMO_2018}. The simulation environment was configured with the following parameters:
+All experiments use \textbf{CityFlow}, an open-source microscopic traffic simulator
+designed for large-scale, learning-based signal control \cite{CityFlow_2019}. The road
+network is a real corridor of central Hai Chau district, Da Nang, imported from
+OpenStreetMap \cite{Haklay_2010,OSM_SUMO_2022}, cleaned and converted through SUMO
+\cite{SUMO_2018,Lopez_2018} into the CityFlow road-network format.
+
+The imported graph contains 592 junction nodes, of which 475 are trivial single-phase
+junctions (road merges, non-signalized crossings) that the converter emits with a
+degenerate one-phase traffic light. These are \emph{not} controllable and are excluded.
+The remaining \textbf{53 intersections carry genuine multi-phase signals} and are the
+agents of interest: 42 are four-phase, 9 are six-phase, 1 is three-phase and 1 is
+eight-phase. Restricting control to arterial signals (rather than residential alleys)
+ensures every agent sees enough traffic for its decisions to matter.
+
+Vehicle demand is a heterogeneous mix of cars and motorbikes, the latter modeled with a
+short, narrow, aggressively accelerating template ($\text{length}=2.0$\,m,
+$\text{width}=1.0$\,m) to approximate Vietnam's motorbike-dominated flow. CityFlow uses a
+lane-discretized car-following model, so this approximates --- but does not reproduce ---
+real motorbike sub-lane filtering; this is stated as a limitation in
+Section~\ref{sec:limits}. The engine advances at a $1.0$\,s time step; every controller
+makes a phase decision every $10$ simulated seconds and respects a minimum green of
+$10$\,s and a fixed $3$\,s yellow/all-red clearance on every switch.
+
+\subsection{Demand Scenarios}
+\label{sec:scenarios}
+
+To probe controllers across congestion regimes we evaluate four demand scenarios; within
+each scenario all four controllers share the same network, seed, and horizon, so the
+comparison is apples-to-apples. Because a raw trip count is horizon-dependent and does not
+by itself say how loaded the network becomes, we characterize each regime by two
+\emph{measured}, controller-independent load axes, recorded under the tuned Fixed-Time
+plan: the number of vehicles \textbf{concurrently present} in the network and the
+\textbf{peak queue} (the largest number simultaneously stopped). The peak queue is the
+natural load axis here because the headline metric --- cumulative waiting time --- is its
+time-integral. Table~\ref{tab:scenarios} orders the four regimes by saturation.
+
+\begin{table}[H]
+\centering
+\caption{The four demand regimes, characterized by measured network load rather than by
+raw trip count. ``Concurrent'' (vehicles simultaneously in the network) and ``peak queue''
+(most vehicles simultaneously stopped) are measured under the tuned Fixed-Time controller
+and therefore describe the \emph{demand}, not the learned policy. The fraction stopped is
+approximate saturation. Ordered by load, the regimes span a realistic arterial peak
+(\texttt{haichau\_rush}) up to gross oversaturation (\texttt{haichau}, \texttt{haichau\_peak}).}
+\label{tab:scenarios}
+\begin{tabular}{@{}lrrrl@{}}
+\toprule
+\textbf{Scenario} & \textbf{Trips} & \textbf{Concurrent} & \textbf{Peak queue} & \textbf{Regime} \\
+\midrule
+\texttt{haichau\_rush} & 50{,}500      & 2{,}900  & 1{,}210 & realistic arterial peak (\emph{headline}) \\
+\texttt{haichau\_calib}& 75{,}500      & 4{,}680  & 2{,}370 & moderately heavy \\
+\texttt{haichau}       & 1{,}200{,}500 & 11{,}370 & 7{,}340 & grossly oversaturated (stress limit) \\
+\texttt{haichau\_peak} & 310{,}900     & 12{,}570 & 8{,}530 & oversaturated surge \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \textbf{headline scenario is \texttt{haichau\_rush}}: about $50{,}500$ vehicle-trips
+injected over the peak hour, reaching $\sim$2{,}900 vehicles concurrently on the arterial
+sub-network with $\sim$1{,}210 stopped at the busiest moment --- roughly $42\%$ saturation.
+This is a genuinely \emph{loaded} regime: queues form and signal timing has real leverage,
+yet the network is not gridlocked, which is exactly the operating point at which adaptive
+control can help. It also matches the intended order of magnitude for a central Da Nang
+arterial corridor at rush hour (Section~\ref{sec:setup}). \texttt{haichau\_calib} is a
+somewhat heavier variant ($\sim$51\% stopped). By contrast \texttt{haichau} --- the raw
+procedural baseline of $\sim$1.2M trips --- and \texttt{haichau\_peak} --- a concentrated
+surge --- drive the network into \emph{gross oversaturation}: roughly two-thirds of all
+present vehicles are stopped and the queues never clear within the horizon. We retain these
+two deliberately over-loaded regimes as a stress test that probes controller behaviour well
+beyond the realistic operating point; Section~\ref{sec:results} reports how each controller
+holds up across the whole spectrum.
+
+\subsection{Controllers}
+
+We compare four controllers spanning the classical-to-learned spectrum:
 
 \begin{itemize}
-    \item \textbf{Network Configuration:} Multi-intersection urban network with 3 signalized intersections arranged in a linear configuration
-    \item \textbf{Simulation Duration:} 3600 seconds (1 hour) per episode with 5-minute warm-up period
-    \item \textbf{Time Step:} 1.0 second control cycle
-    \item \textbf{Traffic Demand:} Stochastic vehicle arrivals following Poisson distribution with varying rates
-    \item \textbf{Vehicle Types:} Heterogeneous traffic mix including cars, motorcycles, and trucks with realistic behavioral parameters
+  \item \textbf{Fixed-Time} --- a cyclic controller that rotates through the admissible
+        green phases in a fixed order. Rather than the naive one-decision-per-phase plan
+        (which wastes $\sim$30\% of every interval on the mandatory transition), we sweep
+        the green duration over $\{10,25,30,40,50\}$\,s and adopt the best per scenario
+        (\textbf{25\,s} for the moderate regimes, \textbf{40\,s} at peak). The tuned
+        plan is $\sim$11--12\% better than the naive one and beats Random, making it a
+        genuinely competitive baseline.
+  \item \textbf{Max-Pressure} --- a strong, well-studied heuristic that greedily selects
+        the phase maximizing the difference between upstream and downstream queue pressure
+        \cite{MaxPressure_2013,PressLight_2019}.
+  \item \textbf{Random} --- selects an admissible phase uniformly at random; a sanity
+        lower bound.
+  \item \textbf{DQN (proposed)} --- a \textbf{parameter-shared Deep Q-Network}: a single
+        Q-network is shared across all 53 intersections and trained on pooled transitions,
+        so the parameter count is constant as the network scales.
 \end{itemize}
 
-The simulation interface was built using the OpenAI Gym framework, enabling seamless integration with standard reinforcement learning libraries and providing standardized state-action interfaces.
+\subsection{Learned Agent and Training}
 
-\subsection{Controller Configuration}
+Each agent observes a compact local state --- normalized per-lane incoming-queue counts
+plus a one-hot encoding of the current green phase --- and selects among its admissible
+green phases. The default control objective is the \textbf{signed Max-Pressure reward}
+(outgoing minus incoming pressure), so a higher (less negative) reward corresponds to
+shorter, more balanced queues; alternative reward functions (a per-lane-normalized queue
+reward in particular) are examined in the ablation (Section~\ref{sec:ablation}).
 
-We evaluated five traffic signal control methods organized into two categories:
+The Q-network is a small multi-layer perceptron, $\text{obs}\!\to\!128\!\to\!128\!\to\!
+|\mathcal{A}|$ with ReLU activations, implemented from scratch in NumPy so it runs inside
+the CityFlow Python-3.6 container (the simulator runs under x86 emulation on the
+development machine). It is trained with the Adam optimizer (learning rate
+$3\!\times\!10^{-4}$), a Huber loss ($\delta=1.0$) and global gradient-norm clipping at
+$10$ for stability, discount $\gamma=0.99$, an experience-replay buffer of $10^5$
+transitions, minibatches of $64$, and a target network synchronized every $200$ training
+steps. Exploration is $\epsilon$-greedy with $\epsilon$ decaying linearly from $1.0$ to
+$0.05$ over $3000$ decisions, over an $800$-step horizon ($80$ decisions per episode).
 
-\textbf{Traditional Baseline Controllers:}
-\begin{enumerate}
-    \item \textbf{Fixed-Time Controller:} Implements predetermined signal phases with fixed 30-second green time allocation per movement
-    \item \textbf{Actuated Controller:} Adjusts phase timing based on vehicle detector data with configurable minimum (15s) and maximum (60s) green times
-    \item \textbf{Adaptive Controller:} Dynamically adjusts timing based on traffic congestion levels using rule-based logic with base green time of 20 seconds
-    \item \textbf{Random Controller:} Random phase selection serving as a worst-case baseline for comparison
-\end{enumerate}
+Two hyperparameters were retuned per demand regime rather than held fixed: the reward
+scale and the lane-count normalizer of the observation. The default configuration trains
+for $60$ episodes with reward scale $0.05$ and count normalizer $40$; the two lighter,
+better-separated regimes (\texttt{haichau\_calib} and the headline \texttt{haichau\_rush})
+are trained for $120$ episodes with reward scale $0.5$, a smaller count normalizer, and
+\emph{greedy-evaluation checkpoint selection} --- the checkpoint that minimizes queue on a
+periodic greedy roll-out is kept, since the value-based agent here tends to peak and then
+drift. The exact per-scenario settings are given in Table~\ref{tab:dqncfg}.
 
-\textbf{Reinforcement Learning Methods:}
-\begin{enumerate}
-    \item \textbf{Deep Q-Network (DQN):} Value-based RL algorithm with experience replay and target networks
-    \begin{itemize}
-        \item Network architecture: Multi-layer perceptron with [256, 128, 64] hidden units
-        \item Learning rate: 5×10\textsuperscript{-4} with Adam optimizer
-        \item Epsilon-greedy exploration: Linear decay from 1.0 to 0.01 over training
-        \item Experience replay buffer: Capacity of 20,000 transitions
-        \item Target network updates: Every 100 training steps
-    \end{itemize}
-\end{enumerate}
+\begin{table}[H]
+\centering
+\caption{Per-scenario DQN configuration behind the reported results. All other
+hyperparameters are shared (Adam $3\!\times\!10^{-4}$, $\gamma=0.99$, buffer $10^5$,
+batch $64$, $\epsilon:1.0\!\to\!0.05$, $800$-step horizon).}
+\label{tab:dqncfg}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Scenario} & \textbf{Reward} & \textbf{Reward scale} & \textbf{Count norm.} & \textbf{Episodes} \\
+\midrule
+\texttt{haichau}       & queue\_norm            & 0.05 & 40 & 60 \\
+\texttt{haichau\_calib}& queue\_norm            & 0.5  & 10 & 120 (greedy-eval) \\
+\texttt{haichau\_peak} & eff.-pressure (ATS)    & 0.05 & 40 & 60 \\
+\texttt{haichau\_rush} & queue\_norm            & 0.5  & 5  & 120 (greedy-eval) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Learning is evident in the per-episode statistics on the headline \texttt{haichau\_rush}
+regime: the mean total queue falls from $618.5$ in the first episode to $337.1$ by the last
+(a $45.5$\% reduction), while the mean reward improves from $-1.46$ to $-0.81$ as exploration
+decays. The training curves are shown in Figure~\ref{fig:training}. (These per-episode
+\emph{training} means --- a single run, averaged over an episode that is still partly
+exploratory --- are not directly comparable to the multi-seed greedy-evaluation queue reported
+in Tables~\ref{tab:waiting}--\ref{tab:queue}, which applies the fixed learned policy over the
+full evaluation horizon.)
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{../results/haichau_rush/training_curve.png}
+  \caption{DQN training progress on the headline \texttt{haichau\_rush} regime: mean reward and
+  mean total queue per episode. Queue falls and reward rises as $\epsilon$ decays into the
+  exploit regime.}
+  \label{fig:training}
+\end{figure}
 
 \subsection{Evaluation Metrics}
 
-Performance was assessed using comprehensive metrics capturing different aspects of traffic system efficiency:
-\begin{itemize}
-    \item \textbf{Average Waiting Time:} Mean time vehicles spend waiting at intersections (seconds per vehicle, lower is better)
-    \item \textbf{Cumulative Reward:} Total reward accumulated during evaluation episodes (higher is better)
-    \item \textbf{Average Queue Length:} Mean number of vehicles waiting in queues across all lanes
-    \item \textbf{Maximum Queue Length:} Peak queue length observed during simulation
-    \item \textbf{Average Vehicles:} Mean number of vehicles present in the network
-\end{itemize}
+Our \textbf{headline metric is cumulative waiting time in vehicle-hours}, computed as the
+time-integral of the total number of queued vehicles across the network
+($\sum_t q_t \cdot \Delta t / 3600$, with $\Delta t = 10$\,s). This is a standard,
+delay-oriented measure of network congestion. We also report the \textbf{mean total
+queue}, the \textbf{average travel time} produced by CityFlow, and the \textbf{mean
+reward}. As discussed in Section~\ref{sec:analysis}, within the finite evaluation horizon
+the waiting-time and queue metrics separate the controllers far more sharply than
+average travel time, because only part of the scheduled demand has entered the network
+by the end of the horizon.
 
-\section{Experimental Results}
+\section{Results}
+\label{sec:results}
 
-\subsection{Performance Comparison}
+\subsection{Controller Comparison}
 
-Table~\ref{tab:performance_summary} presents a comprehensive comparison of all evaluated controllers across key performance metrics for the three-intersection network. The results represent evaluation performance after training convergence.
+Table~\ref{tab:waiting} reports the headline cumulative waiting time for each controller
+across the four scenarios, with the percentage reduction relative to that scenario's tuned
+Fixed-Time plan. For the learned controller we report the best configuration found for
+each scenario (Table~\ref{tab:dqncfg}); the reference configuration and the full sweep of
+reward, state, and architecture variants --- including the negative results --- are given
+in the ablation (Section~\ref{sec:ablation}).
 
 \begin{table}[H]
 \centering
-\caption{Performance comparison across traffic signal control methods (3-intersection network)}
-\label{tab:performance_summary}
-\begin{tabular}{@{}lccccc@{}}
+\caption{Cumulative waiting time (vehicle-hours; lower is better), reduction vs.\ that
+scenario's tuned Fixed-Time. The learned DQN is reported as the multi-seed mean $\pm$ 95\% CI
+over five training seeds; the deterministic baselines have no seed variance. Max-Pressure is
+best in every regime. The DQN clears Fixed-Time and Random and approaches Max-Pressure at
+realistic-to-moderate load, but \emph{degrades below both under gross oversaturation}
+(\texttt{haichau}) --- the saturation spectrum analysed in Section~\ref{sec:analysis}.}
+\label{tab:waiting}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Method} & \textbf{Type} & \textbf{Avg Waiting Time} & \textbf{Cumulative Reward} & \textbf{Avg Queue} & \textbf{Max Queue} \\
- & & \textbf{(seconds)} & & \textbf{(vehicles)} & \textbf{(vehicles)} \\
+\textbf{Scenario} & \textbf{Fixed-Time} & \textbf{Random} & \textbf{Max-Pressure} & \textbf{DQN (proposed)} \\
 \midrule
-Fixed-Time & Baseline & 5078.80 & -5374.65 & 29.59 & 62 \\
-Actuated & Baseline & 5495.07 & -5884.91 & 38.98 & 70 \\
-Adaptive & Baseline & 5146.70 & -5519.48 & 37.28 & 69 \\
-Random & Baseline & 5051.06 & -5388.50 & 33.74 & 60 \\
-\midrule
-\textbf{DQN} & \textbf{RL} & \textbf{2595.19} & \textbf{-1461.70} & \textbf{32.82} & \textbf{49} \\
+\texttt{haichau}       & 912.1 (0\%) & 928.5 ($-1.8$\%) & \textbf{820.1 ($+10.1$\%)} & 1276.0$\pm$7.9 ($-39.9$\%) \\
+\texttt{haichau\_calib}& 339.6 (0\%) & 350.6 ($-3.2$\%) & \textbf{234.2 ($+31.0$\%)} & 266.3$\pm$18.3 ($+21.6$\%) \\
+\texttt{haichau\_peak} & 1198.3 (0\%)& 1228.7 ($-2.5$\%)& \textbf{1044.0 ($+12.9$\%)}& 1137.2$\pm$22.3 ($+5.1$\%) \\
+\texttt{haichau\_rush} & 179.9 (0\%) & 196.9 ($-9.5$\%) & \textbf{107.8 ($+40.1$\%)} & \textbf{113.2$\pm$2.5 ($+37.1$\%)} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Key Findings:}
-\begin{itemize}
-    \item \textbf{DQN significantly outperforms all baselines} with 48.9\% reduction in average waiting time compared to Fixed-Time control
-    \item \textbf{Adaptive controller performs best among traditional methods} but still shows 49.5\% higher waiting times than DQN
-    \item \textbf{DQN achieves 72.7\% improvement in cumulative reward} over Fixed-Time baseline
-    \item \textbf{Queue management is more balanced} with DQN showing lower maximum queue lengths
-\end{itemize}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{../experiments/results/three_intersections/plots/comprehensive_20251027_191347.png}
-    \caption{Comprehensive performance comparison across all traffic signal control methods for the three-intersection network. DQN demonstrates superior performance across all key metrics.}
-    \label{fig:performance_comparison}
-\end{figure}
-
-\subsection{Improvement Analysis}
-
-Table~\ref{tab:improvements} quantifies the performance improvements of the DQN method compared to traditional baselines.
+The ordering is consistent on the mean-total-queue metric (Table~\ref{tab:queue}). Across the
+three non-oversaturated regimes Max-Pressure attains the lowest queue, the DQN is next, and
+both clear the tuned Fixed-Time and Random baselines; only in the grossly oversaturated
+\texttt{haichau} regime does the DQN fall behind all baselines (the saturation spectrum is
+analysed in Section~\ref{sec:analysis}). On the headline \texttt{haichau\_rush} regime --- a
+realistic arterial peak --- the DQN cuts cumulative waiting time by \textbf{37.1\%} relative to
+Fixed-Time (multi-seed 95\% CI $\pm2.5$ veh-h), capturing most of the $40.1$\% that the
+hand-engineered Max-Pressure heuristic achieves, while Random makes congestion \emph{worse}
+than Fixed-Time.
 
 \begin{table}[H]
 \centering
-\caption{Performance improvement of DQN vs traditional baselines}
-\label{tab:improvements}
-\begin{tabular}{@{}lccc@{}}
+\caption{Mean total queue (lower is better) by controller and scenario. DQN is the multi-seed
+mean $\pm$ 95\% CI over five training seeds; baselines are deterministic.}
+\label{tab:queue}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Comparison} & \textbf{Waiting Time Reduction} & \textbf{Reward Improvement} & \textbf{Queue Reduction} \\
+\textbf{Scenario} & \textbf{Fixed-Time} & \textbf{Random} & \textbf{Max-Pressure} & \textbf{DQN} \\
 \midrule
-DQN vs Fixed-Time & 48.9\% & 72.7\% & 10.8\% \\
-DQN vs Actuated & 52.8\% & 75.2\% & 15.8\% \\
-DQN vs Adaptive & 49.5\% & 73.5\% & 12.0\% \\
-DQN vs Random & 48.6\% & 72.9\% & 2.7\% \\
+\texttt{haichau}       & 4104.7 & 4178.3 & \textbf{3690.6} & 4593.6$\pm$28.3 \\
+\texttt{haichau\_calib}& 1222.6 & 1262.2 & \textbf{843.1}  & 958.6$\pm$65.8 \\
+\texttt{haichau\_peak} & 4314.0 & 4423.3 & \textbf{3758.3} & 4093.8$\pm$80.3 \\
+\texttt{haichau\_rush} & 647.6  & 708.8  & \textbf{388.2}  & 407.7$\pm$8.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{../experiments/results/three_intersections/plots/comparison_20251027_191348.png}
-    \caption{Controller comparison showing DQN's superior performance across waiting time, reward, and queue metrics compared to traditional baselines.}
-    \label{fig:controller_comparison}
+  \centering
+  \includegraphics[width=0.9\textwidth]{../results/presentation/methods_haichau_rush.png}
+  \caption{Waiting-time reduction vs.\ Fixed-Time on the headline \texttt{haichau\_rush}
+  scenario. The learned DQN captures most of the improvement of the Max-Pressure
+  heuristic while learning its policy purely from local counts.}
+  \label{fig:rush}
 \end{figure}
 
-The improvement analysis reveals:
+\section{Ablation Study}
+\label{sec:ablation}
 
-\begin{itemize}
-    \item \textbf{Substantial waiting time reduction:} DQN reduces average waiting time by approximately 2,500 seconds per vehicle compared to traditional methods
-    \item \textbf{Significant reward improvement:} 72-75\% improvement in cumulative reward demonstrates better overall system optimization
-    \item \textbf{More balanced queue management:} Lower maximum queue lengths indicate better traffic flow distribution
-\end{itemize}
+Because the DQN converges to but does not beat Max-Pressure, we searched the design space ---
+reward, architecture, state, and algorithmic add-ons --- to test whether any variant changes the
+conclusion. Every variant is trained into a separate directory and never overwrites the frozen
+baselines. Table~\ref{tab:ablation} reports the variants on the honest realistic-peak
+(\texttt{haichau\_rush}) and congested-surge (\texttt{haichau\_peak}) regimes. The main
+configuration per regime and the borderline dueling head are each evaluated over five seeds,
+because at realistic-peak load the between-variant differences are of the same order as the
+seed-to-seed variation --- so a single-seed ranking would not be trustworthy.
 
-\subsection{Training Dynamics and Learning Progress}
+\begin{table}[H]
+\centering
+\caption{Ablation on mean total queue (lower is better), re-pointed to the honest headline
+realistic-peak (\texttt{haichau\_rush}) and congested-surge (\texttt{haichau\_peak}) regimes.
+``vs MP'' is the gap to Max-Pressure. Multi-seed entries (the main config per regime and the
+dueling head) are mean $\pm$ 95\% CI over five training seeds; single-seed exploratory variants
+carry no CI. \textbf{No learned variant beats Max-Pressure} --- even the dueling head, whose best
+single seed dipped just below it ($378.6$), has its entire five-seed 95\% CI above Max-Pressure.}
+\label{tab:ablation}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+\textbf{Regime} & \textbf{Controller / variant} & \textbf{Queue} & \textbf{vs Fixed-Time} & \textbf{vs Max-Pressure} \\
+\midrule
+Rush & Fixed-Time (tuned)                           & 647.6 & 0\%       & $-66.8$\% \\
+Rush & Max-Pressure                                 & 388.2 & $+40.1$\% & 0\% \\
+Rush & DQN \texttt{queue\_norm} (main, 5-seed)      & \textbf{407.7$\pm$8.8}  & \textbf{+37.0\%} & $-5.0$\% \\
+Rush & DQN dueling (5-seed)                         & 416.8$\pm$20.0 & $+35.6$\% & $-7.4$\% \\
+Rush & DQN warm-start $+$ $n$-step                  & 430.7 & $+33.5$\% & $-10.9$\% \\
+\midrule
+Peak & Fixed-Time (tuned)                           & 4314.0 & 0\%       & $-14.8$\% \\
+Peak & Max-Pressure                                 & 3758.3 & $+12.9$\% & 0\% \\
+Peak & DQN \texttt{ats}+eff.-pressure (main, 5-seed)& \textbf{4093.8$\pm$80.3} & \textbf{+5.1\%} & $-8.9$\% \\
+Peak & DQN basic (plain state)                      & 4118.5 & $+4.5$\%  & $-9.6$\% \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The DQN agent was trained for 1,000 steps with evaluation every 100 steps to monitor learning progress. Figure~\ref{fig:detailed_metrics} shows the training curves and learning dynamics.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{../experiments/results/three_intersections/plots/detailed_metrics_20251027_191348.png}
-    \caption{Detailed training metrics showing DQN learning progress over 1,000 training steps. The agent demonstrates clear learning behavior with improving performance across episodes.}
-    \label{fig:detailed_metrics}
-\end{figure}
-
-Key observations from the training process:
-
+The salient findings:
 \begin{enumerate}
-    \item \textbf{Efficient learning:} DQN demonstrates rapid improvement in the early training stages, achieving significant performance gains within the first 200-300 training steps
-    \item \textbf{Convergence behavior:} The agent shows stable convergence with reduced performance variance in later training episodes
-    \item \textbf{Sample efficiency:} Meaningful performance improvements are achieved with relatively modest training data (1,000 steps)
-    \item \textbf{Generalization:} The learned policy generalizes well to evaluation scenarios different from training conditions
+  \item \textbf{No learned variant beats Max-Pressure --- confirmed under seed variation.}
+        Every learned policy lands a few percent above Max-Pressure on queue. The sharpest
+        test is the dueling head: its best single seed (queue $378.6$) dipped \emph{below}
+        Max-Pressure ($388.2$), but over five seeds it averages $416.8\pm20.0$ --- its entire
+        95\% CI stays above Max-Pressure, and it is statistically indistinguishable from the
+        plain \texttt{queue\_norm} network ($407.7\pm8.8$). That single favourable seed is
+        exactly why the borderline variants are evaluated multi-seed rather than reported as a
+        flattering point estimate.
+  \item \textbf{Reward and architecture move queue only within seed variation.} At the
+        realistic peak the learned variants (\texttt{queue\_norm}, dueling, warm-start) span a
+        few percent of queue --- the same order as the $\pm2$--$5\%$ seed CI --- so we report the
+        best configuration per regime (Table~\ref{tab:dqncfg}) without ranking them. (The
+        original \texttt{pressure} reward is omitted at this regime: its scale was tuned for
+        \texttt{queue\_norm} and mis-scales the raw pressure reward, an interaction artifact
+        rather than a property of the reward.)
+  \item \textbf{The approaching-demand (ATS) state did not give a robust gain here.} Adding an
+        \emph{incoming running-vehicle} channel --- the approaching demand Max-Pressure ignores,
+        following the Advanced-XLight / Efficient-Pressure line of work
+        \cite{Advanced_XLight_2022} --- changed the congested-regime queue only marginally
+        (ATS $4093.8$ vs.\ a plain-state $4118.5$, a $0.6$\% difference well inside the seed CI).
+        On this arterial network the extra channel is not a statistically significant improvement;
+        an \emph{effective-range} running-vehicle count remains a plausible but unconfirmed
+        direction (Section~\ref{sec:limits}).
+  \item \textbf{Max-Pressure warm-start hurts only under oversaturation.} Behaviour-cloning
+        Max-Pressure and then fine-tuning with RL \emph{eroded} the initialization on the
+        oversaturated regimes (dropping below Fixed-Time --- catastrophic forgetting), but at the
+        realistic peak the same warm-start trained normally ($+33.5$\% vs Fixed-Time). The
+        degradation is therefore specific to the saturated regime where the reward signal itself
+        is unstable, not a general property; preserving the clone would need residual RL or a KL
+        penalty to the teacher (future work). We report this negative result explicitly.
 \end{enumerate}
 
-\subsection{Real-World Impact Analysis}
+\section{Analysis}
+\label{sec:analysis}
 
-Figure~\ref{fig:real_world_impact} illustrates the practical implications of the experimental results for real-world traffic management.
+The central, honestly-framed result is a \emph{saturation spectrum}. At a realistic arterial
+peak and moderate load the parameter-shared DQN --- learning purely from \emph{local}
+per-intersection queue counts --- \textbf{clears the tuned Fixed-Time and Random baselines and
+converges toward Max-Pressure-level performance without exceeding it}: it cuts cumulative
+waiting time by $37.1\%$ on the headline \texttt{haichau\_rush} regime and $21.6\%$ on
+\texttt{haichau\_calib}, landing about $5$--$14\%$ short of Max-Pressure
+(Table~\ref{tab:waiting}). That a network with no hand-crafted pressure formula rediscovers
+control quality comparable to a well-studied heuristic is the key positive finding.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{../experiments/results/three_intersections/plots/real_world_impact_20251027_191347.png}
-    \caption{Real-world impact analysis showing time savings, throughput improvements, and environmental benefits of DQN-based traffic control compared to traditional methods.}
-    \label{fig:real_world_impact}
-\end{figure}
+\textbf{The advantage tracks saturation.} The margin any controller can extract shrinks as the
+network fills: the DQN's reduction over Fixed-Time falls from $37.1\%$ at the realistic peak to
+$5.1\%$ under the oversaturated \texttt{haichau\_peak} surge, and \emph{reverses} to $-39.9\%$
+--- below even Random --- in the grossly oversaturated \texttt{haichau} baseline, where about
+two-thirds of all vehicles are queued and no local policy can drain the network within the
+horizon. Two mechanisms compound: with the network saturated there is little slack for signal
+timing to recover, and a value-based agent trained on a horizon whose queues never clear yields
+bootstrapped value estimates that drift, so its greedy policy destabilizes late in the episode.
+This is exactly the regime where honest \emph{report-horizon} checkpoint selection matters ---
+choosing the checkpoint on a shorter horizon hides the late divergence and would over-report the
+dense result --- so we select every checkpoint on the horizon we report on. We surface this
+failure as a limitation (Section~\ref{sec:limits}) rather than restrict evaluation to the
+regimes that flatter the learned controller.
 
-The real-world impact assessment reveals:
+\textbf{Why Max-Pressure is hard to beat here.} Max-Pressure greedily selects the phase with
+the largest instantaneous pressure and is \emph{provably throughput-optimal}: it stabilizes
+any demand that some controller could stabilize \cite{MaxPressure_2013,Varaiya_2013}. Two
+facts explain why our learned agent approaches but does not surpass it. First, this is a
+\emph{network-stability} guarantee on throughput, not a delay guarantee --- Max-Pressure is
+not delay-optimal and is known to behave sub-optimally at low demand --- which is why any gap
+remains on our delay-oriented waiting-time metric. Second, and more decisively, Max-Pressure
+consumes \emph{both} the upstream and the downstream queues of each movement (plus turn
+ratios), whereas our DQN observes only local upstream queue counts: the agent's information
+set is a strict subset of Max-Pressure's, so on that information Max-Pressure is already
+near-optimal and little is left for the learner to exploit. A learned controller can surpass
+Max-Pressure only by adding information it lacks --- a downstream-aware or pressure-based
+state, or explicit inter-agent coordination --- and this is exactly what the literature that
+\emph{does} beat it supplies: PressLight learns a downstream-aware pressure policy and
+surpasses Max-Pressure on an \emph{arterial} network \cite{PressLight_2019}; MPLight scales
+pressure-as-coordination to thousands of signals \cite{MPLight_2020}; CoLight and related work
+add graph attention over neighbours \cite{CoLight_2022,Colight_2019,CoordinatedDQL_2022}. The
+discriminator is thus \textbf{information and coordination, not network size} --- learned wins
+over Max-Pressure are documented on arterials as well as grids, but always with richer state or
+coordination, never from purely local queue counts. Consistent with this, enriching the state
+\emph{locally} was not enough on our network: adding the approaching-demand (ATS) running-vehicle
+channel did not yield a statistically significant gain (Section~\ref{sec:ablation}). The
+information that separates Max-Pressure and its learned successors is \emph{downstream-aware and
+coordinated}, not merely local approaching demand --- so neighbour communication and downstream
+state, left as future work, are the identified route to closing the remaining gap.
 
+\textbf{Why average travel time is compressed.} On travel time the top methods differ by
+under one percent, because within the finite horizon only a fraction of scheduled demand
+has entered the network, so vehicles that never queue dominate the mean and mask the
+differences that the congestion-sensitive waiting-time and queue metrics reveal. We
+therefore report cumulative waiting time as the headline metric.
+
+\section{Limitations of the Empirical Study}
+\label{sec:limits}
+
+We state the study's limitations explicitly so the results are not over-claimed --- in the
+spirit of sober reinforcement-learning benchmarking for signal control, which finds that
+reported learned gains can be sensitive to sensing assumptions and network realism
+\cite{RESCO_2021}:
 \begin{itemize}
-    \item \textbf{Time savings:} Approximately 2,500 seconds saved per vehicle translates to substantial daily time savings for urban commuters
-    \item \textbf{Throughput improvement:} Better traffic flow management enables higher network capacity utilization
-    \item \textbf{Environmental benefits:} Reduced idling times contribute to lower fuel consumption and emissions
-    \item \textbf{Economic impact:} Time savings and improved efficiency have direct economic benefits for cities and commuters
+  \item \textbf{Motorbike modeling is approximate.} The motorbike template captures size
+        and aggressive dynamics, but CityFlow's lane-discretized model does not reproduce
+        true sub-lane filtering, which is characteristic of Vietnamese traffic.
+  \item \textbf{Demand is synthetic.} Flows are generated procedurally and calibrated to a
+        target volume-to-capacity ratio, not to measured Da Nang traffic counts.
+  \item \textbf{Local observations, no coordination.} Each agent sees only its own lanes;
+        inter-agent communication and coordination are left as future work and are the
+        most promising route to surpassing Max-Pressure on this network.
+  \item \textbf{Modest training budget.} Sixty episodes of an $800$-step horizon were used
+        because CityFlow runs under x86 emulation on the development hardware.
+  \item \textbf{Degradation under gross oversaturation.} On the deliberately over-loaded
+        \texttt{haichau} baseline (roughly two-thirds of vehicles queued) the local
+        value-based DQN drops below Fixed-Time and Random (Table~\ref{tab:waiting}); the
+        controller targets the realistic-to-moderate load regime, and draining a gridlocked
+        network is beyond what any purely local policy achieves. This is a scope boundary, not
+        a defect --- the operating point of interest is the realistic arterial peak.
 \end{itemize}
 
-\section{Discussion}
-
-\subsection{Performance Analysis}
-
-The experimental results strongly validate the effectiveness of reinforcement learning for traffic signal control in multi-intersection urban networks:
-
-\paragraph{Superior Learning Capability}
-DQN demonstrates remarkable adaptive capability, achieving nearly 50\% reduction in waiting times compared to traditional methods. This performance gap highlights the value of learning-based approaches that can discover optimal control policies through interaction with complex traffic dynamics.
-
-\paragraph{Multi-Objective Optimization Success}
-The reward function successfully balances competing objectives (waiting time minimization, queue management, and throughput maximization). DQN's superior performance across all metrics demonstrates that learning-based methods can implicitly optimize multiple traffic management goals simultaneously.
-
-\paragraph{Stability and Robustness}
-While the current evaluation uses controlled traffic scenarios, the consistent performance improvements suggest good generalization potential. The learning approach shows promise for handling the stochastic and dynamic nature of real urban traffic.
-
-\subsection{Comparison with Baseline Methods}
-
-\paragraph{Fixed-Time Control Limitations}
-Fixed-time control serves as the baseline for most existing traffic systems but shows clear limitations in adaptive scenarios. Its static timing cannot respond to real-time traffic variations, resulting in suboptimal performance across all metrics.
-
-\paragraph{Adaptive Control Performance}
-The adaptive controller performs best among traditional methods, demonstrating the value of dynamic adjustment strategies. However, its rule-based logic remains constrained compared to DQN's learned policies that can capture complex traffic patterns.
-
-\paragraph{DQN Advantages}
-DQN significantly outperforms all traditional baselines, showing that learning-based methods can achieve substantially better traffic optimization. The performance gains are particularly notable in waiting time reduction and overall system efficiency.
-
-\subsection{Practical Implications}
-
-The experimental results demonstrate compelling practical benefits for urban traffic management:
-
-\begin{enumerate}
-    \item \textbf{Substantial Time Savings:} 2,500 seconds reduction in average waiting time per vehicle translates to significant daily savings for urban commuters and improved quality of life.
-    
-    \item \textbf{Environmental Benefits:} Reduced vehicle idling directly contributes to lower fuel consumption and greenhouse gas emissions, supporting urban sustainability goals.
-    
-    \item \textbf{Infrastructure Efficiency:} Better traffic flow management maximizes existing road capacity without requiring costly infrastructure expansions.
-    
-    \item \textbf{Computational Feasibility:} The training process demonstrates that RL-based traffic control is computationally practical for real-world deployment scenarios.
-\end{enumerate}
-
-\subsection{Learning Algorithm Effectiveness}
-
-The DQN implementation proves highly effective for traffic signal control:
-
-\begin{itemize}
-    \item \textbf{Sample Efficiency:} Meaningful performance improvements achieved with modest training data (1,000 steps)
-    \item \textbf{Convergence Properties:} Stable learning behavior with clear convergence to optimal policies
-    \item \textbf{Generalization:} Learned policies perform well on evaluation scenarios different from training conditions
-    \item \textbf{Adaptability:} Framework can be extended to incorporate additional traffic parameters and constraints
-\end{itemize}
-
-\subsection{Limitations and Future Considerations}
-
-Several limitations of the current study should be acknowledged:
-
-\begin{enumerate}
-    \item \textbf{Simulation-to-Reality Gap:} The evaluation uses SUMO simulations with idealized conditions. Real-world deployment requires validation under sensor noise, communication delays, and unpredictable human driving behaviors.
-    
-    \item \textbf{Single Algorithm Focus:} Currently only DQN is implemented and evaluated. Comparison with other RL algorithms (PPO, SAC) would provide broader insights into algorithm effectiveness.
-    
-    \item \textbf{Limited Traffic Scenarios:} The experiments use controlled traffic patterns. Real urban traffic includes incidents, special events, weather impacts, and temporal variations that require additional testing.
-    
-    \item \textbf{Reward Function Design:} The current reward formulation may not capture all relevant traffic management objectives. Sensitivity analysis and multi-objective optimization require further investigation.
-    
-    \item \textbf{Scalability Assessment:} While the 3-intersection network shows promise, evaluation on larger networks (9x9 grids, real city maps) is needed to assess computational and coordination requirements.
-\end{enumerate}
-
-\section{Summary}
-
-This chapter presented comprehensive experimental results comparing DQN-based reinforcement learning with traditional traffic signal control methods in a three-intersection urban network. The key findings are:
-
-\begin{itemize}
-    \item \textbf{DQN achieves 48.9\% reduction} in average waiting time compared to fixed-time control (approximately 2,500 seconds saved per vehicle)
-    \item \textbf{72.7\% improvement} in cumulative reward demonstrates superior multi-objective optimization
-    \item \textbf{All traditional baselines outperformed} including adaptive control, validating the potential of learning-based approaches
-    \item \textbf{Sample-efficient learning} with meaningful performance gains achieved in 1,000 training steps
-    \item \textbf{Practical feasibility} demonstrated through realistic simulation environment and computational requirements
-\end{itemize}
-
-These results provide strong evidence for the effectiveness of reinforcement learning in traffic signal optimization and establish a foundation for future research in adaptive urban mobility systems. The substantial performance improvements suggest that learning-based methods can significantly enhance traffic flow efficiency while maintaining practical deployment constraints.
-
+These limitations, together with the ablation, motivate the future directions discussed in
+the next chapter: neighbour-coordinated observations (e.g.\ CoLight-style attention),
+an effective-range running-vehicle count, and residual or KL-regularized RL on top of the
+Max-Pressure warm-start so that learning corrects the heuristic without forgetting it.

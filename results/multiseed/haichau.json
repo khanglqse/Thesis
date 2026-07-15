@@ -1,0 +1,86 @@
+{
+  "scenario": "haichau",
+  "n_seeds": 5,
+  "aggregate": {
+    "MaxPressure": {
+      "mean_total_queue": {
+        "mean": 3690.625,
+        "std": 0.0,
+        "ci95": 0.0,
+        "n": 5
+      },
+      "wait_hours": {
+        "mean": 820.1388888888889,
+        "std": 0.0,
+        "ci95": 0.0,
+        "n": 5
+      },
+      "final_average_travel_time": {
+        "mean": 383.8621013133208,
+        "std": 0.0,
+        "ci95": 0.0,
+        "n": 5
+      }
+    },
+    "FixedTime": {
+      "mean_total_queue": {
+        "mean": 4104.6625,
+        "std": 0.0,
+        "ci95": 0.0,
+        "n": 5
+      },
+      "wait_hours": {
+        "mean": 912.1472222222222,
+        "std": 0.0,
+        "ci95": 0.0,
+        "n": 5
+      },
+      "final_average_travel_time": {
+        "mean": 385.0098761726079,
+        "std": 0.0,
+        "ci95": 0.0,
+        "n": 5
+      }
+    },
+    "Random": {
+      "mean_total_queue": {
+        "mean": 4178.2875,
+        "std": 0.0,
+        "ci95": 0.0,
+        "n": 5
+      },
+      "wait_hours": {
+        "mean": 928.5083333333334,
+        "std": 1.1368683772161603e-13,
+        "ci95": 9.965090693866813e-14,
+        "n": 5
+      },
+      "final_average_travel_time": {
+        "mean": 385.2864540337711,
+        "std": 0.0,
+        "ci95": 0.0,
+        "n": 5
+      }
+    },
+    "DQN": {
+      "mean_total_queue": {
+        "mean": 4593.606,
+        "std": 32.262010848674855,
+        "ci95": 28.278899344601278,
+        "n": 5
+      },
+      "wait_hours": {
+        "mean": 1276.0016666666666,
+        "std": 8.961669680187569,
+        "ci95": 7.8552498179448955,
+        "n": 5
+      },
+      "final_average_travel_time": {
+        "mean": 478.15078920539725,
+        "std": 0.1779645564168787,
+        "ci95": 0.15599281152762495,
+        "n": 5
+      }
+    }
+  }
+}

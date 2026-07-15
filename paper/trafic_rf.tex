@@ -103,7 +103,7 @@ FPT University\\
 \vspace{1cm}
 \textbf{Abstract}\\
 \end{center}
-Urban congestion imposes significant social, environmental, and economic costs. Traditional fixed-time and actuated traffic signal controllers are limited in adapting to dynamic, stochastic urban flows. This thesis investigates reinforcement learning (RL) for multi-intersection traffic signal control, modeling intersections as agents that learn policies to reduce delay, balance queues, and improve throughput while maintaining safety constraints. We develop a scalable multi-agent RL architecture with localized communication, domain-aware reward design, and hybrid safeguards for safe operations. The framework is specified with clear state, action, and reward formulations, coordination mechanisms across neighboring intersections, and training procedures suitable for deployment with microscopic simulators (e.g., SUMO/CityFlow) \cite{SimulationPlatforms_Comparison2023}. We provide an extensive literature review of recent works in adaptive control, multi-agent RL, and graph-based learning for traffic systems, and present a detailed methodology without experiments, to be completed later. The expected outcomes include improved average travel time, reduced queue lengths, and enhanced network-wide coordination under heterogeneous traffic conditions.
+Urban congestion imposes significant social, environmental, and economic costs. Traditional fixed-time and actuated traffic signal controllers are limited in adapting to dynamic, stochastic urban flows. This thesis investigates reinforcement learning (RL) for multi-intersection traffic signal control, modeling intersections as agents that learn policies to reduce delay, balance queues, and improve throughput while maintaining safety constraints. We specify a scalable multi-agent RL framework --- with localized communication and coordination as design elements --- and implement and evaluate its core \emph{parameter-shared Deep Q-Network} instance, with domain-aware reward design and rule-based safety safeguards. The framework is specified with clear state, action, and reward formulations, coordination mechanisms across neighboring intersections, and training procedures suitable for deployment with microscopic simulators (e.g., SUMO/CityFlow) \cite{SimulationPlatforms_Comparison2023}. We provide an extensive literature review of recent works in adaptive control, multi-agent RL, and graph-based learning for traffic systems. We then evaluate the implemented controller on a real Da Nang arterial network (Hai Chau, 53 signalized intersections) modeled in CityFlow, against tuned Fixed-Time, Max-Pressure, and Random baselines across four demand regimes. The learned controller reduces cumulative waiting time by up to $37.1\%$ over tuned Fixed-Time at realistic peak demand and converges to Max-Pressure-level performance while learning purely from local queue counts, without a hand-crafted pressure formula; network-wide coordination that could surpass Max-Pressure is identified as the principal direction for future work.
 
 % Lời cảm ơn (Acknowledgments)
 %\chapter*{Acknowledgments}
@@ -127,6 +127,8 @@ Urban congestion imposes significant social, environmental, and economic costs. 
 
 \section{Background}
 Urban traffic congestion has become one of the most critical challenges in modern metropolitan areas, leading to significant economic, environmental, and social costs. As the number of vehicles on the road continues to increase due to rapid urbanization and population growth, existing transportation infrastructures struggle to accommodate the rising traffic demand efficiently. According to major traffic congestion reports such as INRIX Global Traffic Scorecard~\cite{inrix2023} and TomTom Traffic Index~\cite{tomtom2023}, urban drivers spend between 51 to 101 hours annually stuck in congestion on average, resulting in billions of dollars in lost productivity and excessive fuel consumption. Furthermore, idling vehicles contribute to an increase in carbon emissions, directly worsening air quality and public health in densely populated regions.
+
+This challenge is especially acute in the rapidly motorizing cities of Southeast Asia. \textbf{Da Nang}, the case study of this thesis, illustrates the scale: the city's registered fleet exceeds one million motorbikes and roughly two hundred thousand cars, and at peak hours on the order of \textbf{100{,}000--200{,}000 vehicles} circulate simultaneously across its road network~\cite{DaNangTraffic_MOT2024}. Crucially, the flow is overwhelmingly \textit{motorbike-dominated} --- motorbikes account for roughly $83\%$ of vehicles --- producing dense, heterogeneous, weaving movements that conventional fixed-time signals, designed for lane-disciplined car traffic, handle poorly. These conditions --- a high motorbike share, sharp peak-hour surges, and a dense central arterial grid --- motivate a learning-based controller evaluated on a realistic model of a Da Nang district rather than on a synthetic grid alone.
 
 At the heart of urban mobility lies the \textbf{traffic signal control system (TSCS)} --- the primary mechanism used to coordinate vehicular movement across intersections. Traditional control systems are typically based on \textbf{fixed-time schedules} designed using historical traffic data or heuristic methods such as the \textbf{Webster formula}. While effective in low-variance environments, these static systems fail to adapt to real-time fluctuations caused by incidents, weather conditions, or irregular traffic patterns. In many developing cities, these inefficiencies lead to substantial delays, uneven lane utilization, and cascading congestion across intersections.
 
@@ -183,11 +185,11 @@ This research introduces a novel reinforcement learning (RL) framework for optim
     \item \textbf{A hybrid learning mechanism combining model-free and rule-based components.}  
     We employ a hybrid mechanism where reinforcement learning governs the adaptive phase switching, while predefined traffic rules ensure safety and compliance with real-world signal constraints. This combination enhances policy stability and supports deployment in realistic operational environments.
 
-    \item \textbf{Comprehensive evaluation and benchmarking.}  
-    The proposed method is implemented and evaluated using open-source simulation platforms such as SUMO and CityFlow. Multiple experimental setups are conducted, covering synthetic grid networks, realistic city maps, and varying traffic densities. The evaluation compares our approach against fixed-time, actuated, and existing RL-based controllers under identical conditions.
+    \item \textbf{Comprehensive evaluation and benchmarking.}
+    The core parameter-shared DQN instance of the framework is implemented and evaluated on the CityFlow microscopic simulator using a real arterial network of Hai Chau district, Da Nang (imported from OpenStreetMap and converted through SUMO). Experiments span four demand regimes at varying traffic densities and compare the learned controller against tuned Fixed-Time, the Max-Pressure heuristic, and Random baselines under identical conditions.
 
-    \item \textbf{Performance analysis and insight.}  
-    The proposed framework is expected to achieve 15–30\% reduction in average vehicle waiting time and total travel time compared to state-of-the-art baselines, based on performance reported in related studies. The analysis will reveal that inter-agent communication and the reward design play a key role in achieving both local optimization and global network efficiency.
+    \item \textbf{Performance analysis and insight.}
+    The learned controller reduces cumulative waiting time by up to $37.1\%$ over tuned Fixed-Time at realistic peak demand and converges to Max-Pressure-level performance while learning purely from local queue counts. Through a systematic, multi-seed ablation, the analysis reveals that reward, state, and architecture choices move performance only within seed variation (no local-observation variant is statistically separable or beats Max-Pressure), that Max-Pressure is near-optimal on the per-intersection information a single agent observes, and that downstream-aware state and inter-agent coordination are the principal ingredients needed to surpass it --- the direction identified for future work.
 \end{enumerate}
 
 In summary, this thesis contributes to the growing body of research on intelligent transportation systems by delivering a data-driven, adaptive, and practically deployable traffic light optimization framework. The proposed methodology is expected to support future smart city infrastructures by enabling scalable, sustainable, and efficient traffic management solutions.
@@ -255,14 +257,14 @@ The proposed method is designed to overcome the key challenges identified in Sec
 
 \subsection{Implementation Plan}
 
-The implementation will be developed and evaluated using the SUMO simulator integrated with the OpenAI Gym interface. The framework will be implemented in Python, leveraging libraries such as PyTorch and Ray RLlib for distributed training. Evaluation scenarios will include:
+The core of the proposed framework is implemented in Python. Because the CityFlow engine used for the experiments ships in a Python-3.6 container (run under x86 emulation on Apple-silicon hardware via Colima), the learned controller is a \emph{parameter-shared Deep Q-Network implemented from scratch in NumPy} rather than with a heavyweight deep-learning stack. Evaluation uses:
 \begin{enumerate}
-    \item A synthetic 3x3 grid network for initial training and hyperparameter tuning.
-    \item A real-world city map (e.g., Hangzhou or Cologne) for large-scale evaluation.
-    \item Comparison with baselines: Fixed-Time Control, Actuated Control, and Independent DQN.
+    \item a real arterial network of Hai Chau district, Da Nang (53 signalized intersections), imported from OpenStreetMap and converted through SUMO into the CityFlow format;
+    \item four demand regimes ranging from a dense, oversaturated baseline to a calibrated realistic-peak scenario;
+    \item comparison against tuned Fixed-Time, the Max-Pressure heuristic, and Random baselines.
 \end{enumerate}
 
-The experimental results (detailed in Chapter~4) will demonstrate the efficiency, adaptability, and coordination capability of the proposed model in improving urban traffic performance under diverse scenarios.
+\paragraph{Scope: what is validated versus proposed.} To keep the claims precise, we distinguish the parts of the framework that are \emph{implemented and empirically validated} in Chapter~4 from those presented as \emph{proposed framework and future work}. \textbf{Validated:} the parameter-shared DQN acting on local per-intersection observations (queue counts and current phase), the reward/state/architecture ablations, and the four-scenario benchmark against Fixed-Time, Max-Pressure, and Random. \textbf{Proposed framework / future work:} the inter-agent communication and coordination layer, the centralized-training/decentralized-execution value-decomposition (QMIX/VDN) and graph-attention variants, and the actor-critic algorithms surveyed in the methodology --- these define the design space and the roadmap toward surpassing Max-Pressure, but are not among the results reported here. The experimental results are detailed in Chapter~4.
 
 
 \section{Structure of the Thesis}
@@ -318,7 +320,7 @@ Machine learning-based approaches, including regression, neural networks, and fu
 Reinforcement learning (RL) has recently gained popularity for traffic control due to its capability to learn adaptive policies through interaction with the environment. Single-agent RL models—such as Deep Q-Networks (DQN) or policy gradient methods—have been applied to optimize phase switching at individual intersections \cite{DQN_Traffic2022,PolicyGradient2023}. While these approaches show promise, they often fail to generalize in multi-intersection networks due to lack of coordination mechanisms \cite{IQLTraffic2021,CooperativeRL2022}.
 
 \subsection*{Evaluation Setups and Simulators}
-Microscopic simulators provide safe, controllable environments to benchmark algorithms. SUMO is widely adopted for its open-source tooling, reproducibility, and TraCI interface for online control \cite{Lopez_2018}. CityFlow and VISSIM are also used, but this thesis prioritizes SUMO \cite{CityFlow_2019,SimulationPlatforms_Comparison2023}. Typical setups include (a) synthetic grids (e.g., $3\times3$, $4\times4$) with controlled demand patterns and (b) real maps imported from OpenStreetMap (OSM) with calibrated demand \cite{OSM_SUMO_2022}. Benchmarks often compare against fixed-time, actuated, and classical adaptive baselines.
+Microscopic simulators provide safe, controllable environments to benchmark algorithms. SUMO is widely adopted for its open-source tooling, reproducibility, and TraCI interface for online control \cite{Lopez_2018}. CityFlow is a high-throughput simulator purpose-built for large-scale, learning-based signal control; this thesis uses CityFlow as its simulation engine, with SUMO used only for network conversion \cite{CityFlow_2019,SimulationPlatforms_Comparison2023}. Typical setups include (a) synthetic grids (e.g., $3\times3$, $4\times4$) with controlled demand patterns and (b) real maps imported from OpenStreetMap (OSM) with calibrated demand \cite{OSM_SUMO_2022}. Benchmarks often compare against fixed-time, actuated, and classical adaptive baselines.
 
 \subsection*{Common Metrics}
 Studies commonly report: average travel time, average delay, queue length, intersection throughput, stop counts, and network speed \cite{AdaptiveReview_2023,DRL_Transportation_2023}. Pressure-based metrics additionally consider demand-supply imbalance \cite{MaxPressure_2013,CoordinatedDQL_2022}. Robustness indicators include variance across seeds, sensitivity to demand patterns, and performance under sensor noise \cite{Du_2023}.
@@ -454,7 +456,7 @@ We employ a domain-aware reward integrating delay, queue, and throughput to bala
 \[
 r_v(t) = -\alpha \cdot \text{avg\_delay}_v(t) - \beta \cdot \text{queue\_len}_v(t) + \gamma' \cdot \text{throughput}_v(t),
 \]
-with non-negative weights $\alpha,\beta,\gamma'$. We also consider pressure-based shaping, inspired by Max-Pressure control, where lane pressure $p_{l}=x_l-\sum_{l'\in\text{down}(l)} x_{l'}$ and intersection pressure is the sum across movements \cite{CoordinatedDQL_2022,QMIX_TSC_2022}. Reward ablations and sensitivity analysis are planned for the experimental chapter.
+with non-negative weights $\alpha,\beta,\gamma'$. We also consider pressure-based shaping, inspired by Max-Pressure control, where lane pressure $p_{l}=x_l-\sum_{l'\in\text{down}(l)} x_{l'}$ and intersection pressure is the sum across movements \cite{CoordinatedDQL_2022,QMIX_TSC_2022}. Reward ablations and sensitivity analysis are reported in the Experiments and Results chapter.
 
 In grid networks, an auxiliary green-wave bonus can incentivize progression along corridors by rewarding coordinated offsets when platoons are detected. Penalties for phase chattering discourage frequent toggling and oscillations.
 
@@ -469,17 +471,19 @@ Our framework supports both value-based and policy-based methods under centraliz
 \end{itemize}
 The choice can be tailored to network scale, communication budget, and training resources.
 
+Among these options, the experiments in this thesis instantiate and evaluate the \emph{value-based, parameter-shared DQN} --- a single Q-network shared across all intersections and trained on pooled transitions. The policy-based, value-decomposition (VDN/QMIX), actor-critic, and graph-attention variants listed above define the framework's design space and are left as future work; the algorithm below states the general CTDE template of which the implemented controller is the parameter-shared, value-based special case.
+
 \begin{algorithm}
-\caption{CTDE MARL for Traffic Signal Control in SUMO}
+\caption{General CTDE MARL framework for traffic signal control (the implemented instance is the parameter-shared DQN evaluated in the Experiments and Results chapter).}
 \label{alg:ctde}
 \begin{algorithmic}[1]
 \State Initialize policies $\{\pi_{\theta_v}\}_{v\in V}$ and, if used, a centralized critic $Q_{\psi}$
 \For{each training episode}
-  \State Reset SUMO scenario; warm-up vehicles; set initial phases
+  \State Reset simulator scenario; warm-up vehicles; set initial phases
   \For{each step $t=0,1,\dots,T$}
     \State Each agent $v$ observes $s_v(t)$
     \State Each agent selects $a_v(t) \sim \pi_{\theta_v}(\cdot\mid s_v(t))$ subject to masks
-    \State Apply joint action in SUMO via TraCI; advance simulation
+    \State Apply joint action in the simulator; advance simulation
     \State Receive rewards $r_v(t)$ and next states $s_v(t+1)$
     \State Store transitions in replay buffers (shared or per-agent)
     \State Update $\{\pi_{\theta_v}\}$ and $Q_{\psi}$ under CTDE (e.g., QMIX/VDN/MAAC)
@@ -503,7 +507,7 @@ For corridor-oriented networks, we optionally aggregate neighbor messages along 
 
 Training is conducted in microscopic simulators with OpenAI Gym-style interfaces, such as SUMO or CityFlow \cite{SimulationPlatforms_Comparison2023,Lopez_2018,CityFlow_2019}. We employ episodic training with replay buffers (for off-policy algorithms) and curriculum over traffic demand patterns to improve generalization \cite{Curriculum_TSC_2023,MetaTraffic2023}. Stabilization techniques include target networks, entropy regularization, prioritized replay, and gradient clipping \cite{DeepTraffic2023,MARL_Coordinated_Access2023}.
 
-For SUMO integration, TraCI retrieves detector states, queues, and speeds, while actions set signal programs or phase indices each control step. Demand curricula alternate peak and off-peak flows and inject incident perturbations (e.g., lane closures) to assess robustness.
+The simulator interface retrieves per-lane queue and phase states, while actions set the next phase index each control step (the implemented instance uses the CityFlow engine rather than SUMO/TraCI). Demand curricula alternate peak and off-peak flows and inject incident perturbations (e.g., lane closures) to assess robustness.
 
 \section{Safety and Operational Constraints}
 
@@ -512,6 +516,9 @@ We integrate rule-based guards alongside RL to ensure compliance with traffic sa
 \section{Complexity and Scalability Considerations}
 
 The decentralized design scales linearly with the number of intersections for observation and inference. Communication and training complexity depends on neighborhood degree and chosen coordination method. Grouping intersections (e.g., by corridors) can further reduce overhead while preserving coordination \cite{GPLight_IJCAI2023,HierLight_2023}.
+
+% ===== Chapter 4: Experiments and Results (real CityFlow / Hai Chau results) =====
+\input{chapter4_experiments_results}
 
 \chapter{Discussion}
 
@@ -535,7 +542,7 @@ Potential limitations include performance sensitivity to reward weights, communi
 
 \chapter{Conclusion and Future Work}
 
-We proposed a scalable, coordination-aware RL framework for multi-intersection traffic signal control with domain-informed reward design and safety constraints. The approach supports multiple learning algorithms under CTDE, limited neighbor communication, and practical deployment considerations. Future work will include: (i) comprehensive experiments across grid and real-world maps in SUMO, (ii) ablations over reward shaping and communication, (iii) transfer learning across heterogeneous networks, and (iv) integration of model-based planning and federated learning for privacy-preserving, city-scale optimization \cite{FederatedMARL_TRC2024,ModelBased_TSC_2024}.
+We proposed a scalable, coordination-aware RL framework for multi-intersection traffic signal control with domain-informed reward design and safety constraints, and we implemented and evaluated its core parameter-shared DQN instance on a real arterial network of Hai Chau, Da Nang, in CityFlow. The learned controller clears the tuned Fixed-Time and Random baselines --- reducing cumulative waiting time by up to $37.1\%$ over Fixed-Time at realistic peak demand --- and converges to Max-Pressure-level performance while learning purely from local queue counts, without a hand-crafted pressure formula. A systematic multi-seed ablation over reward, state, and architecture showed that no local-observation variant surpasses Max-Pressure (even a dueling head whose best single seed dipped below Max-Pressure had its full 95\% confidence interval above it), and identified downstream-aware state and inter-agent coordination as the missing ingredients. Future work will therefore focus on: (i) neighbour-coordinated observations (e.g., CoLight-style attention) and effective-range demand features to surpass Max-Pressure; (ii) robustness under sensor noise, incidents, and demand shift; (iii) transfer learning across heterogeneous networks; and (iv) model-based planning and federated learning for privacy-preserving, city-scale optimization \cite{FederatedMARL_TRC2024,ModelBased_TSC_2024}.
 
 % Tài liệu tham khảo (References)
 \cleardoublepage

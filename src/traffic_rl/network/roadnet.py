@@ -104,3 +104,21 @@ class RoadNet:
         """Roads starting at a virtual (boundary) intersection — flow spawn points."""
         virtual = {i["id"] for i in self.intersections if i.get("virtual")}
         return [r["id"] for r in self.roads if r["startIntersection"] in virtual]
+
+    def upstream_neighbors(self, inter_id: str) -> List[str]:
+        """Signalized intersections that feed traffic INTO inter_id.
+
+        A road incoming to inter_id (endIntersection == inter_id) starts at some
+        upstream intersection; if that upstream node is itself signalized it is an
+        upstream neighbour. Used by the neighbour-coordinated ("CoLight-lite") state
+        so an agent can anticipate approaching demand — the signal Max-Pressure lacks.
+        """
+        sig = set(self.signalized_ids())
+        out: List[str] = []
+        for road_id in self._by_id[inter_id]["roads"]:
+            road = self._road_by_id[road_id]
+            if road["endIntersection"] == inter_id:
+                up = road["startIntersection"]
+                if up != inter_id and up in sig and up not in out:
+                    out.append(up)
+        return out

@@ -32,8 +32,21 @@ class ObservationEncoder:
             self.obs_dim = 2 * self.max_in + self.max_out + self.max_green
         elif state_mode == "basic":
             self.obs_dim = self.max_in + self.max_out + self.max_green
+        elif state_mode == "neighbor":
+            # basic + 2 mean-pooled upstream-neighbour features (CoLight-lite).
+            self.obs_dim = self.max_in + self.max_out + self.max_green + 2
+            self._nb_in = {}
+            self._nb_out = {}
+            for i in ids:
+                nbs = roadnet.upstream_neighbors(i)
+                nin, nout = [], []
+                for n in nbs:
+                    nin.extend(roadnet.incoming_lanes(n))
+                    nout.extend(roadnet.outgoing_lanes(n))
+                self._nb_in[i] = nin
+                self._nb_out[i] = nout
         else:
-            raise ValueError("unknown state_mode %r (basic|ats)" % state_mode)
+            raise ValueError("unknown state_mode %r (basic|ats|neighbor)" % state_mode)
 
     def num_greens(self, inter_id):
         return len(self._greens[inter_id])
@@ -54,6 +67,14 @@ class ObservationEncoder:
             v[self.max_in + k] = lane_counts.get(lane, 0) / self.count_norm
         if 0 <= green_index < self.num_greens(inter_id):
             v[self.max_in + self.max_out + green_index] = 1.0
+        if self.state_mode == "neighbor":
+            base = self.max_in + self.max_out + self.max_green
+            nin = self._nb_in[inter_id]
+            nout = self._nb_out[inter_id]
+            if nin:
+                v[base] = sum(lane_counts.get(l, 0) for l in nin) / len(nin) / self.count_norm
+            if nout:
+                v[base + 1] = sum(lane_counts.get(l, 0) for l in nout) / len(nout) / self.count_norm
         return v
 
     def _encode_ats(self, inter_id, lane_counts, waiting_counts, green_index):
