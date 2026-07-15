@@ -265,6 +265,37 @@ mean $\pm$ 95\% CI over five training seeds; baselines are deterministic.}
   \label{fig:rush}
 \end{figure}
 
+\subsection{Robustness to Sensor Noise}
+\label{sec:robustness}
+
+A controller that relies on live vehicle counts is only useful if it tolerates imperfect
+sensing \cite{RESCO_2021}. We stress-test this by corrupting every controller's per-lane count
+observations with zero-mean Gaussian noise of increasing magnitude (standard deviation scaled by
+the lane count, up to $0.8\times$), while measuring the \emph{ground-truth} queue --- so the
+noise degrades only what a policy actually consumes, not the reported metric. Fixed-Time and
+Random, which ignore counts, are therefore invariant by construction --- a useful sanity control.
+Figure~\ref{fig:robustness} shows the result on the headline \texttt{haichau\_rush} regime.
+
+Both count-based controllers are \textbf{robust}: even at $0.8\times$ per-lane noise the
+ground-truth queue rises by at most $\sim$4--8\% (Max-Pressure $388\!\to\!402$, DQN
+$448\!\to\!467$), and both remain far below the noise-blind Fixed-Time ($696$) at every level.
+Max-Pressure is marginally the more stable of the two and the DQN is comparable --- we find
+\emph{no} robustness advantage for either, but the practical point stands: the learned
+controller degrades gracefully under substantial sensing error and is deployable without
+idealized sensors. The same pattern holds on \texttt{haichau\_calib}. Phase-selection
+controllers are inherently noise-tolerant here because each decision aggregates many lanes, so
+independent per-lane errors largely cancel in the phase comparison.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{../results/presentation/robustness_haichau_rush.png}
+  \caption{Robustness to sensor noise on \texttt{haichau\_rush}: ground-truth mean total queue
+  vs.\ observation-noise level. Max-Pressure and the DQN stay low and nearly flat; the
+  observation-blind Fixed-Time and Random are invariant by construction, confirming the metric
+  measures true performance rather than the noisy sensor.}
+  \label{fig:robustness}
+\end{figure}
+
 \section{Ablation Study}
 \label{sec:ablation}
 

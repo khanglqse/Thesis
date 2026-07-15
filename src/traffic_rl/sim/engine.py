@@ -33,6 +33,13 @@ class CityFlowEngine(object):
         # type: () -> dict
         return dict(self._eng.get_lane_waiting_vehicle_count())
 
+    def true_lane_waiting_counts(self):
+        # type: () -> dict
+        # Ground-truth queue for METRIC computation. Identical to lane_waiting_counts()
+        # for a real engine; PerturbedEngine overrides it to return UNPERTURBED counts so
+        # that sensor-noise robustness measures true performance, not the noisy sensor.
+        return self.lane_waiting_counts()
+
     def vehicle_count(self):
         # type: () -> int
         return int(self._eng.get_vehicle_count())

@@ -67,3 +67,10 @@ class PerturbedEngine(object):
 
     def lane_waiting_counts(self):
         return self._perturb(self._inner.lane_waiting_counts())
+
+    def true_lane_waiting_counts(self):
+        # Ground-truth (unperturbed) queue for the METRIC. The controller reads the
+        # perturbed lane_waiting_counts()/lane_vehicle_counts() above; performance is
+        # measured on the real queue so sensor noise degrades only what a policy actually
+        # consumes, not the reported metric (Fixed-Time/Random stay flat by construction).
+        return self._inner.lane_waiting_counts()

@@ -105,10 +105,15 @@ class MultiAgentTrafficEnv:
         waiting = self.engine.lane_waiting_counts()
         rewards = {a: self._reward_fn(self.states[a], waiting) for a in self.agent_ids}
         done = self._t >= self.max_steps
+        # Metric uses GROUND-TRUTH queue (== waiting for a real engine; unperturbed under
+        # PerturbedEngine) so sensor-noise robustness measures true performance, not the
+        # noisy sensor. Reward/observation stay on the perturbed path above.
+        true_waiting = (self.engine.true_lane_waiting_counts()
+                        if hasattr(self.engine, "true_lane_waiting_counts") else waiting)
         info = {
             "average_travel_time": self.engine.average_travel_time(),
             "vehicle_count": self.engine.vehicle_count(),
-            "total_queue": float(sum(waiting.values())),
+            "total_queue": float(sum(true_waiting.values())),
             "step": self._t,
         }
         return self._observations(), rewards, done, info
