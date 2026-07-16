@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Sandbox RL — Agent điều khiển đèn (live)</title>
+  <link rel="stylesheet" href="sandbox.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Agent RL đang điều khiển đèn tín hiệu — chạy trực tiếp</h1>
+      <p class="note">Micro-model minh hoạ <b>chính policy đã huấn luyện</b> (haichau_rush DQN).
+        Con số định lượng đầy đủ trên mạng 53 nút ở Chương 4.</p>
+    </header>
+    <main>
+      <section id="stage">
+        <canvas id="canvas" width="720" height="720"></canvas>
+        <div id="phase-banner">Pha đang xanh: <span id="phase-label">—</span></div>
+      </section>
+      <aside id="side">
+        <div id="controls"></div>
+        <div id="scoreboard"></div>
+        <div id="qbars"></div>
+        <div id="log"></div>
+      </aside>
+    </main>
+  </div>
+  <script src="sandbox_core.js"></script>
+  <script src="sandbox.js"></script>
+</body>
+</html>
