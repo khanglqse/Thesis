@@ -85,7 +85,11 @@ def score_intersection(rn, inter_id):
     # a "clean" green phase serves a strict subset of roadLinks (not all-green)
     clean = sum(1 for g in greens if 0 < len(lp[g].get("availableRoadLinks", [])) < n_links)
     n_in = len(_incoming_road_ids(rn, inter_id))
-    return (min(n_in, 4), clean, len(greens))
+    # a node with NO all-green phase must always outrank one that has any,
+    # regardless of in-approach count or raw phase count (Max-Pressure would
+    # otherwise camp on the all-green phase and the sandbox demo degenerates).
+    no_allgreen = 1 if (greens and clean == len(greens)) else 0
+    return (no_allgreen, min(n_in, 4), clean, len(greens))
 
 
 def pick_intersection(rn):
@@ -167,8 +171,9 @@ def main():
     if args.list:
         ranked = sorted(rn.signalized_ids(), key=lambda i: score_intersection(rn, i), reverse=True)
         for i in ranked[:10]:
-            n_in, clean, ng = score_intersection(rn, i)
-            print("{:>2} in-approaches  {:>2} clean-phases  {:>2} greens   {}".format(n_in, clean, ng, i))
+            no_allgreen, n_in, clean, ng = score_intersection(rn, i)
+            print("{:>2} no-allgreen  {:>2} in-approaches  {:>2} clean-phases  {:>2} greens   {}".format(
+                no_allgreen, n_in, clean, ng, i))
         return 0
 
     inter_id = args.inter or pick_intersection(rn)
