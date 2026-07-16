@@ -106,7 +106,7 @@
     let visCtrl = C.CONTROLLERS[ctrlKey](s.model);
     let fixedCtrl = C.CONTROLLERS.fixed_time(s.model);
     const rng = C.mulberry32(99);
-    const sb = new C.Scoreboard();
+    let sb = new C.Scoreboard();
     let sinceDecision = 0;
     const rate = () => {
       const r = {}; for (const ap of it.geometry.approaches) if (ap.role === "in") r[ap.road] = demand; return r;
@@ -135,7 +135,7 @@
         for (let sub = 0; sub < speed; sub++) {
           visible.arrivals(dt, rate()); shadow.arrivals(dt, rate());
           visible.dischargeAndDecay(dt); shadow.dischargeAndDecay(dt);
-          sb.accumulate(visCtrl.labelVi === "Cố định (Fixed-Time)" ? "Fixed-Time" : visCtrl.name === "DQN" ? "DQN" : visCtrl.name, visible.totalQueue(), dt);
+          sb.accumulate(visCtrl.name, visible.totalQueue(), dt);
           sb.accumulate("Fixed-Time", shadow.totalQueue(), dt);
           sinceDecision += dt;
           if (sinceDecision >= meta.action_interval) {
@@ -151,7 +151,12 @@
     }
 
     buildControls(s, {
-      ctrl: (v) => { ctrlKey = v; visCtrl = C.CONTROLLERS[v](s.model); },
+      ctrl: (v) => {
+        ctrlKey = v; visCtrl = C.CONTROLLERS[v](s.model);
+        sb = new C.Scoreboard();
+        document.getElementById("scoreboard").innerHTML = "";
+        sinceDecision = 0;
+      },
       demand: (v) => { demand = v; },
       speed: (v) => { speed = v; },
       togglePlay: () => { playing = !playing; document.getElementById("play").textContent = playing ? "Tạm dừng" : "Tiếp tục"; },
@@ -159,6 +164,7 @@
         visible = s.micro = new C.MicroModel(it, meta, C.mulberry32(42));
         shadow = new C.MicroModel(it, meta, C.mulberry32(42));
         sb.acc = {}; document.getElementById("log").innerHTML = ""; s.greenIdx = 0;
+        sinceDecision = 0;
       },
     });
     tick();
