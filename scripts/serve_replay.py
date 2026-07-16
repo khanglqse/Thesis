@@ -41,6 +41,8 @@ def main():
 
     print("Serving {} at http://localhost:{}/".format(ROOT, args.port))
     print("Open: {}".format(url))
+    print("Sandbox (live RL, no container): "
+          "http://localhost:{}/frontend/sandbox.html".format(args.port))
     print("In the page, pick:")
     print("  Roadnet file: {}".format(roadnet))
     if demo_dir.exists():
