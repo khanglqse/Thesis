@@ -62,5 +62,69 @@
     }
   }
 
-  return { Net, Encoder };
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const SAT_PER_LANE = 0.5;      // veh/s discharged per lane on green
+  const OUT_DECAY = 0.3;         // fraction/s outgoing occupancy drains downstream
+
+  class MicroModel {
+    constructor(intersection, meta, rng) {
+      this.it = intersection; this.meta = meta; this.rng = rng;
+      this.t = 0; this.greenIdx = 0; this.sinceSwitch = 0; this.yellowLeft = 0;
+      this.inCounts = {}; this.outCounts = {};
+      for (const l of intersection.incoming_lanes) this.inCounts[l] = 0;
+      for (const l of intersection.outgoing_lanes) this.outCounts[l] = 0;
+      // road -> its incoming lane ids (for spreading arrivals)
+      this._inLanesByRoad = {};
+      for (const ap of intersection.geometry.approaches)
+        if (ap.role === "in") this._inLanesByRoad[ap.road] = ap.lanes;
+    }
+    arrivals(dt, ratePerApproach) {
+      for (const road in this._inLanesByRoad) {
+        const lanes = this._inLanesByRoad[road];
+        const lam = (ratePerApproach[road] || 0) * dt;
+        // expected lam arrivals spread across the road's lanes; Bernoulli per unit
+        let n = 0; for (let k = 0; k < Math.ceil(lam) + 2; k++) if (this.rng() < lam / (Math.ceil(lam) + 2)) n++;
+        for (let i = 0; i < n; i++) this.inCounts[lanes[i % lanes.length]] += 1;
+      }
+    }
+    dischargeAndDecay(dt) {
+      if (this.yellowLeft > 0) { this.yellowLeft = Math.max(0, this.yellowLeft - dt); }
+      else {
+        const ph = this.it.green_phases[this.greenIdx];
+        for (const mv of ph.movements) {
+          for (const il of mv.in_lanes) {
+            const move = Math.min(this.inCounts[il], SAT_PER_LANE * dt);
+            this.inCounts[il] -= move;
+            const ol = mv.out_lanes[0];
+            if (ol != null) this.outCounts[ol] += move;
+          }
+        }
+      }
+      for (const ol in this.outCounts) this.outCounts[ol] = Math.max(0, this.outCounts[ol] * (1 - OUT_DECAY * dt));
+      this.t += dt; this.sinceSwitch += dt;
+    }
+    laneCountsIn() { return this.inCounts; }
+    laneCountsOut() { return this.outCounts; }
+    totalQueue() { let s = 0; for (const l in this.inCounts) s += this.inCounts[l]; return s; }
+    applyChoice(choice) {
+      const old = this.greenIdx;
+      if (choice === old || choice < 0 || choice >= this.it.num_greens
+          || this.sinceSwitch < this.meta.min_green) {
+        return { changed: false, oldPhase: old, newPhase: old, yellow: 0 };
+      }
+      this.greenIdx = choice; this.sinceSwitch = 0; this.yellowLeft = this.meta.yellow_time;
+      return { changed: true, oldPhase: old, newPhase: choice, yellow: this.meta.yellow_time };
+    }
+  }
+
+  return { Net, Encoder, MicroModel, mulberry32, SAT_PER_LANE };
 });
