@@ -100,13 +100,17 @@
       if (this.yellowLeft > 0) { this.yellowLeft = Math.max(0, this.yellowLeft - dt); }
       else {
         const ph = this.it.green_phases[this.greenIdx];
+        const outFor = {};                       // unique in-lane -> representative out-lane
         for (const mv of ph.movements) {
           for (const il of mv.in_lanes) {
-            const move = Math.min(this.inCounts[il], SAT_PER_LANE * dt);
-            this.inCounts[il] -= move;
-            const ol = mv.out_lanes[0];
-            if (ol != null) this.outCounts[ol] += move;
+            if (!(il in outFor)) outFor[il] = (mv.out_lanes[0] != null ? mv.out_lanes[0] : null);
           }
+        }
+        for (const il in outFor) {
+          const move = Math.min(this.inCounts[il], SAT_PER_LANE * dt);
+          this.inCounts[il] -= move;
+          const ol = outFor[il];
+          if (ol != null) this.outCounts[ol] += move;
         }
       }
       for (const ol in this.outCounts) this.outCounts[ol] = Math.max(0, this.outCounts[ol] * (1 - OUT_DECAY * dt));
