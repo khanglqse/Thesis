@@ -130,5 +130,85 @@
     }
   }
 
-  return { Net, Encoder, MicroModel, mulberry32, SAT_PER_LANE };
+  class Agent {
+    constructor(model) {
+      this.net = new Net(model.weights, model.dims);
+      this.enc = new Encoder(model.dims, model.intersection);
+      this.enc.countNorm = model.meta.count_norm;
+      this.numGreens = model.intersection.num_greens;
+      this.nActions = model.dims.n_actions;
+    }
+    decide(micro) {
+      const x = this.enc.encode(micro.laneCountsIn(), micro.laneCountsOut(), micro.greenIdx);
+      const q = this.net.forward(x);
+      return { choice: this.net.maskedArgmax(q, this.numGreens), q };
+    }
+  }
+
+  function _phaseQueue(micro, phaseIdx) {   // summed incoming queue on a phase's served lanes
+    const ph = micro.it.green_phases[phaseIdx];
+    let s = 0;
+    for (const mv of ph.movements) for (const il of mv.in_lanes) s += micro.inCounts[il] || 0;
+    return s;
+  }
+
+  const CONTROLLERS = {
+    dqn(model) {
+      const ag = new Agent(model);
+      return { name: "DQN", labelVi: "RL (DQN)", isRL: true,
+               decide(micro) { return ag.decide(micro); } };
+    },
+    fixed_time(model) {
+      const period = model.meta.fixed_green;
+      return { name: "FixedTime", labelVi: "Cố định (Fixed-Time)", isRL: false,
+               decide(micro, ctx) {
+                 const idx = Math.floor((ctx.tSinceCycle || micro.t) / period) % micro.it.num_greens;
+                 return { choice: idx, q: null };
+               } };
+    },
+    max_pressure(model) {
+      return { name: "MaxPressure", labelVi: "Max-Pressure", isRL: false,
+               decide(micro) {
+                 let best = 0, bv = -Infinity;
+                 for (let g = 0; g < micro.it.num_greens; g++) {
+                   const v = _phaseQueue(micro, g);
+                   if (v > bv) { bv = v; best = g; }
+                 }
+                 return { choice: best, q: null };
+               } };
+    },
+    random(model) {
+      return { name: "Random", labelVi: "Ngẫu nhiên", isRL: false,
+               decide(micro, ctx) {
+                 const r = (ctx && ctx.rng) ? ctx.rng() : 0.5;
+                 return { choice: Math.floor(r * micro.it.num_greens), q: null };
+               } };
+    },
+  };
+
+  function formatDecision(evt) {
+    const head = "[t=" + Math.round(evt.t) + "s] " + evt.ctrlLabel;
+    const appr = evt.approachesVi && evt.approachesVi.length ? " · xanh cho hướng " + evt.approachesVi.join("–") : "";
+    const why = evt.reason ? " · (" + evt.reason + ")" : "";
+    const qs = (evt.qWin != null) ? " · Q=" + evt.qWin.toFixed(1) : "";
+    if (evt.changed) return head + " — đổi pha " + evt.oldPhase + "→" + evt.newPhase + appr + why + qs;
+    return head + " — giữ pha " + evt.oldPhase + " (đang xanh)" + qs;
+  }
+
+  class Scoreboard {
+    constructor() { this.acc = {}; }
+    accumulate(label, queue, dt) { this.acc[label] = (this.acc[label] || 0) + queue * dt / 3600.0; }
+    summary() {
+      const fixed = this.acc["Fixed-Time"] || 0;
+      const visited = Object.assign({}, this.acc);
+      // any non-fixed visible controller vs the fixed shadow
+      let cur = 0, curKey = null;
+      for (const k in this.acc) if (k !== "Fixed-Time") { cur = this.acc[k]; curKey = k; }
+      const deltaPctVsFixed = fixed ? (100 * (fixed - cur) / fixed) : 0;
+      return { visited, curKey, deltaPctVsFixed };
+    }
+  }
+
+  return { Net, Encoder, MicroModel, mulberry32, SAT_PER_LANE,
+           Agent, CONTROLLERS, formatDecision, Scoreboard };
 });

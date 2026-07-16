@@ -3,6 +3,7 @@ const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
 const { MicroModel, mulberry32, SAT_PER_LANE } = require("../../frontend/sandbox_core.js");
+const core = require("../../frontend/sandbox_core.js");
 
 const MODEL = JSON.parse(
   fs.readFileSync(path.join(__dirname, "../../frontend/sandbox_model.json"), "utf8"));
@@ -64,4 +65,41 @@ test("each served lane discharges at most SAT_PER_LANE per second, even when a l
       `lane ${il} drained ${drained} veh in 1s, exceeding SAT_PER_LANE=${SAT_PER_LANE}`
     );
   }
+});
+
+test("max_pressure picks the phase serving the longest queues", () => {
+  const m = new core.MicroModel(MODEL.intersection, MODEL.meta, core.mulberry32(3));
+  m.sinceSwitch = MODEL.meta.min_green;
+  // load only phase p2's served lanes heavily
+  const target = Math.min(1, MODEL.intersection.num_greens - 1);
+  const ph = MODEL.intersection.green_phases[target];
+  for (const mv of ph.movements) for (const il of mv.in_lanes) m.inCounts[il] = 20;
+  const mp = core.CONTROLLERS.max_pressure(MODEL);
+  const { choice } = mp.decide(m, { tSinceCycle: 0 });
+  assert.strictEqual(choice, target);
+});
+
+test("dqn agent returns a valid masked choice + q", () => {
+  const m = new core.MicroModel(MODEL.intersection, MODEL.meta, core.mulberry32(3));
+  const dqn = core.CONTROLLERS.dqn(MODEL);
+  const { choice, q } = dqn.decide(m, {});
+  assert.ok(choice >= 0 && choice < MODEL.intersection.num_greens);
+  assert.strictEqual(q.length, MODEL.dims.n_actions);
+});
+
+test("formatDecision renders a Vietnamese switch line", () => {
+  const line = core.formatDecision({ t: 120, ctrlLabel: "DQN", changed: true, oldPhase: 2,
+    newPhase: 0, approachesVi: ["Bắc", "Nam"], reason: "hàng chờ Bắc dài nhất", qWin: 3.1 });
+  assert.ok(line.includes("120"));
+  assert.ok(line.includes("DQN"));
+  assert.ok(line.includes("→") || line.includes("->"));
+  assert.ok(line.includes("Bắc"));
+});
+
+test("scoreboard computes veh-hours and delta vs fixed", () => {
+  const sb = new core.Scoreboard();
+  for (let i = 0; i < 360; i++) { sb.accumulate("DQN", 10, 10); sb.accumulate("Fixed-Time", 20, 10); }
+  const s = sb.summary();
+  assert.ok(s.visited["DQN"] > 0 && s.visited["Fixed-Time"] > s.visited["DQN"]);
+  assert.ok(s.deltaPctVsFixed > 0);   // DQN better -> positive % reduction
 });
