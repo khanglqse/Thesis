@@ -62,6 +62,94 @@ def parity_samples(net, obs_dim, n_actions, n, seed):
     return out
 
 
+_COMPASS_VI = ["Đông", "Đông Bắc", "Bắc", "Tây Bắc", "Tây", "Tây Nam", "Nam", "Đông Nam"]
+
+
+def bearing_deg(cx, cy, px, py):
+    return (math.degrees(math.atan2(py - cy, px - cx)) + 360.0) % 360.0
+
+
+def compass_vi(bearing):
+    return _COMPASS_VI[int((bearing + 22.5) // 45) % 8]
+
+
+def _incoming_road_ids(rn, inter_id):
+    return [r for r in rn._by_id[inter_id]["roads"]
+            if rn._road_by_id[r]["endIntersection"] == inter_id]
+
+
+def score_intersection(rn, inter_id):
+    greens = rn.green_phases(inter_id)
+    lp = rn._lightphases(inter_id)
+    n_links = len(rn._by_id[inter_id].get("roadLinks", []))
+    # a "clean" green phase serves a strict subset of roadLinks (not all-green)
+    clean = sum(1 for g in greens if 0 < len(lp[g].get("availableRoadLinks", [])) < n_links)
+    n_in = len(_incoming_road_ids(rn, inter_id))
+    return (min(n_in, 4), clean, len(greens))
+
+
+def pick_intersection(rn):
+    return max(rn.signalized_ids(), key=lambda i: score_intersection(rn, i))
+
+
+def _far_point(rn, road_id, cx, cy):
+    pts = rn._road_by_id[road_id]["points"]
+    return max(pts, key=lambda p: (p["x"] - cx) ** 2 + (p["y"] - cy) ** 2)
+
+
+def intersection_block(rn, enc, inter_id):
+    inter = rn._by_id[inter_id]
+    cx, cy = inter["point"]["x"], inter["point"]["y"]
+    incoming = rn.incoming_lanes(inter_id)
+    outgoing = rn.outgoing_lanes(inter_id)
+    road_links = inter["roadLinks"]
+    greens = rn.green_phases(inter_id)
+    lp = rn._lightphases(inter_id)
+
+    def road_lane_ids(road_id):
+        n = len(rn._road_by_id[road_id]["lanes"])
+        return ["{}_{}".format(road_id, k) for k in range(n)]
+
+    def approach_label(road_id):
+        fp = _far_point(rn, road_id, cx, cy)
+        return compass_vi(bearing_deg(cx, cy, fp["x"], fp["y"]))
+
+    phases = []
+    for g in greens:
+        movements, appset = [], []
+        for rl_idx in lp[g].get("availableRoadLinks", []):
+            rl = road_links[rl_idx]
+            in_l, out_l = [], []
+            for ll in rl["laneLinks"]:
+                il = "{}_{}".format(rl["startRoad"], ll["startLaneIndex"])
+                ol = "{}_{}".format(rl["endRoad"], ll["endLaneIndex"])
+                if il not in in_l:
+                    in_l.append(il)
+                if ol not in out_l:
+                    out_l.append(ol)
+            movements.append({"from_road": rl["startRoad"], "to_road": rl["endRoad"],
+                              "in_lanes": in_l, "out_lanes": out_l,
+                              "turn": rl.get("type", "go_straight")})
+            lab = approach_label(rl["startRoad"])
+            if lab not in appset:
+                appset.append(lab)
+        phases.append({"phase_index": g, "movements": movements, "approaches_vi": appset})
+
+    approaches = []
+    for road_id in inter["roads"]:
+        road = rn._road_by_id[road_id]
+        role = "in" if road["endIntersection"] == inter_id else "out"
+        fp = _far_point(rn, road_id, cx, cy)
+        approaches.append({"road": road_id, "role": role,
+                           "angle_deg": bearing_deg(cx, cy, fp["x"], fp["y"]),
+                           "compass_vi": compass_vi(bearing_deg(cx, cy, fp["x"], fp["y"])),
+                           "lanes": road_lane_ids(road_id)})
+
+    return {"incoming_lanes": incoming, "outgoing_lanes": outgoing,
+            "num_greens": len(greens), "green_phases": phases,
+            "geometry": {"center": [cx, cy], "approaches": approaches}}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--area", default="haichau_rush")
@@ -76,17 +164,23 @@ def main():
     ckpt = args.ckpt or "results/{a}/dqn_{a}.npz".format(a=args.area)
     rn, enc, net, weights = load_bundle(args.area, ckpt, scen["count_norm"], scen["state_mode"])
 
-    # (Task 2 fills in intersection selection, geometry, phase movements, and the
-    # full bundle. Task 1 stops after weights/dims/parity so the parity path is
-    # testable on its own.)
+    if args.list:
+        ranked = sorted(rn.signalized_ids(), key=lambda i: score_intersection(rn, i), reverse=True)
+        for i in ranked[:10]:
+            n_in, clean, ng = score_intersection(rn, i)
+            print("{:>2} in-approaches  {:>2} clean-phases  {:>2} greens   {}".format(n_in, clean, ng, i))
+        return 0
+
+    inter_id = args.inter or pick_intersection(rn)
     bundle = {
-        "meta": {"area": args.area, "state_mode": scen["state_mode"],
-                 "count_norm": scen["count_norm"], "fixed_green": scen["fixed_green"],
-                 "action_interval": 10, "min_green": 10, "yellow_time": 3,
-                 "dueling": "Wv" in weights},
+        "meta": {"area": args.area, "intersection_id": inter_id,
+                 "state_mode": scen["state_mode"], "count_norm": scen["count_norm"],
+                 "fixed_green": scen["fixed_green"], "action_interval": 10,
+                 "min_green": 10, "yellow_time": 3, "dueling": "Wv" in weights},
         "dims": {"max_in": enc.max_in, "max_out": enc.max_out, "max_green": enc.max_green,
                  "obs_dim": enc.obs_dim, "hidden": int(np.asarray(weights["W1"]).shape[1]),
                  "n_actions": enc.max_green},
+        "intersection": intersection_block(rn, enc, inter_id),
         "weights": weights,
         "parity": parity_samples(net, enc.obs_dim, enc.max_green, args.samples, seed=1),
     }

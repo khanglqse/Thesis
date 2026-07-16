@@ -28,3 +28,34 @@ def test_parity_samples_are_self_consistent():
         got = export.forward_mirror(weights, s["obs"])
         assert np.allclose(got, s["q"], atol=1e-5)
         assert int(np.argmax(s["q"])) == s["greedy"]
+
+
+def test_intersection_block_lane_ordering_and_phases():
+    rn, enc, net, weights = export.load_bundle(AREA, CKPT, count_norm=5.0, state_mode="basic")
+    inter_id = export.pick_intersection(rn)
+    blk = export.intersection_block(rn, enc, inter_id)
+    # lane order must match the encoder's, so obs slots line up with training
+    assert blk["incoming_lanes"] == rn.incoming_lanes(inter_id)
+    assert blk["outgoing_lanes"] == rn.outgoing_lanes(inter_id)
+    assert blk["num_greens"] == len(rn.green_phases(inter_id))
+    assert blk["num_greens"] >= 3
+    inset = set(blk["incoming_lanes"])
+    outset = set(blk["outgoing_lanes"])
+    for ph in blk["green_phases"]:
+        assert ph["movements"], "green phase with no movements"
+        for mv in ph["movements"]:
+            assert set(mv["in_lanes"]) <= inset
+            assert set(mv["out_lanes"]) <= outset
+            assert mv["turn"] in ("go_straight", "turn_left", "turn_right", "turn_u")
+    # geometry: one approach entry per road touching the intersection
+    assert len(blk["geometry"]["approaches"]) == len(rn._by_id[inter_id]["roads"])
+    for ap in blk["geometry"]["approaches"]:
+        assert ap["role"] in ("in", "out")
+        assert 0.0 <= ap["angle_deg"] < 360.0
+
+
+def test_compass_buckets():
+    assert export.compass_vi(0.0) == "Đông"
+    assert export.compass_vi(90.0) == "Bắc"
+    assert export.compass_vi(180.0) == "Tây"
+    assert export.compass_vi(270.0) == "Nam"
