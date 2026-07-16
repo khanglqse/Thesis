@@ -74,6 +74,133 @@
     return set;
   }
 
-  window.__sandboxDraw = drawFrame;         // Task 7 calls this each tick
+  window.__sandboxDraw = drawFrame;
   window.__sandboxServed = servedInLanes;
+
+  function buildControls(s, onChange) {
+    const it = s.model.intersection;
+    const el = document.getElementById("controls");
+    const ctrlOpts = [["dqn", "RL (DQN)"], ["fixed_time", "Cố định"], ["max_pressure", "Max-Pressure"], ["random", "Ngẫu nhiên"]]
+      .map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+    el.innerHTML =
+      `<label>Bộ điều khiển: <select id="ctrl">${ctrlOpts}</select></label>` +
+      `<label>Lưu lượng: <input id="demand" type="range" min="0" max="0.6" step="0.02" value="0.35"></label>` +
+      `<label>Tốc độ: <input id="speed" type="range" min="1" max="20" step="1" value="6"></label>` +
+      `<button id="play">Tạm dừng</button> <button id="reset">Đặt lại</button>`;
+    document.getElementById("ctrl").onchange = (e) => onChange.ctrl(e.target.value);
+    document.getElementById("demand").oninput = (e) => onChange.demand(parseFloat(e.target.value));
+    document.getElementById("speed").oninput = (e) => onChange.speed(parseInt(e.target.value, 10));
+    document.getElementById("play").onclick = () => onChange.togglePlay();
+    document.getElementById("reset").onclick = () => onChange.reset();
+  }
+
+  function approachesViForPhase(it, greenIdx) {
+    return it.green_phases[greenIdx].approaches_vi || [];
+  }
+
+  function runLoop(s) {
+    const C = window.SandboxCore, it = s.model.intersection, meta = s.model.meta;
+    let ctrlKey = "dqn", demand = 0.35, speed = 6, playing = true;
+    let visible = s.micro;
+    let shadow = new C.MicroModel(it, meta, C.mulberry32(42));   // same seed => same arrivals
+    let visCtrl = C.CONTROLLERS[ctrlKey](s.model);
+    let fixedCtrl = C.CONTROLLERS.fixed_time(s.model);
+    const rng = C.mulberry32(99);
+    const sb = new C.Scoreboard();
+    let sinceDecision = 0;
+    const rate = () => {
+      const r = {}; for (const ap of it.geometry.approaches) if (ap.role === "in") r[ap.road] = demand; return r;
+    };
+
+    function decide(micro, ctrl, label, isRL) {
+      const { choice, q } = ctrl.decide(micro, { tSinceCycle: micro.t, rng });
+      const res = micro.applyChoice(choice);
+      s.greenIdx = visible.greenIdx;
+      if (micro === visible) {
+        s.flash = 6;
+        updateQBars(s, q);
+        updatePhaseBanner(s);
+        const appr = approachesViForPhase(it, micro.greenIdx);
+        let reason = "";
+        if (q) { let mx = -Infinity, mi = 0; for (let j = 0; j < it.num_greens; j++) if (q[j] > mx) { mx = q[j]; mi = j; } reason = "Q lớn nhất ở pha " + mi; }
+        logLine(s, C.formatDecision({ t: micro.t, ctrlLabel: label, changed: res.changed,
+          oldPhase: res.oldPhase, newPhase: res.newPhase, approachesVi: appr, reason,
+          qWin: q ? Math.max.apply(null, Array.from(q).slice(0, it.num_greens)) : null }), isRL);
+      }
+    }
+
+    function tick() {
+      if (playing) {
+        const dt = 1.0;
+        for (let sub = 0; sub < speed; sub++) {
+          visible.arrivals(dt, rate()); shadow.arrivals(dt, rate());
+          visible.dischargeAndDecay(dt); shadow.dischargeAndDecay(dt);
+          sb.accumulate(visCtrl.labelVi === "Cố định (Fixed-Time)" ? "Fixed-Time" : visCtrl.name === "DQN" ? "DQN" : visCtrl.name, visible.totalQueue(), dt);
+          sb.accumulate("Fixed-Time", shadow.totalQueue(), dt);
+          sinceDecision += dt;
+          if (sinceDecision >= meta.action_interval) {
+            sinceDecision = 0;
+            decide(visible, visCtrl, visCtrl.labelVi, visCtrl.isRL);
+            decide(shadow, fixedCtrl, "Fixed-Time(bóng)", false);
+          }
+        }
+        updateScoreboard(s, sb);
+      }
+      window.__sandboxDraw(s);
+      requestAnimationFrame(tick);
+    }
+
+    buildControls(s, {
+      ctrl: (v) => { ctrlKey = v; visCtrl = C.CONTROLLERS[v](s.model); },
+      demand: (v) => { demand = v; },
+      speed: (v) => { speed = v; },
+      togglePlay: () => { playing = !playing; document.getElementById("play").textContent = playing ? "Tạm dừng" : "Tiếp tục"; },
+      reset: () => {
+        visible = s.micro = new C.MicroModel(it, meta, C.mulberry32(42));
+        shadow = new C.MicroModel(it, meta, C.mulberry32(42));
+        sb.acc = {}; document.getElementById("log").innerHTML = ""; s.greenIdx = 0;
+      },
+    });
+    tick();
+  }
+
+  function updatePhaseBanner(s) {
+    const it = s.model.intersection;
+    document.getElementById("phase-label").textContent =
+      "#" + s.greenIdx + " (" + (it.green_phases[s.greenIdx].approaches_vi || []).join("–") + ")";
+  }
+  function updateQBars(s, q) {
+    const it = s.model.intersection, host = document.getElementById("qbars");
+    if (!q) { host.innerHTML = "<div class='note'>Baseline không dùng Q-value.</div>"; return; }
+    let mx = -Infinity, mi = 0; for (let j = 0; j < it.num_greens; j++) if (q[j] > mx) { mx = q[j]; mi = j; }
+    let mn = Infinity; for (let j = 0; j < it.num_greens; j++) mn = Math.min(mn, q[j]);
+    let html = "<div class='note'>Q-value mỗi pha (DQN):</div>";
+    for (let j = 0; j < it.num_greens; j++) {
+      const w = Math.round(100 * (q[j] - mn) / (mx - mn + 1e-6));
+      html += `<div class="qbar ${j === mi ? "win" : ""}"><i style="width:${w}%"></i><span>pha ${j}: ${q[j].toFixed(2)}</span></div>`;
+    }
+    host.innerHTML = html;
+  }
+  function updateScoreboard(s, sb) {
+    const sum = sb.summary(), host = document.getElementById("scoreboard");
+    const cur = sum.curKey ? sum.visited[sum.curKey] : 0, fixed = sum.visited["Fixed-Time"] || 0;
+    const arrow = sum.deltaPctVsFixed >= 0 ? "▼" : "▲";
+    host.innerHTML = `<div><b>Thời gian chờ tích luỹ (trong sandbox)</b></div>` +
+      `<div>${sum.curKey || "—"}: ${cur.toFixed(2)} veh-h</div>` +
+      `<div>Fixed-Time (bóng): ${fixed.toFixed(2)} veh-h</div>` +
+      `<div>${arrow} ${Math.abs(sum.deltaPctVsFixed).toFixed(1)}% so với Fixed-Time</div>`;
+  }
+  function logLine(s, text, isRL) {
+    const host = document.getElementById("log");
+    const div = document.createElement("div");
+    div.className = "log-line " + (isRL ? "rl" : "base");
+    div.textContent = text;
+    host.insertBefore(div, host.firstChild);
+    while (host.childNodes.length > 200) host.removeChild(host.lastChild);
+  }
+
+  // kick off once the model+state are ready (start() sets window.__sandbox)
+  const _boot = setInterval(() => {
+    if (window.__sandbox) { clearInterval(_boot); runLoop(window.__sandbox); }
+  }, 30);
 })();
