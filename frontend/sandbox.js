@@ -3,7 +3,8 @@
   "use strict";
   const C = window.SandboxCore;
 
-  fetch("sandbox_model.json").then((r) => r.json()).then((model) => start(model));
+  fetch("sandbox_model.json").then((r) => r.json()).then((model) => start(model))
+    .catch(function (e) { console.error("sandbox_model.json load/render failed:", e); });
 
   function start(model) {
     const canvas = document.getElementById("canvas");
@@ -11,10 +12,9 @@
     const W = canvas.width, H = canvas.height;
     const it = model.intersection;
 
-    // world -> screen transform (fit the approaches' far points into the canvas)
-    const cx = it.geometry.center[0], cy = it.geometry.center[1];
-    let maxR = 1;
-    for (const ap of it.geometry.approaches) maxR = Math.max(maxR, 120);
+    // world -> screen transform: fit the outermost drawn radius into the canvas.
+    // queue ticks reach 58 + 7*19 = 191 (see drawFrame); labels/spokes sit inside that.
+    const maxR = 195;
     const scale = (Math.min(W, H) * 0.42) / maxR;
     function sx(dx) { return W / 2 + dx * scale; }
     function sy(dy) { return H / 2 - dy * scale; }   // y up
@@ -62,7 +62,7 @@
       }
       // count label
       ctx.fillStyle = "#0b1118"; ctx.font = "13px sans-serif";
-      ctx.fillText(String(Math.round(q)), sx(d.x * 150) - 6, sy(d.y * 150));
+      ctx.fillText(String(Math.round(q)), sx(d.x * 135) - 6, sy(d.y * 135));
     }
     if (s.flash > 0) s.flash -= 1;
   }
