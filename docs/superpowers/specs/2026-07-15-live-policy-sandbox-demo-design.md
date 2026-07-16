@@ -35,6 +35,10 @@ Enabling facts (verified in code):
   (no Docker/CityFlow/container at demo time — immune to demo-day fragility).
 - Make the control **obvious**: big top-down intersection, per-movement signal heads that change
   green/red as the agent switches phase, a decision flash + chosen-phase label + Q-value bars.
+- A **live decision log** (scrolling event feed): one line per decision naming *which controller
+  acted* and *what it did to the light* (kept vs switched phase, which movement got green, why), so
+  the agent's control is legible as text as well as visually — and a mid-run controller toggle is
+  visible in the log.
 - **Interactive**: demand sliders per approach, controller toggle (DQN / Fixed-Time / Max-Pressure /
   Random), play/pause, speed, reset.
 - **Quantify the benefit honestly**: a hidden Fixed-Time "shadow" runs on the *same* arrival stream;
@@ -123,7 +127,19 @@ encoder constants (count_norm, state_mode) ─┘        (host Python 3.13, no c
 - **Interactions:** demand sliders (master + per-approach or N/S/E/W), controller `<select>`,
   play/pause, speed slider, reset. All text in Vietnamese to match `demo-presets.js`.
 
-### 5.3 Serving
+### 5.3 Live decision log
+A scrolling panel beside the canvas that appends **one entry per decision tick** (every
+`action_interval=10s`), driven by the same decision the controller just made:
+- Content (Vietnamese): `[t=120s] DQN — đổi pha 2→0 · xanh cho hướng Bắc–Nam · (hàng chờ B=12 dài
+  nhất) · Q₀=3.1`, or when unchanged `[t=130s] DQN — giữ pha 0 (đang xanh)`.
+- Each line carries the **controller name + badge** (RL vs baseline styling), so toggling controller
+  mid-run is obvious in the log; the "why" string is the argmax phase + its dominant queue/pressure
+  and (for DQN) the winning Q-value.
+- Behavior: newest on top (or auto-scroll to bottom), capped to the last ~200 lines, pause-on-hover
+  so a viewer can read a line; a "clear" affordance. Implemented in `sandbox.js` (no new file).
+- The same decision event drives the on-canvas flash/label, so log and animation never disagree.
+
+### 5.4 Serving
 - Extend `scripts/serve_replay.py` (or accept its existing static serving) to print the sandbox URL
   `http://localhost:<port>/frontend/sandbox.html`. No new server framework.
 
@@ -210,7 +226,7 @@ so the agent has meaningful phase choices and the drawing is clean. The export s
 |---|---|---|
 | `scripts/export_sandbox_model.py` | new (host Python) | npz + roadnet + config → `frontend/sandbox_model.json` (+parity samples, `--list`) |
 | `frontend/sandbox.html` | new | self-contained demo page |
-| `frontend/sandbox.js` | new | micro-model + encoder + net forward + render + interactions + scoreboard |
+| `frontend/sandbox.js` | new | micro-model + encoder + net forward + render + interactions + scoreboard + live decision log |
 | `frontend/sandbox.css` | new (or inline) | big, projector-legible styling |
 | `frontend/sandbox_model.json` | generated | exported model+geometry (git-ignored or committed) |
 | `scripts/serve_replay.py` | changed | print the sandbox URL |
