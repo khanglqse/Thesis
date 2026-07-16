@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SCENARIOS = {
     "haichau_rush":  {"count_norm": 5.0,  "state_mode": "basic", "fixed_green": 25},
     "haichau_calib": {"count_norm": 10.0, "state_mode": "basic", "fixed_green": 25},
-    "haichau_peak":  {"count_norm": 40.0, "state_mode": "basic", "fixed_green": 25},
+    "haichau_peak":  {"count_norm": 40.0, "state_mode": "basic", "fixed_green": 40},
     "haichau":       {"count_norm": 40.0, "state_mode": "basic", "fixed_green": 25},
 }
 
@@ -60,6 +60,25 @@ def parity_samples(net, obs_dim, n_actions, n, seed):
         out.append({"obs": obs.tolist(), "q": q.tolist(),
                     "greedy": int(net.greedy_action(obs, full_mask))})
     return out
+
+
+def encoder_parity_samples(rn, enc, inter_id, n, seed):
+    """Samples pinning the JS Encoder to the real ObservationEncoder (basic mode)."""
+    rng = np.random.RandomState(seed)
+    inc = rn.incoming_lanes(inter_id)
+    out = rn.outgoing_lanes(inter_id)
+    ng = enc.num_greens(inter_id)
+    samples = []
+    for _ in range(n):
+        in_counts = {l: int(rng.randint(0, 25)) for l in inc}
+        out_counts = {l: int(rng.randint(0, 25)) for l in out}
+        g = int(rng.randint(0, ng))
+        lane_counts = dict(in_counts)
+        lane_counts.update(out_counts)                 # basic mode: one combined dict
+        obs = enc.encode(inter_id, lane_counts, g)     # the real encoder, /count_norm inside
+        samples.append({"inCounts": in_counts, "outCounts": out_counts,
+                        "greenIdx": g, "obs": obs.tolist()})
+    return samples
 
 
 _COMPASS_VI = ["Đông", "Đông Bắc", "Bắc", "Tây Bắc", "Tây", "Tây Nam", "Nam", "Đông Nam"]
@@ -188,6 +207,7 @@ def main():
         "intersection": intersection_block(rn, enc, inter_id),
         "weights": weights,
         "parity": parity_samples(net, enc.obs_dim, enc.max_green, args.samples, seed=1),
+        "encoder_parity": encoder_parity_samples(rn, enc, inter_id, 16, seed=2),
     }
     out_path = ROOT / args.out
     out_path.write_text(json.dumps(bundle))

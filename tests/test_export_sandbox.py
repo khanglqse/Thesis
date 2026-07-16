@@ -54,6 +54,23 @@ def test_intersection_block_lane_ordering_and_phases():
         assert 0.0 <= ap["angle_deg"] < 360.0
 
 
+def test_encoder_parity_samples_are_self_consistent():
+    """Guards the JS Encoder + count_norm seam: rebuilds each sample's combined
+    lane_counts dict and asserts the real ObservationEncoder reproduces the
+    stored obs vector exactly (these are the samples the JS parity test also
+    consumes, so this pins the Python side of that contract)."""
+    rn, enc, net, weights = export.load_bundle(AREA, CKPT, count_norm=5.0, state_mode="basic")
+    inter_id = export.pick_intersection(rn)
+    samples = export.encoder_parity_samples(rn, enc, inter_id, n=16, seed=2)
+    assert len(samples) == 16
+    for s in samples:
+        lane_counts = dict(s["inCounts"])
+        lane_counts.update(s["outCounts"])
+        obs = enc.encode(inter_id, lane_counts, s["greenIdx"])
+        assert len(obs) == enc.obs_dim
+        assert np.allclose(obs, s["obs"], atol=1e-6)
+
+
 def test_compass_buckets():
     assert export.compass_vi(0.0) == "Đông"
     assert export.compass_vi(90.0) == "Bắc"
