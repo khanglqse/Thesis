@@ -126,6 +126,7 @@
     const playBtn = document.getElementById("play"), scrub = document.getElementById("scrub"),
       speed = document.getElementById("speed"), stepLabel = document.getElementById("steplabel"),
       zoomBtn = document.getElementById("zoom");
+    state.speed = +speed.value;
     playBtn.onclick = () => { state.playing = !state.playing; playBtn.textContent = state.playing ? "⏸ Dừng" : "▶ Chạy"; };
     scrub.oninput = () => { state.step = +scrub.value; redraw(); };
     speed.oninput = () => { state.speed = +speed.value; };
@@ -140,11 +141,12 @@
     function updateScore() {
       const sb = R.scoreboard(comparison, state.CTRL_TO_ROW[state.panels.left.ctrl], state.CTRL_TO_ROW[state.panels.right.ctrl]);
       const fmt = (e) => e ? (e.key + ": " + e.vehH.toFixed(0) + " veh-h (" + (e.pctVsFixed >= 0 ? "▼ " : "▲ ") + Math.abs(e.pctVsFixed).toFixed(1) + "% vs Fixed)") : "—";
-      const rightWins = sb.right && sb.right.pctVsFixed > 0;
+      const lv = sb.left ? sb.left.vehH : Infinity, rv = sb.right ? sb.right.vehH : Infinity;
+      const leftWin = lv < rv, rightWin = rv < lv;
       document.getElementById("scoreboard").innerHTML =
         "<div><b>Thời gian chờ tích luỹ cả episode (số thật Chương 4):</b></div>" +
-        "<div>TRÁI — " + fmt(sb.left) + "</div>" +
-        '<div class="' + (rightWins ? "sb-win" : "") + '">PHẢI — ' + fmt(sb.right) + "</div>" +
+        '<div class="' + (leftWin ? "sb-win" : "") + '">TRÁI — ' + fmt(sb.left) + "</div>" +
+        '<div class="' + (rightWin ? "sb-win" : "") + '">PHẢI — ' + fmt(sb.right) + "</div>" +
         '<div class="note">Cùng kịch bản/seed; veh-h thấp hơn = tốt hơn.</div>';
     }
 
@@ -159,7 +161,16 @@
   }
 
   // Task 2's loadAll() sets window.__replayAB asynchronously; wait for it, then wire the UI.
+  const BOOT_MAX_ATTEMPTS = 150; // ~150 * 30ms ≈ 4.5s
+  let bootAttempts = 0;
   const boot = setInterval(() => {
-    if (window.__replayAB && window.__replayAB.panels) { clearInterval(boot); runUI(window.__replayAB); }
+    if (window.__replayAB && window.__replayAB.panels) { clearInterval(boot); runUI(window.__replayAB); return; }
+    bootAttempts++;
+    if (bootAttempts >= BOOT_MAX_ATTEMPTS) {
+      clearInterval(boot);
+      console.error("replay_ab: timed out waiting for window.__replayAB (loadAll() likely failed — see earlier console error).");
+      const sb = document.getElementById("scoreboard");
+      if (sb) sb.innerHTML = '<div class="note">Không tải được dữ liệu replay — kiểm tra server.</div>';
+    }
   }, 30);
 })();

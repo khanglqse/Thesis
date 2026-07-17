@@ -10,3 +10,4 @@ canvas { background: #e8ebed; border-radius: 8px; width: 100%; max-width: 560px;
 #scoreboard { font-size: 14px; }
 .sb-win { color: #85ee00; font-weight: 700; }
 button, select, input { font-size: 14px; }
+button.on { background: #85ee00; color: #0b1118; font-weight: 700; }
