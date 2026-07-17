@@ -82,7 +82,7 @@
         roadnet: d.roadnet, T, comparison: d.comparison,
         panels: { left: { ctrl: leftCtrl, steps: d.leftSteps },
                   right: { ctrl: rightCtrl, steps: d.rightSteps } },
-        step: 0, playing: false, speed: 4, fetchText, REPLAY, ROADNET, COMPARISON,
+        step: 0, playing: false, speed: 4, fetchText, REPLAY, loadGen: 0,
         CTRL_TO_ROW, CTRLS, drawPanel, scenario: DEFAULT_SCENARIO, SCENARIOS, loadScenario,
       };
       window.__replayAB = state;
@@ -135,7 +135,13 @@
     fill(selL, state.panels.left.ctrl); fill(selR, state.panels.right.ctrl);
     const onSelect = (side, sel) => { sel.onchange = () => {
       state.panels[side].ctrl = sel.value;
+      // Stamp this request with the current generation and only apply it if it's
+      // still the newest in-flight load when it resolves — otherwise a stale
+      // scenario/controller switch could resolve last and desync this panel's
+      // steps from state.roadnet/state.comparison.
+      const myGen = ++state.loadGen;
       state.fetchText(state.REPLAY(state.scenario, sel.value)).then((txt) => {
+        if (myGen !== state.loadGen) return; // superseded by a newer switch; drop
         state.panels[side].steps = R.parseReplay(txt);
         recomputeDerived();
         state.step = Math.min(state.step, state.nSteps - 1);
@@ -153,7 +159,12 @@
       const leftCtrl = state.panels.left.ctrl, rightCtrl = state.panels.right.ctrl;
       state.playing = false; playBtn.textContent = "▶ Chạy";
       scenarioSel.disabled = true;
+      // Same request-generation guard as onSelect above: only the newest
+      // scenario/controller switch in flight is allowed to write into `state`.
+      const myGen = ++state.loadGen;
       state.loadScenario(sc, leftCtrl, rightCtrl).then((d) => {
+        scenarioSel.disabled = false;
+        if (myGen !== state.loadGen) return; // superseded by a newer switch; drop
         state.scenario = sc;
         state.roadnet = d.roadnet;
         state.comparison = d.comparison;
@@ -162,11 +173,11 @@
         state.step = 0;
         recomputeDerived();
         scrub.max = state.nSteps - 1; scrub.value = 0;
-        scenarioSel.disabled = false;
         redraw(); updateScore();
       }).catch((e) => {
         console.error("switch scenario failed:", e);
         scenarioSel.disabled = false;
+        if (myGen !== state.loadGen) return; // a newer switch superseded this failed one; don't revert its value
         scenarioSel.value = state.scenario; // revert the select to the still-loaded scenario
       });
     };
