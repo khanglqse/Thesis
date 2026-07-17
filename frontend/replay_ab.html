@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8" />
+<title>DQN vs Baseline — Replay CityFlow (Hải Châu)</title>
+<link rel="stylesheet" href="replay_ab.css" /></head>
+<body>
+  <header>
+    <h1>RL (DQN) điều khiển đèn — so sánh trực tiếp trên mạng thật (Hải Châu, 53 nút)</h1>
+    <p class="note">Replay CityFlow THẬT của các controller trên cùng kịch bản/seed (haichau_rush).
+      Số liệu là kết quả Chương 4.</p>
+  </header>
+  <div id="panels">
+    <figure><figcaption><select id="ctrl-left"></select> <span class="side-tag">TRÁI</span></figcaption>
+      <canvas id="canvas-left" width="560" height="560"></canvas></figure>
+    <figure><figcaption><select id="ctrl-right"></select> <span class="side-tag">PHẢI</span></figcaption>
+      <canvas id="canvas-right" width="560" height="560"></canvas></figure>
+  </div>
+  <div id="controls"></div>
+  <div id="scoreboard"></div>
+  <script src="replay_ab_core.js"></script>
+  <script src="replay_ab.js"></script>
+</body></html>
