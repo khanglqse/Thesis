@@ -41,8 +41,6 @@ def main():
 
     print("Serving {} at http://localhost:{}/".format(ROOT, args.port))
     print("Open: {}".format(url))
-    print("Sandbox (live RL, no container): "
-          "http://localhost:{}/frontend/sandbox.html".format(args.port))
     print("A/B replay (DQN vs baseline, real network): "
           "http://localhost:{}/frontend/replay_ab.html".format(args.port))
     print("In the page, pick:")
