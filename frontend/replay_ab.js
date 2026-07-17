@@ -77,3 +77,89 @@
   window.ReplayABApp = { drawPanel, loadAll };
   loadAll().catch((e) => { console.error("replay_ab load failed:", e); });
 })();
+
+(function () {
+  "use strict";
+  const R = window.ReplayAB;
+
+  function makeClusterTransform(roadnet, W, H) {
+    // bbox of the 8 intersections nearest the network centroid (zoom target)
+    const inters = roadnet.inters;
+    if (!inters.length) return R.makeTransform(roadnet.bounds, W, H, 8);
+    let cx = 0, cy = 0; for (const n of inters) { cx += n.x; cy += n.y; } cx /= inters.length; cy /= inters.length;
+    const near = inters.slice().sort((a, b) =>
+      ((a.x - cx) ** 2 + (a.y - cy) ** 2) - ((b.x - cx) ** 2 + (b.y - cy) ** 2)).slice(0, 8);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of near) { if (n.x < minX) minX = n.x; if (n.x > maxX) maxX = n.x; if (n.y < minY) minY = n.y; if (n.y > maxY) maxY = n.y; }
+    const px = (maxX - minX) * 0.15 || 50, py = (maxY - minY) * 0.15 || 50;
+    return R.makeTransform({ minX: minX - px, minY: minY - py, maxX: maxX + px, maxY: maxY + py }, W, H, 8);
+  }
+
+  function runUI(state) {
+    const roadnet = state.roadnet, comparison = state.comparison;
+    const cvL = document.getElementById("canvas-left"), cvR = document.getElementById("canvas-right");
+    const ctxL = cvL.getContext("2d"), ctxR = cvR.getContext("2d");
+    const nSteps = Math.min(state.panels.left.steps.length, state.panels.right.steps.length);
+    const fullT = state.T, clusterT = makeClusterTransform(roadnet, cvL.width, cvL.height);
+    state.zoom = false;
+    const curT = () => (state.zoom ? clusterT : fullT);
+
+    const selL = document.getElementById("ctrl-left"), selR = document.getElementById("ctrl-right");
+    const fill = (sel, cur) => { sel.innerHTML = state.CTRLS.map(([v, t]) => '<option value="' + v + '"' + (v === cur ? " selected" : "") + '>' + t + "</option>").join(""); };
+    fill(selL, state.panels.left.ctrl); fill(selR, state.panels.right.ctrl);
+    const onSelect = (side, sel) => { sel.onchange = () => {
+      state.panels[side].ctrl = sel.value;
+      state.fetchText(state.REPLAY(sel.value)).then((txt) => {
+        state.panels[side].steps = R.parseReplay(txt);
+        state.step = Math.min(state.step, state.panels[side].steps.length - 1);
+        redraw(); updateScore();
+      }).catch((e) => console.error("switch controller failed:", e));
+    }; };
+    onSelect("left", selL); onSelect("right", selR);
+
+    document.getElementById("controls").innerHTML =
+      '<button id="play">▶ Chạy</button>' +
+      '<label>Bước: <input id="scrub" type="range" min="0" max="' + (nSteps - 1) + '" value="0"></label>' +
+      '<span id="steplabel">0 / ' + (nSteps - 1) + '</span>' +
+      '<label>Tốc độ: <input id="speed" type="range" min="1" max="30" value="6"></label>' +
+      '<button id="zoom">🔍 Zoom cụm nút</button>';
+    const playBtn = document.getElementById("play"), scrub = document.getElementById("scrub"),
+      speed = document.getElementById("speed"), stepLabel = document.getElementById("steplabel"),
+      zoomBtn = document.getElementById("zoom");
+    playBtn.onclick = () => { state.playing = !state.playing; playBtn.textContent = state.playing ? "⏸ Dừng" : "▶ Chạy"; };
+    scrub.oninput = () => { state.step = +scrub.value; redraw(); };
+    speed.oninput = () => { state.speed = +speed.value; };
+    zoomBtn.onclick = () => { state.zoom = !state.zoom; zoomBtn.classList.toggle("on", state.zoom); redraw(); };
+
+    function redraw() {
+      const t = curT();
+      state.drawPanel(ctxL, roadnet, state.panels.left.steps[state.step], t);
+      state.drawPanel(ctxR, roadnet, state.panels.right.steps[state.step], t);
+      scrub.value = state.step; stepLabel.textContent = state.step + " / " + (nSteps - 1);
+    }
+    function updateScore() {
+      const sb = R.scoreboard(comparison, state.CTRL_TO_ROW[state.panels.left.ctrl], state.CTRL_TO_ROW[state.panels.right.ctrl]);
+      const fmt = (e) => e ? (e.key + ": " + e.vehH.toFixed(0) + " veh-h (" + (e.pctVsFixed >= 0 ? "▼ " : "▲ ") + Math.abs(e.pctVsFixed).toFixed(1) + "% vs Fixed)") : "—";
+      const rightWins = sb.right && sb.right.pctVsFixed > 0;
+      document.getElementById("scoreboard").innerHTML =
+        "<div><b>Thời gian chờ tích luỹ cả episode (số thật Chương 4):</b></div>" +
+        "<div>TRÁI — " + fmt(sb.left) + "</div>" +
+        '<div class="' + (rightWins ? "sb-win" : "") + '">PHẢI — ' + fmt(sb.right) + "</div>" +
+        '<div class="note">Cùng kịch bản/seed; veh-h thấp hơn = tốt hơn.</div>';
+    }
+
+    let acc = 0, last = null;
+    function loop(ts) {
+      if (last == null) last = ts;
+      const dtSec = Math.min(0.1, (ts - last) / 1000); last = ts;
+      if (state.playing) { acc += dtSec * state.speed; while (acc >= 1) { acc -= 1; state.step = (state.step + 1) % nSteps; } redraw(); }
+      requestAnimationFrame(loop);
+    }
+    redraw(); updateScore(); requestAnimationFrame(loop);
+  }
+
+  // Task 2's loadAll() sets window.__replayAB asynchronously; wait for it, then wire the UI.
+  const boot = setInterval(() => {
+    if (window.__replayAB && window.__replayAB.panels) { clearInterval(boot); runUI(window.__replayAB); }
+  }, 30);
+})();
