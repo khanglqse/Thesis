@@ -15,7 +15,7 @@
   - Replays: `results/haichau_rush/demo/replay_{dqn,fixed_time,max_pressure,random}_demo.txt` — **120 steps** each; each line = `carLogs;tlLogs`.
     - car = `x y angle id laneChange len wid` (space-separated); cars comma-separated.
     - tl = `roadId s0 s1 …` per lane-link status: `g`=green, `r`=red, `i`=off/uncontrolled; tls comma-separated.
-  - Roadnet: `data/danang/replay_roadnet_haichau_rush.json` — `intersections[{id, point:{x,y}, virtual?}]`, `roads[{id, points:[{x,y}], lanes:[…], startIntersection, endIntersection}]`.
+  - Roadnet: `data/danang/replay_roadnet_haichau_rush.json` — CityFlow **replay-viewer static format**: `{static:{nodes:[{id, point:[x,y], virtual}], edges:[{id, from, to, points:[[x,y],…], nLane}]}}`. Edge `id`s match the tlLogs road ids (verified 1065/1066). (This is NOT the training-roadnet schema; `frontend/script.js` reads exactly this via `simulation.static.nodes/edges`.)
   - Metrics: `results/haichau_rush/comparison.json` — `table[{controller, queue_series:[…100 pts]}]`; controllers `DQN`, `FixedTime`, `MaxPressure`, `Random`.
 - **Real numbers only** (from `comparison.json`, matching Chapter 4): DQN −30.8%, MaxPressure −40.1%, Random +9.5% waiting-time vs Fixed. veh-hours = `sum(queue * 10) / 3600`.
 - **Honesty note on-screen (Vietnamese):** real CityFlow replay of the real network; numbers are the Chapter-4 results.
@@ -114,13 +114,22 @@ test("scoreboard returns real veh-h and pct vs Fixed", () => {
   "use strict";
 
   function parseRoadnet(data) {
-    const roads = (data.roads || []).map((r) => ({
-      id: r.id, points: r.points || [], nLanes: (r.lanes || []).length,
-      start: r.startIntersection, end: r.endIntersection,
+    // CityFlow replay-viewer static format: {static:{nodes, edges}}.
+    // Normalize point [x,y] arrays -> {x,y} so the renderer code stays uniform.
+    const st = data.static || data;
+    const roads = (st.edges || []).map((e) => ({
+      id: e.id,
+      points: (e.points || []).map((p) => (Array.isArray(p) ? { x: p[0], y: p[1] } : p)),
+      nLanes: e.nLane || (e.lanes ? e.lanes.length : 1),
+      start: e.from, end: e.to,
     }));
-    const inters = (data.intersections || [])
-      .filter((i) => !i.virtual && i.point)
-      .map((i) => ({ id: i.id, x: i.point.x, y: i.point.y }));
+    const inters = (st.nodes || [])
+      .filter((n) => !n.virtual && n.point)
+      .map((n) => ({
+        id: n.id,
+        x: Array.isArray(n.point) ? n.point[0] : n.point.x,
+        y: Array.isArray(n.point) ? n.point[1] : n.point.y,
+      }));
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const r of roads) for (const p of r.points) {
       if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
@@ -339,14 +348,97 @@ button, select, input { font-size: 14px; }
 
 **Files:** Modify `frontend/replay_ab.js` (add the control/loop layer; do not disturb the Task-2 render functions).
 
-**Interfaces (consumed):** `window.__replayAB`, `ReplayABApp.drawPanel`, `ReplayAB.scoreboard`, `ReplayAB.makeTransform`.
+**Interfaces (consumed):** `window.__replayAB` (state, with `drawPanel, fetchText, REPLAY, CTRLS, CTRL_TO_ROW` on it), `ReplayAB.scoreboard`, `ReplayAB.makeTransform`, `ReplayAB.parseReplay`. **Task-2's real `drawPanel` signature is `drawPanel(ctx, roadnet, stepData, T)`** (pre-resolved step data, NOT a raw step index) — use exactly this.
 
-- [ ] **Step 1: Add controls + loop** — append to `frontend/replay_ab.js` a `runUI(state)` that:
-  - Populates both `<select>` (`ctrl-left`, `ctrl-right`) from `state.CTRLS`, defaulting left=`fixed_time`, right=`dqn`; on change, `fetchText(REPLAY(v))` → `parseReplay` → replace that panel's steps, keep `step` clamped, redraw, refresh scoreboard.
-  - Builds `#controls`: play/pause button, a scrub `<input type=range min=0 max=nSteps-1>`, a speed `<input type=range>`, and a **Zoom** toggle button. Zoom toggles `state.T` between the full-network transform and a cluster transform = `makeTransform(clusterBounds, W, H, 8)` where `clusterBounds` is the bbox of the 8 intersections nearest the network centroid (compute once from `roadnet.inters`).
-  - Runs a `requestAnimationFrame` loop: while `playing`, advance a sub-step accumulator by `speed` per second and increment `state.step` (mod nSteps); every frame redraw BOTH panels at the SAME `state.step` (frame-perfect A/B sync) and update the scrub position + step label.
-  - Renders `#scoreboard` from `ReplayAB.scoreboard(state.comparison, CTRL_TO_ROW[left.ctrl], CTRL_TO_ROW[right.ctrl])`: show each side's veh-h and `pctVsFixed` (▼ = reduction, green when the DQN/right side wins), plus a one-line honest caption.
-  - Full code block is provided in the brief; keep functions small, all Vietnamese UI copy, and reuse Task-2's `drawPanel`.
+- [ ] **Step 1: Add controls + loop** — APPEND to `frontend/replay_ab.js` (after the Task-2 IIFE closes; this is a new top-level block that reads the globals Task 2 exposed). Verbatim:
+
+```js
+(function () {
+  "use strict";
+  const R = window.ReplayAB;
+
+  function makeClusterTransform(roadnet, W, H) {
+    // bbox of the 8 intersections nearest the network centroid (zoom target)
+    const inters = roadnet.inters;
+    if (!inters.length) return R.makeTransform(roadnet.bounds, W, H, 8);
+    let cx = 0, cy = 0; for (const n of inters) { cx += n.x; cy += n.y; } cx /= inters.length; cy /= inters.length;
+    const near = inters.slice().sort((a, b) =>
+      ((a.x - cx) ** 2 + (a.y - cy) ** 2) - ((b.x - cx) ** 2 + (b.y - cy) ** 2)).slice(0, 8);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of near) { if (n.x < minX) minX = n.x; if (n.x > maxX) maxX = n.x; if (n.y < minY) minY = n.y; if (n.y > maxY) maxY = n.y; }
+    const px = (maxX - minX) * 0.15 || 50, py = (maxY - minY) * 0.15 || 50;
+    return R.makeTransform({ minX: minX - px, minY: minY - py, maxX: maxX + px, maxY: maxY + py }, W, H, 8);
+  }
+
+  function runUI(state) {
+    const roadnet = state.roadnet, comparison = state.comparison;
+    const cvL = document.getElementById("canvas-left"), cvR = document.getElementById("canvas-right");
+    const ctxL = cvL.getContext("2d"), ctxR = cvR.getContext("2d");
+    const nSteps = Math.min(state.panels.left.steps.length, state.panels.right.steps.length);
+    const fullT = state.T, clusterT = makeClusterTransform(roadnet, cvL.width, cvL.height);
+    state.zoom = false;
+    const curT = () => (state.zoom ? clusterT : fullT);
+
+    const selL = document.getElementById("ctrl-left"), selR = document.getElementById("ctrl-right");
+    const fill = (sel, cur) => { sel.innerHTML = state.CTRLS.map(([v, t]) => '<option value="' + v + '"' + (v === cur ? " selected" : "") + '>' + t + "</option>").join(""); };
+    fill(selL, state.panels.left.ctrl); fill(selR, state.panels.right.ctrl);
+    const onSelect = (side, sel) => { sel.onchange = () => {
+      state.panels[side].ctrl = sel.value;
+      state.fetchText(state.REPLAY(sel.value)).then((txt) => {
+        state.panels[side].steps = R.parseReplay(txt);
+        state.step = Math.min(state.step, state.panels[side].steps.length - 1);
+        redraw(); updateScore();
+      }).catch((e) => console.error("switch controller failed:", e));
+    }; };
+    onSelect("left", selL); onSelect("right", selR);
+
+    document.getElementById("controls").innerHTML =
+      '<button id="play">▶ Chạy</button>' +
+      '<label>Bước: <input id="scrub" type="range" min="0" max="' + (nSteps - 1) + '" value="0"></label>' +
+      '<span id="steplabel">0 / ' + (nSteps - 1) + '</span>' +
+      '<label>Tốc độ: <input id="speed" type="range" min="1" max="30" value="6"></label>' +
+      '<button id="zoom">🔍 Zoom cụm nút</button>';
+    const playBtn = document.getElementById("play"), scrub = document.getElementById("scrub"),
+      speed = document.getElementById("speed"), stepLabel = document.getElementById("steplabel"),
+      zoomBtn = document.getElementById("zoom");
+    playBtn.onclick = () => { state.playing = !state.playing; playBtn.textContent = state.playing ? "⏸ Dừng" : "▶ Chạy"; };
+    scrub.oninput = () => { state.step = +scrub.value; redraw(); };
+    speed.oninput = () => { state.speed = +speed.value; };
+    zoomBtn.onclick = () => { state.zoom = !state.zoom; zoomBtn.classList.toggle("on", state.zoom); redraw(); };
+
+    function redraw() {
+      const t = curT();
+      state.drawPanel(ctxL, roadnet, state.panels.left.steps[state.step], t);
+      state.drawPanel(ctxR, roadnet, state.panels.right.steps[state.step], t);
+      scrub.value = state.step; stepLabel.textContent = state.step + " / " + (nSteps - 1);
+    }
+    function updateScore() {
+      const sb = R.scoreboard(comparison, state.CTRL_TO_ROW[state.panels.left.ctrl], state.CTRL_TO_ROW[state.panels.right.ctrl]);
+      const fmt = (e) => e ? (e.key + ": " + e.vehH.toFixed(0) + " veh-h (" + (e.pctVsFixed >= 0 ? "▼ " : "▲ ") + Math.abs(e.pctVsFixed).toFixed(1) + "% vs Fixed)") : "—";
+      const rightWins = sb.right && sb.right.pctVsFixed > 0;
+      document.getElementById("scoreboard").innerHTML =
+        "<div><b>Thời gian chờ tích luỹ cả episode (số thật Chương 4):</b></div>" +
+        "<div>TRÁI — " + fmt(sb.left) + "</div>" +
+        '<div class="' + (rightWins ? "sb-win" : "") + '">PHẢI — ' + fmt(sb.right) + "</div>" +
+        '<div class="note">Cùng kịch bản/seed; veh-h thấp hơn = tốt hơn.</div>';
+    }
+
+    let acc = 0, last = null;
+    function loop(ts) {
+      if (last == null) last = ts;
+      const dtSec = Math.min(0.1, (ts - last) / 1000); last = ts;
+      if (state.playing) { acc += dtSec * state.speed; while (acc >= 1) { acc -= 1; state.step = (state.step + 1) % nSteps; } redraw(); }
+      requestAnimationFrame(loop);
+    }
+    redraw(); updateScore(); requestAnimationFrame(loop);
+  }
+
+  // Task 2's loadAll() sets window.__replayAB asynchronously; wait for it, then wire the UI.
+  const boot = setInterval(() => {
+    if (window.__replayAB && window.__replayAB.panels) { clearInterval(boot); runUI(window.__replayAB); }
+  }, 30);
+})();
+```
 - [ ] **Step 2: Verify (Playwright/headless)** — both panels play in lockstep (same step index); scrubbing moves both; the DQN panel visibly clears queues faster and its signal-phase pattern differs from Fixed at the same moment; zoom makes signals legible; scoreboard reads DQN ≈ **−30.8%** vs Fixed; switching a panel's controller updates its replay + the scoreboard; console clean. Screenshot(s) in report.
 - [ ] **Step 3: Regression** — `node --test tests/replay_ab/*.test.cjs` still passes (core untouched).
 - [ ] **Step 4: Commit** — `git add frontend/replay_ab.js && git commit -m "feat(replay-ab): sync loop, controls, zoom, scoreboard"`
