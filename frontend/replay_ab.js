@@ -2,9 +2,16 @@
   "use strict";
   const R = window.ReplayAB;
   const ROOT = ""; // served from repo root; paths are absolute from site root
-  const REPLAY = (ctrl) => `/results/haichau_rush/demo/replay_${ctrl}_demo.txt`;
-  const ROADNET_URL = "/data/danang/replay_roadnet_haichau_rush.json";
-  const COMPARISON_URL = "/results/haichau_rush/comparison.json";
+  const SCENARIOS = [
+    ["haichau_rush", "Cao điểm thực (rush)"],
+    ["danang_peak", "Đà Nẵng peak"],
+    ["haichau_peak", "Cao điểm quá tải (peak)"],
+    ["haichau", "Quá tải nặng (haichau)"],
+  ];
+  const DEFAULT_SCENARIO = "haichau_rush";
+  const ROADNET = (sc) => `/data/danang/replay_roadnet_${sc}.json`;
+  const REPLAY = (sc, ctrl) => `/results/${sc}/demo/replay_${ctrl}_demo.txt`;
+  const COMPARISON = (sc) => `/results/${sc}/comparison.json`;
   const CTRLS = [["fixed_time", "Cố định (Fixed-Time)"], ["dqn", "RL (DQN)"],
                  ["max_pressure", "Max-Pressure"], ["random", "Ngẫu nhiên"]];
   const CTRL_TO_ROW = { dqn: "DQN", fixed_time: "FixedTime", max_pressure: "MaxPressure", random: "Random" };
@@ -52,29 +59,41 @@
     if (stepData) { drawCars(ctx, stepData.cars, T); drawSignals(ctx, roadnet, stepData.tl, T); }
   }
 
-  function loadAll() {
-    return Promise.all([fetchText(ROADNET_URL), fetchText(REPLAY("fixed_time")),
-                        fetchText(REPLAY("dqn")), fetchText(COMPARISON_URL)])
-      .then(([rnTxt, leftTxt, rightTxt, cmpTxt]) => {
-        const roadnet = R.parseRoadnet(JSON.parse(rnTxt));
-        const W = document.getElementById("canvas-left").width;
-        const H = document.getElementById("canvas-left").height;
-        const T = R.makeTransform(roadnet.bounds, W, H, 16);
-        const state = {
-          roadnet, T, comparison: JSON.parse(cmpTxt),
-          panels: { left: { ctrl: "fixed_time", steps: R.parseReplay(leftTxt) },
-                    right: { ctrl: "dqn", steps: R.parseReplay(rightTxt) } },
-          step: 0, playing: false, speed: 4, fetchText, REPLAY, CTRL_TO_ROW, CTRLS, drawPanel,
-        };
-        window.__replayAB = state;
-        // initial static frame
-        drawPanel(document.getElementById("canvas-left").getContext("2d"), roadnet, state.panels.left.steps[0], T);
-        drawPanel(document.getElementById("canvas-right").getContext("2d"), roadnet, state.panels.right.steps[0], T);
-        return state;
-      });
+  // Fetch roadnet + both panels' replays + comparison for one scenario. Used both
+  // for the initial load and for the scenario-select reload (Task 3 IIFE below).
+  function loadScenario(sc, leftCtrl, rightCtrl) {
+    return Promise.all([fetchText(ROADNET(sc)), fetchText(REPLAY(sc, leftCtrl)),
+                        fetchText(REPLAY(sc, rightCtrl)), fetchText(COMPARISON(sc))])
+      .then(([rnTxt, leftTxt, rightTxt, cmpTxt]) => ({
+        roadnet: R.parseRoadnet(JSON.parse(rnTxt)),
+        comparison: JSON.parse(cmpTxt),
+        leftSteps: R.parseReplay(leftTxt),
+        rightSteps: R.parseReplay(rightTxt),
+      }));
   }
 
-  window.ReplayABApp = { drawPanel, loadAll };
+  function loadAll() {
+    const leftCtrl = "fixed_time", rightCtrl = "dqn";
+    return loadScenario(DEFAULT_SCENARIO, leftCtrl, rightCtrl).then((d) => {
+      const W = document.getElementById("canvas-left").width;
+      const H = document.getElementById("canvas-left").height;
+      const T = R.makeTransform(d.roadnet.bounds, W, H, 16);
+      const state = {
+        roadnet: d.roadnet, T, comparison: d.comparison,
+        panels: { left: { ctrl: leftCtrl, steps: d.leftSteps },
+                  right: { ctrl: rightCtrl, steps: d.rightSteps } },
+        step: 0, playing: false, speed: 4, fetchText, REPLAY, ROADNET, COMPARISON,
+        CTRL_TO_ROW, CTRLS, drawPanel, scenario: DEFAULT_SCENARIO, SCENARIOS, loadScenario,
+      };
+      window.__replayAB = state;
+      // initial static frame
+      drawPanel(document.getElementById("canvas-left").getContext("2d"), d.roadnet, d.leftSteps[0], T);
+      drawPanel(document.getElementById("canvas-right").getContext("2d"), d.roadnet, d.rightSteps[0], T);
+      return state;
+    });
+  }
+
+  window.ReplayABApp = { drawPanel, loadAll, loadScenario };
   loadAll().catch((e) => { console.error("replay_ab load failed:", e); });
 })();
 
@@ -96,37 +115,71 @@
   }
 
   function runUI(state) {
-    const roadnet = state.roadnet, comparison = state.comparison;
     const cvL = document.getElementById("canvas-left"), cvR = document.getElementById("canvas-right");
     const ctxL = cvL.getContext("2d"), ctxR = cvR.getContext("2d");
-    const nSteps = Math.min(state.panels.left.steps.length, state.panels.right.steps.length);
-    const fullT = state.T, clusterT = makeClusterTransform(roadnet, cvL.width, cvL.height);
     state.zoom = false;
-    const curT = () => (state.zoom ? clusterT : fullT);
+
+    // nSteps/T(full)/clusterT depend on the current scenario's roadnet + replay
+    // lengths, so they live on `state` and get recomputed here — never frozen
+    // in this closure — on scenario switch (and, defensively, controller switch).
+    function recomputeDerived() {
+      state.nSteps = Math.min(state.panels.left.steps.length, state.panels.right.steps.length);
+      state.T = R.makeTransform(state.roadnet.bounds, cvL.width, cvL.height, 16);
+      state.clusterT = makeClusterTransform(state.roadnet, cvL.width, cvL.height);
+    }
+    recomputeDerived();
+    const curT = () => (state.zoom ? state.clusterT : state.T);
 
     const selL = document.getElementById("ctrl-left"), selR = document.getElementById("ctrl-right");
     const fill = (sel, cur) => { sel.innerHTML = state.CTRLS.map(([v, t]) => '<option value="' + v + '"' + (v === cur ? " selected" : "") + '>' + t + "</option>").join(""); };
     fill(selL, state.panels.left.ctrl); fill(selR, state.panels.right.ctrl);
     const onSelect = (side, sel) => { sel.onchange = () => {
       state.panels[side].ctrl = sel.value;
-      state.fetchText(state.REPLAY(sel.value)).then((txt) => {
+      state.fetchText(state.REPLAY(state.scenario, sel.value)).then((txt) => {
         state.panels[side].steps = R.parseReplay(txt);
-        state.step = Math.min(state.step, state.panels[side].steps.length - 1);
+        recomputeDerived();
+        state.step = Math.min(state.step, state.nSteps - 1);
+        scrub.max = state.nSteps - 1; scrub.value = state.step;
         redraw(); updateScore();
       }).catch((e) => console.error("switch controller failed:", e));
     }; };
     onSelect("left", selL); onSelect("right", selR);
 
+    const scenarioSel = document.getElementById("scenario");
+    scenarioSel.innerHTML = state.SCENARIOS.map(([v, t]) => '<option value="' + v + '"' + (v === state.scenario ? " selected" : "") + '>' + t + "</option>").join("");
+    scenarioSel.onchange = () => {
+      const sc = scenarioSel.value;
+      if (sc === state.scenario) return;
+      const leftCtrl = state.panels.left.ctrl, rightCtrl = state.panels.right.ctrl;
+      state.playing = false; playBtn.textContent = "▶ Chạy";
+      scenarioSel.disabled = true;
+      state.loadScenario(sc, leftCtrl, rightCtrl).then((d) => {
+        state.scenario = sc;
+        state.roadnet = d.roadnet;
+        state.comparison = d.comparison;
+        state.panels.left.steps = d.leftSteps;
+        state.panels.right.steps = d.rightSteps;
+        state.step = 0;
+        recomputeDerived();
+        scrub.max = state.nSteps - 1; scrub.value = 0;
+        scenarioSel.disabled = false;
+        redraw(); updateScore();
+      }).catch((e) => {
+        console.error("switch scenario failed:", e);
+        scenarioSel.disabled = false;
+        scenarioSel.value = state.scenario; // revert the select to the still-loaded scenario
+      });
+    };
+
     document.getElementById("controls").innerHTML =
       '<button id="play">▶ Chạy</button>' +
-      '<label>Bước: <input id="scrub" type="range" min="0" max="' + (nSteps - 1) + '" value="0"></label>' +
-      '<span id="steplabel">0 / ' + (nSteps - 1) + '</span>' +
+      '<label>Bước: <input id="scrub" type="range" min="0" max="' + (state.nSteps - 1) + '" value="0"></label>' +
+      '<span id="steplabel">0 / ' + (state.nSteps - 1) + '</span>' +
       '<label>Tốc độ: <input id="speed" type="range" min="1" max="30" value="6"></label>' +
       '<button id="zoom">🔍 Zoom cụm nút</button>';
     const playBtn = document.getElementById("play"), scrub = document.getElementById("scrub"),
       speed = document.getElementById("speed"), stepLabel = document.getElementById("steplabel"),
       zoomBtn = document.getElementById("zoom");
-    state.speed = +speed.value;
     playBtn.onclick = () => { state.playing = !state.playing; playBtn.textContent = state.playing ? "⏸ Dừng" : "▶ Chạy"; };
     scrub.oninput = () => { state.step = +scrub.value; redraw(); };
     speed.oninput = () => { state.speed = +speed.value; };
@@ -134,17 +187,18 @@
 
     function redraw() {
       const t = curT();
-      state.drawPanel(ctxL, roadnet, state.panels.left.steps[state.step], t);
-      state.drawPanel(ctxR, roadnet, state.panels.right.steps[state.step], t);
-      scrub.value = state.step; stepLabel.textContent = state.step + " / " + (nSteps - 1);
+      state.drawPanel(ctxL, state.roadnet, state.panels.left.steps[state.step], t);
+      state.drawPanel(ctxR, state.roadnet, state.panels.right.steps[state.step], t);
+      scrub.value = state.step; stepLabel.textContent = state.step + " / " + (state.nSteps - 1);
     }
     function updateScore() {
-      const sb = R.scoreboard(comparison, state.CTRL_TO_ROW[state.panels.left.ctrl], state.CTRL_TO_ROW[state.panels.right.ctrl]);
+      const sb = R.scoreboard(state.comparison, state.CTRL_TO_ROW[state.panels.left.ctrl], state.CTRL_TO_ROW[state.panels.right.ctrl]);
       const fmt = (e) => e ? (e.key + ": " + e.vehH.toFixed(0) + " veh-h (" + (e.pctVsFixed >= 0 ? "▼ " : "▲ ") + Math.abs(e.pctVsFixed).toFixed(1) + "% vs Fixed)") : "—";
       const lv = sb.left ? sb.left.vehH : Infinity, rv = sb.right ? sb.right.vehH : Infinity;
       const leftWin = lv < rv, rightWin = rv < lv;
+      const scName = (state.SCENARIOS.find((s) => s[0] === state.scenario) || [state.scenario, state.scenario])[1];
       document.getElementById("scoreboard").innerHTML =
-        "<div><b>Thời gian chờ tích luỹ cả episode (số thật Chương 4):</b></div>" +
+        "<div><b>Thời gian chờ tích luỹ cả episode (số thật Chương 4) — kịch bản: " + scName + ":</b></div>" +
         '<div class="' + (leftWin ? "sb-win" : "") + '">TRÁI — ' + fmt(sb.left) + "</div>" +
         '<div class="' + (rightWin ? "sb-win" : "") + '">PHẢI — ' + fmt(sb.right) + "</div>" +
         '<div class="note">Cùng kịch bản/seed; veh-h thấp hơn = tốt hơn.</div>';
@@ -154,7 +208,7 @@
     function loop(ts) {
       if (last == null) last = ts;
       const dtSec = Math.min(0.1, (ts - last) / 1000); last = ts;
-      if (state.playing) { acc += dtSec * state.speed; while (acc >= 1) { acc -= 1; state.step = (state.step + 1) % nSteps; } redraw(); }
+      if (state.playing) { acc += dtSec * state.speed; while (acc >= 1) { acc -= 1; state.step = (state.step + 1) % state.nSteps; } redraw(); }
       requestAnimationFrame(loop);
     }
     redraw(); updateScore(); requestAnimationFrame(loop);

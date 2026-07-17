@@ -2,6 +2,8 @@
 body { margin: 0; font-family: system-ui, Arial, sans-serif; background: #0f1720; color: #e8ebed; }
 header { padding: 10px 18px; } header h1 { font-size: 18px; margin: 0 0 4px; }
 .note { font-size: 12px; color: #9fb2bf; margin: 0; }
+#scenario-bar { display: inline-block; font-size: 13px; margin-top: 8px; }
+#scenario-bar select { margin-left: 4px; }
 #panels { display: flex; gap: 12px; padding: 0 18px; flex-wrap: wrap; }
 figure { margin: 0; } figcaption { font-size: 14px; padding: 4px 0; }
 canvas { background: #e8ebed; border-radius: 8px; width: 100%; max-width: 560px; height: auto; }
