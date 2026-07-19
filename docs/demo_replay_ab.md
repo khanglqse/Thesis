@@ -1,5 +1,7 @@
 # A/B replay: DQN vs baseline on the real network (browser, no container)
 
+Bản 3D (deck.gl, đèn theo từng làn): xem docs/demo_replay_3d.md.
+
 This is the **honest DQN demo**. It replays real CityFlow simulation logs
 (`results/haichau_rush/demo/replay_*_demo.txt`) recorded on the real 53-node
 Hải Châu arterial network, side by side, frame-synchronized. The scoreboard
