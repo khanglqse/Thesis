@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo 3D — Fixed-Time vs DQN (Hải Châu)</title>
+<link rel="stylesheet" href="replay_3d.css">
+</head>
+<body>
+<header>
+  <h1>So sánh 3D: <span id="left-title">Cố định (Fixed-Time)</span> vs <span id="right-title">RL (DQN)</span> — mạng Hải Châu (53 nút đèn)</h1>
+  <p class="note">Replay từ CityFlow thật (không phải suy luận trực tiếp) ·
+     Thanh đứng tại vạch dừng = đèn theo từng làn (xanh/đỏ) ·
+     <a href="replay_ab.html">Xem bản 2D</a></p>
+</header>
+<section class="controls">
+  <label>Kịch bản <select id="scenario"></select></label>
+  <button id="play">▶︎ Chạy</button>
+  <input id="scrub" type="range" min="0" max="119" value="0">
+  <span id="clock">t = 0s</span>
+  <label>Tốc độ <select id="speed">
+    <option value="100">1×</option><option value="50">2×</option><option value="25">4×</option>
+  </select></label>
+  <button id="reset-cam">Đặt lại camera</button>
+</section>
+<section class="panels">
+  <div class="panel">
+    <label>Trái: <select id="ctrl-left"></select></label>
+    <div id="deck-left" class="deck-holder"></div>
+  </div>
+  <div class="panel">
+    <label>Phải: <select id="ctrl-right"></select></label>
+    <div id="deck-right" class="deck-holder"></div>
+  </div>
+</section>
+<section id="scoreboard" class="scoreboard"></section>
+<p class="note">Kéo chuột: xoay · Shift+kéo (hoặc chuột phải): trượt · Lăn: thu-phóng. Hai khung khoá cùng camera và cùng thời điểm.</p>
+<script src="vendor/deck.min.js"></script>
+<script src="replay_ab_core.js"></script>
+<script src="replay_3d_core.js"></script>
+<script src="replay_3d.js"></script>
+</body>
+</html>

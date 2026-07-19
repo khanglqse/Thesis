@@ -43,6 +43,8 @@ def main():
     print("Open: {}".format(url))
     print("A/B replay (DQN vs baseline, real network): "
           "http://localhost:{}/frontend/replay_ab.html".format(args.port))
+    print("3D A/B replay (deck.gl):                       "
+          "http://localhost:{}/frontend/replay_3d.html".format(args.port))
     print("In the page, pick:")
     print("  Roadnet file: {}".format(roadnet))
     if demo_dir.exists():
