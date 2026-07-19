@@ -18,7 +18,7 @@
   const COMPARISON = (sc) => `/results/${sc}/comparison.json`;
   const CAR_COLORS = [[242, 191, 215], [183, 235, 228], [219, 235, 183],
                       [245, 221, 181], [212, 181, 245]];
-  const DT = 10; // seconds of sim time per replay frame (action interval)
+  const DT = 1; // seconds per replay frame (CityFlow logs one frame per 1s step)
 
   const S = {
     scenario: DEFAULT_SCENARIO,

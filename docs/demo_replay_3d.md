@@ -9,7 +9,7 @@ Trang: `frontend/replay_3d.html` — chạy cùng server với bản 2D:
 
 - Hai khung 3D **khoá cùng camera và cùng thời điểm**: trái mặc định Cố định
   (Fixed-Time), phải mặc định DQN; đổi được từng bên (Max-Pressure, Ngẫu nhiên).
-- **Replay CityFlow thật** (120 khung × 10 s) trên mạng Hải Châu 53 nút đèn —
+- **Replay CityFlow thật** (120 khung × 1 s — ~2 phút đầu của episode) trên mạng Hải Châu 53 nút đèn —
   không phải suy luận trực tiếp (live inference). Số liệu bảng điểm đọc từ
   `results/<kịch bản>/comparison.json` (số thật của Chương 4).
 - **Đèn theo từng làn:** thanh đứng màu xanh/đỏ tại vạch dừng của mỗi làn
