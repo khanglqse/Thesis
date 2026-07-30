@@ -76,16 +76,20 @@ Single-seed variant runs (`results/<scen>/exp_abl_*`) + multi-seed main configs
 
 ### Measured numbers (queue)
 Rush — Fixed 647.6, Max-Pressure 388.2:
-- DQN `queue_norm` (MAIN, 5-seed): **407.7 ± 8.8**  (vs Fixed +37.1%, vs MP −5.0%)
-- DQN `dueling` (5-seed [378.6, 420.3, 449.8, 412.9, 422.4]): **416.8 ± 20.0**  (vs Fixed +35.6%, vs MP −7.4%)
-  → **RESOLVED: mean−CI95 = 396.8 > MP 388.2 → the 378.6 was a lucky seed; "no variant beats MP" HOLDS (bulletproof).**
-  Dueling (416.8±20.0) ≈ queue_norm (407.7±8.8): overlapping CIs, statistically indistinguishable (dueling slightly worse).
-  Applied: kept Abstract/Conclusion "does not beat MP"; tab:ablation + findings rewritten on rush+peak (DONE).
+- DQN `queue_norm` (MAIN, 5-seed): **407.7 ± 14.0** (Student-t)  (vs Fixed +37.1%, vs MP −5.0%)
+- DQN `dueling` (5-seed [378.6, 420.3, 449.8, 412.9, 422.4]): **416.8 ± 31.7** (Student-t)  (vs Fixed +35.6%, vs MP −7.4%)
+  → **RESOLVED: mean 416.8 is clearly above (worse than) MP 388.2; the 378.6 was a lucky seed; "no variant beats MP" HOLDS.**
+  **CI-formula update (2026-07-22):** with the corrected Student-t CI (was ±20.0 normal-approx) the dueling
+  interval is [385.1, 448.5], whose lower tail dips just under MP (388.2) — so drop the "entire CI above MP /
+  bulletproof" wording (decision-rule branch 3 below: "approaches but does not significantly beat MP"). The
+  conclusion is unchanged because the *mean* is well above MP; dueling only touches MP at its optimistic tail.
+  Dueling (416.8±31.7) ≈ queue_norm (407.7±14.0): overlapping CIs, statistically indistinguishable (dueling slightly worse).
+  Applied: kept Abstract/Conclusion "does not beat MP"; tab:ablation caption + findings softened to match (DONE 2026-07-22).
 - DQN warm-start+n-step: 430.7  (vs Fixed +33.5%, vs MP −10.9%)  ← did NOT hurt at realistic peak
 - DQN `pressure` reward: 827.6  ← DROP: rs=0.5 was tuned for queue_norm, mis-scales pressure (artifact, not a reward finding)
 
 Peak — Fixed 4314.0, Max-Pressure 3758.3:
-- DQN `ats`+`efficient_pressure` (MAIN, 5-seed): **4093.8 ± 80.3**  (vs Fixed +5.1%, vs MP −8.9%)
+- DQN `ats`+`efficient_pressure` (MAIN, 5-seed): **4093.8 ± 127.1** (Student-t)  (vs Fixed +5.1%, vs MP −8.9%)
 - DQN basic (pressure+basic): 4118.5  (vs Fixed +4.5%, vs MP −9.6%)  → ATS vs basic = 0.6%, WITHIN CI
 
 ### Decision rule for dueling (queue, MP = 388.2)

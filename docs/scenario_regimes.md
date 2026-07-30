@@ -41,10 +41,16 @@ Multi-seed (K=5) means from the re-run with the checkpoint horizon-bug fix
 
 | Scenario        | DQN vs Fixed-Time (wait-hours) | seeds | status |
 |-----------------|-------------------------------:|:-----:|--------|
-| `haichau_rush`  | **+37.1% ± 2.5 veh-h**          | 5/5   | FINAL — headline (vs MP −5.0%) |
-| `haichau_calib` | **+21.6% ± 18.3 veh-h**         | 5/5   | FINAL |
-| `haichau_peak`  | **+5.1% ± 22.3 veh-h**          | 5/5   | FINAL |
-| `haichau`       | **−39.9% ± 7.9 veh-h**          | 5/5   | FINAL — worse than Random |
+| `haichau_rush`  | **+37.1% ± 3.9 veh-h**          | 5/5   | FINAL — headline (vs MP −5.0%) |
+| `haichau_calib` | **+21.6% ± 28.9 veh-h**         | 5/5   | FINAL |
+| `haichau_peak`  | **+5.1% ± 35.3 veh-h**          | 5/5   | FINAL |
+| `haichau`       | **−39.9% ± 12.4 veh-h**         | 5/5   | FINAL — worse than Random |
+
+> **CI note (2026-07-22):** CIs above use the corrected Student-t formula (df=4, sample std) — see
+> `docs/thesis_improvement_review.md` §A1. As a *reduction %* vs Fixed-Time the intervals are rush
+> +37.1% [34.9, 39.2], calib +21.6% [13.1, 30.1], peak +5.1% [2.2, 8.1], dense −39.9% [−41.3, −38.5]
+> — **all four keep their sign** (none crosses 0). The pre-2026-07-22 CIs (±2.5/±18.3/±22.3/±7.9) used
+> a too-narrow normal-approx (z=1.96, ddof=0) and are superseded.
 
 **The spectrum:** the control gap is largest at the realistic peak (`rush`), shrinks as the
 network saturates (`calib` → `peak`), and **reverses to a loss under gross oversaturation**
@@ -72,6 +78,7 @@ gridlocked network. We report the dense failure rather than hide it.
   `fig:training` switched to rush (queue −45.5%); 4 `methods_*.png` regenerated with CI error bars
   (`scripts/regen_methods_multiseed.py`). Tooling: `scripts/emit_ch4_tables.py` (stale-guard).
 - **Ablation DONE (option A, 2026-07-15):** `tab:ablation` re-pointed off dense to rush+peak.
-  Dueling resolved ×5 (416.8±20.0, CI above MP → "no variant beats MP" bulletproof); warm-start
+  Dueling resolved ×5 (416.8±31.7 Student-t; mean well above MP 388.2, CI reaches MP only at lower
+  tail → "no variant beats MP" holds — mean is clearly worse); warm-start
   regime-scoped (hurts only under oversaturation); ATS-not-robust (0.6% < CI); pressure-at-rush
   dropped (rs mis-scale). Full record: `docs/ablation_honest_plan.md`.

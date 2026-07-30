@@ -8,7 +8,6 @@
 
 @article{Sims_1980, title={The Sydney coordinated adaptive traffic (SCAT) system philosophy and benefits}, volume={29}, ISSN={1939-9359}, url={http://dx.doi.org/10.1109/T-VT.1980.23833}, DOI={10.1109/T-VT.1980.23833}, number={2}, journal={IEEE Transactions on Vehicular Technology}, publisher={IEEE}, author={Sims, A. G. and Dobinson, K. W.}, year={1980}, month=may, pages={130–137} }
 
-@inbook{Varaiya_2013, title={The Max-Pressure Controller for Arbitrary Networks of Signalized Intersections}, ISBN={9781461462439}, ISSN={2195-7258}, url={http://dx.doi.org/10.1007/978-1-4614-6243-9_2}, DOI={10.1007/978-1-4614-6243-9_2}, booktitle={Advances in Dynamic Network Modeling in Complex Transportation Systems}, publisher={Springer New York}, author={Varaiya, Pravin}, year={2013}, pages={27–66} }
 
 @inproceedings{Pumir_2015, title={Stability of modified max pressure controller with application to signalized traffic networks}, url={http://dx.doi.org/10.1109/acc.2015.7171007}, DOI={10.1109/acc.2015.7171007}, booktitle={2015 American Control Conference (ACC)}, publisher={IEEE}, author={Pumir, Thomas and Anderson, Leah and Triantafyllos, Dimitrios and Bayen, Alexandre M.}, year={2015}, month=jul, pages={1879–1886} }
 
@@ -51,9 +50,7 @@
 
 @book{Wolf_2011, title={OpenStreetMap Collaborative Prototype, Phase 1}, ISSN={2331-1258}, url={http://dx.doi.org/10.3133/ofr20111136}, DOI={10.3133/ofr20111136}, journal={Open-File Report}, institution={US Geological Survey}, author={Wolf, Eric B. and Matthews, Greg D. and McNinch, Kevin and Poore, Barbara S.}, year={2011}, pages={i–23} }
 
-@inproceedings{Wei_2019, series={KDD ’19}, title={PressLight: Learning Max Pressure Control to Coordinate Traffic Signals in Arterial Network}, url={http://dx.doi.org/10.1145/3292500.3330949}, DOI={10.1145/3292500.3330949}, booktitle={Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining}, publisher={ACM}, author={Wei, Hua and Chen, Chacha and Zheng, Guanjie and Wu, Kan and Gayah, Vikash and Xu, Kai and Li, Zhenhui}, year={2019}, month=jul, pages={1290–1298}, collection={KDD ’19} }
 
-@inproceedings{Wei_2019, series={CIKM ’19}, title={CoLight: Learning Network-level Cooperation for Traffic Signal Control}, url={http://dx.doi.org/10.1145/3357384.3357902}, DOI={10.1145/3357384.3357902}, booktitle={Proceedings of the 28th ACM International Conference on Information and Knowledge Management}, publisher={ACM}, author={Wei, Hua and Xu, Nan and Zhang, Huichu and Zheng, Guanjie and Zang, Xinshi and Chen, Chacha and Zhang, Weinan and Zhu, Yanmin and Xu, Kai and Li, Zhenhui}, year={2019}, month=nov, pages={1913–1922}, collection={CIKM ’19} }
 
 @article{Foerster_2018, title={Counterfactual Multi-Agent Policy Gradients}, volume={32}, ISSN={2159-5399}, url={http://dx.doi.org/10.1609/aaai.v32i1.11794}, DOI={10.1609/aaai.v32i1.11794}, number={1}, journal={Proceedings of the AAAI Conference on Artificial Intelligence}, publisher={Association for the Advancement of Artificial Intelligence (AAAI)}, author={Foerster, Jakob and Farquhar, Gregory and Afouras, Triantafyllos and Nardelli, Nantas and Whiteson, Shimon}, year={2018}, month=apr }
 
@@ -568,22 +565,6 @@
   year={2023}
 }
 
-@inproceedings{Lite_2021,
-  title={PressLight: Learning Max Pressure Control to Coordinate Traffic Signals in Arterial Network},
-  booktitle={Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining},
-  author={Wei, Hua and Chen, Chacha and Zheng, Guanjie and Wu, Kan and Gayah, Vikash V and Xu, Kai and Li, Zhenhui},
-  year={2019},
-  pages={1290--1298}
-}
-
-@inproceedings{CoLight_2022,
-  title={CoLight: Learning Network-level Cooperation for Traffic Signal Control},
-  booktitle={Proceedings of the 28th ACM International Conference on Information and Knowledge Management},
-  author={Wei, Hua and Xu, Nan and Zhang, Huichu and Zheng, Guanjie and Zang, Xinshi and Chen, Chacha and Zhang, Weinan and Zhu, Yanmin and Xu, Kai and Li, Zhenhui},
-  year={2019},
-  pages={1913--1922}
-}
-
 @article{GraphLight2023,
   title={GraphLight: Graph Convolution based Deep Reinforcement Learning for Traffic Signal Control},
   journal={arXiv preprint arXiv:2303.15180},
@@ -684,4 +665,106 @@
   booktitle={Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
   author={Ault, James and Sharon, Guni},
   year={2021}
+}
+
+% --- Added 2026-07-20: statistical evaluation practice in RL ---
+
+@inproceedings{Henderson_2018,
+  title={Deep Reinforcement Learning that Matters},
+  booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
+  author={Henderson, Peter and Islam, Riashat and Bachman, Philip and Pineau, Joelle and Precup, Doina and Meger, David},
+  year={2018},
+  url={https://arxiv.org/abs/1709.06560}
+}
+
+@inproceedings{Agarwal_2021,
+  title={Deep Reinforcement Learning at the Edge of the Statistical Precipice},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  author={Agarwal, Rishabh and Schwarzer, Max and Castro, Pablo Samuel and Courville, Aaron and Bellemare, Marc G.},
+  year={2021},
+  url={https://arxiv.org/abs/2108.13264}
+}
+
+@article{Colas_2018,
+  title={How Many Random Seeds? Statistical Power Analysis in Deep Reinforcement Learning Experiments},
+  journal={arXiv preprint arXiv:1806.08295},
+  author={Colas, C{\'e}dric and Sigaud, Olivier and Oudeyer, Pierre-Yves},
+  year={2018},
+  url={https://arxiv.org/abs/1806.08295}
+}
+
+% --- Added 2026-07-20: robustness of learned traffic signal control ---
+
+@inproceedings{Rodrigues_2019,
+  title={Towards Robust Deep Reinforcement Learning for Traffic Signal Control: Demand Surges, Incidents and Sensor Failures},
+  booktitle={IEEE Intelligent Transportation Systems Conference (ITSC)},
+  author={Rodrigues, Filipe and Azevedo, Carlos Lima},
+  year={2019},
+  doi={10.1109/ITSC.2019.8917451},
+  url={https://arxiv.org/abs/1904.08353}
+}
+
+@article{Nguyen_TREX_2025,
+  title={Robustness of Reinforcement Learning-Based Traffic Signal Control under Incidents: A Comparative Study},
+  journal={arXiv preprint arXiv:2506.13836},
+  author={Nguyen, Dang Viet Anh and Azevedo, Carlos Lima and Toledo, Tomer and Rodrigues, Filipe},
+  year={2025},
+  url={https://arxiv.org/abs/2506.13836}
+}
+
+% --- Added 2026-07-20: recent directions (2024--2025) ---
+
+@article{Xiao_2025,
+  title={Advances in Reinforcement Learning for Traffic Signal Control: A Review of Recent Progress},
+  journal={Intelligent Transportation Infrastructure},
+  author={Xiao, Feng and Lu, Jiaming and Li, Lu and Tu, Wenwen and Li, Chaojing},
+  volume={4},
+  year={2025},
+  doi={10.1093/iti/liaf009}
+}
+
+@article{Jiang_GESA_2024,
+  title={A General Scenario-Agnostic Reinforcement Learning for Traffic Signal Control},
+  journal={IEEE Transactions on Intelligent Transportation Systems},
+  author={Jiang, Haoyuan and Li, Ziyue and Bai, Lei and Zhao, Rui},
+  year={2024}
+}
+
+@inproceedings{Tran_TSLib_2021,
+  title={TSLib: A Unified Traffic Signal Control Framework Using Deep Reinforcement Learning and Benchmarking},
+  booktitle={2021 IEEE International Conference on Big Data},
+  author={Tran, Toan V. and Doan, Thanh-Nam and Sartipi, Mina},
+  pages={1739--1747},
+  year={2021},
+  doi={10.1109/BigData52589.2021.9671993}
+}
+
+% --- Added 2026-07-20: urban traffic context in Vietnam ---
+
+@article{Minh_2005,
+  title={The Speed, Flow and Headway Analyses of Motorcycle Traffic},
+  journal={Journal of the Eastern Asia Society for Transportation Studies},
+  author={Minh, Chu Cong and Sano, Kazushi and Matsumoto, Shoji},
+  volume={6},
+  year={2005}
+}
+
+@article{Ngoc_2021,
+  title={A Comparative Study on Travel Mode Share, Emission, and Safety in Five Vietnamese Cities},
+  journal={International Journal of Intelligent Transportation Systems Research},
+  author={Ngoc, An Minh and Nishiuchi, Hiroaki and Truong, Nguyen Van and Huyen, Le Thu},
+  volume={20},
+  number={1},
+  pages={157--169},
+  year={2022},
+  doi={10.1007/s13177-021-00283-0}
+}
+
+@inproceedings{NguyenHo_2014,
+  title={Modelling Circulation Behaviour of Vietnamese: Applying for Simulation of Hanoi Traffic Network},
+  booktitle={Context-Aware Systems and Applications (ICCASA 2013), Revised Selected Papers},
+  publisher={Springer},
+  author={Nguyen, Manh and Ho, Tuong},
+  year={2014},
+  doi={10.1007/978-3-319-05939-6_3}
 }

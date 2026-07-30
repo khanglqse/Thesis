@@ -1,7 +1,7 @@
 # Reaching a Realistic Improvement — Demand Calibration + DQN Tuning
 
 > **SUPERSEDED (2026-07-15):** the +30.8% here is the original *single-seed* rush result. The
-> final **multi-seed (5-seed) rush headline is +37.1% ± 2.5 veh-h** vs Fixed-Time; dense −39.9%.
+> final **multi-seed (5-seed) rush headline is +37.1% ± 3.9 veh-h** (Student-t) vs Fixed-Time; dense −39.9%.
 > See [scenario_regimes.md](scenario_regimes.md) for the canonical final numbers.
 
 *Why the early DQN gains looked small (~6–9%) and how a corrected demand regime

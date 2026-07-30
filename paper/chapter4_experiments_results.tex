@@ -196,6 +196,15 @@ the waiting-time and queue metrics separate the controllers far more sharply tha
 average travel time, because only part of the scheduled demand has entered the network
 by the end of the horizon.
 
+Because deep-RL outcomes are known to be sensitive to the training seed, every DQN
+figure in this chapter is reported as the mean $\pm$ 95\% confidence interval over five
+independent training seeds. With only five seeds the interval is computed with the
+Student-t distribution (degrees of freedom $=K-1=4$) on the sample standard deviation ---
+the correct small-sample interval, materially wider than a normal ($z=1.96$)
+approximation --- following recommended statistical practice for reinforcement-learning
+evaluation \cite{Henderson_2018,Agarwal_2021,Colas_2018}; the rule-based baselines are
+deterministic replays and therefore carry no seed variance.
+
 \section{Results}
 \label{sec:results}
 
@@ -221,10 +230,10 @@ realistic-to-moderate load, but \emph{degrades below both under gross oversatura
 \toprule
 \textbf{Scenario} & \textbf{Fixed-Time} & \textbf{Random} & \textbf{Max-Pressure} & \textbf{DQN (proposed)} \\
 \midrule
-\texttt{haichau}       & 912.1 (0\%) & 928.5 ($-1.8$\%) & \textbf{820.1 ($+10.1$\%)} & 1276.0$\pm$7.9 ($-39.9$\%) \\
-\texttt{haichau\_calib}& 339.6 (0\%) & 350.6 ($-3.2$\%) & \textbf{234.2 ($+31.0$\%)} & 266.3$\pm$18.3 ($+21.6$\%) \\
-\texttt{haichau\_peak} & 1198.3 (0\%)& 1228.7 ($-2.5$\%)& \textbf{1044.0 ($+12.9$\%)}& 1137.2$\pm$22.3 ($+5.1$\%) \\
-\texttt{haichau\_rush} & 179.9 (0\%) & 196.9 ($-9.5$\%) & \textbf{107.8 ($+40.1$\%)} & \textbf{113.2$\pm$2.5 ($+37.1$\%)} \\
+\texttt{haichau}       & 912.1 (0\%) & 928.5 ($-1.8$\%) & \textbf{820.1 ($+10.1$\%)} & 1276.0$\pm$12.4 ($-39.9$\%) \\
+\texttt{haichau\_calib}& 339.6 (0\%) & 350.6 ($-3.2$\%) & \textbf{234.2 ($+31.0$\%)} & 266.3$\pm$28.9 ($+21.6$\%) \\
+\texttt{haichau\_peak} & 1198.3 (0\%)& 1228.7 ($-2.5$\%)& \textbf{1044.0 ($+12.9$\%)}& 1137.2$\pm$35.3 ($+5.1$\%) \\
+\texttt{haichau\_rush} & 179.9 (0\%) & 196.9 ($-9.5$\%) & \textbf{107.8 ($+40.1$\%)} & \textbf{113.2$\pm$3.9 ($+37.1$\%)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -235,7 +244,7 @@ both clear the tuned Fixed-Time and Random baselines; only in the grossly oversa
 \texttt{haichau} regime does the DQN fall behind all baselines (the saturation spectrum is
 analysed in Section~\ref{sec:analysis}). On the headline \texttt{haichau\_rush} regime --- a
 realistic arterial peak --- the DQN cuts cumulative waiting time by \textbf{37.1\%} relative to
-Fixed-Time (multi-seed 95\% CI $\pm2.5$ veh-h), capturing most of the $40.1$\% that the
+Fixed-Time (multi-seed 95\% CI $\pm3.9$ veh-h), capturing most of the $40.1$\% that the
 hand-engineered Max-Pressure heuristic achieves, while Random makes congestion \emph{worse}
 than Fixed-Time.
 
@@ -248,10 +257,10 @@ mean $\pm$ 95\% CI over five training seeds; baselines are deterministic.}
 \toprule
 \textbf{Scenario} & \textbf{Fixed-Time} & \textbf{Random} & \textbf{Max-Pressure} & \textbf{DQN} \\
 \midrule
-\texttt{haichau}       & 4104.7 & 4178.3 & \textbf{3690.6} & 4593.6$\pm$28.3 \\
-\texttt{haichau\_calib}& 1222.6 & 1262.2 & \textbf{843.1}  & 958.6$\pm$65.8 \\
-\texttt{haichau\_peak} & 4314.0 & 4423.3 & \textbf{3758.3} & 4093.8$\pm$80.3 \\
-\texttt{haichau\_rush} & 647.6  & 708.8  & \textbf{388.2}  & 407.7$\pm$8.8 \\
+\texttt{haichau}       & 4104.7 & 4178.3 & \textbf{3690.6} & 4593.6$\pm$44.8 \\
+\texttt{haichau\_calib}& 1222.6 & 1262.2 & \textbf{843.1}  & 958.6$\pm$104.1 \\
+\texttt{haichau\_peak} & 4314.0 & 4423.3 & \textbf{3758.3} & 4093.8$\pm$127.1 \\
+\texttt{haichau\_rush} & 647.6  & 708.8  & \textbf{388.2}  & 407.7$\pm$14.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -265,8 +274,20 @@ mean $\pm$ 95\% CI over five training seeds; baselines are deterministic.}
   \label{fig:rush}
 \end{figure}
 
-\subsection{Robustness to Sensor Noise}
+\subsection{Robustness and Generalization}
 \label{sec:robustness}
+
+We probe three failure modes beyond clean, in-distribution operation --- sensor noise,
+a local incident, and a demand shift --- the canonical stress axes for learned signal
+control \cite{Rodrigues_2019,Nguyen_TREX_2025}. These stress tests use the frozen learned
+checkpoint on a single fixed evaluation seed, so few-percent differences between controllers
+are indicative rather than statistically resolved; the direction of the effects, not their
+exact magnitude, is what we report.\footnote{Because a single frozen checkpoint is used, the
+clean-condition DQN queue here ($448.2$ on \texttt{haichau\_rush}) is one seed's value and sits
+above the five-seed mean of $407.7$ reported in Table~\ref{tab:queue}; every controller is held
+to the same single-seed protocol, so the within-table comparisons remain valid.}
+
+\paragraph{Sensor noise.}
 
 A controller that relies on live vehicle counts is only useful if it tolerates imperfect
 sensing \cite{RESCO_2021}. We stress-test this by corrupting every controller's per-lane count
@@ -278,7 +299,7 @@ Figure~\ref{fig:robustness} shows the result on the headline \texttt{haichau\_ru
 
 Both count-based controllers are \textbf{robust}: even at $0.8\times$ per-lane noise the
 ground-truth queue rises by at most $\sim$4--8\% (Max-Pressure $388\!\to\!402$, DQN
-$448\!\to\!467$), and both remain far below the noise-blind Fixed-Time ($696$) at every level.
+$448\!\to\!467$), and both remain far below the noise-blind Fixed-Time ($648$) at every level.
 Max-Pressure is marginally the more stable of the two and the DQN is comparable --- we find
 \emph{no} robustness advantage for either, but the practical point stands: the learned
 controller degrades gracefully under substantial sensing error and is deployable without
@@ -295,6 +316,74 @@ independent per-lane errors largely cancel in the phase comparison.
   measures true performance rather than the noisy sensor.}
   \label{fig:robustness}
 \end{figure}
+
+\paragraph{Local incident (stuck signal).} We next inject a mid-episode incident: the busiest
+intersection (the one with the most incoming lanes) is forced to a fixed green for the middle
+third of the horizon --- a stuck signal --- while every other intersection is controlled
+normally. Table~\ref{tab:incident} reports the ground-truth queue with and without the incident.
+All controllers degrade only mildly ($1$--$4\%$), and the learned DQN shows \emph{no} robustness
+advantage: it degrades marginally \emph{more} than Max-Pressure and Fixed-Time ($+4.2\%$ vs
+$+2.7\%$ and $+1.7\%$ on \texttt{haichau\_rush}; $+2.5\%$ vs $+1.8\%$ and $+1.5\%$ on
+\texttt{haichau\_calib}). The stuck signal removes exactly the local adaptivity the pressure and
+learned controllers exploit at that node, whereas the count-blind Fixed-Time has less to lose ---
+so an incident narrows, rather than widens, the gap in the learned controller's favour.
+
+\begin{table}[H]
+\centering
+\caption{Local-incident robustness: ground-truth mean total queue (lower is better) with no
+incident (``clean'') versus a single busiest-intersection stuck signal held for the middle third
+of the horizon. Percentages are the degradation relative to each controller's own clean queue.
+The learned DQN degrades slightly more than the baselines --- no robustness advantage under a
+local incident.}
+\label{tab:incident}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & \multicolumn{2}{c}{\texttt{haichau\_rush}} & \multicolumn{2}{c}{\texttt{haichau\_calib}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Controller} & \textbf{clean} & \textbf{incident} & \textbf{clean} & \textbf{incident} \\
+\midrule
+Fixed-Time   & 647.6 & 658.7 ($+1.7$\%) & 1222.6 & 1241.3 ($+1.5$\%) \\
+Max-Pressure & 388.2 & 398.5 ($+2.7$\%) & 843.1  & 858.0 ($+1.8$\%) \\
+Random       & 708.8 & 717.5 ($+1.2$\%) & 1262.2 & 1274.9 ($+1.0$\%) \\
+DQN          & 448.2 & 467.2 ($+4.2$\%) & 1090.5 & 1118.1 ($+2.5$\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Demand shift (generalization).} Finally we evaluate each trained DQN on the
+\emph{other} regime's demand, with no retraining, to test out-of-distribution generalization
+(Table~\ref{tab:shift}). Transfer is markedly asymmetric. Because these are single-seed frozen
+checkpoints, we anchor the comparison on the \emph{deterministic} Fixed-Time baseline on the test
+flow, which is protocol-clean; the native single-seed column is indicative only. The controller
+trained on the realistic peak \texttt{haichau\_rush} transfers to the heavier \texttt{haichau\_calib}
+essentially for free: at $944.6$ its queue is within seed noise of the calib-native single-seed
+checkpoint ($1090.5$) and sits $22.7\%$ below Fixed-Time --- effectively matching the $21.6\%$
+reduction the in-regime calib policy achieves against Fixed. The reverse --- the
+\texttt{haichau\_calib} controller applied \emph{down} to the lighter \texttt{haichau\_rush} ---
+transfers poorly: queue $594.3$ is $32.6\%$ above the rush-native single-seed checkpoint ($448.2$)
+and only $8.2\%$ below Fixed-Time, against the $37\%$ reduction the in-regime rush policy achieves.
+Training on the less-saturated regime yields the more transferable policy; a controller tuned on a
+heavier regime over-commits to clearing large queues and is miscalibrated for lighter demand.
+
+\begin{table}[H]
+\centering
+\caption{Demand-shift generalization: mean total queue (lower is better) of each DQN evaluated on
+the \emph{other} regime's flow without retraining, against the in-regime (native) DQN and the
+Fixed-Time baseline on the test flow. Native is the same single-seed frozen-checkpoint protocol as
+the transferred controller (identical to the ``clean'' column of Table~\ref{tab:incident}), so
+transfer/native are directly comparable; the deterministic ``vs Fixed-Time'' column is the
+protocol-clean anchor. Transfer is asymmetric --- the rush-trained policy generalizes up to calib
+at no cost, but the calib-trained policy loses most of its edge on rush.}
+\label{tab:shift}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Train $\rightarrow$ Test} & \textbf{DQN (transfer)} & \textbf{DQN (native)} & \textbf{shift cost} & \textbf{vs Fixed-Time} \\
+\midrule
+\texttt{rush} $\rightarrow$ \texttt{calib} & 944.6 & 1090.5 & $-13.4$\% & $+22.7$\% \\
+\texttt{calib} $\rightarrow$ \texttt{rush} & 594.3 & 448.2 & $+32.6$\% & $+8.2$\% \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Ablation Study}
 \label{sec:ablation}
@@ -315,7 +404,9 @@ realistic-peak (\texttt{haichau\_rush}) and congested-surge (\texttt{haichau\_pe
 ``vs MP'' is the gap to Max-Pressure. Multi-seed entries (the main config per regime and the
 dueling head) are mean $\pm$ 95\% CI over five training seeds; single-seed exploratory variants
 carry no CI. \textbf{No learned variant beats Max-Pressure} --- even the dueling head, whose best
-single seed dipped just below it ($378.6$), has its entire five-seed 95\% CI above Max-Pressure.}
+single seed dipped just below it ($378.6$), has a five-seed mean ($416.8$) well above Max-Pressure,
+with only the lower tail of its (wider, Student-t) 95\% CI reaching down to it; no variant separates
+\emph{below} Max-Pressure.}
 \label{tab:ablation}
 \begin{tabular}{@{}llccc@{}}
 \toprule
@@ -323,13 +414,13 @@ single seed dipped just below it ($378.6$), has its entire five-seed 95\% CI abo
 \midrule
 Rush & Fixed-Time (tuned)                           & 647.6 & 0\%       & $-66.8$\% \\
 Rush & Max-Pressure                                 & 388.2 & $+40.1$\% & 0\% \\
-Rush & DQN \texttt{queue\_norm} (main, 5-seed)      & \textbf{407.7$\pm$8.8}  & \textbf{+37.0\%} & $-5.0$\% \\
-Rush & DQN dueling (5-seed)                         & 416.8$\pm$20.0 & $+35.6$\% & $-7.4$\% \\
+Rush & DQN \texttt{queue\_norm} (main, 5-seed)      & \textbf{407.7$\pm$14.0} & \textbf{+37.0\%} & $-5.0$\% \\
+Rush & DQN dueling (5-seed)                         & 416.8$\pm$31.7 & $+35.6$\% & $-7.4$\% \\
 Rush & DQN warm-start $+$ $n$-step                  & 430.7 & $+33.5$\% & $-10.9$\% \\
 \midrule
 Peak & Fixed-Time (tuned)                           & 4314.0 & 0\%       & $-14.8$\% \\
 Peak & Max-Pressure                                 & 3758.3 & $+12.9$\% & 0\% \\
-Peak & DQN \texttt{ats}+eff.-pressure (main, 5-seed)& \textbf{4093.8$\pm$80.3} & \textbf{+5.1\%} & $-8.9$\% \\
+Peak & DQN \texttt{ats}+eff.-pressure (main, 5-seed)& \textbf{4093.8$\pm$127.1} & \textbf{+5.1\%} & $-8.9$\% \\
 Peak & DQN basic (plain state)                      & 4118.5 & $+4.5$\%  & $-9.6$\% \\
 \bottomrule
 \end{tabular}
@@ -340,14 +431,15 @@ The salient findings:
   \item \textbf{No learned variant beats Max-Pressure --- confirmed under seed variation.}
         Every learned policy lands a few percent above Max-Pressure on queue. The sharpest
         test is the dueling head: its best single seed (queue $378.6$) dipped \emph{below}
-        Max-Pressure ($388.2$), but over five seeds it averages $416.8\pm20.0$ --- its entire
-        95\% CI stays above Max-Pressure, and it is statistically indistinguishable from the
-        plain \texttt{queue\_norm} network ($407.7\pm8.8$). That single favourable seed is
-        exactly why the borderline variants are evaluated multi-seed rather than reported as a
+        Max-Pressure ($388.2$), but over five seeds it averages $416.8\pm31.7$ --- its \emph{mean}
+        sits well above Max-Pressure and it is statistically indistinguishable from the plain
+        \texttt{queue\_norm} network ($407.7\pm14.0$); only the lower tail of its Student-t CI
+        reaches Max-Pressure, so it does not separate \emph{below} it. That single favourable seed
+        is exactly why the borderline variants are evaluated multi-seed rather than reported as a
         flattering point estimate.
   \item \textbf{Reward and architecture move queue only within seed variation.} At the
         realistic peak the learned variants (\texttt{queue\_norm}, dueling, warm-start) span a
-        few percent of queue --- the same order as the $\pm2$--$5\%$ seed CI --- so we report the
+        few percent of queue --- the same order as the $\pm3$--$8\%$ seed CI --- so we report the
         best configuration per regime (Table~\ref{tab:dqncfg}) without ranking them. (The
         original \texttt{pressure} reward is omitted at this regime: its scale was tuned for
         \texttt{queue\_norm} and mis-scales the raw pressure reward, an interaction artifact
@@ -397,7 +489,7 @@ regimes that flatter the learned controller.
 
 \textbf{Why Max-Pressure is hard to beat here.} Max-Pressure greedily selects the phase with
 the largest instantaneous pressure and is \emph{provably throughput-optimal}: it stabilizes
-any demand that some controller could stabilize \cite{MaxPressure_2013,Varaiya_2013}. Two
+any demand that some controller could stabilize \cite{MaxPressure_2013}. Two
 facts explain why our learned agent approaches but does not surpass it. First, this is a
 \emph{network-stability} guarantee on throughput, not a delay guarantee --- Max-Pressure is
 not delay-optimal and is known to behave sub-optimally at low demand --- which is why any gap
@@ -411,7 +503,7 @@ state, or explicit inter-agent coordination --- and this is exactly what the lit
 \emph{does} beat it supplies: PressLight learns a downstream-aware pressure policy and
 surpasses Max-Pressure on an \emph{arterial} network \cite{PressLight_2019}; MPLight scales
 pressure-as-coordination to thousands of signals \cite{MPLight_2020}; CoLight and related work
-add graph attention over neighbours \cite{CoLight_2022,Colight_2019,CoordinatedDQL_2022}. The
+add graph attention over neighbours \cite{Colight_2019,CoordinatedDQL_2022}. The
 discriminator is thus \textbf{information and coordination, not network size} --- learned wins
 over Max-Pressure are documented on arterials as well as grids, but always with richer state or
 coordination, never from purely local queue counts. Consistent with this, enriching the state
@@ -420,6 +512,18 @@ channel did not yield a statistically significant gain (Section~\ref{sec:ablatio
 information that separates Max-Pressure and its learned successors is \emph{downstream-aware and
 coordinated}, not merely local approaching demand --- so neighbour communication and downstream
 state, left as future work, are the identified route to closing the remaining gap.
+
+\textbf{The learned policy is not an imitation of Max-Pressure.} A natural hypothesis is that the
+DQN simply rediscovers Max-Pressure's decision rule. We tested this directly: at every decision we
+also computed the phase Max-Pressure \emph{would} select from the same state (without applying it)
+and recorded whether the two agreed. Agreement is low --- $25.1\%$ on \texttt{haichau\_rush} and
+$26.5\%$ on \texttt{haichau\_calib}, with only $6$--$8$ of the $53$ intersections agreeing with
+Max-Pressure more than $70\%$ of the time (and the per-intersection rate ranging over the full
+$0$--$100\%$). The learned controller therefore attains Max-Pressure-\emph{level} performance
+(Section~\ref{sec:results}) through a substantially \emph{different} policy, not by imitating the
+pressure rule. This is consistent with the ceiling argument above: on the local information the two
+controllers share, several near-equivalent policies achieve similar queue outcomes, and value-based
+learning settles on one of them rather than on Max-Pressure's specific greedy choice.
 
 \textbf{Why average travel time is compressed.} On travel time the top methods differ by
 under one percent, because within the finite horizon only a fraction of scheduled demand

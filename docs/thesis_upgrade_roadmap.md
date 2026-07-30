@@ -1,7 +1,7 @@
 # Thesis Upgrade Roadmap — Traffic RL (Hải Châu / CityFlow)
 
 > **NOTE (2026-07-15):** "+30.8%" below is the old single-seed rush number. Final multi-seed
-> headline = **+37.1% ± 2.5** (rush); dense −39.9%. Canonical: [scenario_regimes.md](scenario_regimes.md).
+> headline = **+37.1% ± 3.9** (rush, Student-t); dense −39.9%. Canonical: [scenario_regimes.md](scenario_regimes.md).
 
 > **Ngày:** 2026-07-12 · **Ngữ cảnh:** đánh giá hiện trạng thesis + kế hoạch nâng cấp toàn diện (nghiên cứu + demo + paper).
 > **Quỹ thời gian:** > 1 tháng tới buổi bảo vệ. **Phạm vi user chốt:** làm cả 3 hướng (demo, robustness, đánh bóng nghiên cứu).
