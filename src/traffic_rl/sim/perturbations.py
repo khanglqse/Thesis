@@ -12,6 +12,29 @@ asymmetry is exactly what the robustness study measures.
 import numpy as np
 
 
+def pick_incident(rn, agent_ids, horizon, block_phase=None):
+    """Construct a deterministic incident for a robustness run.
+
+    Blocks the busiest signalized intersection (most incoming lanes; ties broken by
+    the smallest id, so the choice is reproducible) at a fixed green for the middle
+    third of the horizon -- a stuck-signal / local blockage the rest of the network
+    must absorb and recover from. Returns the (inter_id, t_start, t_end, block_phase)
+    tuple expected by ``PerturbedEngine(incident=...)``.
+
+    block_phase defaults to the target's first *green* lightphase (holding one green
+    while every conflicting movement stays red is the stuck-signal failure); the value
+    is a real lightphase index because the env drives the engine with lightphase
+    indices, not green-action indices.
+    """
+    target = max(sorted(agent_ids), key=lambda a: len(rn.incoming_lanes(a)))
+    if block_phase is None:
+        greens = rn.green_phases(target)
+        block_phase = greens[0] if greens else 0
+    t0 = horizon // 3
+    t1 = 2 * horizon // 3
+    return (target, t0, t1, block_phase)
+
+
 class PerturbedEngine(object):
     def __init__(self, inner, noise_std=0.0, noise_kind="gauss", seed=0, incident=None):
         """incident = (inter_id, t_start, t_end, block_phase) or None.

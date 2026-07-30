@@ -22,7 +22,7 @@ import yaml
 
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.engine import CityFlowEngine
-from traffic_rl.sim.perturbations import PerturbedEngine
+from traffic_rl.sim.perturbations import PerturbedEngine, pick_incident
 from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
 from traffic_rl.agents.fixed_time import FixedTimeController
 from traffic_rl.agents.max_pressure import MaxPressureController
@@ -38,7 +38,7 @@ FIXED_GREEN = float(os.environ.get("FIXED_GREEN", _CFG.get("fixed_green_duration
 NOISE_LEVELS = [0.0, 0.1, 0.2, 0.4, 0.8]
 
 
-def _engine(area, flow_area, tag, out_dir, noise_std):
+def _engine(area, flow_area, tag, out_dir, noise_std, incident=None):
     cfg = {"interval": 1.0, "seed": 0, "dir": "data/danang/",
            "roadnetFile": "roadnet_{}.json".format(area),
            "flowFile": "flow_{}.json".format(flow_area),
@@ -46,8 +46,8 @@ def _engine(area, flow_area, tag, out_dir, noise_std):
     p = out_dir / "cfg_{}.json".format(tag)
     p.write_text(json.dumps(cfg))
     eng = CityFlowEngine(str(p))
-    if noise_std > 0:
-        eng = PerturbedEngine(eng, noise_std=noise_std, seed=0)
+    if noise_std > 0 or incident is not None:
+        eng = PerturbedEngine(eng, noise_std=noise_std, seed=0, incident=incident)
     return eng
 
 
@@ -71,8 +71,8 @@ def main():
     rn = RoadNet.load(str(ROOT / "data" / "danang" / "roadnet_{}.json".format(area)))
     state_mode, hidden, dueling = _dqn_meta(base, area)
 
-    def make_env(flow_area, noise_std, tag):
-        eng = _engine(area, flow_area, tag, out_dir, noise_std)
+    def make_env(flow_area, noise_std, tag, incident=None):
+        eng = _engine(area, flow_area, tag, out_dir, noise_std, incident)
         return MultiAgentTrafficEnv(rn, eng, action_interval=10, max_steps=EVAL_STEPS,
                                     yellow_time=3, min_green=10, count_norm=COUNT_NORM,
                                     state_mode=state_mode)
@@ -82,21 +82,47 @@ def main():
         net.load(str(base / "dqn_{}.npz".format(area)))
         return DQNController(net, env.agent_ids)
 
+    CTRLS = [
+        ("fixed", lambda e: FixedTimeController(e.num_actions, green_duration=FIXED_GREEN, action_interval=10)),
+        ("mp", lambda e: MaxPressureController(rn)),
+        ("rand", lambda e: RandomController(e.num_actions, seed=0)),
+        ("dqn", dqn_ctrl)]
+
+    def _keep(rows):
+        return [{k: r[k] for k in ("controller", "mean_total_queue",
+                 "final_average_travel_time", "queue_series")} for r in rows]
+
+    # mode=incident: block the busiest intersection at a stuck green for the middle
+    # third of the horizon; eval all four controllers with and without the incident,
+    # so the degradation (incident - clean) per controller is directly comparable.
+    if mode == "incident":
+        incident = pick_incident(rn, rn.signalized_ids(), EVAL_STEPS)
+        iid, t0, t1, blk = incident
+        out = {"area": area, "mode": mode, "flow_area": area,
+               "incident": {"inter_id": iid, "t0": t0, "t1": t1, "block_phase": blk},
+               "levels": []}
+        for cond, inc in [("none", None), ("incident", incident)]:
+            rows = []
+            for tag, mk in CTRLS:
+                env = make_env(area, 0.0, "{}_{}".format(tag, cond), inc)
+                rows.append(run_episode(env, mk(env)))
+            out["levels"].append({"condition": cond, "rows": _keep(rows)})
+            print("incident=%-8s: " % cond
+                  + " ".join("%s=%.0f" % (r["controller"], r["mean_total_queue"]) for r in rows))
+        (out_dir / "incident.json").write_text(json.dumps(out))
+        print("wrote", out_dir / "incident.json",
+              "| blocked %s phase %d steps [%d,%d)" % (iid, blk, t0, t1))
+        return 0
+
     levels = NOISE_LEVELS if mode == "noise" else [0.0]
     flow_area = sys.argv[3] if (mode == "shift" and len(sys.argv) > 3) else area
     out = {"area": area, "mode": mode, "flow_area": flow_area, "levels": []}
     for lv in levels:
         rows = []
-        for tag, mk in [
-            ("fixed", lambda e: FixedTimeController(e.num_actions, green_duration=FIXED_GREEN, action_interval=10)),
-            ("mp", lambda e: MaxPressureController(rn)),
-            ("rand", lambda e: RandomController(e.num_actions, seed=0)),
-            ("dqn", dqn_ctrl)]:
+        for tag, mk in CTRLS:
             env = make_env(flow_area, lv, "{}_{}".format(tag, lv))
             rows.append(run_episode(env, mk(env)))
-        out["levels"].append({"noise_std": lv,
-                              "rows": [{k: r[k] for k in ("controller", "mean_total_queue",
-                                        "final_average_travel_time", "queue_series")} for r in rows]})
+        out["levels"].append({"noise_std": lv, "rows": _keep(rows)})
         print("noise=%.2f: " % lv + " ".join("%s=%.0f" % (r["controller"], r["mean_total_queue"]) for r in rows))
     (out_dir / "{}.json".format(mode)).write_text(json.dumps(out))
     print("wrote", out_dir / "{}.json".format(mode))

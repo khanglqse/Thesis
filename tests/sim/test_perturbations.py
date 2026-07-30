@@ -1,5 +1,34 @@
 from tests.conftest import FakeEngine
-from traffic_rl.sim.perturbations import PerturbedEngine
+from traffic_rl.sim.perturbations import PerturbedEngine, pick_incident
+
+
+class _FakeRN:
+    def __init__(self, lanes, greens):
+        self._lanes = lanes
+        self._greens = greens
+
+    def incoming_lanes(self, a):
+        return self._lanes[a]
+
+    def green_phases(self, a):
+        return self._greens[a]
+
+
+def test_pick_incident_targets_busiest_intersection_mid_horizon():
+    rn = _FakeRN({"A": ["l1"], "B": ["l1", "l2", "l3"], "C": ["l1", "l2"]},
+                 {"A": [0, 1], "B": [0, 2, 3], "C": [0, 1]})
+    inter, t0, t1, blk = pick_incident(rn, ["A", "B", "C"], horizon=900)
+    assert inter == "B"            # most incoming lanes
+    assert (t0, t1) == (300, 600)  # middle third of the horizon
+    assert blk == 0                # B's first green lightphase (a stuck green)
+
+
+def test_pick_incident_tiebreak_by_id():
+    rn = _FakeRN({"B": ["l1", "l2"], "A": ["l1", "l2"]},
+                 {"A": [1, 2], "B": [0, 3]})
+    inter, _, _, blk = pick_incident(rn, ["B", "A"], horizon=30)
+    assert inter == "A"            # equal lane count -> smallest id wins (deterministic)
+    assert blk == 1                # A's first green lightphase
 
 
 def test_passthrough_when_off():
