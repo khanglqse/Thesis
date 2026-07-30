@@ -75,6 +75,34 @@
     };
   }
 
+  // Centre of the densest cell of vehicle positions, sampled every `every`-th
+  // frame. Both demos aim their zoom button here: the network's *geometric*
+  // centroid is an empty side street (measured on haichau_rush: 0 of 454
+  // vehicles fell inside the centroid view), so zooming there shows bare roads.
+  // Deterministic: highest count wins, ties broken by lowest cell (gx, gy).
+  function busiestSpot(steps, opts) {
+    opts = opts || {};
+    const cell = opts.cell || 400, every = opts.every || 10;
+    const cells = new Map();
+    for (let i = 0; i < (steps || []).length; i += every) {
+      const f = steps[i];
+      if (!f || !f.cars) continue;
+      for (const c of f.cars) {
+        const gx = Math.floor(c.x / cell), gy = Math.floor(c.y / cell);
+        const k = gx + ":" + gy;
+        const e = cells.get(k);
+        if (e) e.n++; else cells.set(k, { gx: gx, gy: gy, n: 1 });
+      }
+    }
+    let best = null;
+    for (const e of cells.values()) {
+      if (!best || e.n > best.n ||
+          (e.n === best.n && (e.gx < best.gx || (e.gx === best.gx && e.gy < best.gy)))) best = e;
+    }
+    if (!best) return null;
+    return { x: best.gx * cell + cell / 2, y: best.gy * cell + cell / 2, n: best.n, cell: cell };
+  }
+
   function waitHours(queue_series, dt) {
     dt = dt || 10;
     let s = 0; for (const q of queue_series) s += q * dt / 3600.0; return s;
@@ -93,5 +121,6 @@
     return { left: entry(leftKey), right: entry(rightKey), fixedVehH: fw };
   }
 
-  return { parseRoadnet, parseReplay, roadSignal, makeTransform, waitHours, scoreboard };
+  return { parseRoadnet, parseReplay, roadSignal, makeTransform, busiestSpot,
+           waitHours, scoreboard };
 });

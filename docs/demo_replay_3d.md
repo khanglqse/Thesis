@@ -23,7 +23,10 @@ Trang: `frontend/replay_3d.html` — chạy cùng server với bản 2D:
 ## Điều khiển
 
 Kéo chuột: xoay camera · Shift+kéo / chuột phải: trượt · lăn chuột: thu-phóng ·
-"Đặt lại camera": về khung nhìn toàn mạng. Play/tua/tốc độ như bản 2D.
+**"🔍 Điểm đông"**: nhảy camera tới ô đông xe nhất của replay, khung ~300 m
+(ở khung nhìn toàn mạng, xe dài 2 m chỉ ~0.1 px nên **chỉ thấy đường, không thấy
+xe** — bấm nút này trước khi trình bày) · "Đặt lại camera": về khung nhìn toàn
+mạng. Play/tua/tốc độ như bản 2D.
 Đổi kịch bản giữa chừng được (haichau_rush → danang_peak → haichau_peak →
 haichau) — câu chuyện bão hoà giữ nguyên như bản 2D.
 

@@ -130,6 +130,22 @@
     fitState = R3.fitView(S.roadnet.bounds, el.clientWidth, el.clientHeight);
     applyViewState(Object.assign({}, fitState));
   }
+  // Whole-network fit renders a 2 m vehicle at ~0.1 px and a lane bar thinner
+  // still, so at the default camera only the roads are visible. This drops the
+  // camera onto the busiest cell of the replay at BUSY_SPAN metres across, where
+  // vehicles and per-lane bars are actually readable.
+  const BUSY_SPAN = 300;
+  function zoomBusy() {
+    const spot = RAB.busiestSpot(S.steps.left, { cell: 400, every: 10 });
+    if (!spot || !viewState) return;
+    const el = $("deck-left");
+    const zoom = R3.zoomForSpan(el.clientWidth, BUSY_SPAN);
+    applyViewState(Object.assign({}, viewState, {
+      target: [spot.x, spot.y, 0],
+      zoom: Math.min(zoom, viewState.maxZoom == null ? zoom : viewState.maxZoom),
+    }));
+  }
+
   function makeDeck(el) {
     return new deck.Deck({
       parent: el,
@@ -223,10 +239,11 @@
       S.T = parseInt(e.target.value, 10) || 0;
       renderBoth();
     });
+    $("zoom-busy").addEventListener("click", zoomBusy);
     $("reset-cam").addEventListener("click", () => {
       if (fitState) applyViewState(Object.assign({}, fitState));
     });
-    window.__replay3d = { state: S, applyViewState }; // test hook
+    window.__replay3d = { state: S, applyViewState, zoomBusy }; // test hook
     window.__decksReady = loadAll(true);
   }
 

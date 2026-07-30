@@ -16,7 +16,11 @@
                  ["max_pressure", "Max-Pressure"], ["random", "Ngẫu nhiên"]];
   const CTRL_TO_ROW = { dqn: "DQN", fixed_time: "FixedTime", max_pressure: "MaxPressure", random: "Random" };
 
-  const CAR_COLORS = ["#f2bfd7", "#b7ebe4", "#dbebb7", "#f5ddb5", "#d4b5f5"];
+  // Dark, saturated markers: the canvas background is light (#e8ebed), so the
+  // original pastel palette left vehicles all but invisible and standing queues
+  // unreadable — the one thing this A/B view exists to show.
+  const CAR_COLORS = ["#1b3a5c", "#7a2230", "#1f5136", "#6b4310", "#432a63"];
+  const CAR_PX = 3.2; // fixed marker size; vehicles are ~2 m and would be sub-pixel to scale
 
   function fetchText(u) { return fetch(u).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status + " " + u); return r.text(); }); }
 
@@ -47,7 +51,7 @@
     for (let i = 0; i < cars.length; i++) {
       const c = cars[i];
       ctx.fillStyle = CAR_COLORS[i % CAR_COLORS.length];
-      const s = Math.max(1.6, 2.2);
+      const s = CAR_PX;
       ctx.fillRect(T.sx(c.x) - s / 2, T.sy(c.y) - s / 2, s, s);
     }
   }
@@ -101,17 +105,20 @@
   "use strict";
   const R = window.ReplayAB;
 
-  function makeClusterTransform(roadnet, W, H) {
-    // bbox of the 8 intersections nearest the network centroid (zoom target)
-    const inters = roadnet.inters;
-    if (!inters.length) return R.makeTransform(roadnet.bounds, W, H, 8);
-    let cx = 0, cy = 0; for (const n of inters) { cx += n.x; cy += n.y; } cx /= inters.length; cy /= inters.length;
-    const near = inters.slice().sort((a, b) =>
-      ((a.x - cx) ** 2 + (a.y - cy) ** 2) - ((b.x - cx) ** 2 + (b.y - cy) ** 2)).slice(0, 8);
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const n of near) { if (n.x < minX) minX = n.x; if (n.x > maxX) maxX = n.x; if (n.y < minY) minY = n.y; if (n.y > maxY) maxY = n.y; }
-    const px = (maxX - minX) * 0.15 || 50, py = (maxY - minY) * 0.15 || 50;
-    return R.makeTransform({ minX: minX - px, minY: minY - py, maxX: maxX + px, maxY: maxY + py }, W, H, 8);
+  // 300 m each side (600 m across the canvas) keeps 2-3 intersections in frame
+  // while making standing queues readable as chains of vehicle markers.
+  const CLUSTER_HALF_SPAN = 300;
+
+  function makeClusterTransform(roadnet, W, H, steps) {
+    // Aim the zoom where the traffic actually is (busiest cell of the replay).
+    // Previously this framed the 8 intersections nearest the *geometric*
+    // centroid, which on haichau_rush is an empty side street — 0 of 454
+    // vehicles landed inside that view, so the zoom showed bare roads.
+    const spot = R.busiestSpot(steps, { cell: 400, every: 10 });
+    if (!spot) return R.makeTransform(roadnet.bounds, W, H, 8);
+    const h = CLUSTER_HALF_SPAN;
+    return R.makeTransform({ minX: spot.x - h, minY: spot.y - h,
+                             maxX: spot.x + h, maxY: spot.y + h }, W, H, 8);
   }
 
   function runUI(state) {
@@ -125,7 +132,8 @@
     function recomputeDerived() {
       state.nSteps = Math.min(state.panels.left.steps.length, state.panels.right.steps.length);
       state.T = R.makeTransform(state.roadnet.bounds, cvL.width, cvL.height, 16);
-      state.clusterT = makeClusterTransform(state.roadnet, cvL.width, cvL.height);
+      state.clusterT = makeClusterTransform(state.roadnet, cvL.width, cvL.height,
+                                            state.panels.left.steps);
     }
     recomputeDerived();
     const curT = () => (state.zoom ? state.clusterT : state.T);

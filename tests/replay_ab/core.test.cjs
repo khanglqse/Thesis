@@ -45,3 +45,44 @@ test("scoreboard returns real veh-h and pct vs Fixed", () => {
   assert.ok(Math.abs(sb.right.pctVsFixed - 30.8) < 1.0); // DQN -30.8% vs Fixed
   assert.ok(Math.abs(sb.left.pctVsFixed) < 1e-6);        // Fixed vs itself = 0
 });
+
+test("busiestSpot lands on real traffic, not the empty geometric centroid", () => {
+  const rn = R.parseRoadnet(roadnet);
+  const steps = R.parseReplay(replayTxt);
+  const spot = R.busiestSpot(steps, { cell: 400, every: 10 });
+  assert.ok(spot && spot.n > 0, "expected a busiest cell");
+
+  // Count vehicles inside a 1200 m box around the busiest spot vs the same box
+  // around the network's geometric centroid (the pre-fix zoom target).
+  const cx = (rn.bounds.minX + rn.bounds.maxX) / 2;
+  const cy = (rn.bounds.minY + rn.bounds.maxY) / 2;
+  const half = 600;
+  const countIn = (x0, y0) => {
+    let n = 0;
+    for (let i = 0; i < steps.length; i += 10)
+      for (const c of steps[i].cars)
+        if (Math.abs(c.x - x0) <= half && Math.abs(c.y - y0) <= half) n++;
+    return n;
+  };
+  const atSpot = countIn(spot.x, spot.y), atCentroid = countIn(cx, cy);
+  assert.ok(atSpot > atCentroid,
+    "busiest view should hold more vehicles than the centroid view, got " +
+    atSpot + " vs " + atCentroid);
+});
+
+test("busiestSpot is deterministic and breaks ties by lowest cell", () => {
+  const mk = (pts) => [{ cars: pts.map(([x, y]) => ({ x, y })), tl: {} }];
+  // two cells with one car each -> lowest (gx, gy) wins, repeatably
+  const steps = mk([[10, 10], [810, 810]]);
+  const a = R.busiestSpot(steps, { cell: 400, every: 1 });
+  const b = R.busiestSpot(steps, { cell: 400, every: 1 });
+  assert.deepStrictEqual(a, b);
+  assert.strictEqual(a.x, 200);
+  assert.strictEqual(a.y, 200);
+  // a genuinely denser cell wins regardless of position
+  const steps2 = mk([[10, 10], [810, 810], [820, 820], [830, 830]]);
+  const c = R.busiestSpot(steps2, { cell: 400, every: 1 });
+  assert.strictEqual(c.n, 3);
+  assert.strictEqual(c.x, 1000);
+  assert.strictEqual(R.busiestSpot([], {}), null);
+});

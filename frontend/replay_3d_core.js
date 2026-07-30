@@ -74,5 +74,12 @@
     };
   }
 
-  return { carFootprint, laneBars, fitView };
+  // OrbitView zoom that fits `span` metres across a W-pixel panel. At the
+  // whole-network fit zoom a 2 m vehicle is ~0.1 px (invisible), so the demo
+  // needs a "zoom to traffic" view: span ~300 m puts a vehicle at ~5 px.
+  function zoomForSpan(W, span) {
+    return Math.log2(Math.max(1, W) / Math.max(1, span));
+  }
+
+  return { carFootprint, laneBars, fitView, zoomForSpan };
 });

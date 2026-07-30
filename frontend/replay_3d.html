@@ -21,6 +21,7 @@
   <label>Tốc độ <select id="speed">
     <option value="100">1×</option><option value="50">2×</option><option value="25">4×</option>
   </select></label>
+  <button id="zoom-busy">🔍 Điểm đông</button>
   <button id="reset-cam">Đặt lại camera</button>
 </section>
 <section class="panels">
@@ -35,9 +36,11 @@
 </section>
 <section id="scoreboard" class="scoreboard"></section>
 <p class="note">Kéo chuột: xoay · Shift+kéo (hoặc chuột phải): trượt · Lăn: thu-phóng. Hai khung khoá cùng camera và cùng thời điểm.</p>
+<!-- ?v= busts the browser cache: a stale replay_3d.js against fresh HTML throws in
+     init() and leaves a blank page. Bump when either script changes. -->
 <script src="vendor/deck.min.js"></script>
-<script src="replay_ab_core.js"></script>
-<script src="replay_3d_core.js"></script>
-<script src="replay_3d.js"></script>
+<script src="replay_ab_core.js?v=20260730"></script>
+<script src="replay_3d_core.js?v=20260730"></script>
+<script src="replay_3d.js?v=20260730"></script>
 </body>
 </html>

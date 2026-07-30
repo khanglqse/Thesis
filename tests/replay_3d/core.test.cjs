@@ -64,3 +64,15 @@ test("laneBars on real haichau_rush frame 0 produces >0 bars", () => {
   }
   assert.ok(total > 0, "expected some g/r bars in frame 0, got " + total);
 });
+
+test("zoomForSpan makes vehicles visible; whole-network fit does not", () => {
+  const W = 780;
+  // 300 m across a 780 px panel -> 2.6 px per metre -> a 2 m vehicle ~5 px
+  const z = R3.zoomForSpan(W, 300);
+  assert.ok(Math.abs(z - Math.log2(780 / 300)) < 1e-9);
+  assert.ok(2 * Math.pow(2, z) > 4, "a 2 m vehicle must exceed 4 px");
+  // the Hải Châu network is ~7 km x 10 km: fitting it all leaves vehicles sub-pixel
+  const fit = R3.fitView({ minX: 0, minY: 0, maxX: 6864, maxY: 9933 }, W, W);
+  assert.ok(2 * Math.pow(2, fit.zoom) < 1, "sanity: whole-network fit hides vehicles");
+  assert.ok(z > fit.zoom);
+});
