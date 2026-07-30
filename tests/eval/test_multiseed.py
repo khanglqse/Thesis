@@ -4,8 +4,17 @@ from traffic_rl.eval.multiseed import summary_stats, aggregate_seeds
 def test_summary_stats_basic():
     s = summary_stats([2.0, 4.0, 6.0])
     assert s["mean"] == 4.0 and s["n"] == 3
-    assert abs(s["std"] - 1.632993) < 1e-4        # population std (ddof=0)
+    assert abs(s["std"] - 2.0) < 1e-6             # sample std (ddof=1), not population
     assert s["ci95"] > 0
+
+
+def test_summary_stats_ci95_uses_student_t_for_five_seeds():
+    # Five seeds -> df=4, t(0.975, 4)=2.776. For [1,2,3,4,5] the sample std (ddof=1)
+    # is 1.581139, so the correct small-sample CI is
+    #   2.776 * 1.581139 / sqrt(5) = 1.9629,
+    # NOT the normal-approx population-std value 1.96*1.41421/sqrt(5) = 1.2396.
+    s = summary_stats([1.0, 2.0, 3.0, 4.0, 5.0])
+    assert abs(s["ci95"] - 1.9629) < 1e-2
 
 
 def test_summary_stats_single_value_no_ci():
