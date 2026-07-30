@@ -23,8 +23,18 @@ python3 scripts/serve_replay.py --no-browser
 > tới ô đông xe nhất của replay (~300 m ở bản 3D, ~600 m ở bản 2D) — chỗ đó thấy rõ
 > hàng chờ và đèn từng làn.
 
-Ảnh dự phòng nếu máy chiếu/WebGL lỗi:
-`results/presentation/demo3d_ab_rush.png` · `results/presentation/demo2d_ab_rush.png`
+**Ảnh dự phòng nếu máy chiếu/WebGL lỗi** (dùng theo thứ tự này):
+
+1. `results/presentation/demo2d_ab_rush.png` — **mang được lập luận A/B**: thấy rõ các
+   chuỗi xe xếp hàng, so được trái/phải. Dùng ảnh này trước.
+2. `results/presentation/demo3d_ab_rush.png` — nút (668, 5805) tại **t = 84s**: cùng một
+   thời điểm, Fixed-Time đang **xanh** đúng nhánh mà DQN đang **đỏ** (và ngược lại ở nhánh
+   cắt). Đây là **bằng chứng thị giác cho con số agreement 25%** — hai controller chọn pha
+   khác nhau. Ảnh này để nói về *đèn theo từng làn* và *hai chính sách khác nhau*, **không**
+   phải để so độ dài hàng chờ (một nút một thời điểm không đại diện cho cả episode —
+   con số cả episode nằm ở bảng điểm và Chương 4).
+
+Tái lập ảnh 2: mở bản 3D → tua tới t = 84s → kéo camera tới nút phía tây (x≈668, y≈5805).
 
 ---
 
@@ -88,6 +98,14 @@ chỉ 6–8 / 53 nút đạt ≥70% → **cùng đẳng cấp hiệu năng, chí
 
 Câu trả lời 1 dòng: *"Demo phát đúng một episode một seed (30.8%); con số trong luận văn
 là trung bình 5 seed (37.1% ± 2.2 %-point)."*
+
+**Nếu thầy hỏi "xe vẽ đúng tỉ lệ chưa?"** — bản 2D vẽ xe dạng **marker cố định ~3 px, KHÔNG
+theo tỉ lệ** (xe máy 2 m thật sẽ dưới 1 px ở mọi mức zoom còn thấy được nút giao); bản 3D vẽ
+**hộp đúng kích thước thật** từ (x, y, góc, dài, rộng) trong replay — đó là lý do phải bấm
+🔍 Điểm đông mới thấy xe. Vị trí xe ở **cả hai bản đều là số thật** trong replay.
+
+**Nếu thầy hỏi "đoạn phát dài bao nhiêu?"** — 120 khung × 1 s = ~2 phút đầu episode; veh-h
+trên bảng điểm là của **cả episode**, không phải của đoạn clip.
 
 ---
 
