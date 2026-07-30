@@ -1,0 +1,19 @@
+### agreement rush
+agreement haichau_rush: rate=0.251 over 100 decisions, 5300 agent-pairs
+### agreement calib
+agreement haichau_calib: rate=0.265 over 100 decisions, 5300 agent-pairs
+### incident rush
+incident=none    : FixedTime=696 MaxPressure=388 Random=709 DQN=448
+incident=incident: FixedTime=707 MaxPressure=399 Random=717 DQN=467
+wrote /work/results/haichau_rush/robustness/incident.json | blocked cluster_1333246012_1333246028_3540437805_6040645617 phase 0 steps [333,666)
+### incident calib
+incident=none    : FixedTime=1263 MaxPressure=843 Random=1262 DQN=1091
+incident=incident: FixedTime=1280 MaxPressure=858 Random=1275 DQN=1118
+wrote /work/results/haichau_calib/robustness/incident.json | blocked cluster_1333246012_1333246028_3540437805_6040645617 phase 0 steps [333,666)
+### shift rush->calib
+noise=0.00: FixedTime=1263 MaxPressure=843 Random=1262 DQN=945
+wrote /work/results/haichau_rush/robustness/shift.json
+### shift calib->rush
+noise=0.00: FixedTime=696 MaxPressure=388 Random=709 DQN=594
+wrote /work/results/haichau_calib/robustness/shift.json
+### ALL DONE

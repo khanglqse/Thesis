@@ -1,0 +1,29 @@
+### rush noise
+noise=0.00: FixedTime=648 MaxPressure=388 Random=709 DQN=448
+noise=0.10: FixedTime=648 MaxPressure=393 Random=709 DQN=429
+noise=0.20: FixedTime=648 MaxPressure=376 Random=709 DQN=433
+noise=0.40: FixedTime=648 MaxPressure=398 Random=709 DQN=411
+noise=0.80: FixedTime=648 MaxPressure=402 Random=709 DQN=467
+wrote /work/results/haichau_rush/robustness/noise.json
+### rush incident
+incident=none    : FixedTime=648 MaxPressure=388 Random=709 DQN=448
+incident=incident: FixedTime=659 MaxPressure=399 Random=717 DQN=467
+wrote /work/results/haichau_rush/robustness/incident.json | blocked cluster_1333246012_1333246028_3540437805_6040645617 phase 0 steps [333,666)
+### rush shift
+noise=0.00: FixedTime=1223 MaxPressure=843 Random=1262 DQN=945
+wrote /work/results/haichau_rush/robustness/shift.json
+### calib noise
+noise=0.00: FixedTime=1223 MaxPressure=843 Random=1262 DQN=1091
+noise=0.10: FixedTime=1223 MaxPressure=846 Random=1262 DQN=1039
+noise=0.20: FixedTime=1223 MaxPressure=832 Random=1262 DQN=1023
+noise=0.40: FixedTime=1223 MaxPressure=860 Random=1262 DQN=1007
+noise=0.80: FixedTime=1223 MaxPressure=870 Random=1262 DQN=1048
+wrote /work/results/haichau_calib/robustness/noise.json
+### calib incident
+incident=none    : FixedTime=1223 MaxPressure=843 Random=1262 DQN=1091
+incident=incident: FixedTime=1241 MaxPressure=858 Random=1275 DQN=1118
+wrote /work/results/haichau_calib/robustness/incident.json | blocked cluster_1333246012_1333246028_3540437805_6040645617 phase 0 steps [333,666)
+### calib shift
+noise=0.00: FixedTime=648 MaxPressure=388 Random=709 DQN=594
+wrote /work/results/haichau_calib/robustness/shift.json
+### ALL DONE
