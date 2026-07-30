@@ -103,6 +103,43 @@
     return { x: best.gx * cell + cell / 2, y: best.gy * cell + cell / 2, n: best.n, cell: cell };
   }
 
+  // Intersections that actually run a light in this frame: a road whose status
+  // list contains g/r ends at a signalised node. Used to keep the demo camera on
+  // a junction where there is a signal to look at.
+  function signalizedInters(roadnet, tl) {
+    const ids = new Set();
+    for (const r of roadnet.roads) {
+      if (r.end && roadSignal(tl && tl[r.id])) ids.add(r.end);
+    }
+    return roadnet.inters.filter((n) => ids.has(n.id));
+  }
+
+  // The junction with the most vehicles around it. A better camera target than
+  // busiestSpot's grid cell: queues form at stop lines, so this frames a place
+  // where the two controllers visibly differ, not just a busy stretch of road.
+  // Deterministic: highest count wins, ties broken by the earlier intersection.
+  function busiestJunction(steps, inters, opts) {
+    opts = opts || {};
+    const radius = opts.radius || 120, every = opts.every || 10;
+    if (!inters || !inters.length) return null;
+    const r2 = radius * radius;
+    const counts = new Array(inters.length).fill(0);
+    for (let i = 0; i < (steps || []).length; i += every) {
+      const f = steps[i];
+      if (!f || !f.cars) continue;
+      for (const c of f.cars) {
+        for (let j = 0; j < inters.length; j++) {
+          const dx = c.x - inters[j].x, dy = c.y - inters[j].y;
+          if (dx * dx + dy * dy <= r2) counts[j]++;
+        }
+      }
+    }
+    let best = 0;
+    for (let j = 1; j < inters.length; j++) if (counts[j] > counts[best]) best = j;
+    if (!counts[best]) return null;
+    return { x: inters[best].x, y: inters[best].y, id: inters[best].id, n: counts[best] };
+  }
+
   function waitHours(queue_series, dt) {
     dt = dt || 10;
     let s = 0; for (const q of queue_series) s += q * dt / 3600.0; return s;
@@ -122,5 +159,5 @@
   }
 
   return { parseRoadnet, parseReplay, roadSignal, makeTransform, busiestSpot,
-           waitHours, scoreboard };
+           signalizedInters, busiestJunction, waitHours, scoreboard };
 });

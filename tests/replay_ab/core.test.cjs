@@ -86,3 +86,40 @@ test("busiestSpot is deterministic and breaks ties by lowest cell", () => {
   assert.strictEqual(c.x, 1000);
   assert.strictEqual(R.busiestSpot([], {}), null);
 });
+
+test("busiestJunction frames a junction that actually carries traffic", () => {
+  const rn = R.parseRoadnet(roadnet);
+  const steps = R.parseReplay(replayTxt);
+  const j = R.busiestJunction(steps, rn.inters, { radius: 120, every: 10 });
+  assert.ok(j && j.n > 0, "expected a busiest junction");
+  assert.ok(rn.inters.some((n) => n.x === j.x && n.y === j.y), "must be a real intersection");
+
+  // it must beat the median junction by a wide margin, else the camera would be
+  // pointed at an ordinary quiet node
+  const counts = rn.inters.map((n) => {
+    let c = 0;
+    for (let i = 0; i < steps.length; i += 10)
+      for (const v of steps[i].cars)
+        if ((v.x - n.x) ** 2 + (v.y - n.y) ** 2 <= 120 * 120) c++;
+    return c;
+  }).sort((a, b) => a - b);
+  const median = counts[Math.floor(counts.length / 2)];
+  assert.strictEqual(j.n, counts[counts.length - 1]);
+  assert.ok(j.n > median * 2, "busiest " + j.n + " vs median " + median);
+
+  assert.deepStrictEqual(R.busiestJunction(steps, rn.inters, { radius: 120, every: 10 }), j);
+  assert.strictEqual(R.busiestJunction(steps, [], {}), null);
+  assert.strictEqual(R.busiestJunction([], rn.inters, {}), null);
+});
+
+test("signalizedInters recovers the 53 signalised intersections of the network", () => {
+  const rn = R.parseRoadnet(roadnet);
+  const steps = R.parseReplay(replayTxt);
+  const sig = R.signalizedInters(rn, steps[0].tl);
+  // the evaluated Hải Châu arterial network has 53 signalised intersections;
+  // if this drifts, the demo and the thesis are describing different networks
+  assert.strictEqual(sig.length, 53);
+  const ids = new Set(rn.inters.map((n) => n.id));
+  for (const n of sig) assert.ok(ids.has(n.id));
+  assert.strictEqual(R.signalizedInters(rn, {}).length, 0);
+});

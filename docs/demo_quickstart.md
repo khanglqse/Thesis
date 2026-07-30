@@ -27,14 +27,14 @@ python3 scripts/serve_replay.py --no-browser
 
 1. `results/presentation/demo2d_ab_rush.png` — **mang được lập luận A/B**: thấy rõ các
    chuỗi xe xếp hàng, so được trái/phải. Dùng ảnh này trước.
-2. `results/presentation/demo3d_ab_rush.png` — nút (668, 5805) tại **t = 84s**: cùng một
-   thời điểm, Fixed-Time đang **xanh** đúng nhánh mà DQN đang **đỏ** (và ngược lại ở nhánh
-   cắt). Đây là **bằng chứng thị giác cho con số agreement 25%** — hai controller chọn pha
-   khác nhau. Ảnh này để nói về *đèn theo từng làn* và *hai chính sách khác nhau*, **không**
-   phải để so độ dài hàng chờ (một nút một thời điểm không đại diện cho cả episode —
-   con số cả episode nằm ở bảng điểm và Chương 4).
+2. `results/presentation/demo3d_ab_rush.png` — đúng khung nhìn nút **🔍 Điểm đông** cho ra
+   (giao lộ có đèn đông xe nhất, t = 100s): thấy **mô hình xe máy/ô tô** và **thanh đèn từng
+   làn**, và cùng thời điểm hai bên đang bật pha khác nhau — **bằng chứng thị giác cho con số
+   agreement 25%**. Ảnh này để nói về *đèn theo từng làn* + *hai chính sách khác nhau*,
+   **không** phải để so độ dài hàng chờ (một nút một thời điểm không đại diện cho cả episode
+   — con số cả episode nằm ở bảng điểm và Chương 4).
 
-Tái lập ảnh 2: mở bản 3D → tua tới t = 84s → kéo camera tới nút phía tây (x≈668, y≈5805).
+Tái lập: mở bản 3D → bấm 🔍 Điểm đông → tua tới t ≈ 100s.
 
 ---
 
@@ -124,7 +124,7 @@ trên bảng điểm là của **cả episode**, không phải của đoạn cli
 |---------|----------|
 | Sao không thắng Max-Pressure? | Varaiya 2013 (MP throughput-optimal với queue local) + RESCO + `docs/ablation_honest_plan.md` |
 | Sao CityFlow không phải SUMO? | Tốc độ multi-agent 53 nút; SUMO dùng để convert mạng — Ch4 + `README.md` |
-| Xe máy mô phỏng thế nào? | Ch4 Limitations + `docs/thesis_improvement_review.md` §E3 (SUMO Sublane Model) |
+| Xe máy mô phỏng thế nào? | **Chỉ thẳng vào bản 3D**: xe máy (2.0×1.0 m, tông ấm) và ô tô (5.0×2.0 m, tông lạnh) vẽ theo đúng template CityFlow ghi trong replay — **~90% xe máy / ~10% ô tô**, nhìn là thấy. Hạn chế (CityFlow không mô phỏng luồn lách trong làn): Ch4 Limitations + `thesis_improvement_review.md` §E3 (SUMO Sublane Model) |
 | 5 seed đủ chưa? | `docs/thesis_improvement_review.md` §A1 (t-CI + Colas 2018) |
 | Demand có thật không? | Synthetic, calib theo phổ bão hoà — `docs/demand_calibration_results.md` |
 | Đèn từng làn trong demo 3D là làn số mấy? | Thứ tự thanh theo thứ tự làn trong replay; **chưa** đối chiếu trái/phải với viewer gốc → thông điệp là "nhánh nào xanh" (`docs/demo_replay_3d.md`) |

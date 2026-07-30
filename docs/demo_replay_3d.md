@@ -18,15 +18,25 @@ Trang: `frontend/replay_3d.html` — chạy cùng server với bản 2D:
   Lưu ý trung thực: thứ tự thanh trong một đường theo thứ tự làn trong replay;
   danh tính trái/phải tuyệt đối của làn chưa đối chiếu với viewer gốc —
   thông điệp demo là "nhánh nào xanh", không phải "làn số mấy".
-- Xe = hộp 3D dựng từ (x, y, góc, dài, rộng) trong replay.
+- **Xe = mô hình 3D theo đúng loại xe trong replay** (từ 2026-07-30; trước đó là hộp trơn):
+  CityFlow ghi kèm template kích thước cho từng xe — **2.0 × 1.0 m = xe máy** (chiếm **~90%**
+  số xe trên mạng này) và **5.0 × 2.0 m = ô tô** (~10%). Xe máy vẽ thành khung + người lái +
+  ghi-đông + 2 bánh; ô tô thành thân + ca-bin + 4 bánh. **Không phóng đại kích thước**: mesh
+  đúng bằng template, dựng tại (x, y) với hướng đúng góc `a` trong replay (đã kiểm: 96% xe
+  đang chạy có `a` trùng hướng dịch chuyển thực tế giữa 2 khung).
+  Xe máy dùng tông pastel ấm, ô tô tông lạnh → **nhìn là thấy ngay tỉ lệ ~90/10** của Đà Nẵng.
+  Hình học thuần ở `vehicleMesh()` (`replay_3d_core.js`), có test kiểm bounding box đúng
+  bằng template. Hiệu năng: ~1.200 xe/khung × 2 panel ≈ **10 ms/bước (~94 fps)**.
 
 ## Điều khiển
 
 Kéo chuột: xoay camera · Shift+kéo / chuột phải: trượt · lăn chuột: thu-phóng ·
-**"🔍 Điểm đông"**: nhảy camera tới ô đông xe nhất của replay, khung ~300 m
-(ở khung nhìn toàn mạng, xe dài 2 m chỉ ~0.1 px nên **chỉ thấy đường, không thấy
-xe** — bấm nút này trước khi trình bày) · "Đặt lại camera": về khung nhìn toàn
-mạng. Play/tua/tốc độ như bản 2D.
+**"🔍 Điểm đông"**: nhảy camera tới **giao lộ CÓ ĐÈN đông xe nhất** của replay
+(`signalizedInters` + `busiestJunction`), khung ~170 m, góc nghiêng 62° — ở đó xe
+2 m chiếm ~9 px nên thấy rõ mô hình xe *và* thanh đèn từng làn. Ở khung nhìn toàn
+mạng xe chỉ ~0.1 px nên **chỉ thấy đường, không thấy xe** — **bấm nút này trước
+khi trình bày** · "Đặt lại camera": về khung nhìn toàn mạng. Play/tua/tốc độ như
+bản 2D.
 Đổi kịch bản giữa chừng được (haichau_rush → danang_peak → haichau_peak →
 haichau) — câu chuyện bão hoà giữ nguyên như bản 2D.
 

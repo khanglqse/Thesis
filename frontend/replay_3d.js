@@ -16,8 +16,12 @@
   const ROADNET = (sc) => `/data/danang/replay_roadnet_${sc}.json`;
   const REPLAY = (sc, c) => `/results/${sc}/demo/replay_${c}_demo.txt`;
   const COMPARISON = (sc) => `/results/${sc}/comparison.json`;
-  const CAR_COLORS = [[242, 191, 215], [183, 235, 228], [219, 235, 183],
-                      [245, 221, 181], [212, 181, 245]];
+  // Motorbikes keep the warm pastel spread; cars get a distinct cool palette so
+  // the ~90/10 motorbike-to-car mix of this network is visible at a glance.
+  const MOTO_COLORS = [[242, 191, 215], [219, 235, 183], [245, 221, 181],
+                       [212, 181, 245], [240, 205, 170]];
+  const CAR_COLORS = [[122, 178, 232], [232, 236, 242], [126, 199, 186],
+                      [166, 176, 196]];
   const DT = 1; // seconds per replay frame (CityFlow logs one frame per 1s step)
 
   const S = {
@@ -57,15 +61,43 @@
     });
   }
 
-  function carLayer(side, cars) {
-    return new deck.SolidPolygonLayer({
-      id: "cars-" + side,
+  // Two shapes, split by the CityFlow template the replay recorded for each
+  // vehicle: 5.0 m long -> car, otherwise motorbike (~90% here). Nothing is
+  // scaled up — the meshes are the template size, so a 2 m motorbike is only
+  // legible once the camera is close (see the "Điểm đông" button).
+  // deck 9 wants the loaders.gl mesh shape; a plain {positions, normals, indices}
+  // object throws inside getModel. The core stays dependency-free typed arrays.
+  const toDeckMesh = (m) => ({
+    attributes: {
+      POSITION: { value: m.positions, size: 3 },
+      NORMAL: { value: m.normals, size: 3 },
+    },
+    indices: { value: m.indices, size: 1 },
+  });
+  const MESHES = { motorbike: toDeckMesh(R3.vehicleMesh("motorbike")),
+                   car: toDeckMesh(R3.vehicleMesh("car")) };
+  const CAR_IS_CAR = (c) => c.len >= 3.5;
+
+  function vehicleLayer(side, kind, cars, palette) {
+    return new deck.SimpleMeshLayer({
+      id: "veh-" + kind + "-" + side,
       data: cars,
-      extruded: true,
-      getElevation: 1.6,
-      getPolygon: (c) => R3.carFootprint(c.x, c.y, c.a, c.len, c.wid),
-      getFillColor: (c, info) => CAR_COLORS[info.index % CAR_COLORS.length],
+      mesh: MESHES[kind],
+      getPosition: (c) => [c.x, c.y, 0],
+      // replay `a` is radians CCW with 0 = +x; deck takes [pitch, yaw, roll] in degrees
+      getOrientation: (c) => [0, -c.a * 180 / Math.PI, 0],
+      getColor: (c, info) => palette[info.index % palette.length],
+      material: { ambient: 0.5, diffuse: 0.6, shininess: 24, specularColor: [60, 64, 70] },
     });
+  }
+
+  function vehicleLayers(side, cars) {
+    const motos = [], cars4 = [];
+    for (const c of cars) (CAR_IS_CAR(c) ? cars4 : motos).push(c);
+    return [
+      vehicleLayer(side, "motorbike", motos, MOTO_COLORS),
+      vehicleLayer(side, "car", cars4, CAR_COLORS),
+    ];
   }
 
   function signalLayer(side, roadnet, tl) {
@@ -92,7 +124,7 @@
     const step = S.steps[side][S.T];
     const layers = [roadLayer(S.roadnet)];
     if (step) {
-      layers.push(carLayer(side, step.cars));
+      for (const l of vehicleLayers(side, step.cars)) layers.push(l);
       layers.push(signalLayer(side, S.roadnet, step.tl));
     }
     decks[side].setProps({ layers });
@@ -134,16 +166,37 @@
   // still, so at the default camera only the roads are visible. This drops the
   // camera onto the busiest cell of the replay at BUSY_SPAN metres across, where
   // vehicles and per-lane bars are actually readable.
-  const BUSY_SPAN = 300;
+  // 170 m across puts a 2 m motorbike at ~9 px, which is where the vehicle
+  // meshes stop reading as specks; the steeper pitch keeps queues legible.
+  const BUSY_SPAN = 170, BUSY_PITCH = 62;
   function zoomBusy() {
-    const spot = RAB.busiestSpot(S.steps.left, { cell: 400, every: 10 });
-    if (!spot || !viewState) return;
+    if (!viewState || !S.roadnet) return;
+    const step = S.steps.left[S.T] || S.steps.left[0];
+    const sig = step ? RAB.signalizedInters(S.roadnet, step.tl) : [];
+    const spot = RAB.busiestJunction(S.steps.left, sig.length ? sig : S.roadnet.inters,
+                                     { radius: 120, every: 10 })
+              || RAB.busiestSpot(S.steps.left, { cell: 400, every: 10 });
+    if (!spot) return;
     const el = $("deck-left");
     const zoom = R3.zoomForSpan(el.clientWidth, BUSY_SPAN);
     applyViewState(Object.assign({}, viewState, {
       target: [spot.x, spot.y, 0],
-      zoom: Math.min(zoom, viewState.maxZoom == null ? zoom : viewState.maxZoom),
+      rotationX: BUSY_PITCH,
+      zoom: zoom,
+      maxZoom: Math.max(zoom + 1, viewState.maxZoom == null ? zoom + 1 : viewState.maxZoom),
     }));
+  }
+
+  // Without a light the mesh vehicles shade flat and read as the boxes they
+  // replaced; one ambient + one directional light gives them visible facets.
+  function makeLighting() {
+    return new deck.LightingEffect({
+      // keep the total modest: brighter than this and the pastel vehicle colours
+      // wash out to white, losing the motorbike/car distinction
+      ambient: new deck.AmbientLight({ color: [255, 255, 255], intensity: 0.9 }),
+      sun: new deck.DirectionalLight({
+        color: [255, 255, 255], intensity: 0.8, direction: [-0.6, -0.8, -1.0] }),
+    });
   }
 
   function makeDeck(el) {
@@ -151,6 +204,7 @@
       parent: el,
       views: new deck.OrbitView({ orbitAxis: "Z" }),
       controller: true,
+      effects: [makeLighting()],
       viewState: { target: [0, 0, 0], zoom: 0, rotationX: 45, rotationOrbit: 0 },
       onViewStateChange: (e) => applyViewState(e.viewState),
       layers: [],

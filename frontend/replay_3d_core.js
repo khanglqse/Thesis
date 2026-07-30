@@ -74,6 +74,78 @@
     };
   }
 
+  // ---- vehicle meshes ------------------------------------------------------
+  // Low-poly, boxes only, authored in METRES with +x = forward, +z = up and the
+  // origin at the vehicle centre on the ground. Sizes are the CityFlow vehicle
+  // templates carried in the replay itself — 2.0 x 1.0 (motorbike, ~90% of
+  // vehicles on this network) and 5.0 x 2.0 (car, ~10%) — so the two shapes on
+  // screen are read from the data, not assigned for decoration.
+
+  function boxInto(m, x0, x1, y0, y1, z0, z1) {
+    const faces = [
+      [[1, 0, 0], [[x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]]],
+      [[-1, 0, 0], [[x0, y1, z0], [x0, y0, z0], [x0, y0, z1], [x0, y1, z1]]],
+      [[0, 1, 0], [[x1, y1, z0], [x0, y1, z0], [x0, y1, z1], [x1, y1, z1]]],
+      [[0, -1, 0], [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]]],
+      [[0, 0, 1], [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]]],
+      [[0, 0, -1], [[x0, y1, z0], [x1, y1, z0], [x1, y0, z0], [x0, y0, z0]]],
+    ];
+    for (const face of faces) {
+      const n = face[0], corners = face[1];
+      const base = m.positions.length / 3;
+      for (const c of corners) {
+        m.positions.push(c[0], c[1], c[2]);
+        m.normals.push(n[0], n[1], n[2]);
+      }
+      m.indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    }
+  }
+
+  function finishMesh(m, dims) {
+    return {
+      positions: new Float32Array(m.positions),
+      normals: new Float32Array(m.normals),
+      indices: new Uint16Array(m.indices),
+      dims: dims,
+    };
+  }
+
+  // kind: "car" -> 5.0 x 2.0 template; anything else -> 2.0 x 1.0 motorbike.
+  function vehicleMesh(kind) {
+    const m = { positions: [], normals: [], indices: [] };
+    if (kind === "car") {
+      boxInto(m, -2.5, 2.5, -1.0, 1.0, 0.35, 1.0);      // body
+      boxInto(m, -1.3, 0.9, -0.85, 0.85, 1.0, 1.55);    // cabin
+      boxInto(m, 1.2, 1.9, -1.0, -0.78, 0, 0.35);       // wheels
+      boxInto(m, 1.2, 1.9, 0.78, 1.0, 0, 0.35);
+      boxInto(m, -1.9, -1.2, -1.0, -0.78, 0, 0.35);
+      boxInto(m, -1.9, -1.2, 0.78, 1.0, 0, 0.35);
+      return finishMesh(m, { len: 5.0, wid: 2.0, height: 1.55 });
+    }
+    // Seen from directly above (the angle the demo is most often read at) the
+    // silhouette has to say "motorbike", so the body is a solid mass along the
+    // long axis with the handlebar as a thin T at the very front — an earlier
+    // version put a full-width bar mid-body and every vehicle read as a "+".
+    boxInto(m, -1.0, 0.55, -0.2, 0.2, 0.35, 0.75);      // frame + seat
+    boxInto(m, -0.5, 0.2, -0.29, 0.29, 0.75, 1.5);      // rider
+    boxInto(m, 0.58, 0.68, -0.5, 0.5, 0.78, 0.9);       // handlebar: sets full width
+    boxInto(m, 0.55, 1.0, -0.1, 0.1, 0, 0.55);          // front wheel
+    boxInto(m, -0.98, -0.5, -0.1, 0.1, 0, 0.55);        // rear wheel
+    boxInto(m, 0.3, 0.62, -0.16, 0.16, 0.55, 0.95);     // front cowl
+    return finishMesh(m, { len: 2.0, wid: 1.0, height: 1.5 });
+  }
+
+  function meshBounds(mesh) {
+    const p = mesh.positions;
+    const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < p.length; i += 3)
+      for (let k = 0; k < 3; k++) {
+        if (p[i + k] < lo[k]) lo[k] = p[i + k];
+        if (p[i + k] > hi[k]) hi[k] = p[i + k];
+      }
+    return { min: lo, max: hi };
+  }
+
   // OrbitView zoom that fits `span` metres across a W-pixel panel. At the
   // whole-network fit zoom a 2 m vehicle is ~0.1 px (invisible), so the demo
   // needs a "zoom to traffic" view: span ~300 m puts a vehicle at ~5 px.
@@ -81,5 +153,5 @@
     return Math.log2(Math.max(1, W) / Math.max(1, span));
   }
 
-  return { carFootprint, laneBars, fitView, zoomForSpan };
+  return { carFootprint, laneBars, fitView, zoomForSpan, vehicleMesh, meshBounds };
 });

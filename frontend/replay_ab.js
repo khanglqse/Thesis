@@ -114,7 +114,10 @@
     // Previously this framed the 8 intersections nearest the *geometric*
     // centroid, which on haichau_rush is an empty side street — 0 of 454
     // vehicles landed inside that view, so the zoom showed bare roads.
-    const spot = R.busiestSpot(steps, { cell: 400, every: 10 });
+    const sig = steps && steps[0] ? R.signalizedInters(roadnet, steps[0].tl) : [];
+    const spot = R.busiestJunction(steps, sig.length ? sig : roadnet.inters,
+                                   { radius: 120, every: 10 })
+              || R.busiestSpot(steps, { cell: 400, every: 10 });
     if (!spot) return R.makeTransform(roadnet.bounds, W, H, 8);
     const h = CLUSTER_HALF_SPAN;
     return R.makeTransform({ minX: spot.x - h, minY: spot.y - h,

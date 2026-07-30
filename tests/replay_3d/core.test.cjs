@@ -76,3 +76,38 @@ test("zoomForSpan makes vehicles visible; whole-network fit does not", () => {
   assert.ok(2 * Math.pow(2, fit.zoom) < 1, "sanity: whole-network fit hides vehicles");
   assert.ok(z > fit.zoom);
 });
+
+test("vehicleMesh matches the CityFlow templates it claims (2x1 moto, 5x2 car)", () => {
+  for (const [kind, len, wid] of [["motorbike", 2.0, 1.0], ["car", 5.0, 2.0]]) {
+    const m = R3.vehicleMesh(kind);
+    const b = R3.meshBounds(m);
+    assert.strictEqual(m.dims.len, len);
+    assert.strictEqual(m.dims.wid, wid);
+    // the mesh must physically fill the template it is drawn for, or the demo
+    // would be showing vehicles at a size the replay never recorded
+    assert.ok(Math.abs((b.max[0] - b.min[0]) - len) < 1e-6, kind + " length");
+    assert.ok(Math.abs((b.max[1] - b.min[1]) - wid) < 1e-6, kind + " width");
+    assert.ok(Math.abs(b.max[2] - m.dims.height) < 1e-6, kind + " height");
+    assert.ok(Math.abs(b.min[2]) < 1e-6, kind + " sits on the ground plane");
+    // centred on the origin in plan so getPosition places the vehicle centre
+    assert.ok(Math.abs(b.max[0] + b.min[0]) < 1e-6 && Math.abs(b.max[1] + b.min[1]) < 1e-6);
+  }
+});
+
+test("vehicleMesh arrays are well formed for SimpleMeshLayer", () => {
+  for (const kind of ["motorbike", "car"]) {
+    const m = R3.vehicleMesh(kind);
+    assert.ok(m.positions instanceof Float32Array && m.normals instanceof Float32Array);
+    assert.ok(m.indices instanceof Uint16Array);
+    assert.strictEqual(m.positions.length, m.normals.length);
+    assert.strictEqual(m.positions.length % 3, 0);
+    assert.strictEqual(m.indices.length % 3, 0);
+    const nVerts = m.positions.length / 3;
+    for (const i of m.indices) assert.ok(i >= 0 && i < nVerts, "index out of range: " + i);
+    // every box contributes 24 verts / 36 indices; nothing degenerate slipped in
+    assert.strictEqual(nVerts % 24, 0);
+    assert.strictEqual(m.indices.length, (nVerts / 24) * 36);
+    for (const v of m.positions) assert.ok(Number.isFinite(v));
+    for (const v of m.normals) assert.ok(Number.isFinite(v));
+  }
+});
