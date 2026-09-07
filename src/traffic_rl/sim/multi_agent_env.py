@@ -14,7 +14,8 @@ from traffic_rl.sim.intersection import IntersectionState, make_reward
 class MultiAgentTrafficEnv:
     def __init__(self, roadnet, engine, action_interval=10, max_steps=3600,
                  yellow_time=3, min_green=10, count_norm=10.0,
-                 reward_type="pressure", state_mode="basic"):
+                 reward_type="pressure", state_mode="basic",
+                 sim_step_seconds=1.0):
         self.roadnet = roadnet
         self.engine = engine
         self.action_interval = action_interval
@@ -23,6 +24,7 @@ class MultiAgentTrafficEnv:
         self.min_green = min_green
         self.reward_type = reward_type
         self.state_mode = state_mode
+        self.sim_step_seconds = float(sim_step_seconds)
         self._reward_fn = make_reward(reward_type)
         self.agent_ids = roadnet.signalized_ids()
         self.encoder = ObservationEncoder(roadnet, count_norm=count_norm,
@@ -40,6 +42,7 @@ class MultiAgentTrafficEnv:
         self._green = {a: 0 for a in self.agent_ids}       # current green INDEX
         self._since_switch = {a: 0 for a in self.agent_ids}
         self._t = 0
+        self._queue_integral_vehicle_seconds = 0.0
 
     # --- introspection used by controllers/runner ---
     def action_masks(self):
@@ -54,6 +57,7 @@ class MultiAgentTrafficEnv:
         self._green = {a: 0 for a in self.agent_ids}
         self._since_switch = {a: 0 for a in self.agent_ids}
         self._t = 0
+        self._queue_integral_vehicle_seconds = 0.0
         for a in self.agent_ids:
             self.engine.set_tl_phase(a, self._green_phases[a][0])
         return self._observations()
@@ -69,6 +73,11 @@ class MultiAgentTrafficEnv:
         for _ in range(n):
             self.engine.step()
             self._t += 1
+            waiting = (self.engine.true_lane_waiting_counts()
+                       if hasattr(self.engine, "true_lane_waiting_counts")
+                       else self.engine.lane_waiting_counts())
+            self._queue_integral_vehicle_seconds += (
+                float(sum(waiting.values())) * self.sim_step_seconds)
         for a in self.agent_ids:
             self._since_switch[a] += n
 
@@ -114,6 +123,7 @@ class MultiAgentTrafficEnv:
             "average_travel_time": self.engine.average_travel_time(),
             "vehicle_count": self.engine.vehicle_count(),
             "total_queue": float(sum(true_waiting.values())),
+            "queue_integral_vehicle_seconds": self._queue_integral_vehicle_seconds,
             "step": self._t,
         }
         return self._observations(), rewards, done, info

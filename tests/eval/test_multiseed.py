@@ -32,3 +32,12 @@ def test_aggregate_seeds_groups_by_controller():
     assert out["DQN"]["wait_hours"]["n"] == 2
     # wait_hours = last cumulative of queue*10/3600; seed0=6*10*10/3600, seed1=6*12*10/3600
     assert out["DQN"]["wait_hours"]["mean"] > 0
+
+
+def test_aggregate_uses_per_step_queue_integral_when_available():
+    row = {"controller": "DQN", "mean_total_queue": 999.0,
+           "queue_series": [999.0] * 10,
+           "queue_integral_vehicle_hours": 0.25,
+           "final_average_travel_time": 5.0}
+    out = aggregate_seeds([[row]])
+    assert out["DQN"]["wait_hours"]["mean"] == 0.25

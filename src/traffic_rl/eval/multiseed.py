@@ -50,6 +50,8 @@ def summary_stats(values):
 
 
 def _wait_hours(row):
+    if row.get("queue_integral_vehicle_hours") is not None:
+        return float(row["queue_integral_vehicle_hours"])
     cum = cumulative_wait_hours(row.get("queue_series") or [], 10)
     return cum[-1] if cum else 0.0
 

@@ -1,0 +1,266 @@
+{
+  "data/.converter_patch/patch_converter.py": {
+    "sha256": "aa5f4d970e5b0af22831bbe6c31997224bce7287faf88c764153bf0006ce7a83",
+    "bytes": 1058
+  },
+  "data/danang/flow_danang_peak.json": {
+    "sha256": "227a27430f391f804c2b3d563ea64065bf701a0ec88491fbed8e85eb123267a1",
+    "bytes": 261962
+  },
+  "data/danang/flow_full.json": {
+    "sha256": "ab83bc3a8e648d11ca839953a14a97f76820504af564cd96d29523080900d41b",
+    "bytes": 120329
+  },
+  "data/danang/flow_haichau.json": {
+    "sha256": "e32f16baec38c050df7f0f68729873c53522aa053025d191136c10e42dfccbaf",
+    "bytes": 218027
+  },
+  "data/danang/flow_haichau_calib.json": {
+    "sha256": "589dc8f6ce8346796a335f40f99293d8cb3a5fe9fb3b3a74f812da80ed2dab89",
+    "bytes": 157387
+  },
+  "data/danang/flow_haichau_peak.json": {
+    "sha256": "974103f9884410c5203080cb7d9acf16797230d1a1fa8331f01dbb46773db042",
+    "bytes": 403181
+  },
+  "data/danang/flow_haichau_rush.json": {
+    "sha256": "73fc7b314d759e6dbb259b2c051b3d3f5b80cd2e5b179fd43c34a8c5507a1056",
+    "bytes": 157387
+  },
+  "data/danang/flow_haichau_uniform.json": {
+    "sha256": "e32f16baec38c050df7f0f68729873c53522aa053025d191136c10e42dfccbaf",
+    "bytes": 218027
+  },
+  "data/danang/flow_subarea.json": {
+    "sha256": "80af9402e6daafe50a59a59cbd4b2b9476cf53f9b9faa8a85058bd427e33dca6",
+    "bytes": 120428
+  },
+  "data/danang/replay_roadnet_danang_peak.json": {
+    "sha256": "c32afd77da713cc67f8faf0bbcf1e52284be9bfce3b6346b07cce3715ec5bdfd",
+    "bytes": 352032
+  },
+  "data/danang/replay_roadnet_full.json": {
+    "sha256": "ad06e827e92b83aa838a09277cb9c12ca8d7c5bae419a2c879ae4527eeb87f14",
+    "bytes": 8354679
+  },
+  "data/danang/replay_roadnet_haichau.json": {
+    "sha256": "c32afd77da713cc67f8faf0bbcf1e52284be9bfce3b6346b07cce3715ec5bdfd",
+    "bytes": 352032
+  },
+  "data/danang/replay_roadnet_haichau_calib.json": {
+    "sha256": "c32afd77da713cc67f8faf0bbcf1e52284be9bfce3b6346b07cce3715ec5bdfd",
+    "bytes": 352032
+  },
+  "data/danang/replay_roadnet_haichau_peak.json": {
+    "sha256": "c32afd77da713cc67f8faf0bbcf1e52284be9bfce3b6346b07cce3715ec5bdfd",
+    "bytes": 352032
+  },
+  "data/danang/replay_roadnet_haichau_rush.json": {
+    "sha256": "c32afd77da713cc67f8faf0bbcf1e52284be9bfce3b6346b07cce3715ec5bdfd",
+    "bytes": 352032
+  },
+  "data/danang/replay_roadnet_subarea.json": {
+    "sha256": "137380d3a77b5c9f2205ef352eeef08c8ec2219be1cc0d19e2800dfeee87c5ca",
+    "bytes": 515317
+  },
+  "data/danang/roadnet_danang_peak.json": {
+    "sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
+    "bytes": 4171836
+  },
+  "data/danang/roadnet_haichau.json": {
+    "sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
+    "bytes": 4171836
+  },
+  "data/danang/roadnet_haichau_calib.json": {
+    "sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
+    "bytes": 4171836
+  },
+  "data/danang/roadnet_haichau_peak.json": {
+    "sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
+    "bytes": 4171836
+  },
+  "data/danang/roadnet_haichau_rush.json": {
+    "sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
+    "bytes": 4171836
+  },
+  "data/danang/roadnet_subarea.json": {
+    "sha256": "a1ab8f9d35a4aa16c2231be853af24c26761ac3cafb69eed5ca8419f38e9cdcc",
+    "bytes": 3916140
+  },
+  "data/osm/danang_full.osm": {
+    "sha256": "bc6b90863f04d93db0af9d95becda4d7bea6f6664f70715d3b79f683b22945e0",
+    "bytes": 33583156
+  },
+  "data/osm/danang_full.osm.pbf": {
+    "sha256": "c696e174384c218582a236160b69f87229a2ab8073b3db7ef6af619d32071dd4",
+    "bytes": 1872274
+  },
+  "data/osm/danang_haichau.net.xml": {
+    "sha256": "0b4e0750134697de1a9d5c7d19fb71bc6cbade58506a7fd816410a487ee3faba",
+    "bytes": 3676493
+  },
+  "data/osm/danang_haichau.osm": {
+    "sha256": "0e71b672e12fb9c6601750be554abd560737a62e8557df3c5cf7f116403d26f1",
+    "bytes": 12405542
+  },
+  "data/osm/danang_haichau.osm.pbf": {
+    "sha256": "cc091baf523d0fa7a8be0b32a62d5e4bccc4d6452e51b38c1b1a88ffc518a331",
+    "bytes": 786468
+  },
+  "data/osm/danang_subarea_bbox.osm.xml": {
+    "sha256": "be3f9b93e6a20ee119a49c3b14721a6e651b9ad81a973e85d6af4e6290ac7783",
+    "bytes": 3157068
+  },
+  "data/sumo/danang_subarea.net.xml": {
+    "sha256": "bbbe9a3322ecca64dd1712d50312c2228a36b77e1a2a258b0d29f238874db611",
+    "bytes": 4259213
+  },
+  "osm_danang/README.md": {
+    "sha256": "e8ebe9e7a229110afa8644531d9f12446c8ea287833ae5b2076fa2c1db719a6a",
+    "bytes": 1016
+  },
+  "osm_danang/danang_roads.graphml": {
+    "sha256": "76e80843660d3d8d8600a24ba9683fae7dc5fb3d7b61a0f26fed02c50e0f462c",
+    "bytes": 12464516
+  },
+  "results/references/haichau/comparison.json": {
+    "sha256": "b4ccb9e2f65623fa8bb7714ca7a3c8d95cdbc69e7a79551efde3b8fdb50ae0d1",
+    "bytes": 6290
+  },
+  "results/references/haichau/comparison_metrics.png": {
+    "sha256": "1850a57ed553479a1dcf2d6c1ffb9251624bfc551f887e7713e5bd07a5b86eca",
+    "bytes": 38041
+  },
+  "results/references/haichau/config_cmp_dqn.json": {
+    "sha256": "cfaae4b4a92459ac8459b4c2c70cb96c7da323679b7007becaa751ae20124227",
+    "bytes": 280
+  },
+  "results/references/haichau/config_cmp_fixed_time.json": {
+    "sha256": "e46698f48b7f08d13a5b13cc515a97c81e9e3fe7fccd045d7eeea8b0f8e70f64",
+    "bytes": 287
+  },
+  "results/references/haichau/config_cmp_max_pressure.json": {
+    "sha256": "58b01b227f4c007b1d2b587d69794eacea08a488ef5e6120ffe40334561c5bb1",
+    "bytes": 289
+  },
+  "results/references/haichau/config_cmp_random.json": {
+    "sha256": "35898b9e2247c6b7899edc7480cc9b8ed961ff99248ae6039ce6e46e7a0bf493",
+    "bytes": 283
+  },
+  "results/references/haichau/config_fixed_time.json": {
+    "sha256": "e31e12778545582daa15732725e2bf9106ecc556cfb1d4bc839386f349711edb",
+    "bytes": 309
+  },
+  "results/references/haichau/config_train.json": {
+    "sha256": "940d5c6b477aab954e4c843420b5742e30d34aa988429a929fa9e525b95d37e6",
+    "bytes": 189
+  },
+  "results/references/haichau/cumulative_wait.png": {
+    "sha256": "70ad20ed2c24e751ebfb37c6ba9598b36c50340462194d7c4b5579f24e238e25",
+    "bytes": 97453
+  },
+  "results/references/haichau/demo/replay_dqn_demo.txt": {
+    "sha256": "9f19866c8aac264f3f142e5256bc610933e96d89890351a15f8c199fa35eae19",
+    "bytes": 22350322
+  },
+  "results/references/haichau/demo/replay_fixed_time_demo.txt": {
+    "sha256": "7f7c5367b84be217b61241361b715f41f61d6de5bac60841385651d348066a7d",
+    "bytes": 22356898
+  },
+  "results/references/haichau/demo/replay_max_pressure_demo.txt": {
+    "sha256": "b2ab69c84847502a31a60dba0a06ef7422d1402b6d6145df8f3356f14ccb5af8",
+    "bytes": 22332320
+  },
+  "results/references/haichau/demo/replay_random_demo.txt": {
+    "sha256": "b349726a71a37585687003aa1aa1e2e5cdbf8f1feef85633d78b324c453f6713",
+    "bytes": 22363595
+  },
+  "results/references/haichau/dqn_haichau.npz": {
+    "sha256": "42deff3e7287551f6f6d2a20d1d4cafba6429a855bb37c14175b9a663b42b845",
+    "bytes": 87990
+  },
+  "results/references/haichau/metrics_fixed_time.json": {
+    "sha256": "4e582b84af96266dc0f066e0c813dadbf4dd98d03bd6dc05c1b27a4e69254153",
+    "bytes": 226
+  },
+  "results/references/haichau/queue_over_time.png": {
+    "sha256": "d1c00f7530b4501cbc512ef405caabc6fae5349b8610e7141c2f5c8f1d87d614",
+    "bytes": 82872
+  },
+  "results/references/haichau/queue_over_time_peak.png": {
+    "sha256": "67a8a2e19f17929b7f2448e4f0558de5d16827cabec16dbeb96916b8c9f2056a",
+    "bytes": 87846
+  },
+  "results/references/haichau/train_log_haichau.json": {
+    "sha256": "cacee2496fa03db67ce6f377c02b0f80bd27a677b6f8d4fea2220736dfe774f1",
+    "bytes": 14424
+  },
+  "results/references/haichau/training_curve.png": {
+    "sha256": "920642f1eb8fdd7c63d66e1ac007a71e6f86604c8151adb30084bd0f94c20231",
+    "bytes": 76148
+  },
+  "results/references/haichau_peak/comparison.json": {
+    "sha256": "1acc87c454ded5bc16c6e1eb1645845003d1b85c866d8fbbbd07016a35ed9eae",
+    "bytes": 7523
+  },
+  "results/references/haichau_peak/comparison_metrics.png": {
+    "sha256": "a814724d1c8d2b8fba01d63a61505fc5b2ca66b2b56edf93a6eee15b5021939f",
+    "bytes": 36989
+  },
+  "results/references/haichau_peak/config_cmp_dqn.json": {
+    "sha256": "d9a6b4b5f197d955f49193b140a0a1b033923c922fc85eb99da50aedb66230fc",
+    "bytes": 300
+  },
+  "results/references/haichau_peak/config_cmp_fixed_time.json": {
+    "sha256": "b307ffd1076aeb220f79bc1e2f1aa69f56d97869b4e448803c83686ceb6c11bc",
+    "bytes": 307
+  },
+  "results/references/haichau_peak/config_cmp_max_pressure.json": {
+    "sha256": "a6430b01e90f9a0ebb15cd7512b6118494e5f4a7d79cddc302396e94073f486c",
+    "bytes": 309
+  },
+  "results/references/haichau_peak/config_cmp_random.json": {
+    "sha256": "497194ff92b8bfcf82c1b213c3cd24341315017f645ac80137fcf81fabb1ca8f",
+    "bytes": 303
+  },
+  "results/references/haichau_peak/config_train.json": {
+    "sha256": "a16ab43de16770be98e74aca59fca82877e2a4d081bb651a5b1904ef87201903",
+    "bytes": 199
+  },
+  "results/references/haichau_peak/cumulative_wait.png": {
+    "sha256": "9d3793784b566d69bca4736822015614a59e66db09d9f37ce79653b8a02e7cc7",
+    "bytes": 101208
+  },
+  "results/references/haichau_peak/demo/replay_dqn_demo.txt": {
+    "sha256": "6c1347442d1892fab6938aa005ba5ef6b61f33a4eb8d4fdd4e3f1a4dcf485d51",
+    "bytes": 12754145
+  },
+  "results/references/haichau_peak/demo/replay_fixed_time_demo.txt": {
+    "sha256": "794e160816b3e240783bae49775e47b4050677e57065fb828cb704e388aaa6fd",
+    "bytes": 12771507
+  },
+  "results/references/haichau_peak/demo/replay_max_pressure_demo.txt": {
+    "sha256": "582d4a0374921ffdd4eae5dc181e2e983938d36021c1165d54e3bbb819e78300",
+    "bytes": 12747731
+  },
+  "results/references/haichau_peak/demo/replay_random_demo.txt": {
+    "sha256": "24ee58719f00aa1e35c6a5f3033b0489e57ada52aa04545719561277530116a2",
+    "bytes": 12778738
+  },
+  "results/references/haichau_peak/dqn_haichau_peak.npz": {
+    "sha256": "268087995637475841372df3167762c331f7e88fe1d3e2fb792c59cb438a5ded",
+    "bytes": 87990
+  },
+  "results/references/haichau_peak/queue_over_time_peak.png": {
+    "sha256": "fd448b6afbc3dc2ce03ab5c1bad57f716b0cd9c1c41c89ae602aa92f4562b47d",
+    "bytes": 87920
+  },
+  "results/references/haichau_peak/train_log_haichau_peak.json": {
+    "sha256": "1babebe646405bc37f3216797fda6d5b919766af7809add2393e79d85c090e0f",
+    "bytes": 14417
+  },
+  "results/references/haichau_peak/training_curve.png": {
+    "sha256": "3467d68ab4e7089471333fad279bd2176cd8bb46e29e0e984f9a3ad829df95d7",
+    "bytes": 74004
+  }
+}

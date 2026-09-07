@@ -35,4 +35,6 @@ def test_run_episode_returns_metrics(tmp_path):
     assert m["agents"] == 1
     assert "final_average_travel_time" in m
     assert m["mean_total_queue"] == 3.0      # constant 3 each decision
+    assert m["queue_integral_vehicle_seconds"] == 18.0  # 3 queued * 6 simulator seconds
+    assert m["queue_integral_vehicle_hours"] == 18.0 / 3600.0
     assert "mean_reward" in m
