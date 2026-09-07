@@ -58,3 +58,10 @@ an 1800-second regression test now protects that case. Consequence: all tau=1.0
 checkpoints and evaluations were moved to a local `superseded` directory, their
 comparison was summarized in `results/research_pilot/calibration/tau_sensitivity.json`,
 and the full five-seed training/test protocol was rerun with new demand hashes.
+### 2026-09-07 — Treat demand scaling as a labeled sensitivity analysis
+
+- **Decision:** Evaluate the frozen published fixed-time controller and all five frozen Dueling DDQN checkpoints at 0.75x, 1.00x, 1.25x, and 1.50x the observed AM camera demand, using five matched departure realizations per level.
+- **Reason:** This tests whether the main conclusion survives plausible loading changes without presenting synthetic counts as new observations. The 1.00x level is the observed one-day AM profile; every other level is explicitly labeled synthetic.
+- **Statistical unit:** For DDQN, average matched demand realizations within each training seed before computing uncertainty. For fixed time, demand realization is the independent unit.
+- **Safety:** No collisions occurred. Four emergency-braking events occurred across the 120 runs and are retained in the report rather than filtered.
+- **Consequence:** The controller remains regime dependent: it is worse at 0.75x, indistinguishable at 1.00x, and better at 1.25x and 1.50x. This finding belongs in the thesis and defense; it does not establish performance for unobserved Da Nang intersections.

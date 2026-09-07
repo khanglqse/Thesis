@@ -1,0 +1,184 @@
+{
+  "cases": [
+    {
+      "case_id": "am_scale_075_demand101",
+      "scale": 0.75,
+      "demand_seed": 101,
+      "scheduled_vehicles": 1747,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_075_demand101.rou.xml",
+      "demand_sha256": "0972beb9c443786a1594bc626557a9d22c61728427f62c3ba4c164badfb82eb1",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_075_demand102",
+      "scale": 0.75,
+      "demand_seed": 102,
+      "scheduled_vehicles": 1747,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_075_demand102.rou.xml",
+      "demand_sha256": "7bf496b6f72e70bf2078f086c61abf38fe1683e22346f27c065784c55a223bb3",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_075_demand103",
+      "scale": 0.75,
+      "demand_seed": 103,
+      "scheduled_vehicles": 1747,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_075_demand103.rou.xml",
+      "demand_sha256": "706d23c3e5dde55aecd55125f9991c59b23a9e8a430f73b4057680eac99d6cf2",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_075_demand104",
+      "scale": 0.75,
+      "demand_seed": 104,
+      "scheduled_vehicles": 1747,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_075_demand104.rou.xml",
+      "demand_sha256": "538b6ba84a121f8fa46e5cb54b8f46ee133cb0667c7ee5b753d46a34f96e58e9",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_075_demand105",
+      "scale": 0.75,
+      "demand_seed": 105,
+      "scheduled_vehicles": 1747,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_075_demand105.rou.xml",
+      "demand_sha256": "72f89752430164eb0040d520d8fb769804d6b17ecddef75fd5e7b67b26af78c5",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_100_demand101",
+      "scale": 1.0,
+      "demand_seed": 101,
+      "scheduled_vehicles": 2330,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_100_demand101.rou.xml",
+      "demand_sha256": "552308cff3284fb16c320acbe39671c098ea0c230778476b3c58c98ffbf40219",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_100_demand102",
+      "scale": 1.0,
+      "demand_seed": 102,
+      "scheduled_vehicles": 2330,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_100_demand102.rou.xml",
+      "demand_sha256": "00517254217480c6e31743c6eb712a4415b34b2b199280f0282a72517245b7d8",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_100_demand103",
+      "scale": 1.0,
+      "demand_seed": 103,
+      "scheduled_vehicles": 2330,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_100_demand103.rou.xml",
+      "demand_sha256": "47c18ea784dee25def5d08cd5d7f6f65cc557da855f21b293a2225dcdda1c6cd",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_100_demand104",
+      "scale": 1.0,
+      "demand_seed": 104,
+      "scheduled_vehicles": 2330,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_100_demand104.rou.xml",
+      "demand_sha256": "0ae80827a311b850b71185f9c4470ae5a145c55222acf4abc1c72f80d829d7ca",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_100_demand105",
+      "scale": 1.0,
+      "demand_seed": 105,
+      "scheduled_vehicles": 2330,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_100_demand105.rou.xml",
+      "demand_sha256": "55cfbeea362db118201bd63419f12eef5afff1d0cd94e89e42258744b8ea6b99",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_125_demand101",
+      "scale": 1.25,
+      "demand_seed": 101,
+      "scheduled_vehicles": 2913,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_125_demand101.rou.xml",
+      "demand_sha256": "b1aa31daa98c34f6545cbe51985b4a561c7cc6e2a1314805e8138455557ae5fa",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_125_demand102",
+      "scale": 1.25,
+      "demand_seed": 102,
+      "scheduled_vehicles": 2913,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_125_demand102.rou.xml",
+      "demand_sha256": "9bdfb14df52abbe43dae9e5b27dfa9c0416016c770ce6652b7c038ca21f58be5",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_125_demand103",
+      "scale": 1.25,
+      "demand_seed": 103,
+      "scheduled_vehicles": 2913,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_125_demand103.rou.xml",
+      "demand_sha256": "2085bd0a19c6375eec74c97841e0b16ea8dd428352fcb8a9c8e064fd3ef979a2",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_125_demand104",
+      "scale": 1.25,
+      "demand_seed": 104,
+      "scheduled_vehicles": 2913,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_125_demand104.rou.xml",
+      "demand_sha256": "34076303aaffb0c90776c6cac465a39386476ea6b22a46ad9f7334bb9b44f55e",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_125_demand105",
+      "scale": 1.25,
+      "demand_seed": 105,
+      "scheduled_vehicles": 2913,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_125_demand105.rou.xml",
+      "demand_sha256": "35f0081d10f7ee858050cbcea417fb420fda53c62c4e2bbf7f88a7608d18b16c",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_150_demand101",
+      "scale": 1.5,
+      "demand_seed": 101,
+      "scheduled_vehicles": 3495,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_150_demand101.rou.xml",
+      "demand_sha256": "f38a6c31ee9f62b8c769f7b027aebcda4e201294f815048a2a88e14c90a01c82",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_150_demand102",
+      "scale": 1.5,
+      "demand_seed": 102,
+      "scheduled_vehicles": 3495,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_150_demand102.rou.xml",
+      "demand_sha256": "6ea56b838543b410100eeb53ee9c8ef99c2cdb2ad3fd619871c7cb056cf14bc6",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_150_demand103",
+      "scale": 1.5,
+      "demand_seed": 103,
+      "scheduled_vehicles": 3495,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_150_demand103.rou.xml",
+      "demand_sha256": "a93f735b1ffaff93da11c20435e8207ad09ad5375292fa0f88653ee38f239ea6",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_150_demand104",
+      "scale": 1.5,
+      "demand_seed": 104,
+      "scheduled_vehicles": 3495,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_150_demand104.rou.xml",
+      "demand_sha256": "0619f83065c550e48515aa5ef8eade95a770b9c532dbb488db08a9a90a411a53",
+      "data_status": "synthetic_scale_sensitivity"
+    },
+    {
+      "case_id": "am_scale_150_demand105",
+      "scale": 1.5,
+      "demand_seed": 105,
+      "scheduled_vehicles": 3495,
+      "route_path": "results/danang_protocol_v1/sensitivity/demands/am_scale_150_demand105.rou.xml",
+      "demand_sha256": "291cc46dfdf566c1320a3c908d9dec138341b8f65abe4568186010f3ec998f87",
+      "data_status": "synthetic_scale_sensitivity"
+    }
+  ]
+}

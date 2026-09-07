@@ -3,6 +3,7 @@
 
 import hashlib
 import csv
+import copy
 import json
 import math
 import random
@@ -401,6 +402,27 @@ def build_observed_camera_demand_files(camera_csv, output_dir):
         results[name]["demand_path"] = str(path)
         results[name]["demand_sha256"] = _sha256(path)
     return results
+
+
+def scale_demand(demand, scale):
+    """Return a labeled synthetic sensitivity case at a demand multiplier."""
+    result = copy.deepcopy(demand)
+    scale = float(scale)
+    result["case_id"] = "%s_scale_%g" % (demand["case_id"], scale)
+    result["demand_scale"] = scale
+    result["data_status"] = "synthetic_scale_sensitivity"
+    result["target_pcu_per_hour"] = demand["target_pcu_per_hour"] * scale
+    scheduled = 0.0
+    motorcycles = 0.0
+    for movement in result["movements"]:
+        movement["target_pcu_per_hour"] *= scale
+        for kind in movement["vehicle_rates_per_hour"]:
+            movement["vehicle_rates_per_hour"][kind] *= scale
+        scheduled += sum(movement["vehicle_rates_per_hour"].values())
+        motorcycles += movement["vehicle_rates_per_hour"].get("motorcycle", 0)
+    result["scheduled_vehicles"] = int(round(scheduled))
+    result["motorcycle_share"] = motorcycles / scheduled if scheduled else 0.0
+    return result
 
 
 def write_sumo_routes(network, demand, route_path):

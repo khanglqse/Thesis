@@ -72,6 +72,25 @@ def test_observed_camera_demands_keep_exact_digitized_vehicle_counts(tmp_path):
     ) == 2330
 
 
+def test_scaled_demand_is_explicitly_labeled_synthetic():
+    from scripts import build_danang_pilot
+
+    source = {
+        "case_id": "observed",
+        "scheduled_vehicles": 100,
+        "target_pcu_per_hour": 70.0,
+        "movements": [{"target_pcu_per_hour": 70.0,
+                       "vehicle_rates_per_hour": {"motorcycle": 80, "car": 20,
+                                                   "truck": 0, "bus": 0}}],
+    }
+    scaled = build_danang_pilot.scale_demand(source, 1.25)
+    assert scaled["scheduled_vehicles"] == 125
+    assert scaled["target_pcu_per_hour"] == 87.5
+    assert scaled["movements"][0]["vehicle_rates_per_hour"]["motorcycle"] == 100
+    assert scaled["data_status"] == "synthetic_scale_sensitivity"
+    assert source["scheduled_vehicles"] == 100
+
+
 def test_sumo_routes_cover_twelve_movements_and_four_vehicle_classes(tmp_path):
     from scripts import build_danang_pilot
 
