@@ -1,0 +1,166 @@
+{
+  "bundle_version": 1,
+  "created_at": "2026-09-07T22:00:00+07:00",
+  "git_commit": "fe12ace8081087ce501c2f619a74168fb7a5dcd5",
+  "network": {
+    "path": "network.json",
+    "sha256": "6374d5970c092ba6c5dc933072a6d1342a63e4d0c632b0e34bbbfcea5685700e",
+    "source_path": "results/research_pilot/generated/danang_isolated_published.net.xml",
+    "coordinate_units": "local SUMO metres"
+  },
+  "initial_view": {
+    "case_id": "test_pm_peak_demand103",
+    "controller_left": "published_fixed",
+    "controller_right": "dueling_n3",
+    "simulation_time": 1800
+  },
+  "aggregate_results": {
+    "source_path": "results/danang_protocol_v1/summary/final-summary.json",
+    "sha256": "286e9b91c8b4d1e484a846c0dbb51e24305542b34382922e7ec3c8e954a052cf"
+  },
+  "runs": [
+    {
+      "case_id": "test_normal_demand103",
+      "scenario": "normal",
+      "controller_id": "published_fixed",
+      "selection_rule": "training seed 12 is the median validation policy; demand seed 103 is the median fixed-time PM case",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "measurement_window": "2025-04-01 13:00-14:00",
+      "train_seed": null,
+      "demand_seed": 103,
+      "sim_seed": 203,
+      "simulator": "SUMO v1_24_0+1559-61e8e739dad",
+      "replay_path": "replays/test_normal_demand103__published_fixed.json",
+      "replay_sha256": "47e39772637c6d0c041ae5ea53db5eec18e18bc60f055ed668fab7c9385f5b4f",
+      "metrics": {
+        "queue_integral_vehicle_hours": 9.935277777777777,
+        "arrived": 1367,
+        "pending": 0,
+        "completion_rate": 0.9799283154121864,
+        "phase_switches": 104,
+        "collisions": 0,
+        "emergency_braking": 0
+      }
+    },
+    {
+      "case_id": "test_normal_demand103",
+      "scenario": "normal",
+      "controller_id": "dueling_n3",
+      "selection_rule": "training seed 12 is the median validation policy; demand seed 103 is the median fixed-time PM case",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "measurement_window": "2025-04-01 13:00-14:00",
+      "train_seed": 12,
+      "demand_seed": 103,
+      "sim_seed": 203,
+      "simulator": "SUMO v1_24_0+1559-61e8e739dad",
+      "replay_path": "replays/test_normal_demand103__dueling_n3.json",
+      "replay_sha256": "5d6a277864d5b3bbf177b4edc8e5d6e8e7f551e122204c9f571ed980da20b7b0",
+      "metrics": {
+        "queue_integral_vehicle_hours": 15.268888888888888,
+        "arrived": 1360,
+        "pending": 0,
+        "completion_rate": 0.974910394265233,
+        "phase_switches": 119,
+        "collisions": 0,
+        "emergency_braking": 0
+      }
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "scenario": "pm_peak",
+      "controller_id": "published_fixed",
+      "selection_rule": "training seed 12 is the median validation policy; demand seed 103 is the median fixed-time PM case",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "measurement_window": "2025-04-01 17:00-18:00",
+      "train_seed": null,
+      "demand_seed": 103,
+      "sim_seed": 203,
+      "simulator": "SUMO v1_24_0+1559-61e8e739dad",
+      "replay_path": "replays/test_pm_peak_demand103__published_fixed.json",
+      "replay_sha256": "43ea5bcce4e8a4e83df0c39e7c1aea3aa57d7b61f08a979585f02fa6ba4ffbb1",
+      "metrics": {
+        "queue_integral_vehicle_hours": 152.46333333333334,
+        "arrived": 1995,
+        "pending": 209,
+        "completion_rate": 0.83125,
+        "phase_switches": 104,
+        "collisions": 0,
+        "emergency_braking": 0
+      }
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "scenario": "pm_peak",
+      "controller_id": "dueling_n3",
+      "selection_rule": "training seed 12 is the median validation policy; demand seed 103 is the median fixed-time PM case",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "measurement_window": "2025-04-01 17:00-18:00",
+      "train_seed": 12,
+      "demand_seed": 103,
+      "sim_seed": 203,
+      "simulator": "SUMO v1_24_0+1559-61e8e739dad",
+      "replay_path": "replays/test_pm_peak_demand103__dueling_n3.json",
+      "replay_sha256": "ab7e8083d43904038e2a3c449997f6ec3977d33ce8f2edeaccd546e6b5c1423f",
+      "metrics": {
+        "queue_integral_vehicle_hours": 76.2838888888889,
+        "arrived": 2201,
+        "pending": 41,
+        "completion_rate": 0.9170833333333334,
+        "phase_switches": 110,
+        "collisions": 0,
+        "emergency_braking": 0
+      }
+    }
+  ],
+  "fallbacks": [
+    {
+      "kind": "mp4",
+      "path": "fallbacks/demo-walkthrough.mp4",
+      "sha256": "df31cba136101ac73089d5dba38ff3e5a1a5481a2d7df805b778be8b5a27be56"
+    },
+    {
+      "kind": "pdf",
+      "path": "fallbacks/result-summary.pdf",
+      "sha256": "74735a907500efa787621309c58dd3d7a4ebe3a7442960290691b01da7710ba0"
+    },
+    {
+      "kind": "screenshot",
+      "path": "fallbacks/pm-peak.png",
+      "sha256": "5781e0cbf82a99d5f3eaba917f39622274c1293ce83011a5e39b8ac986a43fa7"
+    }
+  ],
+  "assets": [
+    {
+      "path": "index.html",
+      "sha256": "9be5d23f26ae3c955fca67a40de9f9d3c20639465ec92d15d21c84da3b55e874"
+    },
+    {
+      "path": "danang_defense.css",
+      "sha256": "09083e54ea15ac0c9b4c87ea075227e82ae4cc5cc0d748939e0cb6ca6c83b2a9"
+    },
+    {
+      "path": "danang_defense.js",
+      "sha256": "39f42d0107b9dcef56a0f79e7a716342ed52e6425ebfd22004392f32cd461998"
+    },
+    {
+      "path": "danang_defense_core.js",
+      "sha256": "d5725dcfebaf98c6decf91e3cdfef4b54a0df597b4676174178b7d8479337d48"
+    },
+    {
+      "path": "aggregate-summary.json",
+      "sha256": "286e9b91c8b4d1e484a846c0dbb51e24305542b34382922e7ec3c8e954a052cf"
+    },
+    {
+      "path": "serve.py",
+      "sha256": "f34ff2e55d118f7b894a08a38b9df8a46007d024b6193f3170bd2cd3b2d923aa"
+    },
+    {
+      "path": "launch_demo.command",
+      "sha256": "1912c40a2113ea478f04fc3e67c380a538810ed1072bd6c2d7d8bfdb73465135"
+    },
+    {
+      "path": "README.txt",
+      "sha256": "6fb7429dbc02fb1f95b5f41b4629b51ac29cb8d3f8ecd8d7ce5a55f865fd63dc"
+    }
+  ]
+}

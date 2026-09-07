@@ -11,6 +11,7 @@ ROOT = Path(__file__).parents[2]
 def test_sumo_env_runs_safe_actions_and_reports_vehicle_accounting():
     from traffic_rl.sim.sumo_single_junction import SumoSingleJunctionEnv
 
+    recorded = []
     env = SumoSingleJunctionEnv(
         network_path=ROOT / "results/research_pilot/generated/danang_isolated_published.net.xml",
         route_path=ROOT / "results/research_pilot/generated/observed_normal.rou.xml",
@@ -20,6 +21,7 @@ def test_sumo_env_runs_safe_actions_and_reports_vehicle_accounting():
         max_steps=20,
         yellow_time=7,
         min_green=10,
+        frame_callback=lambda frame: recorded.append(frame),
     )
     try:
         obs = env.reset()
@@ -36,6 +38,9 @@ def test_sumo_env_runs_safe_actions_and_reports_vehicle_accounting():
         ]
         assert second["collisions"] == 0
         assert second["emergency_braking"] == 0
+        assert [frame["simulation_time"] for frame in recorded] == list(range(1, 21))
+        assert all("phase_index" in frame and "total_queue" in frame
+                   for frame in recorded)
     finally:
         env.close()
 

@@ -65,3 +65,9 @@ and the full five-seed training/test protocol was rerun with new demand hashes.
 - **Statistical unit:** For DDQN, average matched demand realizations within each training seed before computing uncertainty. For fixed time, demand realization is the independent unit.
 - **Safety:** No collisions occurred. Four emergency-braking events occurred across the 120 runs and are retained in the report rather than filtered.
 - **Consequence:** The controller remains regime dependent: it is worse at 0.75x, indistinguishable at 1.00x, and better at 1.25x and 1.50x. This finding belongs in the thesis and defense; it does not establish performance for unobserved Da Nang intersections.
+### 2026-09-07 — Freeze a representative, offline defense replay
+
+- **Decision:** Use training seed 12, the median policy by best validation queue, and demand seed 103, the median published-fixed PM held-out case, for the A/B replay.
+- **Reason:** The selection rule is independent of the DDQN test advantage and prevents cherry-picking a visually favorable episode.
+- **Demo:** Export PM and normal cases at five-second resolution, reproduce the exact frozen metrics, and package a localhost viewer with H.264, PDF, and image fallbacks.
+- **Consequence:** The demo illustrates individual runs and labels them as such. Only the five-seed aggregate table supports the main conclusion.

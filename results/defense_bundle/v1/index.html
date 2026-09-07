@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Da Nang traffic RL defense replay</title><link rel="icon" href="data:,"><link rel="stylesheet" href="danang_defense.css"></head>
+<body><header>
+  <div><p class="eyebrow">THESIS DEFENSE · OFFLINE SUMO REPLAY</p><h1>Da Nang signal control: published fixed time vs Dueling DDQN</h1></div>
+  <div class="status"><strong id="status">Loading verified bundle…</strong><span>No network required</span></div>
+</header>
+<section class="provenance"><label>Scenario <select id="scenario"><option value="pm_peak">PM peak · 17:00</option><option value="normal">Normal · 13:00</option></select></label><span id="provenance"></span></section>
+<main>
+  <article><h2>Published fixed time <small>LEFT</small></h2><canvas id="left" width="620" height="470"></canvas><div id="leftMetrics" class="metrics"></div></article>
+  <article><h2>Dueling Double DQN <small>RIGHT</small></h2><canvas id="right" width="620" height="470"></canvas><div id="rightMetrics" class="metrics"></div></article>
+</main>
+<section class="controls"><button id="play">▶ Play</button><button id="reset">Reset to 30:00</button><label>Speed <select id="speed"><option value="1">1×</option><option value="5">5×</option><option value="10" selected>10×</option><option value="30">30×</option></select></label><input id="seek" type="range" min="0" max="3600" step="5" value="1800"><strong id="clock">30:00</strong></section>
+<section class="finding"><div><span>AGGREGATE RESULT</span><strong id="aggregate"></strong><small>Five independent training seeds; 95% bootstrap CI</small></div><p id="episode"></p></section>
+<details><summary>Provenance and interpretation</summary><p>This page replays a pre-exported simulation. It does not run training or create a new experiment. Training seed 12 is the median validation policy. Demand seed 103 is the median published-fixed PM case. The two panels share scenario, demand realization, simulator seed and time. Whole-episode metrics belong to this representative case; the aggregate result comes from all held-out runs.</p><pre id="details"></pre></details>
+<footer>Nguyen Thanh Nghi–Cach Mang Thang 8–2/9 · four digitized camera movements · SUMO lane model · motorcycle τ = 1.2 s</footer>
+<script src="danang_defense_core.js"></script><script src="danang_defense.js"></script></body></html>

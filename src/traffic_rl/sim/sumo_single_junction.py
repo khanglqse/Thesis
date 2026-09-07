@@ -57,7 +57,7 @@ class SumoSingleJunctionEnv(object):
                  action_interval=10, max_steps=3600, yellow_time=7,
                  min_green=10, count_norm=20.0, sumo_binary="sumo",
                  tls_id="danang_ntn_cmt8_29", traci_module=None,
-                 control_mode="agent"):
+                 control_mode="agent", frame_callback=None):
         self.network_path = str(Path(network_path).resolve())
         self.route_path = str(Path(route_path).resolve())
         self.scheduled_vehicles = int(scheduled_vehicles)
@@ -72,6 +72,7 @@ class SumoSingleJunctionEnv(object):
         if control_mode not in ("agent", "static_program"):
             raise ValueError("control_mode must be agent or static_program")
         self.control_mode = control_mode
+        self.frame_callback = frame_callback
         self.agent_ids = [tls_id]
         self.num_actions = {tls_id: 3}
         self.encoder = _EncoderContract()
@@ -213,8 +214,18 @@ class SumoSingleJunctionEnv(object):
             network_queue = sum(
                 self._connection.lane.getLastStepHaltingNumber(lane)
                 for lanes in self._incoming_lanes.values() for lane in lanes)
-            self._queue_integral += network_queue + len(
-                self._connection.simulation.getPendingVehicles())
+            pending = len(self._connection.simulation.getPendingVehicles())
+            self._queue_integral += network_queue + pending
+            if self.frame_callback is not None:
+                self.frame_callback({
+                    "simulation_time": self._t,
+                    "phase_index": phase_index,
+                    "network_queue": float(network_queue),
+                    "pending": pending,
+                    "total_queue": float(network_queue + pending),
+                    "arrived": self._arrived,
+                    "inserted": self._inserted,
+                })
         self._since_switch += steps
 
     def step(self, actions):
