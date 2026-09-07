@@ -6,8 +6,8 @@
 2. Double-click `launch_demo.command`. It opens port 8765, or tries through 8775 if occupied.
 3. Confirm **Verified bundle loaded** and both panels show vehicles at 30:00.
 4. Start with PM peak. Play at 10×, pause, and point to queue, pending, arrivals, and whole-episode vehicle-hours.
-5. Explain that the seed-12 representative is 50.0% lower, while the five-seed aggregate is 34.5% lower. The aggregate supports the conclusion.
-6. Change to Normal. Show the aggregate is 320.7% higher and explain the fixed-time fallback.
+5. Explain that lower cumulative queue is better: the seed-12 representative is 50.0% lower, while the five-seed aggregate is 34.5% lower. The aggregate supports the PM-peak conclusion.
+6. Change to Normal. Show that cumulative queue is 320.7% higher (worse) and explain why the deployable policy falls back to fixed time in light traffic.
 
 ## Fallback path
 

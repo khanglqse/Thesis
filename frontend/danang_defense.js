@@ -13,8 +13,8 @@ async function loadScenario(scenario){
   state.data={left,right,fixed,dqn,scenario}; state.time=initialTime; $("seek").value=state.time;
   const label=scenario==="pm_peak"?"PM peak, 17:00–18:00":"Normal traffic, 13:00–14:00";
   $("provenance").textContent=`${label} · observed digitized partial coverage · demand seed 103 · simulator seed 203`;
-  const agg=summary.dqn_minus_published_fixed[scenario], pct=Math.abs(agg.relative_change_percent).toFixed(1);
-  $("aggregate").textContent=scenario==="pm_peak"?`DDQN ${pct}% lower than published fixed time`:`DDQN ${pct}% higher than published fixed time`;
+  const agg=summary.dqn_minus_published_fixed[scenario];
+  $("aggregate").textContent=core.aggregateClaim(scenario,agg.relative_change_percent);
   $("details").textContent=JSON.stringify({selection_rule:fixed.selection_rule,simulator:fixed.simulator,fixed_replay_sha256:fixed.replay_sha256,dqn_replay_sha256:dqn.replay_sha256,aggregate_sha256:manifest.aggregate_results.sha256},null,2);
   render();
 }
@@ -28,7 +28,7 @@ function draw(canvas,replay){
  return frame;
 }
 function metrics(el,frame,replay){const m=replay.metrics;el.innerHTML=[["Current queue",Math.round(frame.q)+" veh"],["Pending",frame.pending+" veh"],["Arrived",frame.arrived],["Whole episode",m.queue_integral_vehicle_hours.toFixed(1)+" veh-h"]].map(x=>`<div class="metric"><strong>${x[1]}</strong><span>${x[0]}</span></div>`).join("")}
-function render(){if(!state.data.left)return;const l=draw($("left"),state.data.left),r=draw($("right"),state.data.right);metrics($("leftMetrics"),l,state.data.left);metrics($("rightMetrics"),r,state.data.right);$("clock").textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;const f=state.data.left.metrics.queue_integral_vehicle_hours,d=state.data.right.metrics.queue_integral_vehicle_hours,c=core.representativeChange(f,d);$("episode").textContent=`Representative case: DDQN ${Math.abs(c).toFixed(1)}% ${c<0?"lower":"higher"} queue integral (${d.toFixed(1)} vs ${f.toFixed(1)} veh-h).`;}
+function render(){if(!state.data.left)return;const l=draw($("left"),state.data.left),r=draw($("right"),state.data.right);metrics($("leftMetrics"),l,state.data.left);metrics($("rightMetrics"),r,state.data.right);$("clock").textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;const f=state.data.left.metrics.queue_integral_vehicle_hours,d=state.data.right.metrics.queue_integral_vehicle_hours,c=core.representativeChange(f,d);$("episode").textContent=`Representative case: DDQN ${c<0?"reduces":"increases"} cumulative queue by ${Math.abs(c).toFixed(1)}% (${d.toFixed(1)} vs ${f.toFixed(1)} veh-h; ${c<0?"better":"worse"}).`;}
 function tick(ts){if(state.playing){if(state.last)state.time=Math.min(3600,state.time+(ts-state.last)/1000*state.speed);state.last=ts;$("seek").value=state.time;render();if(state.time>=3600){state.playing=false;$("play").textContent="▶ Play"}}requestAnimationFrame(tick)}
 $("play").onclick=()=>{state.playing=!state.playing;state.last=0;$("play").textContent=state.playing?"❚❚ Pause":"▶ Play"};$("reset").onclick=()=>{state.time=1800;$("seek").value=1800;render()};$("speed").onchange=e=>state.speed=+e.target.value;$("seek").oninput=e=>{state.time=+e.target.value;render()};$("scenario").onchange=e=>loadScenario(e.target.value);
 $("scenario").value=initialScenario;await loadScenario(initialScenario);$("status").textContent="Verified bundle loaded";requestAnimationFrame(tick);

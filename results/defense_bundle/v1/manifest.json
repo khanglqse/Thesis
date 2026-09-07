@@ -132,7 +132,7 @@
   "assets": [
     {
       "path": "index.html",
-      "sha256": "9be5d23f26ae3c955fca67a40de9f9d3c20639465ec92d15d21c84da3b55e874"
+      "sha256": "ed3c3275d26cadc327a065dd866b325520067c6a01b48a86459b03361fdb3c22"
     },
     {
       "path": "danang_defense.css",
@@ -140,11 +140,11 @@
     },
     {
       "path": "danang_defense.js",
-      "sha256": "39f42d0107b9dcef56a0f79e7a716342ed52e6425ebfd22004392f32cd461998"
+      "sha256": "cb427eb66ada10e0845779c03953a873f0ea5680dad350f713d9c935c99b86bc"
     },
     {
       "path": "danang_defense_core.js",
-      "sha256": "d5725dcfebaf98c6decf91e3cdfef4b54a0df597b4676174178b7d8479337d48"
+      "sha256": "8fdd61a5c410b135ad79c05af9371c684e70d523fb678735620e2e02cf3d3f6c"
     },
     {
       "path": "aggregate-summary.json",

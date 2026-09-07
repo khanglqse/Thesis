@@ -29,5 +29,12 @@
   function representativeChange(fixed, learned) {
     return 100 * (learned - fixed) / fixed;
   }
-  return { frameIndexAt, transform, phaseLabel, representativeChange };
+  function aggregateClaim(scenario, relativeChangePercent) {
+    const label = scenario === "pm_peak" ? "PM peak" : "Normal traffic";
+    const pct = Math.abs(relativeChangePercent).toFixed(1);
+    return relativeChangePercent < 0
+      ? `${label}: DDQN reduces cumulative queue by ${pct}% (better)`
+      : `${label}: DDQN increases cumulative queue by ${pct}% (worse; use fixed time)`;
+  }
+  return { frameIndexAt, transform, phaseLabel, representativeChange, aggregateClaim };
 });
