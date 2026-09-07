@@ -65,6 +65,7 @@ core
 
 # Superpowers brainstorming visual companion mockups
 .superpowers/
+.worktrees/
 
 # Truncated demo replays (regenerate with scripts/truncate_replay.py)
 results/*/demo/
