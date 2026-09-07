@@ -59,6 +59,7 @@ osm_danang/*.geojson
 
 # Generated simulation data — all regenerable from scripts (OSM, nets, roadnet, flow, replay)
 data/
+/data
 
 # core dumps (CityFlow segfaults under emulation)
 core
@@ -69,6 +70,10 @@ core
 
 # Truncated demo replays (regenerate with scripts/truncate_replay.py)
 results/*/demo/
+results/*/demo
+
+# Local research/PDF scratch files
+tmp/
 
 # Peak scenario roadnet is a copy of roadnet_haichau.json (regenerate via build_peak_flow.py)
 data/danang/roadnet_haichau_peak.json

@@ -1,0 +1,175 @@
+{
+  "case_id": "danang_am_peak",
+  "demand_scale_vs_am_peak": 1.0,
+  "duration_seconds": 3600,
+  "hour_start": "08:00",
+  "motorcycle_share": 0.6416309012875537,
+  "movements": [
+    {
+      "approach": "NW",
+      "destination": "SE",
+      "movement": "through",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 696.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 327.8600269179004,
+        "motorcycle": 700.2153432032302,
+        "truck": 63.23014804845222
+      }
+    },
+    {
+      "approach": "NW",
+      "destination": "SW",
+      "movement": "right",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 318.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 149.79811574697175,
+        "motorcycle": 319.92597577388966,
+        "truck": 28.889636608344553
+      }
+    },
+    {
+      "approach": "NW",
+      "destination": "NE",
+      "movement": "left",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 9.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 4.23956931359354,
+        "motorcycle": 9.054508748317632,
+        "truck": 0.8176312247644685
+      }
+    },
+    {
+      "approach": "SE",
+      "destination": "NW",
+      "movement": "through",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 369.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 173.82234185733515,
+        "motorcycle": 371.23485868102284,
+        "truck": 33.5228802153432
+      }
+    },
+    {
+      "approach": "SE",
+      "destination": "NE",
+      "movement": "right",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 711.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 334.92597577388966,
+        "motorcycle": 715.3061911170929,
+        "truck": 64.59286675639301
+      }
+    },
+    {
+      "approach": "SE",
+      "destination": "SW",
+      "movement": "left",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 207.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 97.51009421265141,
+        "motorcycle": 208.25370121130553,
+        "truck": 18.805518169582776
+      }
+    },
+    {
+      "approach": "NE",
+      "destination": "SW",
+      "movement": "through",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 942.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 443.74158815612384,
+        "motorcycle": 947.7052489905788,
+        "truck": 85.57873485868103
+      }
+    },
+    {
+      "approach": "NE",
+      "destination": "NW",
+      "movement": "right",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 96.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 45.22207267833109,
+        "motorcycle": 96.5814266487214,
+        "truck": 8.721399730820997
+      }
+    },
+    {
+      "approach": "NE",
+      "destination": "SE",
+      "movement": "left",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 1359.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 640.1749663526246,
+        "motorcycle": 1367.2308209959622,
+        "truck": 123.46231493943473
+      }
+    },
+    {
+      "approach": "SW",
+      "destination": "NE",
+      "movement": "through",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 1059.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 498.8559892328399,
+        "motorcycle": 1065.4138627187078,
+        "truck": 96.20794078061911
+      }
+    },
+    {
+      "approach": "SW",
+      "destination": "SE",
+      "movement": "right",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 300.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 141.31897711978465,
+        "motorcycle": 301.81695827725434,
+        "truck": 27.254374158815615
+      }
+    },
+    {
+      "approach": "SW",
+      "destination": "NW",
+      "movement": "left",
+      "observation_status": "published_aggregate_mixed_observed_estimated",
+      "target_pcu_per_hour": 105.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0.0,
+        "car": 49.46164199192463,
+        "motorcycle": 105.63593539703902,
+        "truck": 9.539030955585464
+      }
+    }
+  ],
+  "pcu_factors": {
+    "bus": 2.0,
+    "car": 1.0,
+    "motorcycle": 0.3,
+    "truck": 2.5
+  },
+  "scheduled_vehicles": 9676,
+  "source_id": "phan2025_3dqn_danang",
+  "source_scope": "four observed camera lines scaled to published 12-movement peak table",
+  "target_pcu_per_hour": 6171.0
+}

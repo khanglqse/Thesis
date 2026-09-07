@@ -14,7 +14,7 @@ Foundation run: `results/research_foundation/20260907T133327743207Z`.
 | F4 literature review | in progress | initial matrix created; full-text extraction remains |
 | F5 data feasibility | complete for public sources | one observed peak intersection is usable; no raw multi-day Hai Chau corridor dataset found yet |
 | F6 foundation handoff | complete | `survey-protocol.md` and `foundation-handoff.md` select the next code gates |
-| T04–T06 network, demand, calibration | pending | pilot selected below |
+| T04–T06 network, demand, calibration | in progress | pinned OSM pilot, 3 demand presets and safe route smoke built; signal program/controller calibration next |
 | T07–T10 training and evaluation | pending | blocked only by implementation, not by user input |
 | T11 thesis and slides | pending | generated after final experiment tables |
 | T12 defense bundle | pending | legacy replay audited; final artifact not yet certified |

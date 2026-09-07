@@ -1,0 +1,22 @@
+Warning: Environment variable SUMO_HOME is not set properly, disabling XML validation. Set 'auto' or 'always' for web lookups.
+Loading net-file from 'results/research_pilot/generated/pilot.net.xml' ... done (35ms).
+Loading route-files incrementally from 'results/research_pilot/generated/am_peak.rou.xml'
+Loading done.
+Simulation version v1_24_0+1559-61e8e739dad started with time: 0.00.
+Simulation ended at time: 300.00.
+Reason: The final simulation step has been reached.
+Performance:
+ Duration: 1.95s
+ Real time factor: 154.242
+ UPS: 53451.413882
+Vehicles:
+ Inserted: 813 (Loaded: 823)
+ Running: 634
+ Waiting: 10
+Statistics (avg of 179):
+ RouteLength: 705.60
+ Speed: 6.10
+ Duration: 130.60
+ WaitingTime: 50.50
+ TimeLoss: 74.08
+ DepartDelay: 0.38

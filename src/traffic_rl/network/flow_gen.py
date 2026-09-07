@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import random
+import csv
+import math
 from pathlib import Path
 from typing import List
 
@@ -25,6 +27,58 @@ VEHICLE_TEMPLATES = {
         "maxSpeed": 11.11, "headwayTime": 1.5,
     },
 }
+
+
+def load_published_turning_movements(path):
+    """Load the published Da Nang peak turning table without losing provenance."""
+    rows = []
+    with Path(path).open(newline="") as stream:
+        for raw in csv.DictReader(stream):
+            row = dict(raw)
+            row["pcu_per_hour"] = int(row["pcu_per_hour"])
+            rows.append(row)
+    identities = set((row["approach"], row["movement"]) for row in rows)
+    expected = set((approach, movement)
+                   for approach in ("NW", "SE", "NE", "SW")
+                   for movement in ("left", "through", "right"))
+    if identities != expected or len(rows) != len(expected):
+        raise ValueError("turning table must contain each of 12 movements exactly once")
+    return rows
+
+
+def load_danang_camera_presets(path):
+    """Aggregate four digitized camera lines into reproducible time presets."""
+    by_hour = {}
+    count_fields = ("car_veh_per_h", "motorcycle_veh_per_h",
+                    "truck_veh_per_h", "bus_veh_per_h")
+    with Path(path).open(newline="") as stream:
+        for row in csv.DictReader(stream):
+            hour = row["hour_start"]
+            out = by_hour.setdefault(hour, {
+                "hour_start": hour,
+                "observed_vehicle_count_per_hour": 0,
+                "derived_pcu_per_hour": 0.0,
+                "covered_movements": 0,
+                "scope": "four_camera_counting_lines",
+                "_uncertainty_sq": 0.0,
+            })
+            out["observed_vehicle_count_per_hour"] += sum(
+                int(row[field]) for field in count_fields)
+            out["derived_pcu_per_hour"] += float(row["derived_pcu_per_h"])
+            out["covered_movements"] += 1
+            out["_uncertainty_sq"] += float(
+                row["digitization_uncertainty_veh_per_h"]) ** 2
+
+    hours = {"normal": "13:00", "am_peak": "08:00", "pm_peak": "17:00"}
+    presets = {}
+    for name, hour in hours.items():
+        if hour not in by_hour:
+            raise ValueError("camera profile is missing preset hour %s" % hour)
+        row = dict(by_hour[hour])
+        row["digitization_uncertainty_vehicle_per_hour"] = math.sqrt(
+            row.pop("_uncertainty_sq"))
+        presets[name] = row
+    return presets
 
 
 def _random_route(rn: RoadNet, entry_roads: List[str], length: int, rng: random.Random) -> List[str]:

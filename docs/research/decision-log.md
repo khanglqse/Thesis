@@ -15,3 +15,7 @@ Decision: training seed, demand/day seed, simulator seed and evaluation case are
 ## 2026-09-07 — defense demo is artifact playback
 
 Decision: offline synchronized replay is the primary defense mode; live inference is optional. Reason: the scientific claim comes from aggregate runs, and presentation reliability requires no training, network, package install or WebGL-only path.
+
+## 2026-09-07 — motorcycle sublane safety parameters
+
+Decision: use SUMO sublane resolution 0.4 m, motorcycle `minGapLat=0.30` m and `lcPushy=0.0` for the first pilot. Evidence: on the AM case, seed 1 and a 300-second horizon, the initial `minGapLat=0.15`/`lcPushy=0.5` combination caused 8 collision teleports; changing only pushiness left 1 and only lateral gap left 2; changing both yielded zero. The no-sublane control also yielded zero. Consequence: a regression test requires zero collision teleport warnings. These values pass technical safety smoke but remain calibration parameters, not empirically validated behavior.

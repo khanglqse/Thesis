@@ -4,7 +4,7 @@
 
 The signalized junction formed by Nguyen Thanh Nghi, Cach Mang Thang 8 and 2/9 streets is the strongest immediately reproducible candidate. Phan, Le and Nguyen (2025) publish a 103-second, three-phase fixed plan and 12 turning-movement peak volumes collected by the Da Nang Department of Transport in 2022. The movements total 6171 passenger-car-equivalent vehicles per hour. This is adequate to construct a disclosed observed-peak demand case and to check the published baseline geometry/plan.
 
-The same article reports camera observations across 12 hours and identifies 07:00–09:00 and 16:00–18:00 as peaks, but the machine-readable raw time series and all directions were not established in this audit. It says unobserved directions were estimated from proportions. Therefore, the published peak table is `observed_aggregate_with_estimated_movements`, not raw trajectory data. A normal-hour case may be digitized from a figure only with an explicit extraction uncertainty and cannot be called raw.
+The same article reports camera observations on 2025-04-01 from 06:00–18:00 and identifies 07:00–09:00 and 16:00–18:00 as peaks. It states that the raw data are available only on request due to privacy/ethical restrictions and that directions outside the two cameras were estimated from proportions. Therefore, the published peak table is `observed_aggregate_with_estimated_movements`, not raw trajectory data. Figures 17–18 have now been digitized with explicit plot-reading uncertainty for four observed counting lines; these rows are derived observations and remain distinct from raw counts.
 
 ## Other sources
 
