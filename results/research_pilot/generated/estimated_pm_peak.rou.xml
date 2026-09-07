@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<routes>
+  <vType id="motorcycle" vClass="motorcycle" length="2.0" width="0.8" accel="3.5" decel="5.0" minGap="0.5" maxSpeed="13.89" sigma="0.7" tau="1.2" minGapLat="0.30" latAlignment="compact" lcSublane="1.0" lcPushy="0.0" />
+  <vType id="car" vClass="passenger" length="5.0" width="1.8" accel="2.0" decel="4.5" minGap="2.5" maxSpeed="11.11" sigma="0.5" />
+  <vType id="truck" vClass="truck" length="8.0" width="2.5" accel="1.3" decel="4.0" minGap="3.0" maxSpeed="10.0" sigma="0.5" />
+  <vType id="bus" vClass="bus" length="12.0" width="2.5" accel="1.2" decel="4.0" minGap="3.0" maxSpeed="10.0" sigma="0.5" />
+  <route id="NW_SE" edges="in_NW out_SE" />
+  <flow id="NW_SE_motorcycle" type="motorcycle" route="NW_SE" begin="0" end="3600" vehsPerHour="782.180350" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NW_SE_car" type="car" route="NW_SE" begin="0" end="3600" vehsPerHour="297.415882" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NW_SE_truck" type="truck" route="NW_SE" begin="0" end="3600" vehsPerHour="44.495289" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="NW_SW" edges="in_NW out_SW" />
+  <flow id="NW_SW_motorcycle" type="motorcycle" route="NW_SW" begin="0" end="3600" vehsPerHour="357.375505" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NW_SW_car" type="car" route="NW_SW" begin="0" end="3600" vehsPerHour="135.888291" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NW_SW_truck" type="truck" route="NW_SW" begin="0" end="3600" vehsPerHour="20.329744" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="NW_NE" edges="in_NW out_NE" />
+  <flow id="NW_NE_motorcycle" type="motorcycle" route="NW_NE" begin="0" end="3600" vehsPerHour="10.114401" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NW_NE_car" type="car" route="NW_NE" begin="0" end="3600" vehsPerHour="3.845895" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NW_NE_truck" type="truck" route="NW_NE" begin="0" end="3600" vehsPerHour="0.575370" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="SE_NW" edges="in_SE out_NW" />
+  <flow id="SE_NW_motorcycle" type="motorcycle" route="SE_NW" begin="0" end="3600" vehsPerHour="414.690444" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SE_NW_car" type="car" route="SE_NW" begin="0" end="3600" vehsPerHour="157.681696" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SE_NW_truck" type="truck" route="SE_NW" begin="0" end="3600" vehsPerHour="23.590175" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="SE_NE" edges="in_SE out_NE" />
+  <flow id="SE_NE_motorcycle" type="motorcycle" route="SE_NE" begin="0" end="3600" vehsPerHour="799.037685" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SE_NE_car" type="car" route="SE_NE" begin="0" end="3600" vehsPerHour="303.825707" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SE_NE_truck" type="truck" route="SE_NE" begin="0" end="3600" vehsPerHour="45.454240" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="SE_SW" edges="in_SE out_SW" />
+  <flow id="SE_SW_motorcycle" type="motorcycle" route="SE_SW" begin="0" end="3600" vehsPerHour="232.631225" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SE_SW_car" type="car" route="SE_SW" begin="0" end="3600" vehsPerHour="88.455585" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SE_SW_truck" type="truck" route="SE_SW" begin="0" end="3600" vehsPerHour="13.233513" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="NE_SW" edges="in_NE out_SW" />
+  <flow id="NE_SW_motorcycle" type="motorcycle" route="NE_SW" begin="0" end="3600" vehsPerHour="1058.640646" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NE_SW_car" type="car" route="NE_SW" begin="0" end="3600" vehsPerHour="402.537012" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NE_SW_truck" type="truck" route="NE_SW" begin="0" end="3600" vehsPerHour="60.222073" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="NE_NW" edges="in_NE out_NW" />
+  <flow id="NE_NW_motorcycle" type="motorcycle" route="NE_NW" begin="0" end="3600" vehsPerHour="107.886945" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NE_NW_car" type="car" route="NE_NW" begin="0" end="3600" vehsPerHour="41.022880" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NE_NW_truck" type="truck" route="NE_NW" begin="0" end="3600" vehsPerHour="6.137281" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="NE_SE" edges="in_NE out_SE" />
+  <flow id="NE_SE_motorcycle" type="motorcycle" route="NE_SE" begin="0" end="3600" vehsPerHour="1527.274563" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NE_SE_car" type="car" route="NE_SE" begin="0" end="3600" vehsPerHour="580.730148" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="NE_SE_truck" type="truck" route="NE_SE" begin="0" end="3600" vehsPerHour="86.880888" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="SW_NE" edges="in_SW out_NE" />
+  <flow id="SW_NE_motorcycle" type="motorcycle" route="SW_NE" begin="0" end="3600" vehsPerHour="1190.127860" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SW_NE_car" type="car" route="SW_NE" begin="0" end="3600" vehsPerHour="452.533647" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SW_NE_truck" type="truck" route="SW_NE" begin="0" end="3600" vehsPerHour="67.701884" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="SW_SE" edges="in_SW out_SE" />
+  <flow id="SW_SE_motorcycle" type="motorcycle" route="SW_SE" begin="0" end="3600" vehsPerHour="337.146703" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SW_SE_car" type="car" route="SW_SE" begin="0" end="3600" vehsPerHour="128.196501" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SW_SE_truck" type="truck" route="SW_SE" begin="0" end="3600" vehsPerHour="19.179004" departLane="best" departPos="random_free" departSpeed="max" />
+  <route id="SW_NW" edges="in_SW out_NW" />
+  <flow id="SW_NW_motorcycle" type="motorcycle" route="SW_NW" begin="0" end="3600" vehsPerHour="118.001346" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SW_NW_car" type="car" route="SW_NW" begin="0" end="3600" vehsPerHour="44.868775" departLane="best" departPos="random_free" departSpeed="max" />
+  <flow id="SW_NW_truck" type="truck" route="SW_NW" begin="0" end="3600" vehsPerHour="6.712651" departLane="best" departPos="random_free" departSpeed="max" />
+</routes>

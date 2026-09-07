@@ -16,7 +16,7 @@ def _epsilon(step, cfg):
     return cfg["epsilon_start"] + frac * (cfg["epsilon_end"] - cfg["epsilon_start"])
 
 
-def _greedy_eval(env, net, masks, eval_max_steps=None):
+def _greedy_eval(env, net, masks=None, eval_max_steps=None):
     """Roll the current GREEDY policy (no exploration, no learning) for one episode
     and return the mean total queue. The honest signal for checkpoint selection —
     training-episode queue (with exploration) does not track greedy quality.
@@ -31,6 +31,7 @@ def _greedy_eval(env, net, masks, eval_max_steps=None):
         env.max_steps = int(eval_max_steps)
     try:
         obs = env.reset()
+        masks = env.action_masks()
         done = False
         qs = []
         while not done:
@@ -71,7 +72,7 @@ def _warmstart(env, net, masks, cfg):
     net.sync_target()
 
 
-def train(env_factory, cfg, ckpt_path, log_path):
+def train(env_factory, cfg, ckpt_path, log_path, eval_env_factory=None):
     env = env_factory()
     obs_dim = env.obs_dim
     n_actions = env.encoder.max_green
@@ -159,7 +160,13 @@ def train(env_factory, cfg, ckpt_path, log_path):
         # track greedy quality. When eval_every>0 we periodically roll the greedy
         # policy and keep the best-by-greedy-eval net (proper early stopping).
         if eval_every and (ep + 1) % eval_every == 0:
-            gq = _greedy_eval(env, net, masks, cfg.get("eval_max_steps", 1000))
+            eval_env = eval_env_factory() if eval_env_factory is not None else env
+            try:
+                gq = _greedy_eval(
+                    eval_env, net, eval_max_steps=cfg.get("eval_max_steps", 1000))
+            finally:
+                if eval_env is not env and hasattr(eval_env, "close"):
+                    eval_env.close()
             log["episodes"][-1]["greedy_eval_queue"] = gq
             if gq < best_queue:
                 best_queue = gq

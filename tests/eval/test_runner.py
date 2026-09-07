@@ -38,3 +38,8 @@ def test_run_episode_returns_metrics(tmp_path):
     assert m["queue_integral_vehicle_seconds"] == 18.0  # 3 queued * 6 simulator seconds
     assert m["queue_integral_vehicle_hours"] == 18.0 / 3600.0
     assert "mean_reward" in m
+    assert m["scheduled"] is None
+    assert m["inserted"] is None
+    assert m["arrived"] is None
+    assert m["pending"] is None
+    assert m["collisions"] is None

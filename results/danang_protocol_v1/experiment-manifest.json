@@ -1,0 +1,207 @@
+{
+  "cases": [
+    {
+      "case_id": "train_am_peak_demand11",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 11,
+      "demand_sha256": "d41dc168e087565465ccdf1c80137996fb2eff284f0b9de3a162b2deda4239c8",
+      "route_path": "results/danang_protocol_v1/demands/train_am_peak_demand11.rou.xml",
+      "scenario": "am_peak",
+      "scheduled_vehicles": 2330,
+      "source_id": "phan2025_camera_profile",
+      "split": "train"
+    },
+    {
+      "case_id": "validation_am_peak_demand31",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 31,
+      "demand_sha256": "c482896fad7d1ba8c844aecee55616b0cfbe8ff176ba7a99139b79fe34f79495",
+      "route_path": "results/danang_protocol_v1/demands/validation_am_peak_demand31.rou.xml",
+      "scenario": "am_peak",
+      "scheduled_vehicles": 2330,
+      "source_id": "phan2025_camera_profile",
+      "split": "validation"
+    },
+    {
+      "case_id": "test_normal_demand101",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 101,
+      "demand_sha256": "7466ac0db38464b3871c5bcb1170a2047c5cf44bf2c5f9527b73e6efdb7f9794",
+      "route_path": "results/danang_protocol_v1/demands/test_normal_demand101.rou.xml",
+      "scenario": "normal",
+      "scheduled_vehicles": 1395,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_normal_demand102",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 102,
+      "demand_sha256": "b81a195e7f8a0e1e1644f3b49971a5964c3defe37469e888a32725e579e56e68",
+      "route_path": "results/danang_protocol_v1/demands/test_normal_demand102.rou.xml",
+      "scenario": "normal",
+      "scheduled_vehicles": 1395,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_normal_demand103",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 103,
+      "demand_sha256": "9a9b7e72eac6820f689e89508a5002a2aa7541ff60df4696de33d6c81138407b",
+      "route_path": "results/danang_protocol_v1/demands/test_normal_demand103.rou.xml",
+      "scenario": "normal",
+      "scheduled_vehicles": 1395,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_normal_demand104",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 104,
+      "demand_sha256": "af02b378c186f72ae710cca5ad1b8c644fd701d41b5c908266f4d66d5ff148a6",
+      "route_path": "results/danang_protocol_v1/demands/test_normal_demand104.rou.xml",
+      "scenario": "normal",
+      "scheduled_vehicles": 1395,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 105,
+      "demand_sha256": "5aa9e357f7501b9383edc8ed08b9e64536ae3b8063f9a18897f57962cfee5582",
+      "route_path": "results/danang_protocol_v1/demands/test_normal_demand105.rou.xml",
+      "scenario": "normal",
+      "scheduled_vehicles": 1395,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand101",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 101,
+      "demand_sha256": "552308cff3284fb16c320acbe39671c098ea0c230778476b3c58c98ffbf40219",
+      "route_path": "results/danang_protocol_v1/demands/test_am_peak_demand101.rou.xml",
+      "scenario": "am_peak",
+      "scheduled_vehicles": 2330,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand102",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 102,
+      "demand_sha256": "00517254217480c6e31743c6eb712a4415b34b2b199280f0282a72517245b7d8",
+      "route_path": "results/danang_protocol_v1/demands/test_am_peak_demand102.rou.xml",
+      "scenario": "am_peak",
+      "scheduled_vehicles": 2330,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand103",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 103,
+      "demand_sha256": "47c18ea784dee25def5d08cd5d7f6f65cc557da855f21b293a2225dcdda1c6cd",
+      "route_path": "results/danang_protocol_v1/demands/test_am_peak_demand103.rou.xml",
+      "scenario": "am_peak",
+      "scheduled_vehicles": 2330,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand104",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 104,
+      "demand_sha256": "0ae80827a311b850b71185f9c4470ae5a145c55222acf4abc1c72f80d829d7ca",
+      "route_path": "results/danang_protocol_v1/demands/test_am_peak_demand104.rou.xml",
+      "scenario": "am_peak",
+      "scheduled_vehicles": 2330,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 105,
+      "demand_sha256": "55cfbeea362db118201bd63419f12eef5afff1d0cd94e89e42258744b8ea6b99",
+      "route_path": "results/danang_protocol_v1/demands/test_am_peak_demand105.rou.xml",
+      "scenario": "am_peak",
+      "scheduled_vehicles": 2330,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand101",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 101,
+      "demand_sha256": "8a86d51eb1c635dd5d0bdcd08a3e6146f4380a0b31c2bb3ca995acf99706accb",
+      "route_path": "results/danang_protocol_v1/demands/test_pm_peak_demand101.rou.xml",
+      "scenario": "pm_peak",
+      "scheduled_vehicles": 2400,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand102",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 102,
+      "demand_sha256": "3422f540b8a482be70aa406e7369b059e275ee10df7267aea6ae0925fddb059e",
+      "route_path": "results/danang_protocol_v1/demands/test_pm_peak_demand102.rou.xml",
+      "scenario": "pm_peak",
+      "scheduled_vehicles": 2400,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 103,
+      "demand_sha256": "fcedb43974af05feb64d5b32a198627ef5551e4b0b6ff7a29c36d79d974a7152",
+      "route_path": "results/danang_protocol_v1/demands/test_pm_peak_demand103.rou.xml",
+      "scenario": "pm_peak",
+      "scheduled_vehicles": 2400,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand104",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 104,
+      "demand_sha256": "272aaa6c737c2bbdcc4fd9952a7ba7006ca925673357b5a0ff8c4ed432bd461f",
+      "route_path": "results/danang_protocol_v1/demands/test_pm_peak_demand104.rou.xml",
+      "scenario": "pm_peak",
+      "scheduled_vehicles": 2400,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "data_source_label": "observed_digitized_partial_coverage",
+      "demand_seed": 105,
+      "demand_sha256": "6165a26f4a4ea819d773e67246f40483841348fb44f7f44b4da7abd62da54c40",
+      "route_path": "results/danang_protocol_v1/demands/test_pm_peak_demand105.rou.xml",
+      "scenario": "pm_peak",
+      "scheduled_vehicles": 2400,
+      "source_id": "phan2025_camera_profile",
+      "split": "test"
+    }
+  ],
+  "config_path": "configs/danang_pilot.yaml",
+  "config_sha256": "18c88a2037aaf99c984a2bff18fdb98338e4d265c2d29dea4511644739dce0e5",
+  "independence_limit": "departure realizations are independent, but all observed profiles come from one published date and are not independent survey days",
+  "network_path": "results/research_pilot/generated/danang_isolated_published.net.xml",
+  "network_sha256": "2e6a7c1dea8dd2f61b79894ea49eea5d1652c8b6cad9302caf9cab7642454feb",
+  "protocol_id": "danang_observed_camera_v1",
+  "protocol_version": 1,
+  "runs": [],
+  "validation": {
+    "case_counts": {
+      "test": 15,
+      "train": 1,
+      "validation": 1
+    },
+    "run_count": 0
+  }
+}

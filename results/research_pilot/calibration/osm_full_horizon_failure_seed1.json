@@ -1,0 +1,62 @@
+{
+  "protocol_status": "failed_calibration",
+  "cases": [
+    {
+      "scenario": "normal",
+      "network": "osm_reference_with_published_signal",
+      "sim_seed": 1,
+      "horizon_seconds": 3600,
+      "loaded": 5808,
+      "inserted": 4082,
+      "running": 524,
+      "pending": 1726,
+      "teleports": {
+        "total": 26,
+        "jam": 5,
+        "yield": 0,
+        "wrongLane": 0
+      },
+      "collisions": 21,
+      "mean_completed_or_unfinished_waiting_time_seconds": 241.07,
+      "verdict": "calibration_failure_not_controller_result"
+    },
+    {
+      "scenario": "am_peak",
+      "network": "osm_reference_with_published_signal",
+      "sim_seed": 1,
+      "horizon_seconds": 3600,
+      "loaded": 9692,
+      "inserted": 4267,
+      "running": 713,
+      "pending": 5425,
+      "teleports": {
+        "total": 236,
+        "jam": 204,
+        "yield": 18,
+        "wrongLane": 0
+      },
+      "collisions": 14,
+      "mean_completed_or_unfinished_waiting_time_seconds": 411.62,
+      "verdict": "calibration_failure_not_controller_result"
+    },
+    {
+      "scenario": "pm_peak",
+      "network": "osm_reference_with_published_signal",
+      "sim_seed": 1,
+      "horizon_seconds": 3600,
+      "loaded": 9981,
+      "inserted": 4464,
+      "running": 805,
+      "pending": 5517,
+      "teleports": {
+        "total": 220,
+        "jam": 193,
+        "yield": 13,
+        "wrongLane": 0
+      },
+      "collisions": 14,
+      "mean_completed_or_unfinished_waiting_time_seconds": 441.08,
+      "verdict": "calibration_failure_not_controller_result"
+    }
+  ]
+}

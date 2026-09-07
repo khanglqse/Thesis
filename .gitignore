@@ -75,6 +75,12 @@ results/*/demo
 # Local research/PDF scratch files
 tmp/
 
+# Preserved local diagnostics superseded by the collision-safe protocol.
+results/danang_protocol_v1_superseded_tau10/
+results/research_pilot/baseline_seed1/
+results/research_pilot/training/
+results/research_pilot/generated/am_peak_published_smoke.log
+
 # Peak scenario roadnet is a copy of roadnet_haichau.json (regenerate via build_peak_flow.py)
 data/danang/roadnet_haichau_peak.json
 .playwright-mcp/

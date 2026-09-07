@@ -1,0 +1,56 @@
+network: results/research_pilot/generated/danang_isolated_published.net.xml
+source_camera_csv: datasets/danang_published/phan2025_camera_hourly_digitized.csv
+source_turning_csv: datasets/danang_published/tran2025_peak_turning_movements.csv
+protocol_dir: results/danang_protocol_v1
+
+simulation:
+  action_interval: 10
+  yellow_time: 7
+  min_green: 20
+  count_norm: 20
+  horizon_seconds: 3600
+
+split:
+  train:
+    scenario: am_peak
+    demand_seed: 11
+    sim_seed: 11
+  validation:
+    scenario: am_peak
+    demand_seed: 31
+    sim_seed: 31
+  test:
+    scenarios: [normal, am_peak, pm_peak]
+    demand_seeds: [101, 102, 103, 104, 105]
+    sim_seeds: [201, 202, 203, 204, 205]
+
+training_variants:
+  dqn_base:
+    episodes: 30
+    hidden: 64
+    lr: 0.0003
+    dueling: false
+    n_step: 1
+  dueling_n3:
+    episodes: 30
+    hidden: 64
+    lr: 0.0003
+    dueling: true
+    n_step: 3
+
+training_common:
+  batch_size: 64
+  buffer_capacity: 50000
+  train_start: 256
+  target_sync: 200
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay_steps: 5000
+  gamma: 0.99
+  reward_scale: 0.01
+  grad_clip: 10.0
+  huber_delta: 1.0
+  eval_every: 5
+  eval_max_steps: 3600
+  warmstart_steps: 0
+

@@ -43,3 +43,23 @@ def test_train_runs_and_checkpoints(tmp_path):
     assert "mean_reward" in rec["episodes"][0]
     q = net.q_values(np.zeros((1, net.W1.shape[0]), np.float32))
     assert q.shape[1] == net.W3.shape[1]
+
+
+def test_checkpoint_selection_uses_separate_validation_env_factory(tmp_path):
+    cfg = {"episodes": 2, "max_steps": 6, "hidden": 8, "lr": 1e-3, "gamma": 0.9,
+           "batch_size": 8, "buffer_capacity": 1000, "train_start": 4,
+           "target_sync": 5, "epsilon_start": 1.0, "epsilon_end": 0.1,
+           "epsilon_decay_steps": 20, "seed": 0, "eval_every": 1,
+           "eval_max_steps": 6}
+    calls = {"validation": 0}
+    validation_factory = _env_factory(tmp_path)
+
+    def make_validation():
+        calls["validation"] += 1
+        return validation_factory()
+
+    train(_env_factory(tmp_path), cfg,
+          ckpt_path=str(tmp_path / "separate.npz"),
+          log_path=str(tmp_path / "separate.json"),
+          eval_env_factory=make_validation)
+    assert calls["validation"] == 2

@@ -64,7 +64,7 @@ def run_episode(env, controller, max_decisions=None):
         if max_decisions is not None and decisions >= max_decisions:
             break
     n = max(len(queues), 1)
-    return {
+    result = {
         "controller": getattr(controller, "name", controller.__class__.__name__),
         "agents": len(env.agent_ids),
         "steps": info.get("step"),
@@ -80,3 +80,11 @@ def run_episode(env, controller, max_decisions=None):
         # analysed/plotted (one value per action_interval).
         "queue_series": [float(q) for q in queues],
     }
+    for field in ("scheduled", "inserted", "arrived", "running", "pending",
+                  "network_queue", "collisions", "emergency_braking",
+                  "phase_switches"):
+        result[field] = info.get(field)
+    scheduled = info.get("scheduled")
+    result["completion_rate"] = (float(info.get("arrived", 0)) / scheduled
+                                 if scheduled else None)
+    return result

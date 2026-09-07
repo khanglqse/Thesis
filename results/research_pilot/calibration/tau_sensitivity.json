@@ -1,0 +1,229 @@
+{
+  "decision": "tau 1.0 superseded after a reproducible held-out rear-end collision; tau 1.2 is final",
+  "tau_1_0_superseded": {
+    "am_peak": {
+      "collisions_total": 1,
+      "dueling_n3_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          56.5175,
+          56.5175
+        ],
+        "independent_values": [
+          56.5175
+        ],
+        "mean": 56.5175,
+        "median": 56.5175,
+        "n_independent": 1,
+        "standard_deviation": 0.0
+      },
+      "fixed_runs": 5,
+      "published_fixed_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          62.781111111111116,
+          67.4565
+        ],
+        "independent_values": [
+          64.63388888888889,
+          60.72472222222222,
+          68.8925,
+          67.0975,
+          65.035
+        ],
+        "mean": 65.27672222222222,
+        "median": 65.035,
+        "n_independent": 5,
+        "standard_deviation": 3.065185515653232
+      },
+      "rl_runs": 5
+    },
+    "normal": {
+      "collisions_total": 0,
+      "dueling_n3_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          30.489166666666666,
+          30.489166666666666
+        ],
+        "independent_values": [
+          30.489166666666666
+        ],
+        "mean": 30.489166666666666,
+        "median": 30.489166666666666,
+        "n_independent": 1,
+        "standard_deviation": 0.0
+      },
+      "fixed_runs": 5,
+      "published_fixed_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          10.023611111111112,
+          10.194277777777778
+        ],
+        "independent_values": [
+          10.231111111111112,
+          10.2,
+          9.991111111111111,
+          10.013333333333334,
+          10.109166666666667
+        ],
+        "mean": 10.108944444444445,
+        "median": 10.109166666666667,
+        "n_independent": 5,
+        "standard_deviation": 0.10751980868314093
+      },
+      "rl_runs": 5
+    },
+    "pm_peak": {
+      "collisions_total": 0,
+      "dueling_n3_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          61.7055,
+          61.7055
+        ],
+        "independent_values": [
+          61.7055
+        ],
+        "mean": 61.7055,
+        "median": 61.7055,
+        "n_independent": 1,
+        "standard_deviation": 0.0
+      },
+      "fixed_runs": 5,
+      "published_fixed_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          120.10711111111111,
+          132.97305555555556
+        ],
+        "independent_values": [
+          114.11777777777777,
+          127.92444444444445,
+          136.4088888888889,
+          127.71416666666667,
+          130.46805555555557
+        ],
+        "mean": 127.32666666666667,
+        "median": 127.92444444444445,
+        "n_independent": 5,
+        "standard_deviation": 8.1752266764549
+      },
+      "rl_runs": 5
+    }
+  },
+  "tau_1_2_final": {
+    "am_peak": {
+      "collisions_total": 0,
+      "dueling_n3_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          69.73576666666666,
+          87.69864444444444
+        ],
+        "independent_values": [
+          73.25727777777777,
+          67.48022222222222,
+          87.47883333333334,
+          70.23055555555555,
+          93.5946111111111
+        ],
+        "mean": 78.4083,
+        "median": 73.25727777777777,
+        "n_independent": 5,
+        "standard_deviation": 11.46440183965345
+      },
+      "fixed_runs": 5,
+      "published_fixed_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          75.89577777777778,
+          83.27886527777777
+        ],
+        "independent_values": [
+          75.79027777777777,
+          75.85222222222222,
+          81.97583333333333,
+          86.2088888888889,
+          76.19388888888889
+        ],
+        "mean": 79.20422222222223,
+        "median": 76.19388888888889,
+        "n_independent": 5,
+        "standard_deviation": 4.70903946442044
+      },
+      "rl_runs": 25
+    },
+    "normal": {
+      "collisions_total": 0,
+      "dueling_n3_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          17.4581,
+          66.00614444444443
+        ],
+        "independent_values": [
+          21.734944444444444,
+          15.047166666666667,
+          73.29677777777778,
+          17.73061111111111,
+          79.66777777777777
+        ],
+        "mean": 41.49545555555555,
+        "median": 21.734944444444444,
+        "n_independent": 5,
+        "standard_deviation": 32.10610492924156
+      },
+      "fixed_runs": 5,
+      "published_fixed_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          9.729888888888889,
+          9.943222222222222
+        ],
+        "independent_values": [
+          9.90638888888889,
+          9.9,
+          9.935277777777777,
+          9.967777777777778,
+          9.604722222222222
+        ],
+        "mean": 9.862833333333333,
+        "median": 9.90638888888889,
+        "n_independent": 5,
+        "standard_deviation": 0.1467662488112425
+      },
+      "rl_runs": 25
+    },
+    "pm_peak": {
+      "collisions_total": 0,
+      "dueling_n3_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          83.12116666666667,
+          117.3239111111111
+        ],
+        "independent_values": [
+          89.7925,
+          81.60305555555556,
+          128.9293888888889,
+          81.30361111111111,
+          118.22833333333332
+        ],
+        "mean": 99.97137777777778,
+        "median": 89.7925,
+        "n_independent": 5,
+        "standard_deviation": 22.143696394596123
+      },
+      "fixed_runs": 5,
+      "published_fixed_queue_vehicle_hours": {
+        "bootstrap_ci95": [
+          147.6906111111111,
+          157.0361111111111
+        ],
+        "independent_values": [
+          158.4825,
+          143.03055555555557,
+          152.46333333333334,
+          151.48527777777778,
+          157.8761111111111
+        ],
+        "mean": 152.66755555555557,
+        "median": 152.46333333333334,
+        "n_independent": 5,
+        "standard_deviation": 6.230045873168994
+      },
+      "rl_runs": 25
+    }
+  }
+}

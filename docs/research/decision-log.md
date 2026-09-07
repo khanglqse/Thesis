@@ -19,3 +19,42 @@ Decision: offline synchronized replay is the primary defense mode; live inferenc
 ## 2026-09-07 — motorcycle sublane safety parameters
 
 Decision: use SUMO sublane resolution 0.4 m, motorcycle `minGapLat=0.30` m and `lcPushy=0.0` for the first pilot. Evidence: on the AM case, seed 1 and a 300-second horizon, the initial `minGapLat=0.15`/`lcPushy=0.5` combination caused 8 collision teleports; changing only pushiness left 1 and only lateral gap left 2; changing both yielded zero. The no-sublane control also yielded zero. Consequence: a regression test requires zero collision teleport warnings. These values pass technical safety smoke but remain calibration parameters, not empirically validated behavior.
+
+## 2026-09-07 — supersede the sublane-primary pilot decision
+
+Decision: use the standard lane model for primary inference and retain sublane
+only as sensitivity. Reason: the 300-second gate above did not generalize to a
+full hour. Observed-demand full-hour runs produced 1–3 collisions in AM/PM under
+sublane and zero in all three regimes under the lane model. Smaller step sizes
+and lateral parameter variants did not consistently eliminate collisions.
+Consequence: thesis claims will discuss the loss of side-by-side motorcycle
+fidelity as a limitation instead of accepting unsafe simulation artifacts.
+
+## 2026-09-07 — isolate the empirically supported junction
+
+Decision: controller training and primary comparison use a 300 m isolated model
+of the published target junction; the pinned OSM network is an external stress
+reference. Reason: adjacent uncalibrated intersections and sub-meter split edge
+fragments caused collisions and insertion bottlenecks unrelated to the target
+controller. Bearings remain OSM-derived and lane counts follow the published
+site description. Consequence: results support this junction, not the whole
+Hai Chau corridor.
+
+## 2026-09-07 — separate direct camera lines from full-demand estimates
+
+Decision: store the four digitized camera lines as the primary observed-demand
+family and the 12-movement PCU/class expansion as an estimated stress family.
+Reason: 6171 is PCU/h, while the figures report vehicle counts by class; reversing
+the PCU conversion yields plausible but unobserved whole-intersection counts.
+Consequence: direct and inferred vehicle totals cannot be mixed in tables or
+presentation labels.
+
+## 2026-09-07 — increase motorcycle headway and invalidate prior runs
+
+Decision: set motorcycle Krauss `tau=1.2` seconds for the primary lane model.
+Reason: held-out AM demand seed 102 / simulator seed 202 reproduced a rear-end
+collision at second 1762 with `tau=1.0`. Changing only `tau` to 1.2 removed it;
+an 1800-second regression test now protects that case. Consequence: all tau=1.0
+checkpoints and evaluations were moved to a local `superseded` directory, their
+comparison was summarized in `results/research_pilot/calibration/tau_sensitivity.json`,
+and the full five-seed training/test protocol was rerun with new demand hashes.

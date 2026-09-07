@@ -6,7 +6,7 @@ Can a reproducible traffic-signal controller trained with independent demand spl
 
 ## Scope selected from evidence
 
-The empirical pilot is the signalized Nguyen Thanh Nghi–Cach Mang Thang 8–2/9 junction. Build it in SUMO 1.24 with the three-phase, 103-second plan and 12 movement volumes totaling 6171 PCU/h at peak published by Phan, Le and Nguyen (2025). Use the official sublane model for motorcycle lateral behavior and document every non-published geometry or behavior assumption.
+The empirical pilot is the signalized Nguyen Thanh Nghi–Cach Mang Thang 8–2/9 junction. It is built in SUMO 1.24 with the three-phase, 103-second plan and the evidence layers published by Phan, Le and Nguyen (2025). Full-hour testing superseded the initial sublane choice: the standard lane model is the safe primary backend, while sublane remains a documented sensitivity because it produced collisions without trajectory data for calibration. Direct camera-line counts and the inferred 12-movement expansion remain separate.
 
 The 53-controller Hai Chau CityFlow network remains the scale benchmark. It is an OSM-derived topology with synthetic random-walk demand. It tests computational scale, coordination and distribution shift; it does not validate city-wide observed demand.
 

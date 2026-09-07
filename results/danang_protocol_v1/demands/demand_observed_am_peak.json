@@ -1,0 +1,75 @@
+{
+  "case_id": "danang_observed_am_peak",
+  "digitization_uncertainty_veh_per_hour": 90,
+  "duration_seconds": 3600,
+  "hour_start": "08:00",
+  "motorcycle_share": 0.6416309012875536,
+  "movements": [
+    {
+      "approach": "SW",
+      "camera": "camera_01",
+      "destination": "NE",
+      "movement": "through",
+      "observation_status": "digitized_from_published_camera_figure",
+      "target_pcu_per_hour": 673.5,
+      "vehicle_rates_per_hour": {
+        "bus": 0,
+        "car": 265,
+        "motorcycle": 820,
+        "truck": 65
+      }
+    },
+    {
+      "approach": "SW",
+      "camera": "camera_01",
+      "destination": "NW",
+      "movement": "left",
+      "observation_status": "digitized_from_published_camera_figure",
+      "target_pcu_per_hour": 134.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0,
+        "car": 60,
+        "motorcycle": 80,
+        "truck": 20
+      }
+    },
+    {
+      "approach": "NW",
+      "camera": "camera_02",
+      "destination": "SE",
+      "movement": "through",
+      "observation_status": "digitized_from_published_camera_figure",
+      "target_pcu_per_hour": 530.0,
+      "vehicle_rates_per_hour": {
+        "bus": 0,
+        "car": 270,
+        "motorcycle": 575,
+        "truck": 35
+      }
+    },
+    {
+      "approach": "NW",
+      "camera": "camera_02",
+      "destination": "NE",
+      "movement": "left",
+      "observation_status": "digitized_from_published_camera_figure",
+      "target_pcu_per_hour": 148.5,
+      "vehicle_rates_per_hour": {
+        "bus": 0,
+        "car": 105,
+        "motorcycle": 20,
+        "truck": 15
+      }
+    }
+  ],
+  "observation_scope": "four digitized camera movement lines",
+  "pcu_factors": {
+    "bus": 2.0,
+    "car": 1.0,
+    "motorcycle": 0.3,
+    "truck": 2.5
+  },
+  "scheduled_vehicles": 2330,
+  "source_id": "phan2025_camera_profile",
+  "target_pcu_per_hour": 1486.0
+}

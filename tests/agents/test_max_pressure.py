@@ -1,4 +1,7 @@
-from traffic_rl.agents.max_pressure import MaxPressureController
+from traffic_rl.agents.max_pressure import (
+    HystereticMaxPressureController,
+    MaxPressureController,
+)
 
 class StubNet:
     def signalized_ids(self): return ["A"]
@@ -20,3 +23,18 @@ def test_ties_pick_lowest_index():
     ctx = {"waiting_counts": {"rin_0": 5, "rin_1": 5, "rout_0": 0},
            "observations": {}, "action_masks": {}}
     assert c.act(ctx) == {"A": 0}
+
+
+def test_hysteretic_pressure_waits_and_requires_improvement_margin():
+    c = HystereticMaxPressureController(StubNet(), min_hold_decisions=2,
+                                        switch_threshold=2)
+    weak = {"waiting_counts": {"rin_0": 5, "rin_1": 6, "rout_0": 0},
+            "observations": {}, "action_masks": {}}
+    strong = {"waiting_counts": {"rin_0": 1, "rin_1": 9, "rout_0": 0},
+              "observations": {}, "action_masks": {}}
+    assert c.act(strong) == {"A": 0}
+    assert c.act(strong) == {"A": 0}
+    assert c.act(weak) == {"A": 0}  # improvement is below threshold
+    assert c.act(strong) == {"A": 1}
+    c.reset()
+    assert c.act(strong) == {"A": 0}

@@ -1,0 +1,52 @@
+{
+  "checkpoint_selection": "lowest full-horizon validation mean total queue",
+  "checkpoint_sha256": "dc07659583c0d45bac5cd8ba628ed040c611c960c2f928dce8548d6bedc4dbad",
+  "git_commit": "f880670022e2135d969672cdde2f3b5e0697f754",
+  "network_sha256": "2e6a7c1dea8dd2f61b79894ea49eea5d1652c8b6cad9302caf9cab7642454feb",
+  "train_seed": 11,
+  "training_case": {
+    "case_id": "train_am_peak_demand11",
+    "data_source_label": "observed_digitized_partial_coverage",
+    "demand_seed": 11,
+    "demand_sha256": "d41dc168e087565465ccdf1c80137996fb2eff284f0b9de3a162b2deda4239c8",
+    "route_path": "results/danang_protocol_v1/demands/train_am_peak_demand11.rou.xml",
+    "scenario": "am_peak",
+    "scheduled_vehicles": 2330,
+    "source_id": "phan2025_camera_profile",
+    "split": "train"
+  },
+  "training_config": {
+    "batch_size": 64,
+    "buffer_capacity": 50000,
+    "dueling": true,
+    "episodes": 30,
+    "epsilon_decay_steps": 5000,
+    "epsilon_end": 0.05,
+    "epsilon_start": 1.0,
+    "eval_every": 5,
+    "eval_max_steps": 3600,
+    "gamma": 0.99,
+    "grad_clip": 10.0,
+    "hidden": 64,
+    "huber_delta": 1.0,
+    "lr": 0.0003,
+    "n_step": 3,
+    "reward_scale": 0.01,
+    "seed": 11,
+    "target_sync": 200,
+    "train_start": 256,
+    "warmstart_steps": 0
+  },
+  "validation_case": {
+    "case_id": "validation_am_peak_demand31",
+    "data_source_label": "observed_digitized_partial_coverage",
+    "demand_seed": 31,
+    "demand_sha256": "c482896fad7d1ba8c844aecee55616b0cfbe8ff176ba7a99139b79fe34f79495",
+    "route_path": "results/danang_protocol_v1/demands/validation_am_peak_demand31.rou.xml",
+    "scenario": "am_peak",
+    "scheduled_vehicles": 2330,
+    "source_id": "phan2025_camera_profile",
+    "split": "validation"
+  },
+  "variant": "dueling_n3"
+}

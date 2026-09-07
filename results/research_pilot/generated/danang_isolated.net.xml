@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-09-07T21:46:48.145847+07:00 by Eclipse SUMO netconvert v1_24_0+1559-61e8e739dad
+<netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <node-files value="/var/folders/j3/vh857slj7kldpgtqnjzgplg00000gq/T/danang-junction-8_vd14s5/nodes.nod.xml"/>
+        <edge-files value="/var/folders/j3/vh857slj7kldpgtqnjzgplg00000gq/T/danang-junction-8_vd14s5/edges.edg.xml"/>
+        <connection-files value="/var/folders/j3/vh857slj7kldpgtqnjzgplg00000gq/T/danang-junction-8_vd14s5/connections.con.xml"/>
+    </input>
+
+    <output>
+        <output-file value="/Users/khanglq1/workplace/Thesis/traffic-rl/.worktrees/thesis-end-to-end/results/research_pilot/generated/danang_isolated.net.xml"/>
+    </output>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+    </junctions>
+
+</netconvertConfiguration>
+-->
+
+<net version="1.20" junctionCornerDetail="5" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+
+    <location netOffset="257.25,192.03" convBoundary="0.00,0.00,487.73,441.65" origBoundary="-257.25,-192.03,230.48,249.62" projParameter="!"/>
+
+    <edge id=":danang_ntn_cmt8_29_0" function="internal">
+        <lane id=":danang_ntn_cmt8_29_0_0" index="0" speed="6.22" length="9.39" shape="257.50,206.82 255.77,204.94 253.89,204.24 251.87,204.72 249.69,206.38"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_1" function="internal">
+        <lane id=":danang_ntn_cmt8_29_1_0" index="0" speed="13.89" length="23.06" shape="257.50,206.82 253.87,201.57 250.95,198.24 247.44,195.55 241.99,192.20"/>
+        <lane id=":danang_ntn_cmt8_29_1_1" index="1" speed="13.89" length="23.06" shape="260.16,205.05 256.29,199.45 253.19,195.90 249.44,193.03 243.64,189.46"/>
+        <lane id=":danang_ntn_cmt8_29_1_2" index="2" speed="13.89" length="23.06" shape="262.82,203.27 258.71,197.33 255.42,193.56 251.45,190.51 245.28,186.72"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_4" function="internal">
+        <lane id=":danang_ntn_cmt8_29_4_0" index="0" speed="10.57" length="4.45" shape="262.82,203.27 260.91,199.25"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_18" function="internal">
+        <lane id=":danang_ntn_cmt8_29_18_0" index="0" speed="10.57" length="19.02" shape="260.91,199.25 260.15,197.64 259.81,192.30 261.83,187.26 266.19,182.50"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_5" function="internal">
+        <lane id=":danang_ntn_cmt8_29_5_0" index="0" speed="7.59" length="11.64" shape="270.29,187.42 268.75,189.38 268.33,191.79 269.01,194.65 270.81,197.95"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_6" function="internal">
+        <lane id=":danang_ntn_cmt8_29_6_0" index="0" speed="13.89" length="28.16" shape="270.29,187.42 264.82,192.09 259.76,196.65 254.81,201.33 249.69,206.38"/>
+        <lane id=":danang_ntn_cmt8_29_6_1" index="1" speed="13.89" length="28.16" shape="268.24,184.96 262.74,189.66 257.60,194.29 252.58,199.04 247.42,204.12"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_8" function="internal">
+        <lane id=":danang_ntn_cmt8_29_8_0" index="0" speed="12.01" length="5.04" shape="268.24,184.96 263.99,187.66"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_19" function="internal">
+        <lane id=":danang_ntn_cmt8_29_19_0" index="0" speed="12.01" length="19.70" shape="263.99,187.66 262.74,188.45 257.08,189.91 251.26,189.33 245.28,186.72"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_9" function="internal">
+        <lane id=":danang_ntn_cmt8_29_9_0" index="0" speed="9.41" length="14.90" shape="250.22,178.48 254.53,180.65 258.29,181.63 261.49,181.42 264.14,180.04"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_10" function="internal">
+        <lane id=":danang_ntn_cmt8_29_10_0" index="0" speed="13.89" length="27.33" shape="250.22,178.48 257.46,182.94 262.12,186.53 265.99,190.96 270.81,197.95"/>
+        <lane id=":danang_ntn_cmt8_29_10_1" index="1" speed="13.89" length="27.33" shape="248.57,181.23 255.45,185.46 259.89,188.87 263.56,193.08 268.15,199.72"/>
+        <lane id=":danang_ntn_cmt8_29_10_2" index="2" speed="13.89" length="27.33" shape="246.93,183.97 253.45,187.99 257.66,191.22 261.14,195.20 265.49,201.50"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_13" function="internal">
+        <lane id=":danang_ntn_cmt8_29_13_0" index="0" speed="9.54" length="4.59" shape="246.93,183.97 250.42,186.95"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_20" function="internal">
+        <lane id=":danang_ntn_cmt8_29_20_0" index="0" speed="9.54" length="19.89" shape="250.42,186.95 251.80,188.13 253.50,192.88 252.05,198.21 247.42,204.12"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_14" function="internal">
+        <lane id=":danang_ntn_cmt8_29_14_0" index="0" speed="6.04" length="9.07" shape="242.90,199.59 244.45,197.53 244.81,195.61 243.99,193.83 241.99,192.20"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_15" function="internal">
+        <lane id=":danang_ntn_cmt8_29_15_0" index="0" speed="13.89" length="28.74" shape="242.90,199.59 248.12,194.45 253.29,189.57 258.58,184.80 264.14,180.04"/>
+        <lane id=":danang_ntn_cmt8_29_15_1" index="1" speed="13.89" length="28.74" shape="245.16,201.86 250.35,196.75 255.45,191.93 260.66,187.23 266.19,182.50"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_17" function="internal">
+        <lane id=":danang_ntn_cmt8_29_17_0" index="0" speed="9.65" length="6.42" shape="245.16,201.86 250.20,197.88"/>
+    </edge>
+    <edge id=":danang_ntn_cmt8_29_21" function="internal">
+        <lane id=":danang_ntn_cmt8_29_21_0" index="0" speed="9.65" length="17.88" shape="250.20,197.88 251.06,197.21 256.41,195.60 261.22,197.03 265.49,201.50"/>
+    </edge>
+
+    <edge id="in_NE" from="boundary_NE" to="danang_ntn_cmt8_29" priority="-1">
+        <lane id="in_NE_0" index="0" speed="13.89" length="287.56" shape="417.00,446.09 257.50,206.82"/>
+        <lane id="in_NE_1" index="1" speed="13.89" length="287.56" shape="419.67,444.31 260.16,205.05"/>
+        <lane id="in_NE_2" index="2" speed="13.89" length="287.56" shape="422.33,442.54 262.82,203.27"/>
+    </edge>
+    <edge id="in_NW" from="boundary_NW" to="danang_ntn_cmt8_29" priority="-1">
+        <lane id="in_NW_0" index="0" speed="13.89" length="284.50" shape="41.73,400.77 242.90,199.59"/>
+        <lane id="in_NW_1" index="1" speed="13.89" length="284.50" shape="43.99,403.03 245.16,201.86"/>
+    </edge>
+    <edge id="in_SE" from="boundary_SE" to="danang_ntn_cmt8_29" priority="-1">
+        <lane id="in_SE_0" index="0" speed="13.89" length="287.02" shape="490.80,3.69 270.29,187.42"/>
+        <lane id="in_SE_1" index="1" speed="13.89" length="287.02" shape="488.75,1.23 268.24,184.96"/>
+    </edge>
+    <edge id="in_SW" from="boundary_SW" to="danang_ntn_cmt8_29" priority="-1">
+        <lane id="in_SW_0" index="0" speed="13.89" length="287.01" shape="4.12,30.82 250.22,178.48"/>
+        <lane id="in_SW_1" index="1" speed="13.89" length="287.01" shape="2.47,33.56 248.57,181.23"/>
+        <lane id="in_SW_2" index="2" speed="13.89" length="287.01" shape="0.82,36.31 246.93,183.97"/>
+    </edge>
+    <edge id="out_NE" from="danang_ntn_cmt8_29" to="boundary_NE" priority="-1">
+        <lane id="out_NE_0" index="0" speed="13.89" length="287.56" shape="270.81,197.95 430.32,437.21"/>
+        <lane id="out_NE_1" index="1" speed="13.89" length="287.56" shape="268.15,199.72 427.65,438.99"/>
+        <lane id="out_NE_2" index="2" speed="13.89" length="287.56" shape="265.49,201.50 424.99,440.76"/>
+    </edge>
+    <edge id="out_NW" from="danang_ntn_cmt8_29" to="boundary_NW" priority="-1">
+        <lane id="out_NW_0" index="0" speed="13.89" length="284.50" shape="249.69,206.38 48.51,407.55"/>
+        <lane id="out_NW_1" index="1" speed="13.89" length="284.50" shape="247.42,204.12 46.25,405.29"/>
+    </edge>
+    <edge id="out_SE" from="danang_ntn_cmt8_29" to="boundary_SE" priority="-1">
+        <lane id="out_SE_0" index="0" speed="13.89" length="287.02" shape="264.14,180.04 484.66,-3.69"/>
+        <lane id="out_SE_1" index="1" speed="13.89" length="287.02" shape="266.19,182.50 486.71,-1.23"/>
+    </edge>
+    <edge id="out_SW" from="danang_ntn_cmt8_29" to="boundary_SW" priority="-1">
+        <lane id="out_SW_0" index="0" speed="13.89" length="287.01" shape="241.99,192.20 -4.12,44.54"/>
+        <lane id="out_SW_1" index="1" speed="13.89" length="287.01" shape="243.64,189.46 -2.47,41.80"/>
+        <lane id="out_SW_2" index="2" speed="13.89" length="287.01" shape="245.28,186.72 -0.82,39.05"/>
+    </edge>
+
+    <tlLogic id="danang_ntn_cmt8_29" type="static" programID="0" offset="0">
+        <phase duration="42" state="GGGGgrrrrGGGGgrrrr"/>
+        <phase duration="3"  state="yyyyyrrrryyyyyrrrr"/>
+        <phase duration="42" state="rrrrrGGGgrrrrrGGGg"/>
+        <phase duration="3"  state="rrrrryyyyrrrrryyyy"/>
+    </tlLogic>
+
+    <junction id="boundary_NE" type="dead_end" x="423.66" y="441.65" incLanes="out_NE_0 out_NE_1 out_NE_2" intLanes="" shape="423.66,441.65 431.65,436.32 423.66,441.65"/>
+    <junction id="boundary_NW" type="dead_end" x="45.12" y="404.16" incLanes="out_NW_0 out_NW_1" intLanes="" shape="45.12,404.16 49.65,408.69 45.12,404.16"/>
+    <junction id="boundary_SE" type="dead_end" x="487.73" y="0.00" incLanes="out_SE_0 out_SE_1" intLanes="" shape="487.73,0.00 483.63,-4.92 487.73,0.00"/>
+    <junction id="boundary_SW" type="dead_end" x="0.00" y="37.68" incLanes="out_SW_0 out_SW_1 out_SW_2" intLanes="" shape="0.00,37.68 -4.94,45.91 -0.00,37.68"/>
+    <junction id="danang_ntn_cmt8_29" type="traffic_light" x="257.25" y="192.03" incLanes="in_NE_0 in_NE_1 in_NE_2 in_SE_0 in_SE_1 in_SW_0 in_SW_1 in_SW_2 in_NW_0 in_NW_1" intLanes=":danang_ntn_cmt8_29_0_0 :danang_ntn_cmt8_29_1_0 :danang_ntn_cmt8_29_1_1 :danang_ntn_cmt8_29_1_2 :danang_ntn_cmt8_29_18_0 :danang_ntn_cmt8_29_5_0 :danang_ntn_cmt8_29_6_0 :danang_ntn_cmt8_29_6_1 :danang_ntn_cmt8_29_19_0 :danang_ntn_cmt8_29_9_0 :danang_ntn_cmt8_29_10_0 :danang_ntn_cmt8_29_10_1 :danang_ntn_cmt8_29_10_2 :danang_ntn_cmt8_29_20_0 :danang_ntn_cmt8_29_14_0 :danang_ntn_cmt8_29_15_0 :danang_ntn_cmt8_29_15_1 :danang_ntn_cmt8_29_21_0" shape="256.17,207.71 272.14,197.06 271.03,195.20 270.31,193.52 269.98,192.03 270.04,190.72 270.48,189.59 271.31,188.64 263.12,178.81 260.06,180.05 258.17,180.00 256.03,179.49 253.66,178.53 251.04,177.11 241.17,193.58 242.76,195.03 243.03,195.83 242.96,196.66 242.54,197.54 241.77,198.46 250.82,207.51 252.80,206.14 253.72,206.00 254.59,206.21 255.40,206.78">
+        <request index="0"  response="000000000000000000" foes="000000000011000000" cont="0"/>
+        <request index="1"  response="100000000000000000" foes="111110000111000000" cont="0"/>
+        <request index="2"  response="100000000000000000" foes="111110000111000000" cont="0"/>
+        <request index="3"  response="100000000100000000" foes="111110000111000000" cont="0"/>
+        <request index="4"  response="100001110100000000" foes="111001110111000000" cont="1"/>
+        <request index="5"  response="000001110000000000" foes="000001110000000000" cont="0"/>
+        <request index="6"  response="000011110000011111" foes="100011110000011111" cont="0"/>
+        <request index="7"  response="000011110000011111" foes="100011110000011111" cont="0"/>
+        <request index="8"  response="011011110000011110" foes="011011110000011110" cont="1"/>
+        <request index="9"  response="000000000000000000" foes="011000000000000000" cont="0"/>
+        <request index="10" response="000000000100000000" foes="111000000111110000" cont="0"/>
+        <request index="11" response="000000000100000000" foes="111000000111110000" cont="0"/>
+        <request index="12" response="100000000100000000" foes="111000000111110000" cont="0"/>
+        <request index="13" response="100000000100001110" foes="111000000111001110" cont="1"/>
+        <request index="14" response="000000000000001110" foes="000000000000001110" cont="0"/>
+        <request index="15" response="000011111000011110" foes="000011111100011110" cont="0"/>
+        <request index="16" response="000011111000011110" foes="000011111100011110" cont="0"/>
+        <request index="17" response="000011110011011110" foes="000011110011011110" cont="1"/>
+    </junction>
+
+    <junction id=":danang_ntn_cmt8_29_18_0" type="internal" x="260.91" y="199.25" incLanes=":danang_ntn_cmt8_29_4_0 in_SW_0 in_SW_1 in_SW_2" intLanes=":danang_ntn_cmt8_29_6_0 :danang_ntn_cmt8_29_6_1 :danang_ntn_cmt8_29_8_0 :danang_ntn_cmt8_29_9_0 :danang_ntn_cmt8_29_10_0 :danang_ntn_cmt8_29_10_1 :danang_ntn_cmt8_29_10_2 :danang_ntn_cmt8_29_15_0 :danang_ntn_cmt8_29_15_1 :danang_ntn_cmt8_29_17_0"/>
+    <junction id=":danang_ntn_cmt8_29_19_0" type="internal" x="263.99" y="187.66" incLanes=":danang_ntn_cmt8_29_8_0 in_NW_0 in_NW_1" intLanes=":danang_ntn_cmt8_29_1_0 :danang_ntn_cmt8_29_1_1 :danang_ntn_cmt8_29_1_2 :danang_ntn_cmt8_29_4_0 :danang_ntn_cmt8_29_10_0 :danang_ntn_cmt8_29_10_1 :danang_ntn_cmt8_29_10_2 :danang_ntn_cmt8_29_13_0 :danang_ntn_cmt8_29_14_0 :danang_ntn_cmt8_29_15_0 :danang_ntn_cmt8_29_15_1"/>
+    <junction id=":danang_ntn_cmt8_29_20_0" type="internal" x="250.42" y="186.95" incLanes=":danang_ntn_cmt8_29_13_0 in_NE_0 in_NE_1 in_NE_2" intLanes=":danang_ntn_cmt8_29_0_0 :danang_ntn_cmt8_29_1_0 :danang_ntn_cmt8_29_1_1 :danang_ntn_cmt8_29_1_2 :danang_ntn_cmt8_29_6_0 :danang_ntn_cmt8_29_6_1 :danang_ntn_cmt8_29_8_0 :danang_ntn_cmt8_29_15_0 :danang_ntn_cmt8_29_15_1 :danang_ntn_cmt8_29_17_0"/>
+    <junction id=":danang_ntn_cmt8_29_21_0" type="internal" x="250.20" y="197.88" incLanes=":danang_ntn_cmt8_29_17_0 in_SE_0 in_SE_1" intLanes=":danang_ntn_cmt8_29_1_0 :danang_ntn_cmt8_29_1_1 :danang_ntn_cmt8_29_1_2 :danang_ntn_cmt8_29_4_0 :danang_ntn_cmt8_29_5_0 :danang_ntn_cmt8_29_6_0 :danang_ntn_cmt8_29_6_1 :danang_ntn_cmt8_29_10_0 :danang_ntn_cmt8_29_10_1 :danang_ntn_cmt8_29_10_2 :danang_ntn_cmt8_29_13_0"/>
+
+    <connection from="in_NE" to="out_NW" fromLane="0" toLane="0" via=":danang_ntn_cmt8_29_0_0" tl="danang_ntn_cmt8_29" linkIndex="0" dir="r" state="O"/>
+    <connection from="in_NE" to="out_SW" fromLane="0" toLane="0" via=":danang_ntn_cmt8_29_1_0" tl="danang_ntn_cmt8_29" linkIndex="1" dir="s" state="O"/>
+    <connection from="in_NE" to="out_SW" fromLane="1" toLane="1" via=":danang_ntn_cmt8_29_1_1" tl="danang_ntn_cmt8_29" linkIndex="2" dir="s" state="O"/>
+    <connection from="in_NE" to="out_SW" fromLane="2" toLane="2" via=":danang_ntn_cmt8_29_1_2" tl="danang_ntn_cmt8_29" linkIndex="3" dir="s" state="O"/>
+    <connection from="in_NE" to="out_SE" fromLane="2" toLane="1" via=":danang_ntn_cmt8_29_4_0" tl="danang_ntn_cmt8_29" linkIndex="4" dir="l" state="o"/>
+    <connection from="in_NW" to="out_SW" fromLane="0" toLane="0" via=":danang_ntn_cmt8_29_14_0" tl="danang_ntn_cmt8_29" linkIndex="14" dir="r" state="o"/>
+    <connection from="in_NW" to="out_SE" fromLane="0" toLane="0" via=":danang_ntn_cmt8_29_15_0" tl="danang_ntn_cmt8_29" linkIndex="15" dir="s" state="o"/>
+    <connection from="in_NW" to="out_SE" fromLane="1" toLane="1" via=":danang_ntn_cmt8_29_15_1" tl="danang_ntn_cmt8_29" linkIndex="16" dir="s" state="o"/>
+    <connection from="in_NW" to="out_NE" fromLane="1" toLane="2" via=":danang_ntn_cmt8_29_17_0" tl="danang_ntn_cmt8_29" linkIndex="17" dir="l" state="o"/>
+    <connection from="in_SE" to="out_NE" fromLane="0" toLane="0" via=":danang_ntn_cmt8_29_5_0" tl="danang_ntn_cmt8_29" linkIndex="5" dir="r" state="o"/>
+    <connection from="in_SE" to="out_NW" fromLane="0" toLane="0" via=":danang_ntn_cmt8_29_6_0" tl="danang_ntn_cmt8_29" linkIndex="6" dir="s" state="o"/>
+    <connection from="in_SE" to="out_NW" fromLane="1" toLane="1" via=":danang_ntn_cmt8_29_6_1" tl="danang_ntn_cmt8_29" linkIndex="7" dir="s" state="o"/>
+    <connection from="in_SE" to="out_SW" fromLane="1" toLane="2" via=":danang_ntn_cmt8_29_8_0" tl="danang_ntn_cmt8_29" linkIndex="8" dir="l" state="o"/>
+    <connection from="in_SW" to="out_SE" fromLane="0" toLane="0" via=":danang_ntn_cmt8_29_9_0" tl="danang_ntn_cmt8_29" linkIndex="9" dir="r" state="O"/>
+    <connection from="in_SW" to="out_NE" fromLane="0" toLane="0" via=":danang_ntn_cmt8_29_10_0" tl="danang_ntn_cmt8_29" linkIndex="10" dir="s" state="O"/>
+    <connection from="in_SW" to="out_NE" fromLane="1" toLane="1" via=":danang_ntn_cmt8_29_10_1" tl="danang_ntn_cmt8_29" linkIndex="11" dir="s" state="O"/>
+    <connection from="in_SW" to="out_NE" fromLane="2" toLane="2" via=":danang_ntn_cmt8_29_10_2" tl="danang_ntn_cmt8_29" linkIndex="12" dir="s" state="O"/>
+    <connection from="in_SW" to="out_NW" fromLane="2" toLane="1" via=":danang_ntn_cmt8_29_13_0" tl="danang_ntn_cmt8_29" linkIndex="13" dir="l" state="o"/>
+
+    <connection from=":danang_ntn_cmt8_29_0" to="out_NW" fromLane="0" toLane="0" dir="r" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_1" to="out_SW" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_1" to="out_SW" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_1" to="out_SW" fromLane="2" toLane="2" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_4" to="out_SE" fromLane="0" toLane="1" via=":danang_ntn_cmt8_29_18_0" dir="l" state="m"/>
+    <connection from=":danang_ntn_cmt8_29_18" to="out_SE" fromLane="0" toLane="1" dir="l" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_5" to="out_NE" fromLane="0" toLane="0" dir="r" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_6" to="out_NW" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_6" to="out_NW" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_8" to="out_SW" fromLane="0" toLane="2" via=":danang_ntn_cmt8_29_19_0" dir="l" state="m"/>
+    <connection from=":danang_ntn_cmt8_29_19" to="out_SW" fromLane="0" toLane="2" dir="l" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_9" to="out_SE" fromLane="0" toLane="0" dir="r" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_10" to="out_NE" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_10" to="out_NE" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_10" to="out_NE" fromLane="2" toLane="2" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_13" to="out_NW" fromLane="0" toLane="1" via=":danang_ntn_cmt8_29_20_0" dir="l" state="m"/>
+    <connection from=":danang_ntn_cmt8_29_20" to="out_NW" fromLane="0" toLane="1" dir="l" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_14" to="out_SW" fromLane="0" toLane="0" dir="r" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_15" to="out_SE" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_15" to="out_SE" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":danang_ntn_cmt8_29_17" to="out_NE" fromLane="0" toLane="2" via=":danang_ntn_cmt8_29_21_0" dir="l" state="m"/>
+    <connection from=":danang_ntn_cmt8_29_21" to="out_NE" fromLane="0" toLane="2" dir="l" state="M"/>
+
+</net>

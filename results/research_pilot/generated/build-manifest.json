@@ -1,5 +1,5 @@
 {
-  "demands": {
+  "estimated_full_intersection_demands": {
     "am_peak": {
       "case_id": "danang_am_peak",
       "demand_path": "results/research_pilot/generated/demand_am_peak.json",
@@ -172,8 +172,8 @@
         "motorcycle": 0.3,
         "truck": 2.5
       },
-      "route_path": "results/research_pilot/generated/am_peak.rou.xml",
-      "route_sha256": "a669e811e1f900238ba52b546eba439791be0a25461e850e1fa2f9c8465228e3",
+      "route_path": "results/research_pilot/generated/estimated_am_peak.rou.xml",
+      "route_sha256": "8d1571677a92c70b834df8fcc047108851bf4ecfc557d56731a17feb8e79f6cd",
       "scheduled_vehicles": 9676,
       "source_id": "phan2025_3dqn_danang",
       "source_scope": "four observed camera lines scaled to published 12-movement peak table",
@@ -351,8 +351,8 @@
         "motorcycle": 0.3,
         "truck": 2.5
       },
-      "route_path": "results/research_pilot/generated/normal.rou.xml",
-      "route_sha256": "47e9b165fb0b2b3a2eb455be5088482552f684edd17d7cd187c5be32e778a037",
+      "route_path": "results/research_pilot/generated/estimated_normal.rou.xml",
+      "route_sha256": "1f40e50c948e249059d5b41ccb4b08187bc03a99e9d102b25c306d95fb2de426",
       "scheduled_vehicles": 5793,
       "source_id": "phan2025_3dqn_danang",
       "source_scope": "four observed camera lines scaled to published 12-movement peak table",
@@ -530,8 +530,8 @@
         "motorcycle": 0.3,
         "truck": 2.5
       },
-      "route_path": "results/research_pilot/generated/pm_peak.rou.xml",
-      "route_sha256": "4ac978120d20e386901daa3e83bda7533fbcc8c24ebb71cdf6a381d0d278b7b8",
+      "route_path": "results/research_pilot/generated/estimated_pm_peak.rou.xml",
+      "route_sha256": "33f8fc5d30ada9395d10704fe2b63b32fb8a7a02fe91fb3035070270f2560c4e",
       "scheduled_vehicles": 9967,
       "source_id": "phan2025_3dqn_danang",
       "source_scope": "four observed camera lines scaled to published 12-movement peak table",
@@ -539,6 +539,354 @@
     }
   },
   "network": {
+    "approach_length_m": {
+      "NE": 300.00405413927325,
+      "NW": 299.99712298620466,
+      "SE": 299.994252111603,
+      "SW": 300.0024749897907
+    },
+    "geometry_source": "pinned OSM approach bearings",
+    "incoming_edges": {
+      "NE": "in_NE",
+      "NW": "in_NW",
+      "SE": "in_SE",
+      "SW": "in_SW"
+    },
+    "lane_count_source": "Phan et al. (2025) site description",
+    "model_scope": "isolated_target_junction",
+    "netconvert_command": [
+      "/opt/homebrew/bin/netconvert",
+      "--node-files",
+      "/var/folders/j3/vh857slj7kldpgtqnjzgplg00000gq/T/danang-junction-8_vd14s5/nodes.nod.xml",
+      "--edge-files",
+      "/var/folders/j3/vh857slj7kldpgtqnjzgplg00000gq/T/danang-junction-8_vd14s5/edges.edg.xml",
+      "--connection-files",
+      "/var/folders/j3/vh857slj7kldpgtqnjzgplg00000gq/T/danang-junction-8_vd14s5/connections.con.xml",
+      "--output-file",
+      "results/research_pilot/generated/danang_isolated.net.xml",
+      "--no-turnarounds",
+      "true"
+    ],
+    "netconvert_warnings": [
+      "Warning: Environment variable SUMO_HOME is not set properly, disabling XML validation. Set 'auto' or 'always' for web lookups.",
+      "Warning: Environment variable SUMO_HOME is not set, using built in type maps."
+    ],
+    "network_path": "results/research_pilot/generated/danang_isolated.net.xml",
+    "network_sha256": "d51f1a25b5ab367c81948cb80257d9f3d5963ee59d2977c9c46c1918646180df",
+    "outgoing_edges": {
+      "NE": "out_NE",
+      "NW": "out_NW",
+      "SE": "out_SE",
+      "SW": "out_SW"
+    },
+    "published_network_path": "results/research_pilot/generated/danang_isolated_published.net.xml",
+    "published_network_sha256": "2e6a7c1dea8dd2f61b79894ea49eea5d1652c8b6cad9302caf9cab7642454feb",
+    "published_signal_program": [
+      {
+        "action": 0,
+        "duration": 32,
+        "kind": "green",
+        "state": "grrrrgGGggrrrrgGGg"
+      },
+      {
+        "action": 0,
+        "duration": 7,
+        "kind": "yellow",
+        "state": "yrrrryyyyyrrrryyyy"
+      },
+      {
+        "action": 1,
+        "duration": 28,
+        "kind": "green",
+        "state": "gGGGrgrrrgGGGrgrrr"
+      },
+      {
+        "action": 1,
+        "duration": 7,
+        "kind": "yellow",
+        "state": "yyyyryrrryyyyryrrr"
+      },
+      {
+        "action": 2,
+        "duration": 22,
+        "kind": "green",
+        "state": "grrrGgrrrgrrrGgrrr"
+      },
+      {
+        "action": 2,
+        "duration": 7,
+        "kind": "yellow",
+        "state": "yrrryyrrryrrryyrrr"
+      }
+    ],
+    "route_edges": {
+      "in_NE": [
+        "in_NE"
+      ],
+      "in_NW": [
+        "in_NW"
+      ],
+      "in_SE": [
+        "in_SE"
+      ],
+      "in_SW": [
+        "in_SW"
+      ],
+      "out_NE": [
+        "out_NE"
+      ],
+      "out_NW": [
+        "out_NW"
+      ],
+      "out_SE": [
+        "out_SE"
+      ],
+      "out_SW": [
+        "out_SW"
+      ]
+    },
+    "target_tls_id": "danang_ntn_cmt8_29"
+  },
+  "observed_camera_demands": {
+    "am_peak": {
+      "case_id": "danang_observed_am_peak",
+      "demand_path": "results/research_pilot/generated/demand_observed_am_peak.json",
+      "demand_sha256": "28b2401c29e87c077264da595eaf0f0a3a5e5fcf08c67a00e2d0038475b6b9ab",
+      "digitization_uncertainty_veh_per_hour": 90,
+      "duration_seconds": 3600,
+      "hour_start": "08:00",
+      "motorcycle_share": 0.6416309012875536,
+      "movements": [
+        {
+          "approach": "SW",
+          "camera": "camera_01",
+          "destination": "NE",
+          "movement": "through",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 673.5,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 265,
+            "motorcycle": 820,
+            "truck": 65
+          }
+        },
+        {
+          "approach": "SW",
+          "camera": "camera_01",
+          "destination": "NW",
+          "movement": "left",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 134.0,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 60,
+            "motorcycle": 80,
+            "truck": 20
+          }
+        },
+        {
+          "approach": "NW",
+          "camera": "camera_02",
+          "destination": "SE",
+          "movement": "through",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 530.0,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 270,
+            "motorcycle": 575,
+            "truck": 35
+          }
+        },
+        {
+          "approach": "NW",
+          "camera": "camera_02",
+          "destination": "NE",
+          "movement": "left",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 148.5,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 105,
+            "motorcycle": 20,
+            "truck": 15
+          }
+        }
+      ],
+      "observation_scope": "four digitized camera movement lines",
+      "pcu_factors": {
+        "bus": 2.0,
+        "car": 1.0,
+        "motorcycle": 0.3,
+        "truck": 2.5
+      },
+      "route_path": "results/research_pilot/generated/observed_am_peak.rou.xml",
+      "route_sha256": "cb297eb896ecfa479a513ff232b2fa4832cb319892fa054b172595a5b55edbde",
+      "scheduled_vehicles": 2330,
+      "source_id": "phan2025_camera_profile",
+      "target_pcu_per_hour": 1486.0
+    },
+    "normal": {
+      "case_id": "danang_observed_normal",
+      "demand_path": "results/research_pilot/generated/demand_observed_normal.json",
+      "demand_sha256": "689391d99c4ed4d7a1aa5ea89cec8c9e1a6c6412c10812d4a4cdeeab9c02d7ce",
+      "digitization_uncertainty_veh_per_hour": 60,
+      "duration_seconds": 3600,
+      "hour_start": "13:00",
+      "motorcycle_share": 0.6630824372759857,
+      "movements": [
+        {
+          "approach": "SW",
+          "camera": "camera_01",
+          "destination": "NE",
+          "movement": "through",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 425.5,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 115,
+            "motorcycle": 410,
+            "truck": 75
+          }
+        },
+        {
+          "approach": "SW",
+          "camera": "camera_01",
+          "destination": "NW",
+          "movement": "left",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 135.5,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 55,
+            "motorcycle": 60,
+            "truck": 25
+          }
+        },
+        {
+          "approach": "NW",
+          "camera": "camera_02",
+          "destination": "SE",
+          "movement": "through",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 355.0,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 115,
+            "motorcycle": 425,
+            "truck": 45
+          }
+        },
+        {
+          "approach": "NW",
+          "camera": "camera_02",
+          "destination": "NE",
+          "movement": "left",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 56.5,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 35,
+            "motorcycle": 30,
+            "truck": 5
+          }
+        }
+      ],
+      "observation_scope": "four digitized camera movement lines",
+      "pcu_factors": {
+        "bus": 2.0,
+        "car": 1.0,
+        "motorcycle": 0.3,
+        "truck": 2.5
+      },
+      "route_path": "results/research_pilot/generated/observed_normal.rou.xml",
+      "route_sha256": "8e396c3bf26d3a98081725e028a7f1813f5cbe0663dbab491fee773048013cea",
+      "scheduled_vehicles": 1395,
+      "source_id": "phan2025_camera_profile",
+      "target_pcu_per_hour": 972.5
+    },
+    "pm_peak": {
+      "case_id": "danang_observed_pm_peak",
+      "demand_path": "results/research_pilot/generated/demand_observed_pm_peak.json",
+      "demand_sha256": "07c63717a38cc463c0b73780d0387d4ae8c3c0e61f7081a38fa1f480d1150c14",
+      "digitization_uncertainty_veh_per_hour": 90,
+      "duration_seconds": 3600,
+      "hour_start": "17:00",
+      "motorcycle_share": 0.6958333333333333,
+      "movements": [
+        {
+          "approach": "SW",
+          "camera": "camera_01",
+          "destination": "NE",
+          "movement": "through",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 658.0,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 215,
+            "motorcycle": 1060,
+            "truck": 50
+          }
+        },
+        {
+          "approach": "SW",
+          "camera": "camera_01",
+          "destination": "NW",
+          "movement": "left",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 164.5,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 100,
+            "motorcycle": 90,
+            "truck": 15
+          }
+        },
+        {
+          "approach": "NW",
+          "camera": "camera_02",
+          "destination": "SE",
+          "movement": "through",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 457.5,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 245,
+            "motorcycle": 500,
+            "truck": 25
+          }
+        },
+        {
+          "approach": "NW",
+          "camera": "camera_02",
+          "destination": "NE",
+          "movement": "left",
+          "observation_status": "digitized_from_published_camera_figure",
+          "target_pcu_per_hour": 93.5,
+          "vehicle_rates_per_hour": {
+            "bus": 0,
+            "car": 75,
+            "motorcycle": 20,
+            "truck": 5
+          }
+        }
+      ],
+      "observation_scope": "four digitized camera movement lines",
+      "pcu_factors": {
+        "bus": 2.0,
+        "car": 1.0,
+        "motorcycle": 0.3,
+        "truck": 2.5
+      },
+      "route_path": "results/research_pilot/generated/observed_pm_peak.rou.xml",
+      "route_sha256": "03cc61eb40cf10210e2ced3a1a719a20599b0dcaeb3eb21ce24a8b3729bc5fcd",
+      "scheduled_vehicles": 2400,
+      "source_id": "phan2025_camera_profile",
+      "target_pcu_per_hour": 1373.5
+    }
+  },
+  "osm_reference_network": {
     "approach_length_m": {
       "NE": 350.59,
       "NW": 313.76,
@@ -614,7 +962,7 @@
       "Warning: 8 total messages of type: Speed of % connection '%' reduced by % due to turning radius of % (length=%, angle=%)."
     ],
     "network_path": "results/research_pilot/generated/pilot.net.xml",
-    "network_sha256": "58af84e195a5c99c9eaabfae17153756b7d8be72769ceaf33e863e55957b3f9c",
+    "network_sha256": "3a989fd6a6d10517d176c5cd6039f3597ed763ea2f295129230fd8f54c66cb84",
     "osm_path": "datasets/danang_published/osm/ntn_cmt8_29_20260907.osm",
     "osm_sha256": "3ee7b22f078a86ce74e99733741c2901e6ebd1e97608e11d9f4f6a627e888121",
     "outgoing_edges": {
@@ -623,6 +971,46 @@
       "SE": "1175814891#1",
       "SW": "302763980#1"
     },
+    "published_network_path": "results/research_pilot/generated/pilot_published.net.xml",
+    "published_network_sha256": "553b0ba6306e18ebb588b593c0c105110b546cc4a00091697735b76d747a23ca",
+    "published_signal_program": [
+      {
+        "action": 0,
+        "duration": 32,
+        "kind": "green",
+        "state": "grrrrrgGGgrgrrrrrgGgr"
+      },
+      {
+        "action": 0,
+        "duration": 7,
+        "kind": "yellow",
+        "state": "yrrrrryyyyryrrrrryyyr"
+      },
+      {
+        "action": 1,
+        "duration": 28,
+        "kind": "green",
+        "state": "gGGGrrgrrrrgGGGrrgrrr"
+      },
+      {
+        "action": 1,
+        "duration": 7,
+        "kind": "yellow",
+        "state": "yyyyrryrrrryyyyrryrrr"
+      },
+      {
+        "action": 2,
+        "duration": 22,
+        "kind": "green",
+        "state": "grrrGrgrrrrgrrrGrgrrr"
+      },
+      {
+        "action": 2,
+        "duration": 7,
+        "kind": "yellow",
+        "state": "yrrryryrrrryrrryryrrr"
+      }
+    ],
     "route_edges": {
       "in_NE": [
         "302763977#3",
