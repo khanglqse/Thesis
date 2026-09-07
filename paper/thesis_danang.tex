@@ -1,0 +1,437 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage[left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{fancyhdr}
+\usepackage{listings}
+
+\graphicspath{{figures/}{../results/danang_protocol_v1/summary/}}
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.15em}
+\setlength{\emergencystretch}{2em}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\fancyhead[L]{Evidence-Aware RL for Da Nang Traffic Signal Control}
+\renewcommand{\headrulewidth}{0.3pt}
+\captionsetup{font=small,labelfont=bf}
+\hypersetup{pdftitle={Evidence-Aware Reinforcement Learning for Traffic Signal Control at a Da Nang Intersection},pdfauthor={Luong Quang Khang}}
+
+\newcommand{\qint}{\ensuremath{Q_{\mathrm{int}}}}
+\newcommand{\ddqn}{Dueling Double DQN}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+{\large MINISTRY OF EDUCATION AND TRAINING\par}
+{\large FPT UNIVERSITY\par}
+\vspace{2.2cm}
+{\Large\bfseries EVIDENCE-AWARE REINFORCEMENT LEARNING\\[0.25cm]
+FOR TRAFFIC SIGNAL CONTROL\\[0.25cm]AT A DA NANG INTERSECTION\par}
+\vspace{1.8cm}
+{\large A thesis submitted in partial fulfillment of the requirements\\
+for the degree of Master of Software Engineering\par}
+\vspace{1.5cm}
+{\Large\bfseries Luong Quang Khang\par}
+\vfill
+\begin{tabular}{ll}
+Supervisors: & Dr. Nguyen Luong Vuong\\
+             & Dr. Bui Cao Vu
+\end{tabular}
+\vfill
+{\large Da Nang, Vietnam --- 2026\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\chapter*{Declaration}
+I declare that this thesis reports the experiment protocol and results contained in the accompanying repository. Published traffic observations and prior methods are attributed to their sources. The interpretations, implementation, experiment design, and analysis are the author's work. The repository retains machine-readable manifests, frozen model checkpoints, raw evaluation records, and the scripts used to produce the reported tables and figures.
+
+\chapter*{Acknowledgements}
+I thank my supervisors, Dr. Nguyen Luong Vuong and Dr. Bui Cao Vu, for their guidance. I also acknowledge the authors who made the Da Nang intersection observations public and the developers of SUMO and OpenStreetMap, whose open tools and data made this reproducible study possible.
+
+\chapter*{Abstract}
+This thesis studies adaptive traffic signal control at the Nguyen Thanh Nghi--Cach Mang Thang 8--2/9 intersection in Da Nang, Vietnam. It addresses a recurring weakness in traffic reinforcement learning research: strong claims built on incompletely described demand, simulator, and evaluation assumptions. The study reconstructs a demand-matched SUMO model from a published 103-second signal plan, an audited OpenStreetMap snapshot, twelve published turning movements, and four hourly camera movement lines digitized for 1 April 2025. The directly supported scenarios contain 1,395 vehicles in the normal hour at 13:00, 2,330 in the morning peak at 08:00, and 2,400 in the evening peak at 17:00. Because public observations cover one date and only part of the intersection, the model is described as demand-matched and geometry-audited rather than fully behavior-calibrated.
+
+A \ddqn{} controller is trained for thirty one-hour episodes with five independent training seeds. A base DQN architecture is retained as an ablation. Published fixed-time, raw Max-Pressure, and hysteretic Max-Pressure controllers provide non-learning baselines. Checkpoint selection uses a separate validation demand realization; testing uses fifteen held-out cases across three traffic regimes. The primary metric is the integral of stopped vehicles inside the model plus vehicles waiting to enter it. Uncertainty for the learning controller is calculated over training seeds, not over crossed simulator runs.
+
+The result is regime dependent. Relative to the published fixed plan, \ddqn{} changes the queue integral by $+320.7\%$ in normal demand, $-1.0\%$ in the morning peak, and $-34.5\%$ in the evening peak. The 95\% bootstrap intervals for the absolute paired changes are $[7.60,56.14]$, $[-9.47,8.49]$, and $[-69.55,-35.34]$ vehicle-hours, respectively. A synthetic demand sensitivity test confirms the pattern: learning is harmful at $0.75\times$ observed AM demand but beneficial at $1.25\times$ and $1.50\times$. All 105 primary held-out runs complete without collision; four emergency-braking events occur in 120 sensitivity runs. These results support adaptive deployment only when demand is sufficiently high and monitored. They do not support a city-wide performance claim. The thesis contributes a traceable reconstruction, a collision regression that changed the motorcycle headway from 1.0 to 1.2 seconds and triggered a complete rerun, a seed-aware evaluation protocol, and an offline replay package for defense and inspection.
+
+\noindent\textbf{Keywords:} traffic signal control; reinforcement learning; Dueling Double DQN; SUMO; Da Nang; reproducibility; mixed traffic.
+
+\tableofcontents
+\listoffigures
+\listoftables
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+\section{Motivation}
+Traffic signal control is a sequential decision problem under uncertain demand. A fixed plan is predictable and inexpensive, but it cannot directly react when queues shift between approaches. Reinforcement learning (RL) offers a way to learn a feedback policy from repeated interaction with a traffic model. Its flexibility also introduces risks: a controller can exploit modelling artifacts, results can depend strongly on random seed, and an apparent improvement can disappear outside the trained demand regime.
+
+Da Nang is a particularly relevant setting because traffic is heterogeneous and motorcycle dominated. The most useful public evidence found for this study is the detailed case study by Phan, Le, and Nguyen~\cite{phan2025danang}. It identifies the target signal, reports its geometry and 103-second timing plan, gives twelve peak turning movements, and publishes hourly camera profiles. The present work reconstructs a smaller, auditable experiment from that evidence instead of making unsupported claims about an entire district.
+
+\section{Research question}
+The central question is:
+\begin{quote}
+Under which observed and stress-tested demand regimes does a seed-evaluated \ddqn{} controller reduce total queue accumulation relative to the published fixed-time plan at the selected Da Nang intersection?
+\end{quote}
+Three supporting questions guide the work:
+\begin{enumerate}[label=RQ\arabic*.]
+\item Can the public intersection evidence be converted into a reproducible SUMO scenario without presenting inferred demand as observation?
+\item Does the learning architecture improve on the base DQN under the same training budget, and how variable are the learned policies across training seeds?
+\item Do safety and benefit persist across normal, peak, and scaled-demand scenarios?
+\end{enumerate}
+
+\section{Contributions}
+The thesis makes four practical contributions. First, it defines an evidence hierarchy separating directly digitized camera counts, published aggregate PCU movements, geometric map evidence, and modelling assumptions. Second, it provides a reproducible experiment with disjoint training, validation, and held-out departure realizations. Third, it reports negative results and simulator failures, including poor Max-Pressure behavior and a motorcycle-headway defect that required a full rerun. Fourth, it supplies a defense-ready offline replay rather than relying on live training.
+
+\section{Scope}
+The empirical claim concerns one isolated signalized junction, one observed date, and four camera movement lines. The twelve-movement, full-intersection PCU table is useful as contextual evidence and for estimated stress construction, but it is not treated as a direct vehicle count. Neighboring junctions are excluded from the primary causal comparison because their demand and signal plans could not be validated. This scope is narrower than the legacy project claim and is deliberately aligned with the available evidence.
+
+\chapter{Background and Related Work}
+
+\section{Traffic simulation and signal control}
+SUMO is an open-source microscopic simulator that represents individual vehicles, routes, car-following behavior, lane changes, and signal programs~\cite{lopez2018sumo}. Its TraCI interface permits an external controller to observe the network and change signal phases during simulation. Microscopic detail is valuable for mixed traffic, but it makes network topology, vehicle parameters, and collision handling part of the experimental hypothesis.
+
+Fixed-time control repeats a predetermined phase plan. It is a strong baseline when the plan was designed for the site and demand is stable. Max-Pressure selects phases according to queue imbalance and has network-stability motivation under stated assumptions~\cite{varaiya2013maxpressure}. PressLight connects pressure-based traffic objectives with RL~\cite{wei2019presslight}. In this thesis, both raw and hysteretic Max-Pressure are retained. Their failure is informative because only four movements are observed and every phase switch incurs a seven-second clearance.
+
+\section{Deep Q-learning}
+DQN approximates the action-value function with a neural network and stabilizes learning through replay and a target network~\cite{mnih2015dqn}. Double DQN separates action selection from target evaluation to reduce maximization bias~\cite{hasselt2016double}. The dueling architecture separately estimates a state value and action advantages~\cite{wang2016dueling}:
+\begin{equation}
+Q(s,a)=V(s)+A(s,a)-\frac{1}{|\mathcal{A}|}\sum_{a'}A(s,a').
+\end{equation}
+The implemented agent combines Double DQN targets, a dueling network, and three-step returns. This combination is called \ddqn{} in the rest of the thesis.
+
+\section{Traffic RL evaluation}
+Traffic-control testbeds such as CityFlow~\cite{zhang2019cityflow} and RESCO~\cite{ault2021resco} help standardize interfaces and scenarios. Multi-agent work has shown how shared or coordinated policies can scale to networks~\cite{chu2020marl}. Yet benchmark success does not establish validity at a new junction: signal constraints, sensor coverage, demand, and driver behavior must still be reconstructed.
+
+RL results can vary substantially across training runs. Henderson et al.~\cite{henderson2018matters} argue for reproducible implementations and adequate reporting, while Agarwal et al.~\cite{agarwal2021precipice} show that few-run point estimates can support unstable conclusions. The present design therefore treats training seed as the independent unit for learned policies and reports interval estimates.
+
+\section{Relation to the closest Da Nang study}
+Phan et al.~\cite{phan2025danang} evaluate two 3DQN training budgets in SUMO and report performance over demand from 50\% to 150\% of a baseline. Their work supplies the decisive local evidence for this reconstruction. This thesis differs in purpose: it audits what can be reproduced from public figures, freezes disjoint split realizations, compares multiple independently trained checkpoints, integrates vehicles waiting outside the network into the objective, and reports conditions where RL loses to the published plan. The work should be read as an independent evidence-aware replication and extension, not a reproduction of their proprietary detector pipeline or trained network.
+
+\chapter{Evidence and Scenario Reconstruction}
+
+\section{Evidence hierarchy}
+Table~\ref{tab:evidence} records how every major input is used. OpenStreetMap provides location and bearings, not traffic demand. The published case study provides the timing, lane description, movement table, and plotted camera series. OpenStreetMap itself is a collaborative geographic dataset whose strengths and limitations depend on local contributor coverage~\cite{haklay2010osm}.
+
+\begin{table}[H]
+\centering
+\caption{Evidence layers and permitted claims.}\label{tab:evidence}
+\begin{tabular}{p{3.2cm}p{4.3cm}p{5.5cm}}
+\toprule
+Layer & Artifact & Permitted use \\
+\midrule
+Published signal & 32/7, 28/7, 22/7 seconds & Exact 103-second baseline program \\
+Published geometry & 2/2/3/3 approach lanes & Isolated lane topology \\
+Digitized camera plots & Four movement lines, 06:00--18:00 & Direct scenario vehicle counts with reading uncertainty \\
+Published movement table & 12 movements, 6,171 PCU/h & Context and estimated full-intersection stress only \\
+Pinned OSM extract & Coordinates and approach bearings & Auditable placement and orientation \\
+SUMO parameters & Vehicle dimensions, headways, dynamics & Explicit modelling assumptions \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Study site and geometry}
+The target is the Nguyen Thanh Nghi--Cach Mang Thang 8--2/9 junction described by Phan et al. The reconstruction uses one signal and four 300 m approaches. The two Nguyen Thanh Nghi/Hoa Xuan sides have two lanes and the 2/9/Cach Mang Thang 8 sides have three. A pinned OSM extract supplies the approach bearings. Figure~\ref{fig:junction} shows the analysis model.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{junction-schematic.pdf}
+\caption{Audited isolated junction and the four directly observed movement lines. The schematic simplifies geometry for explanation; the SUMO network is the executable source.}\label{fig:junction}
+\end{figure}
+
+An initial full OSM conversion was tested for an hour. It produced confounding queues at nearby nodes, short edge fragments, and 14--21 collisions depending on case. Without validated neighboring signal programs and demand, those failures could not be attributed to the target controller. The full graph remains an audit artifact; the isolated network is the primary experiment.
+
+\section{Observed demand}
+Two published camera views yield four digitized movement series, divided into motorcycles, cars, trucks, and buses. Counts are read from Figures 17--18 of the source paper with an explicit per-series digitization uncertainty of 15 or 30 vehicles per hour. The selected hours are shown in Table~\ref{tab:demand} and Figure~\ref{fig:profile}.
+
+\begin{table}[H]
+\centering
+\caption{Directly supported test scenarios.}\label{tab:demand}
+\small
+\resizebox{0.92\textwidth}{!}{%
+\begin{tabular}{llllr}
+\toprule
+Scenario & Local time & Role & Evidence status & Vehicles/hour \\
+\midrule
+Normal & 13:00 & Held-out test & Four digitized camera movements & 1,395 \\
+AM peak & 08:00 & Train/validation/test profile & Four digitized camera movements & 2,330 \\
+PM peak & 17:00 & Held-out test & Four digitized camera movements & 2,400 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.93\textwidth]{camera-profile.pdf}
+\caption{Digitized sum across the four camera movement lines on 1 April 2025. This is partial intersection coverage, not total city or full-junction traffic.}\label{fig:profile}
+\end{figure}
+
+The twelve published peak movements sum to 6,171 PCU/h. Applying observed class mix to all twelve would schedule 5,793, 9,676, and 9,967 vehicles for the three regimes. Those figures are model estimates and are never labeled observed. They are excluded from the primary comparison because their class composition and hourly scaling cannot be independently verified.
+
+\section{Vehicle and signal assumptions}
+Vehicle classes preserve the published categories. Passenger-car-equivalent weighting is used only to interpret the aggregate movement table; the simulator represents explicit vehicles. The published fixed program contains three green phases and three seven-second clearances, totaling 103 seconds. The adaptive agent acts every ten seconds, must retain green for at least twenty seconds, and automatically traverses the seven-second safe transition when a phase changes.
+
+The study initially used a 1.0-second motorcycle time headway. A held-out AM realization produced a rear-end collision at simulation time 1,762 seconds. A one-parameter reproduction showed that 1.2 seconds removed the event. Because headway changes capacity and policy dynamics, all prior checkpoints and results were invalidated and the complete protocol was rerun. This is a central example of why safety checks must be part of model selection rather than a final illustration.
+
+\chapter{Methodology}
+
+\section{Markov decision process}
+At decision time $t$, the state includes per-approach stopped queue counts, vehicles waiting to enter the network, and the active phase representation. Counts are normalized by 20. The action $a_t\in\{0,1,2\}$ selects one of the three admissible green phases. Signal safety logic may delay an action through the clearance interval and minimum-green rule.
+
+The one-step reward is the negative total queue:
+\begin{equation}
+r_t=-0.01\left(q_t^{\mathrm{network}}+q_t^{\mathrm{pending}}\right).
+\end{equation}
+Including pending vehicles prevents a controller from appearing successful by blocking insertion at the model boundary. The primary episode outcome is the exact one-second integral
+\begin{equation}
+\qint=\frac{1}{3600}\sum_{t=1}^{3600}
+\left(q_t^{\mathrm{network}}+q_t^{\mathrm{pending}}\right),
+\end{equation}
+reported in vehicle-hours.
+
+\section{Learning algorithm}
+The replay tuple is $(s_t,a_t,R_t^{(3)},s_{t+3},d_t)$. The three-step return is
+\begin{equation}
+R_t^{(3)}=r_t+\gamma r_{t+1}+\gamma^2r_{t+2}, \qquad \gamma=0.99.
+\end{equation}
+The Double DQN target uses the online network to choose the action and the target network to evaluate it. A Huber loss and gradient clipping at 10 control extreme updates. Experience replay begins after 256 decisions; minibatches contain 64 samples; the target network synchronizes every 200 optimization steps. Exploration decays linearly from 1.0 to 0.05 over 5,000 decision steps.
+
+The network has a shared 64-unit hidden representation and dueling value/advantage heads. Each training run contains thirty full one-hour episodes. Every fifth episode, a greedy full-hour validation is executed on a distinct departure realization. The checkpoint with the smallest validation mean queue is frozen.
+
+\section{Baselines and ablation}
+The published fixed-time plan is the principal baseline because it is the deployed plan documented for the site. Raw Max-Pressure chooses the largest estimated approach pressure at every admissible decision. Hysteretic Max-Pressure changes phase only when the alternative exceeds the current phase by a margin. A base Double DQN without dueling heads and using one-step returns is trained at seed 11 under the same budget. This architecture ablation tests the combined dueling/three-step change; it is not a full factorial attribution.
+
+\section{Protocol and independence}
+Table~\ref{tab:split} defines the split before held-out evaluation. Departure generation preserves the exact class and movement counts while changing within-hour timing. Hashes in the experiment manifest prove that the realizations differ.
+
+\begin{table}[H]
+\centering
+\caption{Data and randomization split.}\label{tab:split}
+\begin{tabularx}{\textwidth}{l>{\raggedright\arraybackslash}Xll}
+\toprule
+Partition & Demand profile & Demand seeds & Simulator/training seeds \\
+\midrule
+Training & AM peak & 11 & training 11--15 \\
+Validation & AM peak & 31 & matched to each training run \\
+Held-out test & Normal, AM, PM & 101--105 & simulator 201--205 \\
+Sensitivity & AM scaled 0.75--1.50 & 101--105 & frozen policies only \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The five DDQN policies are independent learning replicates. Each is crossed with the same fifteen held-out demand cases. Therefore, the analysis first averages cases within each training seed; it never treats 75 correlated DDQN evaluations as 75 independent policies. Fixed-time confidence intervals use five demand realizations per scenario. Paired DDQN-minus-fixed effects match on demand realization, average within training seed, and bootstrap those five seed-level effects with 20,000 resamples.
+
+\chapter{Implementation and Verification}
+
+\section{Software architecture}
+The implementation uses Python, NumPy, and SUMO controlled through TraCI. Scenario generation builds explicit vehicle departure files and records SHA-256 hashes. The environment exposes queue state, applies safe transitions, records collisions and emergency braking, and checks accounting identities among scheduled, inserted, running, arrived, and pending vehicles. Training, evaluation, summarization, and figure generation are separate commands so final evaluation cannot silently retrain a model.
+
+\section{Verification gates}
+Automated tests cover the published 103-second program, four-approach network, observed counts, demand realization hashes, vehicle classes, full-hour rear-end regression, split separation, exact queue integral, controller safety constraints, checkpoint loading, and seed-aware statistics. The JavaScript replay tests verify local manifest loading and synchronized A/B playback. A final test command and artifact manifest are included in Appendix~\ref{app:repro}.
+
+\section{Accounting and safety}
+At every run end, the evaluator records scheduled, inserted, arrived, running, pending, collision, and emergency-braking totals. Pending demand is included in the queue integral. All primary held-out runs use the final 1.2-second motorcycle headway. The simulation uses collision output as a required metric instead of relying on console warnings.
+
+\chapter{Results}
+
+\section{Training and architecture selection}
+For seed 11, the base DQN reaches a best validation mean queue of 81.43 vehicles; the dueling three-step version reaches 71.71 under the same thirty-episode budget. The combined modification is therefore selected for the five-seed experiment. Across the selected architecture, best validation queues are 71.71, 73.07, 87.26, 70.25, and 83.74 for seeds 11--15. The spread is material and persists into held-out performance.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{validation-learning-curves.pdf}
+\caption{Full-hour greedy validation during training. Non-monotonic curves and between-seed variation motivate checkpoint selection and seed-level uncertainty.}\label{fig:learning}
+\end{figure}
+
+\section{Primary controller comparison}
+Table~\ref{tab:primary} reports the stopped-plus-pending queue integral. Lower is better. DDQN is summarized over five independent learned policies; each policy value is its average over five matched demand realizations.
+
+\begin{table}[H]
+\centering
+\caption{Primary held-out queue integral in vehicle-hours, mean [95\% bootstrap CI].}\label{tab:primary}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrr}
+\toprule
+Controller & Normal 13:00 & AM peak 08:00 & PM peak 17:00 \\
+\midrule
+Published fixed & 9.86 [9.73, 9.94] & 79.20 [75.90, 83.28] & 152.67 [147.69, 157.04] \\
+Raw Max-Pressure & 140.72 & 352.43 & 269.02 \\
+Hysteretic MP & 126.85 & 281.52 & 241.40 \\
+Dueling DDQN & 41.50 [17.46, 66.01] & 78.41 [69.74, 87.70] & 99.97 [83.12, 117.32] \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{controller-comparison.pdf}
+\caption{Held-out controller comparison. Error bars represent the appropriate independent unit for fixed time and learned policies.}\label{fig:comparison}
+\end{figure}
+
+The paired DDQN effect relative to fixed time is $+31.63$ vehicle-hours in normal traffic, equivalent to $+320.7\%$ and therefore harmful. Its 95\% interval is $[7.60,56.14]$. At the AM peak the effect is $-0.80$ vehicle-hours ($-1.0\%$), with interval $[-9.47,8.49]$; the experiment does not resolve a difference. At the PM peak, DDQN reduces the integral by 52.70 vehicle-hours ($34.5\%$), with interval $[-69.55,-35.34]$. All 105 primary held-out controller runs record zero collisions.
+
+Both Max-Pressure variants perform poorly. This does not refute Max-Pressure theory. The implemented pressure signal sees only partial movements, and seven-second transition loss is substantial relative to a ten-second decision interval. Raw MP changes too readily; hysteresis helps but remains worse than the published plan. The negative result shows that a theoretically strong baseline still requires compatible observation and phase definitions.
+
+\section{Demand sensitivity}
+The frozen fixed and DDQN controllers are evaluated at four multipliers of the observed AM profile. Only 1.00$\times$ is observed; the other levels are synthetic sensitivity cases. Table~\ref{tab:sensitivity} and Figure~\ref{fig:sensitivity} show a crossover between low and congested demand.
+
+\begin{table}[H]
+\centering
+\caption{Synthetic AM demand sensitivity, queue integral in vehicle-hours.}\label{tab:sensitivity}
+\begin{tabular}{rrrrr}
+\toprule
+Scale & Scheduled veh. & Fixed mean & DDQN mean & DDQN change \\
+\midrule
+0.75 & 1,747 & 13.95 & 39.21 & +181.2\% \\
+1.00 & 2,330 & 79.20 & 78.41 & -1.0\% \\
+1.25 & 2,913 & 307.16 & 159.11 & -48.2\% \\
+1.50 & 3,495 & 595.67 & 389.10 & -34.7\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{demand-sensitivity.pdf}
+\caption{Demand sensitivity of frozen controllers. The dashed line marks the observed AM profile; other levels are synthetic.}\label{fig:sensitivity}
+\end{figure}
+
+No collision occurs in the 120 sensitivity runs. Four emergency-braking events are recorded. Their rarity does not validate real-world safety, but retaining them prevents a zero-event primary table from hiding a model warning under stress.
+
+\section{Answer to the research question}
+The learned controller has evidence of benefit at the PM peak and at synthetic demand above the observed AM load. It has no resolved benefit at the AM profile and is clearly harmful at low demand. The appropriate conclusion is a demand-gated adaptive policy with monitored fallback to the published plan, not unconditional DDQN deployment.
+
+\chapter{Discussion}
+
+\section{Why performance changes with demand}
+At low demand, the published plan clears the small queues efficiently and predictably. A learned policy has little congestion to recover but can still pay clearance costs or starve a minor movement. At high demand, queues persist across cycles, so responding to imbalance can recover more time than switching costs consume. The PM profile and scaled stress tests expose this advantage. Seed variability shows that architecture alone does not guarantee a good policy.
+
+\section{Implications for deployment}
+A practical controller should observe a demand or queue threshold and activate DDQN only in the regime where validation supports it. It should retain the published plan as a fallback, enforce the same minimum-green and clearance rules outside the neural network, monitor out-of-distribution state ranges, and log pending demand as well as visible queues. Before field use, it would require shadow-mode evaluation with live detectors and a traffic-engineer safety review.
+
+\section{Threats to validity}
+\textbf{Construct validity.} The primary metric measures queue accumulation, not emissions, pedestrian delay, equity, or real travel time. Four camera lines do not observe the entire junction. Digitization introduces reading error.
+
+\textbf{Internal validity.} The isolated network removes neighboring confounding but also removes spillback. Driver parameters are engineering assumptions. A single headway change removed a reproduced collision, but no trajectory data support full car-following calibration.
+
+\textbf{External validity.} Observations cover one date. Departure seeds vary timing, not independent survey days. Results do not generalize automatically to another hour, weather condition, incident, intersection, or all of Da Nang.
+
+\textbf{Statistical conclusion validity.} Five training seeds give only moderate precision. Bootstrap intervals expose uncertainty but cannot repair limited independent data. Architecture ablation uses one seed and combines two changes, so it supports selection within this project rather than a general claim about dueling or $n$-step learning.
+
+\section{What was rejected}
+The legacy project described a 53-intersection Hai Chau network and 50,500 real trips. The repository did not contain evidence sufficient to support those claims, so they are not part of this thesis. The full OSM target-area experiment was also rejected as primary evidence because adjacent junction failures dominated the outcome. These decisions reduce headline scale but increase traceability.
+
+\chapter{Reproducibility and Defense Demonstration}
+
+\section{Artifact structure}
+The repository stores source observations under \texttt{datasets/danang\_published}, network and calibration evidence under \texttt{results/research\_pilot}, and the frozen protocol under \texttt{results/danang\_protocol\_v1}. Every reported aggregate is generated from JSON evaluation records. The final thesis does not depend on values copied from an interactive notebook.
+
+\section{Presentation-safe demo}
+Live training is unsuitable for a defense because run time and exploration are stochastic. The demonstration therefore uses pre-exported, synchronized fixed-time and DDQN replays on the same PM held-out demand. It displays scenario provenance, simulation time, active phase, queue counts, cumulative queue integral, arrivals, pending vehicles, and safety events. It loads local files and requires no network connection. A launcher starts a local static server and opens the viewer. A recorded video, screenshots, and the result PDF form the fallback chain.
+
+The replay is an inspection aid, not an additional experiment. The representative policy is chosen by median validation performance before the replay case is viewed; the displayed test case is identified explicitly. Aggregate conclusions remain those in Table~\ref{tab:primary}.
+
+\section{Reproduction sequence}
+Scenario preparation, training, held-out evaluation, statistical summarization, thesis compilation, and demo export are separate stages. The generated artifact manifest records checksums and tool versions. Appendix~\ref{app:repro} lists the commands.
+
+\chapter{Conclusion and Future Work}
+
+This thesis reconstructed and evaluated an adaptive controller at a published Da Nang signal under explicit evidence limits. \ddqn{} reduced queue accumulation at the PM peak and high synthetic demand, matched the fixed plan at the observed AM profile within uncertainty, and performed worse in normal traffic. The central engineering result is conditional: a learned controller should be enabled only where its demand regime is supported, with the published plan retained as a safe operational fallback.
+
+The work also demonstrates the value of protocol discipline. A held-out collision forced a headway correction and complete rerun. Seed-level uncertainty changed the result from a single headline percentage into three regime-specific conclusions. Pending-demand accounting prevented boundary blocking from looking efficient. These practices are transferable to other traffic RL studies.
+
+Future work should collect multi-day, full-movement counts, queues, headways, travel times, pedestrian demand, and signal logs. Those data would permit behavioral calibration and day-level testing. The next spatial step should add the nearby Nui Thanh and Thang Long signals only after their timing and demand are observed, allowing spillback and coordination to be studied. Algorithmically, uncertainty-aware policy ensembles, demand gating, constrained switching, and offline pretraining from signal logs deserve evaluation. Field deployment should begin in shadow mode and advance only after independent safety and traffic-engineering review.
+
+\appendix
+\chapter{Reproduction Commands}\label{app:repro}
+The following commands run from the repository root. They intentionally keep preparation, training, and testing distinct.
+\begin{lstlisting}[basicstyle=\ttfamily\small,breaklines=true]
+python3 scripts/prepare_danang_protocol.py
+python3 scripts/train_danang_sumo.py --variant dueling_n3 --seed 11
+# repeat training seeds 12, 13, 14, 15
+python3 scripts/evaluate_danang_protocol.py --controller published_fixed
+python3 scripts/evaluate_danang_protocol.py --controller max_pressure
+python3 scripts/evaluate_danang_protocol.py --controller hysteretic_mp
+# evaluate each frozen dueling checkpoint
+python3 scripts/summarize_danang_protocol.py
+python3 scripts/prepare_danang_sensitivity.py
+python3 scripts/evaluate_danang_sensitivity.py --controller published_fixed
+# evaluate each frozen dueling checkpoint
+python3 scripts/summarize_danang_sensitivity.py
+python3 scripts/build_thesis_figures.py
+cd paper && tectonic thesis_danang.tex
+\end{lstlisting}
+
+\chapter{Parameter Ledger}
+\begin{longtable}{p{4cm}p{3cm}p{6cm}}
+\caption{Final experiment parameters.}\\
+\toprule Parameter & Value & Rationale \\
+\midrule\endfirsthead
+\toprule Parameter & Value & Rationale \\
+\midrule\endhead
+Simulation horizon & 3,600 s & Complete observed hour \\
+Decision interval & 10 s & Responsive control with bounded action rate \\
+Minimum green & 20 s & Avoid rapid oscillation \\
+Yellow/clearance & 7 s & Published site plan \\
+Motorcycle headway & 1.2 s & Held-out collision regression \\
+Training episodes & 30 & Fixed compute budget for every seed \\
+Training seeds & 11--15 & Independent learned policies \\
+Discount factor & 0.99 & Long-horizon queue objective \\
+Replay capacity & 50,000 & Covers the training decision stream \\
+Batch size & 64 & Stable mini-batch updates \\
+Learning rate & 0.0003 & Shared across ablation and final model \\
+Target sync & 200 updates & Stabilizes temporal-difference targets \\
+$n$-step return & 3 & Selected with dueling architecture ablation \\
+Hidden width & 64 & Compact deployable network \\
+Validation frequency & 5 episodes & Six full-hour selection checkpoints \\
+Bootstrap replicates & 20,000 & Stable interval computation \\
+\bottomrule
+\end{longtable}
+
+\chapter{Claim-to-Evidence Matrix}
+\begin{longtable}{p{5.2cm}p{7.8cm}}
+\toprule Claim & Machine-readable evidence \\
+\midrule\endfirsthead
+\toprule Claim & Machine-readable evidence \\
+\midrule\endhead
+Observed scenario counts & \path{datasets/danang_published/phan2025_camera_hourly_digitized.csv} \\
+Published turning total and movements & \path{datasets/danang_published/tran2025_peak_turning_movements.csv} \\
+Final network and signal & \path{results/research_pilot/generated/danang_isolated_published.net.xml} \\
+Train/validation/test separation & \path{results/danang_protocol_v1/experiment-manifest.json} \\
+Learning curves and selected checkpoints & \path{results/danang_protocol_v1/training/*/train-log.json} \\
+Primary held-out runs & \path{results/danang_protocol_v1/evaluation/*.json} \\
+Primary aggregates & \path{results/danang_protocol_v1/summary/final-summary.json} \\
+Sensitivity aggregates & \path{results/danang_protocol_v1/summary/sensitivity-summary.json} \\
+Headway before/after check & \path{results/research_pilot/calibration/tau_sensitivity.json} \\
+Rejected full OSM test & \path{results/research_pilot/calibration/osm_full_horizon_failure_seed1.json} \\
+\bottomrule
+\end{longtable}
+
+\bibliographystyle{plainnat}
+\bibliography{references_verified}
+
+\end{document}

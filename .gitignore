@@ -84,3 +84,16 @@ results/research_pilot/generated/am_peak_published_smoke.log
 # Peak scenario roadnet is a copy of roadnet_haichau.json (regenerate via build_peak_flow.py)
 data/danang/roadnet_haichau_peak.json
 .playwright-mcp/
+.presentation-build/
+node_modules/
+paper/rendered/
+paper/thesis_danang.aux
+paper/thesis_danang.bbl
+paper/thesis_danang.blg
+paper/thesis_danang.lof
+paper/thesis_danang.log
+paper/thesis_danang.lot
+paper/thesis_danang.out
+paper/thesis_danang.toc
+presentation/rendered/
+results/defense_bundle/v1/.video_frames/

@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "build:defense-deck": "node scripts/build_defense_deck.mjs",
+    "test:replay": "node --test tests/replay_ab/*.test.cjs tests/replay_3d/*.test.cjs"
+  },
+  "dependencies": {
+    "pptxgenjs": "4.0.1"
+  }
+}
