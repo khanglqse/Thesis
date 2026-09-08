@@ -294,6 +294,7 @@ def _write_bound_project(root):
         _write(demand_path, "train-%02d" % index)
         cases.append({
             "case_id": "train-%02d" % index, "split": "train",
+            "scheduled_vehicles": 1000 + index,
             "demand_path": str(demand_path.relative_to(root)),
             "demand_sha256": _digest(demand_path),
         })
@@ -302,6 +303,7 @@ def _write_bound_project(root):
         _write(demand_path, "validation-%02d" % index)
         cases.append({
             "case_id": "validation-%02d" % index, "split": "validation",
+            "scheduled_vehicles": 2000 + index,
             "demand_path": str(demand_path.relative_to(root)),
             "demand_sha256": _digest(demand_path),
         })
@@ -316,6 +318,7 @@ def _write_bound_project(root):
                 "demand_seed": 200 + regime_index * 10 + demand_index,
                 "simulator_seed": 300 + regime_index * 10 + demand_index,
                 "horizon_steps": 10,
+                "scheduled_vehicles": 3000 + regime_index * 10 + demand_index,
                 "demand_path": str(demand_path.relative_to(root)),
                 "demand_sha256": _digest(demand_path),
             })

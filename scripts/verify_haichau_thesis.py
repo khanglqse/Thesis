@@ -171,6 +171,10 @@ def _load_cases(root, protocol):
         demand_path = _inside(root, case.get("demand_path"))
         if not demand_path or not demand_path.is_file() or _sha256(demand_path) != demand_hash:
             raise ValueError("case demand artifact hash mismatch: %s" % case_id)
+        scheduled = case.get("scheduled_vehicles")
+        if isinstance(scheduled, bool) or not isinstance(scheduled, int) \
+                or scheduled <= 0:
+            raise ValueError("case scheduled_vehicles must be a positive integer")
         prior = demand_splits.setdefault(demand_hash, split)
         if prior != split:
             raise ValueError("demand artifact appears in multiple splits")

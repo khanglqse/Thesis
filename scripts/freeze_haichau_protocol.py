@@ -199,11 +199,16 @@ def _release_cases(root, manifest):
             raise ValueError("experiment case identity is invalid")
         demand_path, relative = _relative_file(root, source.get("flow_path"), "case flow")
         demand_sha = _assert_hash(demand_path, source.get("flow_sha256"), "case flow")
+        scheduled = source.get("scheduled_vehicles")
+        if isinstance(scheduled, bool) or not isinstance(scheduled, int) \
+                or scheduled <= 0:
+            raise ValueError("case scheduled_vehicles must be a positive integer")
         case = {
             "case_id": case_id,
             "split": split,
             "demand_path": relative,
             "demand_sha256": demand_sha,
+            "scheduled_vehicles": scheduled,
         }
         if split == "test":
             regime = source.get("scenario")

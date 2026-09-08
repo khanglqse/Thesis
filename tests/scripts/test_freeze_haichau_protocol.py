@@ -161,6 +161,7 @@ def _fixture(root):
                 "sim_seed": 200 + number,
                 "flow_path": str(flow.relative_to(root)),
                 "flow_sha256": _sha256(flow),
+                "scheduled_vehicles": 1000 + number,
             })
     manifest = {
         "protocol_version": 2,
@@ -269,6 +270,38 @@ def test_freeze_writes_hash_bound_protocol_from_all_final_eligible_cells(tmp_pat
     assert verify_haichau_thesis._case_gate(tmp_path, protocol)["passed"] is True
     assert verify_haichau_thesis._checkpoint_gate(tmp_path, protocol)["passed"] is True
     assert verify_haichau_thesis._acceptance_rules(protocol)["bootstrap_samples"] == 10000
+
+
+def test_freeze_requires_and_preserves_scheduled_vehicle_counts(tmp_path):
+    fixture = _fixture(tmp_path)
+    manifest = json.loads(fixture["manifest"].read_text())
+    expected = dict((case["case_id"], case["scheduled_vehicles"])
+                    for case in manifest["cases"])
+
+    protocol = freeze_protocol(
+        tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+        fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+        runtime_inspector=_runtime)
+
+    release_manifest = json.loads(
+        (tmp_path / protocol["case_manifest_path"]).read_text())
+    assert dict((case["case_id"], case["scheduled_vehicles"])
+                for case in release_manifest["cases"]) == expected
+
+
+def test_freeze_rejects_case_without_scheduled_vehicle_count(tmp_path):
+    fixture = _fixture(tmp_path)
+    manifest = json.loads(fixture["manifest"].read_text())
+    del manifest["cases"][0]["scheduled_vehicles"]
+    _write(fixture["manifest"], manifest)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "remove scheduled vehicle count")
+
+    with pytest.raises(ValueError, match="scheduled_vehicles"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
 
 
 def test_freeze_refuses_overwrite_or_any_test_case_in_selection_evidence(tmp_path):
