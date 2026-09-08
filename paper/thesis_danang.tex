@@ -264,6 +264,14 @@ Hai Chau intersections do not all expose the same number or meaning of green pha
 
 The neighbor-aware phase-scoring DDQN applies the same two-hidden-layer NumPy network to every candidate row and returns one scalar action value per phase. Double-DQN targets, three-step returns, Huber loss, gradient clipping, replay, and a target network stabilize learning. Mean-pooled adjacent queues add fixed graph context, but the model has no learned attention and is not presented as CoLight. The comparison learned family, \texttt{shared\_ddqn\_legacy}, uses a parameter-shared fixed-vector observation and dueling action outputs. It is retained as an architecture ablation because positional action outputs can carry different phase meanings across heterogeneous intersections.
 
+The directed neighbor graph follows permitted road-link corridors through
+non-signalized junctions and stops at the first controlled signal. It contains
+154 directed edges, covers all 53 controlled nodes without isolates, and has two
+weak components (51 nodes and a separate two-signal area). Consequently,
+coordination claims refer to local corridor context within these induced
+components; the experiment does not demonstrate end-to-end coordination across
+the whole city.
+
 The step reward combines a negative queue term with a downstream-blocking penalty and a small switch cost; its fixed weights are 1.0, 0.2, and 0.05. Reward is a training signal rather than the reported outcome. The primary evaluation metric is the network queue integral accumulated at every CityFlow step, stored in vehicle-seconds and convertible to vehicle-hours for presentation. Secondary outcomes include per-node maximum queue, spillback duration, switches, lost time, completed-vehicle travel time, and full vehicle accounting. Travel time over completed vehicles is never interpreted without scheduled, due, inserted, arrived, running, removed, pending, and completion measures.
 
 \subsection{Controllers, training, and checkpoint selection}
@@ -509,7 +517,7 @@ Controlled signals & 53 & Ordered OSM-derived Hai Chau agent set \\
 Simulation horizon & 3,600 s & Common full-hour evaluation horizon \\
 Manifest cases & 9/6/15 & Train/validation/test cases; 30 total \\
 Route streams per case & 500 & Seeded sampling from split route families \\
-Minimum signals per route & 2 & Exposes coordination across controlled nodes \\
+Minimum signals per route & 2 & Supports local coordination within induced graph components \\
 Motorcycle share & 0.90 & Explicit synthetic mixed-traffic assumption \\
 Action interval & 10 s & Common bounded decision rate \\
 Yellow transition & 3 s & Frozen network action contract \\
