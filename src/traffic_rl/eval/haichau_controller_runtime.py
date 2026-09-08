@@ -271,7 +271,7 @@ def evaluate_run(project_root, run, runtime_dir,
     metrics["completed_steps"] = int(run["horizon_steps"])
     for field in (
             "case_id", "regime", "controller_id", "learning_seed",
-            "demand_seed", "simulator_seed", "network_sha256",
+            "demand_seed", "simulator_seed", "scheduled_vehicles", "network_sha256",
             "viewer_network_sha256", "demand_sha256", "demand_path",
             "runtime_digest", "runtime_image", "runtime_image_id",
             "runtime_dockerfile_path", "runtime_dockerfile_sha256",
