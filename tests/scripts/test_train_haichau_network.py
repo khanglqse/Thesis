@@ -1,3 +1,6 @@
+import json
+
+from scripts import train_haichau_network
 from scripts.train_haichau_network import _pilot_profile
 
 
@@ -25,3 +28,60 @@ def test_five_seed_projection_uses_end_to_end_wall_time():
     assert profile["measured_end_to_end_wall_time_seconds"] == 120.0
     assert profile["baseline_tuning_wall_time_seconds"] == 80.0
     assert profile["projected_five_seed_campaign_seconds"] == 600.0
+
+
+def test_cli_passes_precomputed_baseline_artifact_to_trainer(monkeypatch, tmp_path):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"simulation": {"action_interval": 10}}))
+    config = tmp_path / "config.yaml"
+    config.write_text("schema_version: 2\ntiers:\n  final: {episodes: 1, horizon_seconds: 20, eval_every: 1}\n")
+    cache = tmp_path / "baseline-tuning.json"
+    cache.write_text("{}")
+    captured = {}
+    monkeypatch.setattr(train_haichau_network, "_make_env_factory",
+                        lambda *args: "fake-env-factory")
+
+    def fake_train(*args, **kwargs):
+        captured["artifact"] = kwargs["baseline_tuning_artifact"]
+        return {"status": "complete"}
+
+    monkeypatch.setattr(train_haichau_network, "train_network", fake_train)
+
+    result = train_haichau_network.main([
+        "--mode", "final", "--learning-seed", "11",
+        "--manifest", str(manifest), "--config", str(config),
+        "--output", str(tmp_path / "run"),
+        "--baseline-tuning-artifact", str(cache),
+    ])
+
+    assert result == 0
+    assert captured["artifact"] == str(cache)
+
+
+def test_cli_can_precompute_baseline_artifact_once(monkeypatch, tmp_path):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"simulation": {"action_interval": 10}}))
+    config = tmp_path / "config.yaml"
+    config.write_text("schema_version: 2\ntiers:\n  final: {episodes: 1, horizon_seconds: 20, eval_every: 1}\n")
+    cache = tmp_path / "precomputed-baseline.json"
+    captured = {}
+    monkeypatch.setattr(train_haichau_network, "_make_env_factory",
+                        lambda *args: "fake-env-factory")
+
+    def fake_precompute(factory, loaded_manifest, resolved, artifact_path,
+                        foundation_root=None):
+        captured["factory"] = factory
+        captured["artifact_path"] = artifact_path
+        return {"tuning_sha256": "a" * 64}
+
+    monkeypatch.setattr(train_haichau_network, "precompute_baseline_tuning",
+                        fake_precompute)
+
+    result = train_haichau_network.main([
+        "--mode", "final", "--learning-seed", "11",
+        "--manifest", str(manifest), "--config", str(config),
+        "--precompute-baseline-tuning", str(cache),
+    ])
+
+    assert result == 0
+    assert captured == {"factory": "fake-env-factory", "artifact_path": str(cache)}

@@ -2,6 +2,7 @@
 import json
 import hashlib
 import importlib.util
+import math
 import os
 import subprocess
 import time
@@ -192,8 +193,133 @@ def _tune_fixed_time(env_factory, cases, horizon_seconds, config, binding):
     return result
 
 
+def _tuning_binding(manifest, validation_cases, horizon_seconds, config):
+    return {
+        "manifest_sha256": canonical_json_sha256(manifest),
+        "network_sha256": manifest["network"]["sha256"],
+        "generator_config_sha256": manifest["generator_config_sha256"],
+        "runtime": manifest["runtime"],
+        "validation_case_hashes": {
+            case["case_id"]: case.get("flow_sha256")
+            for case in validation_cases},
+        "horizon_seconds": int(horizon_seconds),
+        "action_interval": int(config.get("simulation", {}).get(
+            "action_interval", 10)),
+    }
+
+
+def _search_space(config):
+    baseline = config.get("baseline", {})
+    if baseline.get("controller") != "validation_tuned_fixed":
+        raise ValueError("baseline controller must be validation_tuned_fixed")
+    durations = baseline.get("search_green_durations", [])
+    if not durations or any(int(value) <= 0 for value in durations):
+        raise ValueError("baseline search_green_durations must be positive")
+    return {"fixed_green_duration": sorted(set(int(value) for value in durations))}
+
+
+def _load_precomputed_tuning(artifact):
+    if isinstance(artifact, os.PathLike):
+        artifact = os.fspath(artifact)
+    if isinstance(artifact, str):
+        if not os.path.isfile(artifact):
+            raise ValueError("precomputed baseline tuning artifact is missing")
+        try:
+            with open(artifact, "r") as source:
+                tuning = json.load(source)
+        except (IOError, ValueError) as exc:
+            raise ValueError("precomputed baseline tuning artifact is invalid: %s" % exc)
+        return tuning, {
+            "source_kind": "file",
+            "source_path": artifact,
+            "source_artifact_sha256": _file_sha256(artifact),
+        }
+    if isinstance(artifact, dict):
+        return json.loads(json.dumps(artifact)), {
+            "source_kind": "in_memory",
+            "source_artifact_sha256": canonical_json_sha256(artifact),
+        }
+    raise ValueError("precomputed baseline tuning artifact must be a JSON file or object")
+
+
+def _validate_precomputed_tuning(tuning, binding, config, validation_cases):
+    if not isinstance(tuning, dict):
+        raise ValueError("precomputed baseline tuning artifact must be an object")
+    claimed_sha = tuning.get("tuning_sha256")
+    canonical = dict((key, value) for key, value in tuning.items()
+                     if key != "tuning_sha256")
+    if claimed_sha != canonical_json_sha256(canonical):
+        raise ValueError("precomputed baseline tuning hash drift")
+    if tuning.get("schema_version") != 1 \
+            or tuning.get("method") != "validation_grid_search":
+        raise ValueError("precomputed baseline tuning schema is invalid")
+    artifact_binding = tuning.get("binding")
+    if not isinstance(artifact_binding, dict):
+        raise ValueError("precomputed baseline tuning binding is invalid")
+    for field in ("manifest_sha256", "network_sha256", "runtime",
+                  "validation_case_hashes", "horizon_seconds",
+                  "action_interval"):
+        if artifact_binding.get(field) != binding[field]:
+            raise ValueError("precomputed baseline tuning %s drift" % field)
+    if artifact_binding != binding:
+        raise ValueError("precomputed baseline tuning binding drift")
+    expected_search = _search_space(config)
+    if tuning.get("search_space") != expected_search:
+        raise ValueError("precomputed baseline tuning search space drift")
+    candidates = tuning.get("candidates")
+    if not isinstance(candidates, list) or not candidates:
+        raise ValueError("precomputed baseline tuning candidates are missing")
+    expected_durations = expected_search["fixed_green_duration"]
+    if [candidate.get("fixed_green_duration") if isinstance(candidate, dict)
+            else None for candidate in candidates] != expected_durations:
+        raise ValueError("precomputed baseline tuning candidates drift")
+    expected_cases = [(case["case_id"], case["scenario"])
+                      for case in validation_cases]
+    ranked = []
+    for candidate in candidates:
+        rows = candidate.get("rows")
+        if not isinstance(rows, list) or [
+                (row.get("case_id"), row.get("scenario"))
+                if isinstance(row, dict) else None for row in rows] != expected_cases:
+            raise ValueError("precomputed baseline tuning validation cases drift")
+        queues = []
+        for row in rows:
+            try:
+                queue = float(row["queue_integral_vehicle_seconds"])
+            except (KeyError, TypeError, ValueError):
+                raise ValueError("precomputed baseline tuning queue is invalid")
+            if not math.isfinite(queue) or queue <= 0:
+                raise ValueError("precomputed baseline tuning queue is invalid")
+            completion = row.get("completion_rate")
+            if completion is not None and not math.isfinite(float(completion)):
+                raise ValueError("precomputed baseline tuning completion is invalid")
+            queues.append(queue)
+        mean_queue = sum(queues) / len(queues)
+        try:
+            reported_mean = float(candidate["mean_queue_integral_vehicle_seconds"])
+        except (KeyError, TypeError, ValueError):
+            raise ValueError("precomputed baseline tuning mean is invalid")
+        if not math.isfinite(reported_mean) or abs(reported_mean - mean_queue) > 1e-9:
+            raise ValueError("precomputed baseline tuning mean drift")
+        ranked.append((mean_queue, int(candidate["fixed_green_duration"])))
+    selected = tuning.get("selected", {}).get("fixed_green_duration") \
+        if isinstance(tuning.get("selected"), dict) else None
+    if selected != min(ranked)[1]:
+        raise ValueError("precomputed baseline tuning selection drift")
+
+
+def _selected_baseline_rows(tuning, validation_cases):
+    duration = tuning["selected"]["fixed_green_duration"]
+    candidate = next(item for item in tuning["candidates"]
+                     if item["fixed_green_duration"] == duration)
+    rows = {}
+    for case, baseline in zip(validation_cases, candidate["rows"]):
+        rows[case["case_id"]] = baseline
+    return rows
+
+
 def _validation_rows(env_factory, cases, horizon_seconds, net, config,
-                     fixed_duration):
+                     fixed_duration, precomputed_baseline_rows=None):
     rows = []
     action_interval = config.get("simulation", {}).get("action_interval", 10)
     for case in cases:
@@ -205,36 +331,51 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
             _close(candidate_env)
         _assert_rollout_complete(
             candidate, horizon_seconds, "candidate validation %s" % case["case_id"])
-        baseline_env = env_factory(case, horizon_seconds)
-        try:
-            baseline = _rollout(
-                baseline_env, net, fixed_green_duration=fixed_duration,
-                action_interval=action_interval)
-        finally:
-            _close(baseline_env)
-        _assert_rollout_complete(
-            baseline, horizon_seconds, "baseline validation %s" % case["case_id"])
+        if precomputed_baseline_rows is None:
+            baseline_env = env_factory(case, horizon_seconds)
+            try:
+                baseline = _rollout(
+                    baseline_env, net, fixed_green_duration=fixed_duration,
+                    action_interval=action_interval)
+            finally:
+                _close(baseline_env)
+            _assert_rollout_complete(
+                baseline, horizon_seconds,
+                "baseline validation %s" % case["case_id"])
+            baseline_queue = float(baseline["queue_integral_vehicle_seconds"])
+            baseline_completion = baseline.get("completion_rate")
+            fresh_baseline = True
+            baseline_source = None
+        else:
+            baseline = precomputed_baseline_rows[case["case_id"]]
+            baseline_queue = float(baseline["queue_integral_vehicle_seconds"])
+            baseline_completion = baseline.get("completion_rate")
+            fresh_baseline = False
+            baseline_source = "precomputed_tuning"
         row = {
             "case_id": case["case_id"],
             "scenario": case["scenario"],
             "demand_seed": case.get("demand_seed"),
             "sim_seed": case.get("sim_seed"),
             "candidate_queue": float(candidate["queue_integral_vehicle_seconds"]),
-            "baseline_queue": float(baseline["queue_integral_vehicle_seconds"]),
+            "baseline_queue": baseline_queue,
             "fresh_candidate": True,
-            "fresh_baseline": True,
+            "fresh_baseline": fresh_baseline,
         }
+        if baseline_source is not None:
+            row["baseline_source"] = baseline_source
         if candidate.get("completion_rate") is not None \
-                and baseline.get("completion_rate") is not None:
+                and baseline_completion is not None:
             row["candidate_completion"] = float(candidate["completion_rate"])
-            row["baseline_completion"] = float(baseline["completion_rate"])
+            row["baseline_completion"] = float(baseline_completion)
         rows.append(row)
     return rows
 
 
 def _checkpoint_contract(manifest, config, max_green, tuning, verification,
                          controller_family="neighbor_phase_ddqn",
-                         feature_order=None):
+                         feature_order=None,
+                         baseline_tuning_provenance=None):
     preprocessing = manifest["preprocessing"]
     model = config["model"]
     manifest_sha256 = canonical_json_sha256(manifest)
@@ -254,7 +395,7 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
         "padding_actions_selectable": False,
         "n_actions": int(max_green),
     })
-    return {
+    contract = {
         "controller_family": controller_family,
         "obs_schema_version": 2,
         "feature_order": order,
@@ -285,11 +426,18 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
         "baseline_tuning_sha256": tuning["tuning_sha256"],
         "foundation_verification": verification,
     }
+    if baseline_tuning_provenance is not None:
+        contract["baseline_tuning_provenance_sha256"] = (
+            baseline_tuning_provenance["provenance_sha256"])
+        contract["baseline_tuning_artifact_sha256"] = (
+            baseline_tuning_provenance["copied_artifact_sha256"])
+    return contract
 
 
 def _train_network_impl(env_factory, manifest, config, output_dir,
                         foundation_root, verification, run_start_time,
-                        foundation_verification_seconds, controller_family):
+                        foundation_verification_seconds, controller_family,
+                        baseline_tuning_artifact):
     """Train without opening the manifest's locked test split."""
     if manifest.get("protocol_version") != 2:
         raise ValueError("Hai Chau manifest protocol_version must be 2")
@@ -310,6 +458,19 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     model_config = config["model"]
     optimizer = config["optimizer"]
     learning_seed = int(config["learning_seed"])
+    horizon_seconds = int(run["horizon_seconds"])
+    manifest_sha256 = canonical_json_sha256(manifest)
+    tuning_binding = _tuning_binding(
+        manifest, validation_cases, horizon_seconds, config)
+    precomputed_provenance = None
+    if baseline_tuning_artifact is not None:
+        tuning, source_provenance = _load_precomputed_tuning(
+            baseline_tuning_artifact)
+        _validate_precomputed_tuning(
+            tuning, tuning_binding, config, validation_cases)
+    else:
+        tuning = None
+        source_provenance = None
     output_dir = os.path.abspath(output_dir)
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
@@ -318,23 +479,35 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         os.makedirs(checkpoints_dir)
     _write_json(os.path.join(output_dir, "status.json"), {
         "status": "partial", "reason": "run in progress"})
-    manifest_sha256 = canonical_json_sha256(manifest)
-    validation_case_hashes = {
-        case["case_id"]: case.get("flow_sha256") for case in validation_cases}
-    tuning_binding = {
-        "manifest_sha256": manifest_sha256,
-        "network_sha256": manifest["network"]["sha256"],
-        "generator_config_sha256": manifest["generator_config_sha256"],
-        "runtime": manifest["runtime"],
-        "validation_case_hashes": validation_case_hashes,
-    }
     tuning_start = time.time()
-    tuning = _tune_fixed_time(
-        env_factory, validation_cases, int(run["horizon_seconds"]), config,
-        tuning_binding)
-    tuning_seconds = time.time() - tuning_start
+    if tuning is None:
+        tuning = _tune_fixed_time(
+            env_factory, validation_cases, horizon_seconds, config,
+            tuning_binding)
+        tuning_seconds = time.time() - tuning_start
+        precomputed_baseline_rows = None
+    else:
+        tuning_seconds = 0.0
+        precomputed_baseline_rows = _selected_baseline_rows(
+            tuning, validation_cases)
     fixed_duration = tuning["selected"]["fixed_green_duration"]
-    _write_json(os.path.join(output_dir, "baseline-tuning.json"), tuning)
+    tuning_path = os.path.join(output_dir, "baseline-tuning.json")
+    _write_json(tuning_path, tuning)
+    if source_provenance is not None:
+        precomputed_provenance = dict(source_provenance)
+        precomputed_provenance.update({
+            "schema_version": 1,
+            "strategy": "precomputed_baseline_tuning",
+            "copied_artifact_path": "baseline-tuning.json",
+            "copied_artifact_sha256": _file_sha256(tuning_path),
+            "tuning_sha256": tuning["tuning_sha256"],
+        })
+        provenance_path = os.path.join(
+            output_dir, "baseline-tuning-provenance.json")
+        _write_json(provenance_path, precomputed_provenance)
+        precomputed_provenance["provenance_path"] = (
+            "baseline-tuning-provenance.json")
+        precomputed_provenance["provenance_sha256"] = _file_sha256(provenance_path)
     resolved = json.loads(json.dumps(config))
     resolved["manifest_protocol_version"] = manifest["protocol_version"]
     resolved["network_sha256"] = manifest["network"]["sha256"]
@@ -342,8 +515,15 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     resolved["generator_config_sha256"] = manifest["generator_config_sha256"]
     resolved["runtime"] = manifest["runtime"]
     resolved["baseline_tuning_sha256"] = tuning["tuning_sha256"]
+    if precomputed_provenance is not None:
+        resolved["baseline_tuning"] = {
+            "mode": "precomputed",
+            "copied_artifact_sha256": precomputed_provenance[
+                "copied_artifact_sha256"],
+            "provenance_sha256": precomputed_provenance["provenance_sha256"],
+        }
     _write_json(os.path.join(output_dir, "resolved-config.json"), resolved)
-    _write_json(os.path.join(output_dir, "run-manifest.json"), {
+    run_manifest = {
         "manifest": manifest,
         "manifest_sha256": manifest_sha256,
         "foundation_verification": verification,
@@ -351,7 +531,18 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "controller_id": controller_family,
         "mode": config.get("mode"),
         "learning_seed": learning_seed,
-    })
+    }
+    if precomputed_provenance is not None:
+        run_manifest["baseline_tuning"] = {
+            "mode": "precomputed",
+            "tuning_sha256": tuning["tuning_sha256"],
+            "copied_artifact_path": "baseline-tuning.json",
+            "copied_artifact_sha256": precomputed_provenance[
+                "copied_artifact_sha256"],
+            "provenance_path": precomputed_provenance["provenance_path"],
+            "provenance_sha256": precomputed_provenance["provenance_sha256"],
+        }
+    _write_json(os.path.join(output_dir, "run-manifest.json"), run_manifest)
 
     rng = np.random.RandomState(learning_seed)
     sampler = BalancedCaseSampler(train_cases, seed=learning_seed)
@@ -415,7 +606,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                 contract = _checkpoint_contract(
                     manifest, config, max_green, tuning, verification,
                     controller_family=controller_family,
-                    feature_order=feature_order)
+                    feature_order=feature_order,
+                    baseline_tuning_provenance=precomputed_provenance)
             elif observations[first_agent].shape != (
                     ((contract["max_green"], contract["feature_dim"])
                      if controller_family == "neighbor_phase_ddqn"
@@ -528,8 +720,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
             network.save_bundle(checkpoint_dir, contract)
             validation_start = time.time()
             rows = _validation_rows(
-                env_factory, validation_cases, int(run["horizon_seconds"]),
-                network, config, fixed_duration)
+                env_factory, validation_cases, horizon_seconds,
+                network, config, fixed_duration, precomputed_baseline_rows)
             validation_seconds += time.time() - validation_start
             score = score_validation(rows)
             score["training_step"] = episode + 1
@@ -616,6 +808,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "selection.json", "summary.json", "checkpoint/contract.json",
         "checkpoint/weights.npz",
     ]
+    if precomputed_provenance is not None:
+        artifact_paths.append("baseline-tuning-provenance.json")
     artifact_hashes = {}
     for relative_path in artifact_paths:
         artifact_path = os.path.join(output_dir, relative_path)
@@ -643,7 +837,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
 def train_network(env_factory, manifest, config, output_dir,
                   foundation_root=None, foundation_verifier=None,
                   run_started_at=None,
-                  controller_family="neighbor_phase_ddqn"):
+                  controller_family="neighbor_phase_ddqn",
+                  baseline_tuning_artifact=None):
     """Verify the immutable foundation, then train without opening test cases."""
     if controller_family not in ("neighbor_phase_ddqn", "shared_ddqn_legacy"):
         raise ValueError("unknown learned controller family")
@@ -657,7 +852,8 @@ def train_network(env_factory, manifest, config, output_dir,
     try:
         return _train_network_impl(
             env_factory, manifest, config, output_dir, root, verification,
-            run_start_time, verification_seconds, controller_family)
+            run_start_time, verification_seconds, controller_family,
+            baseline_tuning_artifact)
     except Exception as exc:
         absolute_output = os.path.abspath(output_dir)
         if os.path.isdir(absolute_output):
@@ -665,3 +861,34 @@ def train_network(env_factory, manifest, config, output_dir,
                 "status": "failed", "error_type": type(exc).__name__,
                 "error": str(exc)})
         raise
+
+
+def precompute_baseline_tuning(env_factory, manifest, config, artifact_path,
+                               foundation_root=None, foundation_verifier=None):
+    """Write one immutable validation-only fixed-time tuning artifact."""
+    if manifest.get("protocol_version") != 2:
+        raise ValueError("Hai Chau manifest protocol_version must be 2")
+    if config.get("schema_version") != 2:
+        raise ValueError("Hai Chau training config schema_version must be 2")
+    validation_cases = [case for case in manifest.get("cases", [])
+                        if case.get("split") == "validation"]
+    if set(case.get("scenario") for case in validation_cases) != set(
+            ("normal", "am_peak", "pm_peak")):
+        raise ValueError("validation cases must cover normal/am_peak/pm_peak")
+    run = config["run"]
+    root = os.path.abspath(foundation_root or os.getcwd())
+    verifier = foundation_verifier or _default_foundation_verifier
+    _verify_training_foundation(root, manifest, verifier)
+    artifact_path = os.path.abspath(artifact_path)
+    if os.path.exists(artifact_path):
+        raise ValueError("refusing to overwrite baseline tuning artifact")
+    parent = os.path.dirname(artifact_path)
+    if not os.path.isdir(parent):
+        os.makedirs(parent)
+    binding = _tuning_binding(
+        manifest, validation_cases, int(run["horizon_seconds"]), config)
+    tuning = _tune_fixed_time(
+        env_factory, validation_cases, int(run["horizon_seconds"]), config,
+        binding)
+    _write_json(artifact_path, tuning)
+    return tuning

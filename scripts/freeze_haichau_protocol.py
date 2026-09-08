@@ -20,6 +20,8 @@ from traffic_rl.eval.release_identity import inspect_runtime_image, verify_git_c
 from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.sim.phase_encoder import FEATURES
+from traffic_rl.train.network_trainer import (
+    _tuning_binding, _validate_precomputed_tuning)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -320,6 +322,54 @@ def _validate_selection_inputs(validation, selection, tuning, validation_ids):
         raise ValueError("baseline tuning uses a non-validation case")
 
 
+def _validate_precomputed_tuning_provenance(run_dir, run_manifest, tuning,
+                                            source_artifacts, manifest,
+                                            resolved, contract):
+    record = run_manifest.get("baseline_tuning")
+    if record is None:
+        return
+    if not isinstance(record, dict) or record.get("mode") != "precomputed":
+        raise ValueError("baseline tuning provenance is invalid")
+    tuning_path = record.get("copied_artifact_path")
+    provenance_path = record.get("provenance_path")
+    if tuning_path != "baseline-tuning.json" \
+            or provenance_path != "baseline-tuning-provenance.json":
+        raise ValueError("baseline tuning provenance path drift")
+    if (record.get("copied_artifact_sha256")
+            != source_artifacts.get(tuning_path)):
+        raise ValueError("baseline tuning copied artifact drift")
+    if record.get("provenance_sha256") != source_artifacts.get(provenance_path):
+        raise ValueError("baseline tuning provenance hash drift")
+    if record.get("tuning_sha256") != tuning.get("tuning_sha256"):
+        raise ValueError("baseline tuning identity drift")
+    validation_cases = [case for case in manifest.get("cases", [])
+                        if case.get("split") == "validation"]
+    try:
+        binding = _tuning_binding(
+            manifest, validation_cases,
+            int(resolved["run"]["horizon_seconds"]), resolved)
+    except (KeyError, TypeError, ValueError):
+        raise ValueError("baseline tuning resolved configuration is invalid")
+    _validate_precomputed_tuning(tuning, binding, resolved, validation_cases)
+    provenance = _json(Path(run_dir) / provenance_path, "baseline tuning provenance")
+    if (provenance.get("schema_version") != 1
+            or provenance.get("strategy") != "precomputed_baseline_tuning"
+            or provenance.get("copied_artifact_path") != tuning_path
+            or provenance.get("copied_artifact_sha256")
+            != source_artifacts[tuning_path]
+            or provenance.get("tuning_sha256") != tuning.get("tuning_sha256")):
+        raise ValueError("baseline tuning provenance drift")
+    if provenance.get("source_kind") not in ("file", "in_memory") \
+            or not re.fullmatch(r"[0-9a-f]{64}", str(
+                provenance.get("source_artifact_sha256", ""))):
+        raise ValueError("baseline tuning source provenance is invalid")
+    if (contract.get("baseline_tuning_provenance_sha256")
+            != record["provenance_sha256"]
+            or contract.get("baseline_tuning_artifact_sha256")
+            != record["copied_artifact_sha256"]):
+        raise ValueError("checkpoint baseline tuning provenance drift")
+
+
 def _run_artifact_path(run_dir, relative):
     if not isinstance(relative, str) or not relative:
         raise ValueError("status artifact path is invalid")
@@ -332,7 +382,7 @@ def _run_artifact_path(run_dir, relative):
 
 
 def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
-                      normalization, validation_ids):
+                      normalization, validation_ids, manifest):
     run_path, normalized_relative = _relative_file(
         root, run_relative + "/status.json", "training artifact status")
     run_dir = run_path.parent
@@ -377,6 +427,9 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
     _validate_selection_inputs(validation, selection, tuning, validation_ids)
     contract = _json(run_dir / "checkpoint/contract.json", "checkpoint contract")
     _checkpoint_contract(contract, controller, compatibility, normalization)
+    _validate_precomputed_tuning_provenance(
+        run_dir, run_manifest, tuning, source_artifacts, manifest, resolved,
+        contract)
     _load_checkpoint_bundle(run_dir / "checkpoint", controller, contract)
     contract_path = run_dir / "checkpoint/contract.json"
     weight_path = run_dir / "checkpoint/weights.npz"
@@ -414,7 +467,7 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
 
 
 def _training_checkpoints(root, index_path, compatibility, normalization,
-                          validation_ids):
+                          validation_ids, manifest):
     index_path, relative = _relative_file(root, index_path, "training index")
     index = _json(index_path, "training index")
     if set(index or ()) != set(LEARNING_CONTROLLERS):
@@ -430,7 +483,7 @@ def _training_checkpoints(root, index_path, compatibility, normalization,
                 raise ValueError("training index run path is invalid")
             checkpoints.append(_checkpoint_entry(
                 root, controller, seed, run_relative, compatibility,
-                normalization, validation_ids))
+                normalization, validation_ids, manifest))
     return checkpoints, relative, _sha256(index_path)
 
 
@@ -512,7 +565,8 @@ def freeze_protocol(root, experiment_manifest, viewer_network, controller_config
                          if case["split"] == "validation")
     config, config_relative, config_sha = _controller_configuration(root, controller_configs)
     checkpoints, index_relative, index_sha = _training_checkpoints(
-        root, training_index, compatibility, normalization, validation_ids)
+        root, training_index, compatibility, normalization, validation_ids,
+        manifest)
     runtime = _runtime(root, runtime_image, runtime_dockerfile, runtime_inspector)
     case_manifest = {
         "schema_version": 1,

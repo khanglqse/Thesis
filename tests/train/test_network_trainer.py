@@ -7,7 +7,7 @@ from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.train.network_trainer import (
     _default_foundation_verifier, canonical_json_sha256,
-    resolve_training_config, train_network)
+    precompute_baseline_tuning, resolve_training_config, train_network)
 
 
 class FakeNetworkEnv(object):
@@ -121,6 +121,24 @@ def _verified(root, manifest):
     }
 
 
+def _precomputed_tuning(manifest, config):
+    validation_cases = [case for case in manifest["cases"]
+                        if case["split"] == "validation"]
+    binding = {
+        "manifest_sha256": canonical_json_sha256(manifest),
+        "network_sha256": manifest["network"]["sha256"],
+        "generator_config_sha256": manifest["generator_config_sha256"],
+        "runtime": manifest["runtime"],
+        "validation_case_hashes": {
+            case["case_id"]: case["flow_sha256"] for case in validation_cases},
+        "horizon_seconds": config["run"]["horizon_seconds"],
+        "action_interval": config.get("simulation", {}).get("action_interval", 10),
+    }
+    return network_trainer._tune_fixed_time(
+        lambda case, horizon: FakeNetworkEnv(case, horizon), validation_cases,
+        config["run"]["horizon_seconds"], config, binding)
+
+
 def test_default_foundation_verifier_loads_from_requested_root(tmp_path):
     scripts = tmp_path / "scripts"
     scripts.mkdir()
@@ -193,6 +211,9 @@ def test_training_visits_all_regimes_and_saves_resolved_contract(tmp_path):
     assert tuning_hash == canonical_json_sha256(tuning)
     assert tuning["selected"]["fixed_green_duration"] == 10
     assert tuning["binding"]["validation_case_hashes"]
+    default_rows = json.loads((output / "validation.json").read_text())["step-3"]["rows"]
+    assert all(row["fresh_baseline"] is True for row in default_rows)
+    assert all("baseline_source" not in row for row in default_rows)
     episode = json.loads((output / "train-log.json").read_text())[0]
     for field in ("demand_seed", "sim_seed", "flow_sha256",
                   "queue_integral_vehicle_seconds", "total_queue", "arrived",
@@ -203,6 +224,82 @@ def test_training_visits_all_regimes_and_saves_resolved_contract(tmp_path):
     assert status["status"] in ("complete", "ineligible")
     assert status["artifact_sha256"]
     assert summary["updates"] > 0
+
+
+def test_precomputed_baseline_reuses_tuning_rows_and_hash_binds_provenance(tmp_path):
+    manifest = _manifest()
+    config = _config()
+    cache_path = tmp_path / "precomputed-baseline.json"
+    cache_path.write_text(json.dumps(_precomputed_tuning(manifest, config)))
+    created = []
+
+    def factory(case, horizon_seconds):
+        env = FakeNetworkEnv(case, horizon_seconds)
+        created.append(env)
+        return env
+
+    output = tmp_path / "cached-run"
+    summary = train_network(
+        factory, manifest, config, str(output), foundation_root=str(tmp_path),
+        foundation_verifier=_verified, baseline_tuning_artifact=str(cache_path))
+
+    validation_cases = [case for case in manifest["cases"]
+                        if case["split"] == "validation"]
+    assert sum(env.case["split"] == "validation" for env in created) == \
+        len(validation_cases) + 1
+    rows = json.loads((output / "validation.json").read_text())["step-3"]["rows"]
+    assert all(row["fresh_baseline"] is False for row in rows)
+    assert all(row["baseline_source"] == "precomputed_tuning" for row in rows)
+    assert summary["baseline_tuning_wall_time_seconds"] == 0.0
+
+    provenance = json.loads(
+        (output / "baseline-tuning-provenance.json").read_text())
+    status = json.loads((output / "status.json").read_text())
+    run_manifest = json.loads((output / "run-manifest.json").read_text())
+    assert provenance["copied_artifact_sha256"] == \
+        status["artifact_sha256"]["baseline-tuning.json"]
+    assert run_manifest["baseline_tuning"]["provenance_sha256"] == \
+        status["artifact_sha256"]["baseline-tuning-provenance.json"]
+
+
+def test_precomputed_baseline_rejects_horizon_drift_before_writing_run(tmp_path):
+    manifest = _manifest()
+    config = _config()
+    tuning = _precomputed_tuning(manifest, config)
+    tuning["binding"]["horizon_seconds"] = 10
+    tuning["tuning_sha256"] = canonical_json_sha256(
+        dict((key, value) for key, value in tuning.items()
+             if key != "tuning_sha256"))
+    cache_path = tmp_path / "wrong-horizon.json"
+    cache_path.write_text(json.dumps(tuning))
+    output = tmp_path / "rejected-cache"
+
+    with np.testing.assert_raises_regex(ValueError, "horizon"):
+        train_network(
+            lambda case, horizon: FakeNetworkEnv(case, horizon), manifest, config,
+            str(output), foundation_root=str(tmp_path), foundation_verifier=_verified,
+            baseline_tuning_artifact=str(cache_path))
+
+    assert not output.exists()
+
+
+def test_precompute_baseline_tuning_writes_reusable_artifact_without_training(tmp_path):
+    manifest = _manifest()
+    config = _config()
+    artifact = tmp_path / "cache" / "baseline-tuning.json"
+
+    tuning = precompute_baseline_tuning(
+        lambda case, horizon: FakeNetworkEnv(case, horizon), manifest, config,
+        str(artifact), foundation_root=str(tmp_path), foundation_verifier=_verified)
+
+    assert artifact.is_file()
+    assert json.loads(artifact.read_text()) == tuning
+    assert tuning["binding"]["horizon_seconds"] == 20
+    assert tuning["binding"]["validation_case_hashes"] == {
+        "validation-normal": "normal" * 8,
+        "validation-am_peak": "am_peak" * 8,
+        "validation-pm_peak": "pm_peak" * 8,
+    }
 
 
 def test_legacy_vector_family_trains_and_saves_distinct_bundle(tmp_path):

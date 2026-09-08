@@ -14,7 +14,8 @@ from traffic_rl.sim.engine import CityFlowEngine
 from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
 from traffic_rl.sim.encoder import ObservationEncoder
 from traffic_rl.sim.phase_encoder import PhaseFeatureEncoder
-from traffic_rl.train.network_trainer import resolve_training_config, train_network
+from traffic_rl.train.network_trainer import (
+    precompute_baseline_tuning, resolve_training_config, train_network)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -103,6 +104,14 @@ def main(argv=None):
                         default="results/haichau_network_v2/experiment-manifest.json")
     parser.add_argument("--config", default="configs/haichau_training_v2.yaml")
     parser.add_argument("--output")
+    parser.add_argument(
+        "--baseline-tuning-artifact",
+        help=("precomputed validation-only fixed-time tuning JSON; it must "
+              "match this manifest, validation cases, horizon, and search space"))
+    parser.add_argument(
+        "--precompute-baseline-tuning", metavar="PATH",
+        help=("write one immutable validation-only fixed-time tuning JSON and "
+              "exit before learning episodes"))
     args = parser.parse_args(argv)
 
     os.chdir(str(ROOT))
@@ -111,17 +120,36 @@ def main(argv=None):
     resolved = resolve_training_config(
         training_config, args.mode, args.learning_seed)
     resolved["simulation"] = manifest["simulation"]
-    output_dir = (Path(args.output) if args.output else
-                  ROOT / "results" / "haichau_network_v2" / "training" /
-                  (("%s-seed%d" if args.controller_family == "neighbor_phase_ddqn"
-                    else "legacy-%s-seed%d") % (args.mode, args.learning_seed)))
+    if args.baseline_tuning_artifact and args.precompute_baseline_tuning:
+        parser.error("cache input and --precompute-baseline-tuning cannot be combined")
+    if args.precompute_baseline_tuning:
+        artifact_path = Path(args.precompute_baseline_tuning)
+        if not artifact_path.is_absolute():
+            artifact_path = ROOT / artifact_path
+        output_dir = artifact_path.parent / ".baseline-tuning-runtime"
+    else:
+        artifact_path = None
+        output_dir = (Path(args.output) if args.output else
+                      ROOT / "results" / "haichau_network_v2" / "training" /
+                      (("%s-seed%d" if args.controller_family == "neighbor_phase_ddqn"
+                        else "legacy-%s-seed%d") % (args.mode, args.learning_seed)))
     if not output_dir.is_absolute():
         output_dir = ROOT / output_dir
     env_factory = _make_env_factory(
         manifest, resolved, output_dir, args.controller_family)
+    if artifact_path is not None:
+        tuning = precompute_baseline_tuning(
+            env_factory, manifest, resolved, str(artifact_path),
+            foundation_root=str(ROOT))
+        print(json.dumps({
+            "artifact_path": str(artifact_path),
+            "tuning_sha256": tuning["tuning_sha256"],
+        }, indent=2, sort_keys=True))
+        return 0
     summary = train_network(
         env_factory, manifest, resolved, str(output_dir), foundation_root=str(ROOT),
-        run_started_at=command_start, controller_family=args.controller_family)
+        run_started_at=command_start, controller_family=args.controller_family,
+        baseline_tuning_artifact=args.baseline_tuning_artifact)
 
     if args.mode == "pilot":
         peak_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss

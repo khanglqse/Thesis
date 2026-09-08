@@ -4,7 +4,8 @@ import subprocess
 
 import pytest
 
-from scripts.freeze_haichau_protocol import _contains_test_reference, freeze_protocol
+from scripts.freeze_haichau_protocol import (
+    _canonical_hash, _contains_test_reference, freeze_protocol)
 from scripts import verify_haichau_thesis
 from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
@@ -175,6 +176,7 @@ def _fixture(root):
         },
         "generator_config_path": str(generator_config.relative_to(root)),
         "generator_config_sha256": _sha256(generator_config),
+        "runtime": {"base_image_digest": RUNTIME_DIGEST},
         "preprocessing": {"count_norm": 20.0, "capacity_norm": 40.0},
         "cases": cases,
     }
@@ -249,6 +251,181 @@ def _runtime(image):
         "runtime_image_id": RUNTIME_IMAGE_ID,
         "repo_digests": [RUNTIME_IMAGE],
     }
+
+
+def _add_precomputed_tuning_provenance(root, relative):
+    run_dir = root / relative
+    tuning_path = run_dir / "baseline-tuning.json"
+    manifest = json.loads((root / "release/experiment-manifest.json").read_text())
+    validation_cases = [case for case in manifest["cases"]
+                        if case["split"] == "validation"]
+    resolved_path = run_dir / "resolved-config.json"
+    resolved = json.loads(resolved_path.read_text())
+    resolved["baseline"] = {
+        "controller": "validation_tuned_fixed",
+        "search_green_durations": [30],
+    }
+    resolved["simulation"] = {"action_interval": 10}
+    _write(resolved_path, resolved)
+    tuning = {
+        "schema_version": 1,
+        "method": "validation_grid_search",
+        "search_space": {"fixed_green_duration": [30]},
+        "selected": {"fixed_green_duration": 30},
+        "candidates": [{
+            "fixed_green_duration": 30,
+            "mean_queue_integral_vehicle_seconds": 100.0,
+            "rows": [{
+                "case_id": case["case_id"],
+                "scenario": case["scenario"],
+                "queue_integral_vehicle_seconds": 100.0,
+                "completion_rate": 1.0,
+            } for case in validation_cases],
+        }],
+        "binding": {
+            "manifest_sha256": _canonical_hash(manifest),
+            "network_sha256": manifest["network"]["sha256"],
+            "generator_config_sha256": manifest["generator_config_sha256"],
+            "runtime": manifest["runtime"],
+            "validation_case_hashes": dict(
+                (case["case_id"], case["flow_sha256"])
+                for case in validation_cases),
+            "horizon_seconds": 3600,
+            "action_interval": 10,
+        },
+    }
+    tuning["tuning_sha256"] = _canonical_hash(tuning)
+    _write(tuning_path, tuning)
+    provenance_path = run_dir / "baseline-tuning-provenance.json"
+    _write(provenance_path, {
+        "schema_version": 1,
+        "strategy": "precomputed_baseline_tuning",
+        "source_kind": "file",
+        "source_path": "cache/baseline-tuning.json",
+        "source_artifact_sha256": "f" * 64,
+        "copied_artifact_path": "baseline-tuning.json",
+        "copied_artifact_sha256": _sha256(tuning_path),
+        "tuning_sha256": tuning["tuning_sha256"],
+    })
+    run_manifest_path = run_dir / "run-manifest.json"
+    run_manifest = json.loads(run_manifest_path.read_text())
+    run_manifest["baseline_tuning"] = {
+        "mode": "precomputed",
+        "tuning_sha256": tuning["tuning_sha256"],
+        "copied_artifact_path": "baseline-tuning.json",
+        "copied_artifact_sha256": _sha256(tuning_path),
+        "provenance_path": "baseline-tuning-provenance.json",
+        "provenance_sha256": _sha256(provenance_path),
+    }
+    _write(run_manifest_path, run_manifest)
+    for contract_path in (run_dir / "checkpoint/contract.json",
+                          run_dir / "checkpoints/step-80/contract.json"):
+        contract = json.loads(contract_path.read_text())
+        contract["baseline_tuning_provenance_sha256"] = run_manifest[
+            "baseline_tuning"]["provenance_sha256"]
+        contract["baseline_tuning_artifact_sha256"] = run_manifest[
+            "baseline_tuning"]["copied_artifact_sha256"]
+        _write(contract_path, contract)
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["baseline-tuning.json"] = _sha256(tuning_path)
+    status["artifact_sha256"]["resolved-config.json"] = _sha256(resolved_path)
+    status["artifact_sha256"]["checkpoint/contract.json"] = _sha256(
+        run_dir / "checkpoint/contract.json")
+    status["artifact_sha256"]["run-manifest.json"] = _sha256(run_manifest_path)
+    status["artifact_sha256"]["baseline-tuning-provenance.json"] = _sha256(
+        provenance_path)
+    _write(status_path, status)
+
+
+def _refresh_precomputed_tuning_hashes(run_dir):
+    tuning_path = run_dir / "baseline-tuning.json"
+    tuning = json.loads(tuning_path.read_text())
+    tuning["tuning_sha256"] = _canonical_hash(
+        dict((key, value) for key, value in tuning.items()
+             if key != "tuning_sha256"))
+    _write(tuning_path, tuning)
+    provenance_path = run_dir / "baseline-tuning-provenance.json"
+    provenance = json.loads(provenance_path.read_text())
+    provenance["copied_artifact_sha256"] = _sha256(tuning_path)
+    provenance["tuning_sha256"] = tuning["tuning_sha256"]
+    _write(provenance_path, provenance)
+    run_manifest_path = run_dir / "run-manifest.json"
+    run_manifest = json.loads(run_manifest_path.read_text())
+    run_manifest["baseline_tuning"]["tuning_sha256"] = tuning["tuning_sha256"]
+    run_manifest["baseline_tuning"]["copied_artifact_sha256"] = _sha256(
+        tuning_path)
+    run_manifest["baseline_tuning"]["provenance_sha256"] = _sha256(
+        provenance_path)
+    _write(run_manifest_path, run_manifest)
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["baseline-tuning.json"] = _sha256(tuning_path)
+    status["artifact_sha256"]["baseline-tuning-provenance.json"] = _sha256(
+        provenance_path)
+    status["artifact_sha256"]["run-manifest.json"] = _sha256(run_manifest_path)
+    _write(status_path, status)
+
+
+def test_freeze_audits_hash_bound_precomputed_baseline_provenance(tmp_path):
+    fixture = _fixture(tmp_path)
+    relative = json.loads(fixture["index"].read_text())["neighbor_phase_ddqn"]["11"]
+    _add_precomputed_tuning_provenance(tmp_path, relative)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "add cache provenance")
+
+    protocol = freeze_protocol(
+        tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+        fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+        runtime_inspector=_runtime)
+
+    checkpoint = next(item for item in protocol["checkpoints"]
+                      if item["controller_id"] == "neighbor_phase_ddqn"
+                      and item["learning_seed"] == 11)
+    assert "baseline-tuning-provenance.json" in checkpoint["source_artifacts"]
+
+
+def test_freeze_rejects_precomputed_baseline_provenance_hash_drift(tmp_path):
+    fixture = _fixture(tmp_path)
+    relative = json.loads(fixture["index"].read_text())["neighbor_phase_ddqn"]["11"]
+    _add_precomputed_tuning_provenance(tmp_path, relative)
+    run_dir = tmp_path / relative
+    run_manifest_path = run_dir / "run-manifest.json"
+    run_manifest = json.loads(run_manifest_path.read_text())
+    run_manifest["baseline_tuning"]["provenance_sha256"] = "0" * 64
+    _write(run_manifest_path, run_manifest)
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["run-manifest.json"] = _sha256(run_manifest_path)
+    _write(status_path, status)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "drift cache provenance")
+
+    with pytest.raises(ValueError, match="provenance hash drift"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+def test_freeze_revalidates_precomputed_baseline_binding(tmp_path):
+    fixture = _fixture(tmp_path)
+    relative = json.loads(fixture["index"].read_text())["neighbor_phase_ddqn"]["11"]
+    _add_precomputed_tuning_provenance(tmp_path, relative)
+    run_dir = tmp_path / relative
+    tuning_path = run_dir / "baseline-tuning.json"
+    tuning = json.loads(tuning_path.read_text())
+    del tuning["binding"]
+    _write(tuning_path, tuning)
+    _refresh_precomputed_tuning_hashes(run_dir)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "remove cache binding")
+
+    with pytest.raises(ValueError, match="binding"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
 
 
 def test_freeze_writes_hash_bound_protocol_from_all_final_eligible_cells(tmp_path):
