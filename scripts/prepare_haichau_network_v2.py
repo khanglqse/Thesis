@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Build deterministic Hai Chau demand files and their hash-bound manifest."""
+
+import argparse
+import json
+from pathlib import Path
+
+import yaml
+
+from traffic_rl.network.haichau_dataset import audit_network, build_flow_cases
+from traffic_rl.network.roadnet import RoadNet
+from traffic_rl.research.artifacts import sha256_file
+
+
+IMAGE_DIGEST = "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32"
+IMAGE_NAME = "cityflowproject/cityflow"
+
+
+def _canonical_write(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+
+
+def _under_root(root, path):
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        raise ValueError("artifact path must be inside repository root: %s" % path)
+
+
+def prepare(config_path, root=None, new_version=False):
+    """Resolve a generator config into immutable flow files and a manifest."""
+    root = Path(root) if root is not None else Path(__file__).resolve().parent.parent
+    root = root.resolve()
+    config_path = Path(config_path)
+    if not config_path.is_absolute():
+        config_path = root / config_path
+    config_path = config_path.resolve()
+    config = yaml.safe_load(config_path.read_text())
+    if config.get("schema_version") != 2:
+        raise ValueError("Hai Chau generator config schema_version must be 2")
+
+    roadnet_path = root / config["roadnet"]
+    network_audit = audit_network(roadnet_path)
+    if network_audit["phase_errors"]:
+        raise ValueError("network audit has phase errors")
+
+    generator_hash = sha256_file(config_path)
+    network_hash = sha256_file(roadnet_path)
+    result_dir = root / "results" / config["dataset_id"]
+    manifest_path = result_dir / "experiment-manifest.json"
+    if manifest_path.exists() and not new_version:
+        existing = json.loads(manifest_path.read_text())
+        if (
+            existing.get("generator_config_sha256") != generator_hash
+            or existing.get("network", {}).get("sha256") != network_hash
+        ):
+            raise ValueError(
+                "existing manifest network or generator hash differs; use --new-version"
+            )
+
+    roadnet = RoadNet.load(str(roadnet_path))
+    generated_cases = build_flow_cases(roadnet, config)
+    case_records = []
+    for generated in generated_cases:
+        case = dict(generated)
+        flow = case.pop("flow")
+        flow_path = result_dir / "demands" / (case["case_id"] + ".json")
+        _canonical_write(flow_path, flow)
+        case["flow_path"] = _under_root(root, flow_path)
+        case["flow_sha256"] = sha256_file(flow_path)
+        case_records.append(case)
+
+    network = dict(network_audit)
+    network["path"] = _under_root(root, roadnet_path)
+    network["sha256"] = network_hash
+    provenance_path = roadnet_path.parent / "provenance.json"
+    if provenance_path.is_file():
+        network["provenance"] = {
+            "path": _under_root(root, provenance_path),
+            "sha256": sha256_file(provenance_path),
+        }
+
+    manifest = {
+        "protocol_version": 2,
+        "dataset_id": config["dataset_id"],
+        "data_source_label": config["demand_label"],
+        "generator_config_path": _under_root(root, config_path),
+        "generator_config_sha256": generator_hash,
+        "network": network,
+        "cases": case_records,
+        "runtime": {
+            "image": IMAGE_NAME,
+            "image_digest": IMAGE_DIGEST,
+            "platform": "linux/amd64",
+        },
+        "preprocessing": config["preprocessing"],
+        "simulation": config["simulation"],
+    }
+    _canonical_write(manifest_path, manifest)
+    return manifest
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--config", default="configs/haichau_network_v2.yaml", help="resolved YAML inputs"
+    )
+    parser.add_argument(
+        "--new-version",
+        action="store_true",
+        help="deliberately replace a manifest bound to different inputs",
+    )
+    args = parser.parse_args(argv)
+    manifest = prepare(args.config, new_version=args.new_version)
+    print(
+        json.dumps(
+            {
+                "manifest": "results/%s/experiment-manifest.json" % manifest["dataset_id"],
+                "cases": len(manifest["cases"]),
+                "network_sha256": manifest["network"]["sha256"],
+                "generator_config_sha256": manifest["generator_config_sha256"],
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

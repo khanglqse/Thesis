@@ -15,7 +15,7 @@
 - [x] Task 1: artifact hashing and manifest contract
 - [x] Task 2: version and audit canonical network
 - [x] Task 3: deterministic multi-regime OD demand generator
-- [ ] Task 4: build versioned experiment manifest and flows
+- [x] Task 4: build versioned experiment manifest and flows
 - [ ] Task 5: pin and smoke CityFlow runtime
 
 ## TDD evidence
@@ -29,3 +29,6 @@ Entries below record the command and observed reason for RED before production c
 - Task 2 GREEN: `PYTHONPATH=src pytest tests/network/test_haichau_dataset.py tests/network/test_roadnet_phases.py -v` — 7 passed.
 - Task 3 RED: `PYTHONPATH=src pytest tests/network/test_haichau_demand.py -v` — 5 failed because route and case generation functions were absent.
 - Task 3 GREEN: `PYTHONPATH=src pytest tests/network/test_haichau_demand.py tests/research/test_artifacts.py -v` — 10 passed.
+- Task 4 RED: `PYTHONPATH=src pytest tests/scripts/test_prepare_haichau_network.py -v` — 3 failed because `scripts.prepare_haichau_network_v2` did not exist.
+- Task 4 real generation: builder emitted 30 cases (9 train, 6 validation, 15 test), 30 unique flow hashes, all three regimes in every seed family, minimum route coverage 2 controlled signals; output size 8.0 MB.
+- Task 4 GREEN: `PYTHONPATH=src pytest tests/scripts/test_prepare_haichau_network.py -v` — 3 passed.

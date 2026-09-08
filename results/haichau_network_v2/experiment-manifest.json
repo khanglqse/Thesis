@@ -1,0 +1,816 @@
+{
+  "cases": [
+    {
+      "case_id": "train_normal_demand11",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 11,
+      "flow_path": "results/haichau_network_v2/demands/train_normal_demand11.json",
+      "flow_sha256": "0a09641852b6f3a4c54bac5f4af541ef5d1512f79405c3d35cc298790f1025bc",
+      "route_signal_histogram": {
+        "2": 433,
+        "3": 45,
+        "4": 5,
+        "5": 17
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 111,
+      "split": "train"
+    },
+    {
+      "case_id": "train_am_peak_demand11",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 11,
+      "flow_path": "results/haichau_network_v2/demands/train_am_peak_demand11.json",
+      "flow_sha256": "5958d23b76db8c4bdc254f391503638f3779d0519aecb1bfa6c645869a48185c",
+      "route_signal_histogram": {
+        "2": 433,
+        "3": 45,
+        "4": 5,
+        "5": 17
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 111,
+      "split": "train"
+    },
+    {
+      "case_id": "train_pm_peak_demand11",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 11,
+      "flow_path": "results/haichau_network_v2/demands/train_pm_peak_demand11.json",
+      "flow_sha256": "799ea418ca9f9ede09b449b2a4339bf6b5437c5f4f62ac371bed272dbe387c19",
+      "route_signal_histogram": {
+        "2": 433,
+        "3": 45,
+        "4": 5,
+        "5": 17
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 111,
+      "split": "train"
+    },
+    {
+      "case_id": "train_normal_demand12",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 12,
+      "flow_path": "results/haichau_network_v2/demands/train_normal_demand12.json",
+      "flow_sha256": "4a51561e6c02936c66fd395c54b2d5d5665b2aca84402fc6535978ddc3cccba6",
+      "route_signal_histogram": {
+        "2": 416,
+        "3": 56,
+        "4": 12,
+        "5": 16
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 112,
+      "split": "train"
+    },
+    {
+      "case_id": "train_am_peak_demand12",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 12,
+      "flow_path": "results/haichau_network_v2/demands/train_am_peak_demand12.json",
+      "flow_sha256": "db2b3ce47d6b4ecc2776892daf2f35d4c6b57eace70b88b47d8be89d39957286",
+      "route_signal_histogram": {
+        "2": 416,
+        "3": 56,
+        "4": 12,
+        "5": 16
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 112,
+      "split": "train"
+    },
+    {
+      "case_id": "train_pm_peak_demand12",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 12,
+      "flow_path": "results/haichau_network_v2/demands/train_pm_peak_demand12.json",
+      "flow_sha256": "4ea8c13844ea84cfed7e0ef69d8ac64711e5d4f0e58f49389efda7b58291ed21",
+      "route_signal_histogram": {
+        "2": 416,
+        "3": 56,
+        "4": 12,
+        "5": 16
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 112,
+      "split": "train"
+    },
+    {
+      "case_id": "train_normal_demand13",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 13,
+      "flow_path": "results/haichau_network_v2/demands/train_normal_demand13.json",
+      "flow_sha256": "9e722939144e4a38507eaf8f4bcdd9041a2d5e0dde55b2099fa106e276a155b8",
+      "route_signal_histogram": {
+        "2": 414,
+        "3": 63,
+        "4": 12,
+        "5": 11
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 113,
+      "split": "train"
+    },
+    {
+      "case_id": "train_am_peak_demand13",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 13,
+      "flow_path": "results/haichau_network_v2/demands/train_am_peak_demand13.json",
+      "flow_sha256": "e87b64cc7afc73286d4211664e5ab2d13562578f36580bafb881f4dc1d64c102",
+      "route_signal_histogram": {
+        "2": 414,
+        "3": 63,
+        "4": 12,
+        "5": 11
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 113,
+      "split": "train"
+    },
+    {
+      "case_id": "train_pm_peak_demand13",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 13,
+      "flow_path": "results/haichau_network_v2/demands/train_pm_peak_demand13.json",
+      "flow_sha256": "1eed4d5246cba5e0520228f7a892ce68bfe3ba9978e543f9a8d72c6c114358bf",
+      "route_signal_histogram": {
+        "2": 414,
+        "3": 63,
+        "4": 12,
+        "5": 11
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 113,
+      "split": "train"
+    },
+    {
+      "case_id": "validation_normal_demand31",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 31,
+      "flow_path": "results/haichau_network_v2/demands/validation_normal_demand31.json",
+      "flow_sha256": "f2159a1915608297ef0a50a5147d6268949bbfe6ccf74907990f203c87f7c663",
+      "route_signal_histogram": {
+        "2": 424,
+        "3": 55,
+        "4": 10,
+        "5": 11
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 131,
+      "split": "validation"
+    },
+    {
+      "case_id": "validation_am_peak_demand31",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 31,
+      "flow_path": "results/haichau_network_v2/demands/validation_am_peak_demand31.json",
+      "flow_sha256": "ee692ba03107cd8412ecc4496c4ea1120ae69d2df6566eb244b495701e9de670",
+      "route_signal_histogram": {
+        "2": 424,
+        "3": 55,
+        "4": 10,
+        "5": 11
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 131,
+      "split": "validation"
+    },
+    {
+      "case_id": "validation_pm_peak_demand31",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 31,
+      "flow_path": "results/haichau_network_v2/demands/validation_pm_peak_demand31.json",
+      "flow_sha256": "cd14f5771bccf367ccdd1b5e0739e594b9b2f94193735c490fb276f21d11d052",
+      "route_signal_histogram": {
+        "2": 424,
+        "3": 55,
+        "4": 10,
+        "5": 11
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 131,
+      "split": "validation"
+    },
+    {
+      "case_id": "validation_normal_demand32",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 32,
+      "flow_path": "results/haichau_network_v2/demands/validation_normal_demand32.json",
+      "flow_sha256": "af634346d7dea6c0a1e32ad4c6b071837f112ba9d6f3020fe8cbfb2d80e81433",
+      "route_signal_histogram": {
+        "2": 413,
+        "3": 60,
+        "4": 7,
+        "5": 20
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 132,
+      "split": "validation"
+    },
+    {
+      "case_id": "validation_am_peak_demand32",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 32,
+      "flow_path": "results/haichau_network_v2/demands/validation_am_peak_demand32.json",
+      "flow_sha256": "a7f60cc3ea20b1f356c8bc47ef538c1d25d5f72eb063b59c366f82099260beaf",
+      "route_signal_histogram": {
+        "2": 413,
+        "3": 60,
+        "4": 7,
+        "5": 20
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 132,
+      "split": "validation"
+    },
+    {
+      "case_id": "validation_pm_peak_demand32",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 32,
+      "flow_path": "results/haichau_network_v2/demands/validation_pm_peak_demand32.json",
+      "flow_sha256": "d541ab9493b29703f31d151934bd8383d3c85fa31a81f016a46bd441d5abe3e8",
+      "route_signal_histogram": {
+        "2": 413,
+        "3": 60,
+        "4": 7,
+        "5": 20
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 132,
+      "split": "validation"
+    },
+    {
+      "case_id": "test_normal_demand101",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 101,
+      "flow_path": "results/haichau_network_v2/demands/test_normal_demand101.json",
+      "flow_sha256": "f8346ceb21c2c55faab05c850ab4c65f1378daf0503c52824d5b23566bebfed7",
+      "route_signal_histogram": {
+        "2": 418,
+        "3": 57,
+        "4": 10,
+        "5": 15
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 201,
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand101",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 101,
+      "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand101.json",
+      "flow_sha256": "3f4aaf590d45a0ff3c89986c0dbb955b1c3012e4c24710fb2ebbcb405b831d4a",
+      "route_signal_histogram": {
+        "2": 418,
+        "3": 57,
+        "4": 10,
+        "5": 15
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 201,
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand101",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 101,
+      "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand101.json",
+      "flow_sha256": "296cbee90e74e94a3ea011fbebdfb7268cc353b21df8a1db252955d57e6da0a4",
+      "route_signal_histogram": {
+        "2": 418,
+        "3": 57,
+        "4": 10,
+        "5": 15
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 201,
+      "split": "test"
+    },
+    {
+      "case_id": "test_normal_demand102",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 102,
+      "flow_path": "results/haichau_network_v2/demands/test_normal_demand102.json",
+      "flow_sha256": "564bfeb803d1abb6e42dc641d186816e8dc0e74acf46b04c5bfe14cb3e7fe4a9",
+      "route_signal_histogram": {
+        "2": 438,
+        "3": 42,
+        "4": 7,
+        "5": 13
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 202,
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand102",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 102,
+      "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand102.json",
+      "flow_sha256": "137feb7a0812b59294bf7582828851b310ceaeb68bcda3e959375502281ca6e3",
+      "route_signal_histogram": {
+        "2": 438,
+        "3": 42,
+        "4": 7,
+        "5": 13
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 202,
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand102",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 102,
+      "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand102.json",
+      "flow_sha256": "f4c98e56fdbcc31a75d95a803758c3e4a523062de9ab8873f4218c5a1c57f999",
+      "route_signal_histogram": {
+        "2": 438,
+        "3": 42,
+        "4": 7,
+        "5": 13
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 202,
+      "split": "test"
+    },
+    {
+      "case_id": "test_normal_demand103",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 103,
+      "flow_path": "results/haichau_network_v2/demands/test_normal_demand103.json",
+      "flow_sha256": "f70e32a6faf66188530744c7494bafe32bd2320cf5c16396e0eacd501254119f",
+      "route_signal_histogram": {
+        "2": 420,
+        "3": 61,
+        "4": 7,
+        "5": 12
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 203,
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand103",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 103,
+      "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand103.json",
+      "flow_sha256": "9e1b8556dee8c211febf11605c20b99cd79775d1bd4130c5c2b6d6835918f29a",
+      "route_signal_histogram": {
+        "2": 420,
+        "3": 61,
+        "4": 7,
+        "5": 12
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 203,
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 103,
+      "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand103.json",
+      "flow_sha256": "e5ac7c75d5f89dd3049d42b766c0e07cd8ec28a076b75e3af04b38d15d793c27",
+      "route_signal_histogram": {
+        "2": 420,
+        "3": 61,
+        "4": 7,
+        "5": 12
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 203,
+      "split": "test"
+    },
+    {
+      "case_id": "test_normal_demand104",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 104,
+      "flow_path": "results/haichau_network_v2/demands/test_normal_demand104.json",
+      "flow_sha256": "da7fe3453c2052ee86d4032f43b931f9dd256eaa7e626fb1260a7d51181a9fdb",
+      "route_signal_histogram": {
+        "2": 412,
+        "3": 69,
+        "4": 13,
+        "5": 6
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 204,
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand104",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 104,
+      "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand104.json",
+      "flow_sha256": "a1279b84f78bab2b019dbb9d0d1673025f62c5519a6e4621edcdcf920a580f78",
+      "route_signal_histogram": {
+        "2": 412,
+        "3": 69,
+        "4": 13,
+        "5": 6
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 204,
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand104",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 104,
+      "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand104.json",
+      "flow_sha256": "98fb16c00479240ff9b6572bd88e7e391a06bc5d8486e2af661b992461f3fef9",
+      "route_signal_histogram": {
+        "2": 412,
+        "3": 69,
+        "4": 13,
+        "5": 6
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 204,
+      "split": "test"
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 105,
+      "flow_path": "results/haichau_network_v2/demands/test_normal_demand105.json",
+      "flow_sha256": "d129cfd6ef603f30ff61a316a872edfa92e67b0cffd283caf41189c91357ab10",
+      "route_signal_histogram": {
+        "2": 436,
+        "3": 47,
+        "4": 6,
+        "5": 11
+      },
+      "scale": 1.0,
+      "scenario": "normal",
+      "sim_seed": 205,
+      "split": "test"
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 105,
+      "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand105.json",
+      "flow_sha256": "c61da98a25307eaf47556535419ea4f88215f0f5c6b89ee04cdf0fb006abac3a",
+      "route_signal_histogram": {
+        "2": 436,
+        "3": 47,
+        "4": 6,
+        "5": 11
+      },
+      "scale": 1.6,
+      "scenario": "am_peak",
+      "sim_seed": 205,
+      "split": "test"
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+      "demand_seed": 105,
+      "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand105.json",
+      "flow_sha256": "04104da84a35c685b5ff16d314289c09923857b79cc3378b34682abf2f89f159",
+      "route_signal_histogram": {
+        "2": 436,
+        "3": 47,
+        "4": 6,
+        "5": 11
+      },
+      "scale": 2.0,
+      "scenario": "pm_peak",
+      "sim_seed": 205,
+      "split": "test"
+    }
+  ],
+  "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
+  "dataset_id": "haichau_network_v2",
+  "generator_config_path": "configs/haichau_network_v2.yaml",
+  "generator_config_sha256": "6dbbcde62c257ebba8007eeabd2bb41a1a03ca28014ace56af6ca9c5f67775e5",
+  "network": {
+    "agent_ids": [
+      "1333258672",
+      "1333258675",
+      "1333258678",
+      "1333303403",
+      "1333730385",
+      "1333762614",
+      "1334170383",
+      "3761464424",
+      "420248538",
+      "420248590",
+      "420248766",
+      "420248835",
+      "420248842",
+      "420248975",
+      "420248999",
+      "420249023",
+      "420249060",
+      "420249080",
+      "420249146",
+      "420249151",
+      "420249236",
+      "420249421",
+      "420249521",
+      "420249525",
+      "5896811072",
+      "cluster_10925625407_3070396769_3070396791",
+      "cluster_11568485806_420249005_6513691661",
+      "cluster_1261738019_3070396244_3070396254_6522135551",
+      "cluster_1261738236_2996178189",
+      "cluster_1333246012_1333246028_3540437805_6040645617",
+      "cluster_1333246087_3078041918",
+      "cluster_1333246117_2991183833",
+      "cluster_1333258669_1333279736",
+      "cluster_1334202699_3080182071",
+      "cluster_1334305553_420249257",
+      "cluster_1616276760_2991819238",
+      "cluster_1726781971_1726781974",
+      "cluster_2623083098_2988146967_2988146972_9662761813",
+      "cluster_2988146960_2988146981",
+      "cluster_2988146980_3068684702",
+      "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+      "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+      "cluster_2991183856_2991183859_2991183862_6548202094",
+      "cluster_2991819236_420249033",
+      "cluster_3065559064_3065559065",
+      "cluster_3070269464_3070269465",
+      "cluster_3501206652_420248485_6531294016",
+      "cluster_420249139_6525355442",
+      "cluster_420249144_6524986722",
+      "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+      "cluster_420249565_6525355441",
+      "cluster_6164917307_6164917332_6164917334_6164917335",
+      "cluster_6521341372_6521341373_6521341380"
+    ],
+    "controlled_signals": 53,
+    "directed_signal_edges": [
+      [
+        "1333258672",
+        "1333258678"
+      ],
+      [
+        "1333258672",
+        "cluster_3070269464_3070269465"
+      ],
+      [
+        "1333258675",
+        "1333258678"
+      ],
+      [
+        "1333258675",
+        "cluster_1333258669_1333279736"
+      ],
+      [
+        "1333258678",
+        "1333258672"
+      ],
+      [
+        "1333258678",
+        "1333258675"
+      ],
+      [
+        "1333258678",
+        "cluster_1333246087_3078041918"
+      ],
+      [
+        "1333303403",
+        "420248842"
+      ],
+      [
+        "1333303403",
+        "420248975"
+      ],
+      [
+        "1333303403",
+        "420249151"
+      ],
+      [
+        "420248538",
+        "420249525"
+      ],
+      [
+        "420248590",
+        "420249023"
+      ],
+      [
+        "420248590",
+        "420249236"
+      ],
+      [
+        "420248766",
+        "cluster_1726781971_1726781974"
+      ],
+      [
+        "420248835",
+        "420248842"
+      ],
+      [
+        "420248842",
+        "1333303403"
+      ],
+      [
+        "420248842",
+        "420248835"
+      ],
+      [
+        "420248975",
+        "1333303403"
+      ],
+      [
+        "420249023",
+        "420248590"
+      ],
+      [
+        "420249023",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more"
+      ],
+      [
+        "420249080",
+        "cluster_3501206652_420248485_6531294016"
+      ],
+      [
+        "420249146",
+        "cluster_420249144_6524986722"
+      ],
+      [
+        "420249151",
+        "1333303403"
+      ],
+      [
+        "420249236",
+        "420248590"
+      ],
+      [
+        "420249421",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more"
+      ],
+      [
+        "420249525",
+        "420248538"
+      ],
+      [
+        "420249525",
+        "cluster_6521341372_6521341373_6521341380"
+      ],
+      [
+        "cluster_1261738236_2996178189",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more"
+      ],
+      [
+        "cluster_1333246087_3078041918",
+        "1333258678"
+      ],
+      [
+        "cluster_1333246087_3078041918",
+        "cluster_1333258669_1333279736"
+      ],
+      [
+        "cluster_1333258669_1333279736",
+        "1333258675"
+      ],
+      [
+        "cluster_1333258669_1333279736",
+        "cluster_1333246087_3078041918"
+      ],
+      [
+        "cluster_1616276760_2991819238",
+        "cluster_2991819236_420249033"
+      ],
+      [
+        "cluster_1616276760_2991819238",
+        "cluster_3501206652_420248485_6531294016"
+      ],
+      [
+        "cluster_1726781971_1726781974",
+        "420248766"
+      ],
+      [
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981"
+      ],
+      [
+        "cluster_2988146960_2988146981",
+        "cluster_2623083098_2988146967_2988146972_9662761813"
+      ],
+      [
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702"
+      ],
+      [
+        "cluster_2988146980_3068684702",
+        "cluster_2988146960_2988146981"
+      ],
+      [
+        "cluster_2991819236_420249033",
+        "cluster_1616276760_2991819238"
+      ],
+      [
+        "cluster_2991819236_420249033",
+        "cluster_3501206652_420248485_6531294016"
+      ],
+      [
+        "cluster_3070269464_3070269465",
+        "1333258672"
+      ],
+      [
+        "cluster_3501206652_420248485_6531294016",
+        "420249080"
+      ],
+      [
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_1616276760_2991819238"
+      ],
+      [
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_2991819236_420249033"
+      ],
+      [
+        "cluster_420249139_6525355442",
+        "cluster_420249565_6525355441"
+      ],
+      [
+        "cluster_420249144_6524986722",
+        "420249146"
+      ],
+      [
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "420249023"
+      ],
+      [
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "420249421"
+      ],
+      [
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_6521341372_6521341373_6521341380"
+      ],
+      [
+        "cluster_420249565_6525355441",
+        "cluster_420249139_6525355442"
+      ],
+      [
+        "cluster_6521341372_6521341373_6521341380",
+        "420249525"
+      ],
+      [
+        "cluster_6521341372_6521341373_6521341380",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more"
+      ]
+    ],
+    "intersections": 592,
+    "path": "datasets/haichau_network_v2/roadnet.json",
+    "phase_errors": [],
+    "provenance": {
+      "path": "datasets/haichau_network_v2/provenance.json",
+      "sha256": "d7e82a8b6e62643bdd9a4b165a507b8127e725455975903f58e86ed91bbc58dc"
+    },
+    "roads": 1107,
+    "sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
+    "weak_components": 28
+  },
+  "preprocessing": {
+    "capacity_norm": 40.0,
+    "count_norm": 20.0
+  },
+  "protocol_version": 2,
+  "runtime": {
+    "image": "cityflowproject/cityflow",
+    "image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "platform": "linux/amd64"
+  },
+  "simulation": {
+    "action_interval": 10,
+    "maximum_red": 180,
+    "min_green": 20,
+    "yellow_time": 3
+  }
+}
