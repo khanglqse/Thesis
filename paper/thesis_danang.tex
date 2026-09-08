@@ -247,7 +247,7 @@ Sensitivity & AM scaled 0.75--1.50 & 101--105 & frozen policies only \\
 The five DDQN policies are independent learning replicates. Each is crossed with the same fifteen held-out demand cases. Therefore, the analysis first averages cases within each training seed; it never treats 75 correlated DDQN evaluations as 75 independent policies. Fixed-time confidence intervals use five demand realizations per scenario. Paired DDQN-minus-fixed effects match on demand realization, average within training seed, and bootstrap those five seed-level effects with 20,000 resamples.
 
 \section{Hai Chau network extension protocol}
-The network extension uses the canonical 53-signal Hai Chau topology with synthetic network demand constrained by Da Nang evidence. It is a scalability and coordination study, not a claim that district-wide flows were observed or behavior-calibrated. Candidate phases are represented by served movements and adjacent-signal context. The frozen test compares fresh matched runs of tuned fixed-time, Max-Pressure, hysteretic Max-Pressure, the legacy shared DDQN ablation, and neighbor-aware phase-scoring DDQN.
+The network extension uses a 53-signal OpenStreetMap-derived Hai Chau topology with synthetic network demand constrained by Da Nang evidence. The JICA port-corridor study and the DaCRISS integrated-development study provide planning context only; neither calibrates signal timing, routes, or flows for these 53 signals~\cite{jica2014tiensa,dacriss2010danang}. It is a scalability and coordination study, not a claim that district-wide flows were observed or behavior-calibrated. Candidate phases are represented by served movements and adjacent-signal context. The frozen test compares fresh matched runs of tuned fixed-time, Max-Pressure, hysteretic Max-Pressure, the legacy shared DDQN ablation, and neighbor-aware phase-scoring DDQN.
 
 The primary network metric is queue integral sampled at every simulator step. Completed-vehicle travel-time statistics are always reported with departed, arrived, running, pending, and completion counts. Learned-policy effects first average matched demand and simulator cases inside each learning seed; bootstrap inference then uses at least five learning seeds. The predeclared gates require normal point non-inferiority, a normal upper confidence bound within five percent of tuned fixed-time, a wholly negative confidence interval in at least one peak regime, and no matched completion degradation above two percentage points.
 
@@ -350,15 +350,13 @@ A practical controller should observe a demand or queue threshold and activate D
 \textbf{Statistical conclusion validity.} Five training seeds give only moderate precision. Bootstrap intervals expose uncertainty but cannot repair limited independent data. Architecture ablation uses one seed and combines two changes, so it supports selection within this project rather than a general claim about dueling or $n$-step learning.
 
 \section{What was rejected}
-The legacy project described a 53-intersection Hai Chau network and 50,500 real trips. The repository did not contain evidence sufficient to support the real-trip claim, so those historical rows remain immutable legacy evidence. The new 53-signal extension uses a versioned namespace, fresh matched controller runs, and an explicit synthetic-demand label. Until its frozen five-seed verifier passes, it supplies no result claim and cannot replace the isolated-junction empirical evidence.
+The legacy project described a 53-intersection Hai Chau network and 50,500 real trips. The repository did not contain evidence sufficient to support the real-trip claim, so those historical rows remain immutable legacy evidence. The new extension uses a versioned namespace, a 53-signal OpenStreetMap-derived topology, fresh matched controller runs, and synthetic network demand constrained by Da Nang evidence. Until its frozen five-seed verifier reports \texttt{"complete": true}, it supplies no result claim and cannot replace the isolated-junction empirical evidence.
 
 \section{Hai Chau network result status}
-\IfFileExists{generated/haichau_network/haichau_network_results.tex}{%
-\input{generated/haichau_network/haichau_network_results.tex}
-\input{generated/haichau_network/haichau_controller_comparison.tex}
-}{%
-The frozen 53-signal campaign artifacts are absent from this build. No network acceptance or performance claim is made here. The final release verifier must confirm all five learning seeds, matched fresh baselines, summary provenance, and offline demo hashes before this generated table may be included.
-}
+No network acceptance or performance claim is made in this build. A generated table may be
+included only after the final release verifier reports \texttt{"complete": true} for the
+OpenStreetMap-derived topology, synthetic network demand, all five learning seeds, matched
+fresh baselines, summary provenance, and offline-demo hashes.
 
 \chapter{Reproducibility and Defense Demonstration}
 
@@ -398,6 +396,20 @@ python3 scripts/evaluate_danang_sensitivity.py --controller published_fixed
 # evaluate each frozen dueling checkpoint
 python3 scripts/summarize_danang_sensitivity.py
 python3 scripts/build_thesis_figures.py
+# 53-signal extension: OSM-derived topology, synthetic network demand.
+# Train both learned controller families for every required seed.
+for seed in 11 12 13 14 15; do
+  make haichau-train-final LEARNING_SEED=$seed
+  make haichau-train-legacy-final LEARNING_SEED=$seed
+done
+python3 scripts/prepare_haichau_release_inputs.py
+python3 scripts/prepare_haichau_viewer_network.py
+PYTHONPATH=src python3 scripts/freeze_haichau_protocol.py \
+  --manifest results/haichau_network_v2/experiment-manifest.json \
+  --viewer-network results/haichau_network_v2/release-inputs/viewer-network.json \
+  --controller-configs results/haichau_network_v2/release-inputs/final-controller-configs.json \
+  --training-index results/haichau_network_v2/release-inputs/training-index.json \
+  --runtime-image registry.example/traffic-rl@sha256:IMMUTABLE_IMAGE_DIGEST
 python3 scripts/run_haichau_campaign.py --verify-only
 python3 scripts/summarize_haichau_campaign.py
 python3 scripts/build_haichau_thesis_artifacts.py

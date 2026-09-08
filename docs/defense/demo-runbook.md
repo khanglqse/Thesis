@@ -2,9 +2,15 @@
 
 ## 53-signal Hai Chau extension: release-gated path
 
-This path uses only `results/haichau_network_v2`. Its demand label is **synthetic network
-demand constrained by Da Nang evidence**. Do not substitute any `results/haichau*` legacy
-row, checkpoint or replay into this namespace.
+This path uses only `results/haichau_network_v2`: a 53-signal **OpenStreetMap-derived Hai
+Chau topology** with **synthetic network demand constrained by Da Nang evidence**. The
+[JICA Tien Sa--Da Nang port study](https://openjicareport.jica.go.jp/pdf/12250627.pdf) and
+[DaCRISS integrated-development study](https://openjicareport.jica.go.jp/pdf/12014940_02.pdf)
+provide planning context only. They do not calibrate the 53 signal timings, routes, or flows.
+Do not substitute any `results/haichau*` legacy row, checkpoint or replay into this namespace.
+
+The extension has no performance or acceptance claim until
+`scripts/verify_haichau_thesis.py` exits zero and its report says `"complete": true`.
 
 The foundation/model pipeline must first provide a tracked or checksum-verified canonical
 network manifest, a frozen 30-case split, CityFlow image digest and five validation-eligible
@@ -43,21 +49,32 @@ project mount and exit state, then requires its stdout JSON to equal the hashed 
 metrics and replay artifacts. Keep these containers until the final audit succeeds.
 
 Use the freeze CLI only after the ten learned training runs are complete and
-validation-eligible. It accepts an index with exactly the two learned controller IDs and
-the five string seeds `11` through `15`, each mapped to a final-run directory. The
-controller configuration JSON contains `resolved_config`, `controller_configs`, and
-`controller_commands`, with entries for all five controllers. The command reads only
-training/validation evidence, verifies the selected checkpoint bundle, and creates the
-network manifest, case manifest, and protocol together. It refuses an existing final
-directory, hash drift, a non-final/short run, or any test-case reference in selection
-evidence.
+validation-eligible. Train both controller families for each required seed, then create
+the release inputs and verified viewer geometry. The input scripts refuse an incomplete,
+ineligible, drifted, or mixed-duration training set. The resulting index has exactly the
+two learned controller IDs and seeds `11` through `15`; the controller configuration has
+the resolved evaluator config and entries for all five controllers.
+
+```sh
+for seed in 11 12 13 14 15; do
+  make haichau-train-final LEARNING_SEED="$seed"
+  make haichau-train-legacy-final LEARNING_SEED="$seed"
+done
+python3 scripts/prepare_haichau_release_inputs.py
+python3 scripts/prepare_haichau_viewer_network.py
+```
+
+The freeze command reads only training/validation evidence, verifies the selected
+checkpoint bundle, and creates the network manifest, case manifest, and protocol together.
+It refuses an existing final directory, hash drift, a non-final/short run, or any
+test-case reference in selection evidence.
 
 ```sh
 PYTHONPATH=src python3 scripts/freeze_haichau_protocol.py \
   --manifest results/haichau_network_v2/experiment-manifest.json \
-  --viewer-network path/to/verified-53-signal-viewer-network.json \
-  --controller-configs path/to/final-controller-configs.json \
-  --training-index path/to/final-training-index.json \
+  --viewer-network results/haichau_network_v2/release-inputs/viewer-network.json \
+  --controller-configs results/haichau_network_v2/release-inputs/final-controller-configs.json \
+  --training-index results/haichau_network_v2/release-inputs/training-index.json \
   --runtime-image registry.example/traffic-rl@sha256:IMMUTABLE_IMAGE_DIGEST
 ```
 
@@ -94,7 +111,7 @@ Export all six run IDs with fallbacks made from the same frozen evidence:
 
 ```sh
 PYTHONPATH=src python3 scripts/export_haichau_replays.py \
-  --network path/to/verified-53-signal-viewer-network.json \
+  --network results/haichau_network_v2/release-inputs/viewer-network.json \
   --run-id NORMAL_FIXED --run-id NORMAL_DDQN \
   --run-id AM_FIXED --run-id AM_DDQN \
   --run-id PM_FIXED --run-id PM_DDQN \
