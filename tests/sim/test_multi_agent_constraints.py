@@ -236,7 +236,8 @@ def test_explicit_yellow_with_movements_is_clearance_not_service(tmp_path):
             "compound_phases": [],
             "phase_semantics": [
                 {"phase_index": index, "duration_seconds": duration,
-                 "source_state": "y" if role == "clearance_yellow" else "x",
+                 "source_state": ("y" if role == "clearance_yellow" else
+                                  "r" if role == "all_red" else "G"),
                  "role": role,
                  "movements": fixture.phase_movement_records("A", index)}
                 for index, (duration, role) in enumerate(

@@ -285,15 +285,6 @@ class RoadNet:
                 errors.append(
                     "intersection {} selectable phase {} is shorter than min_green".format(
                         inter_id, phase_index))
-        for phase_index in transitions:
-            if 0 <= phase_index < phase_count \
-                    and isinstance(min_green, (int, float)) \
-                    and self.phase_movement_pairs(inter_id, phase_index) \
-                    and float(self._lightphases(inter_id)[phase_index].get(
-                        "time", 0)) >= float(min_green):
-                errors.append(
-                    "intersection {} transition phase {} is selectable by rule".format(
-                        inter_id, phase_index))
         allowed_roles = set(("selectable_green", "compound_service",
                              "clearance_yellow", "all_red"))
         semantics = record.get("phase_semantics", [])
@@ -325,6 +316,32 @@ class RoadNet:
             if semantic.get("movements") != self.phase_movement_records(
                     inter_id, phase_index):
                 errors.append("intersection {} phase {} movements mismatch".format(
+                    inter_id, phase_index))
+            source_state = semantic.get("source_state", "")
+            if not isinstance(source_state, str):
+                source_state = ""
+            duration_valid = (isinstance(duration, (int, float))
+                              and not isinstance(duration, bool))
+            if role == "selectable_green" and (
+                    "g" not in source_state.lower()
+                    or "y" in source_state.lower()):
+                errors.append("intersection {} phase {} green semantics invalid".format(
+                    inter_id, phase_index))
+            if role == "compound_service" and (
+                    not semantic.get("movements")
+                    or not isinstance(min_green, (int, float))
+                    or not duration_valid
+                    or duration >= min_green
+                    or "g" not in source_state.lower()
+                    or "y" in source_state.lower()):
+                errors.append("intersection {} phase {} compound semantics invalid".format(
+                    inter_id, phase_index))
+            if role == "clearance_yellow" and "y" not in source_state.lower():
+                errors.append("intersection {} phase {} yellow semantics invalid".format(
+                    inter_id, phase_index))
+            if role == "all_red" and (semantic.get("movements")
+                                       or set(source_state.lower()) - set("r")):
+                errors.append("intersection {} phase {} all-red semantics invalid".format(
                     inter_id, phase_index))
         semantic_selectable = sorted(
             index for index, role in phase_roles.items()
