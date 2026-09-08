@@ -334,6 +334,135 @@ def _write_outputs(selected_path, selected_bytes, decision_path, decision):
                 staged.unlink()
 
 
+def _selection_artifact(root, record, label):
+    if not isinstance(record, dict):
+        raise ValueError("%s record is invalid" % label)
+    path = record.get("path")
+    expected = record.get("sha256")
+    if not isinstance(path, str) or not _SHA256.match(str(expected or "")):
+        raise ValueError("%s record is incomplete" % label)
+    artifact = _inside(root, path, label)
+    if not artifact.is_file() or sha256_file(artifact) != expected:
+        raise ValueError("%s hash drift" % label)
+    return artifact
+
+
+def _validate_pilot_artifacts(root, schedule, name):
+    if not isinstance(schedule, dict):
+        raise ValueError("%s pilot evidence is incomplete" % name)
+    run_dir = _inside(root, schedule.get("run_dir"), name + " pilot run directory")
+    artifacts = schedule.get("artifacts")
+    if not run_dir.is_dir() or not isinstance(artifacts, dict):
+        raise ValueError("%s pilot evidence is incomplete" % name)
+    required = {
+        "status.json", "run-manifest.json", "resolved-config.json",
+        "baseline-tuning.json", "baseline-tuning-provenance.json",
+        "validation.json", "selection.json",
+    }
+    if not required.issubset(artifacts):
+        raise ValueError("%s pilot evidence is incomplete" % name)
+    for relative, expected in artifacts.items():
+        candidate = Path(relative)
+        if (candidate.is_absolute() or ".." in candidate.parts or not candidate.parts
+                or not _SHA256.match(str(expected or ""))):
+            raise ValueError("%s pilot artifact record is invalid" % name)
+        artifact = run_dir / candidate
+        if not artifact.is_file() or sha256_file(artifact) != expected:
+            raise ValueError("%s pilot artifact hash drift: %s" % (name, relative))
+
+
+def validate_final_selection(root, decision_path):
+    """Return one hash-checked pilot decision and final selected configuration.
+
+    This intentionally validates only immutable pilot evidence already recorded in
+    the selector output.  It is safe to run after final training, whose commit is
+    expected to be newer than the pilot-selection commit.
+    """
+    root = Path(root).resolve()
+    if not isinstance(decision_path, (str, Path)):
+        raise ValueError("pilot epsilon selection path is required")
+    supplied = Path(decision_path)
+    if supplied.is_absolute():
+        try:
+            decision_path = supplied.resolve().relative_to(root)
+        except ValueError:
+            raise ValueError("pilot epsilon selection must remain inside the project")
+    decision_path = _inside(root, decision_path, "pilot epsilon selection")
+    decision = _json(decision_path, "pilot epsilon selection")
+    if (decision.get("schema_version") != 1
+            or decision.get("decision_type")
+            != "haichau_pilot_epsilon_schedule_selection"):
+        raise ValueError("pilot epsilon selection schema is invalid")
+    identity = decision.get("decision_identity_sha256")
+    unsigned = dict(decision)
+    unsigned.pop("decision_identity_sha256", None)
+    if (not _SHA256.match(str(identity or ""))
+            or identity != canonical_sha256(unsigned)):
+        raise ValueError("pilot epsilon selection identity hash drift")
+    inputs = decision.get("inputs")
+    if (not isinstance(inputs, dict)
+            or not re.fullmatch(r"[0-9a-f]{40,64}",
+                                str(inputs.get("code_commit") or ""))):
+        raise ValueError("pilot epsilon selection inputs are invalid")
+    manifest = _selection_artifact(root, inputs.get("manifest"), "pilot manifest")
+    if not isinstance(_json(manifest, "pilot manifest"), dict):
+        raise ValueError("pilot manifest is invalid")
+    _selection_artifact(root, inputs.get("baseline_tuning"), "pilot baseline tuning")
+    configs = inputs.get("configs")
+    schedules = decision.get("schedules")
+    winner = decision.get("winner")
+    selected = decision.get("selected_config")
+    if (not isinstance(configs, dict) or set(configs) != set(_SCHEDULES)
+            or not isinstance(schedules, dict) or set(schedules) != set(_SCHEDULES)
+            or not isinstance(winner, dict) or not isinstance(selected, dict)):
+        raise ValueError("pilot epsilon selection schedule records are invalid")
+    winner_name = winner.get("schedule")
+    if winner_name not in _SCHEDULES or winner.get("config") != configs[winner_name]:
+        raise ValueError("pilot epsilon selection winner is invalid")
+    for name in _SCHEDULES:
+        source = _selection_artifact(root, configs[name], name + " source config")
+        source_config = _load_yaml(source, name + " source config")
+        if _epsilon(source_config, name + " source config") != configs[name].get(
+                "epsilon_decay_decisions"):
+            raise ValueError("%s source config epsilon drift" % name)
+        _validate_pilot_artifacts(root, schedules[name], name)
+    selected_path = _selection_artifact(root, selected, "selected config")
+    selected_config = _load_yaml(selected_path, "selected config")
+    winner_path = _selection_artifact(root, configs[winner_name], "winning source config")
+    winner_config = _load_yaml(winner_path, "winning source config")
+    if selected_config != winner_config:
+        raise ValueError("selected config differs from winning pilot config")
+    return {
+        "path": str(decision_path.relative_to(root)),
+        "sha256": sha256_file(decision_path),
+        "decision_identity_sha256": identity,
+        "winner": {
+            "schedule": winner_name,
+            "config": dict(configs[winner_name]),
+        },
+        "selected_config": {
+            "path": str(selected_path.relative_to(root)),
+            "sha256": sha256_file(selected_path),
+            "config": selected_config,
+        },
+    }
+
+
+def validate_final_resolved_config(resolved, selected_config, learning_seed):
+    """Require a final run to retain every selected pilot configuration field."""
+    if not isinstance(resolved, dict) or not isinstance(selected_config, dict):
+        raise ValueError("final resolved training configuration is invalid")
+    if (resolved.get("mode") != "final"
+            or resolved.get("learning_seed") != learning_seed):
+        raise ValueError("final resolved training configuration identity drift")
+    final_tier = selected_config.get("tiers", {}).get("final")
+    if not isinstance(final_tier, dict) or resolved.get("run") != final_tier:
+        raise ValueError("final resolved training tier drift")
+    for key, value in selected_config.items():
+        if resolved.get(key) != value:
+            raise ValueError("final resolved training configuration differs from selected config")
+
+
 def select_from_spec(root, spec_path):
     """Select one final epsilon configuration using only registered validation evidence."""
     root = Path(root).resolve()

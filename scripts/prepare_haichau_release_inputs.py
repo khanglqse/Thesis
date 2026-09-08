@@ -8,6 +8,11 @@ import math
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from traffic_rl.research.pilot_epsilon_selector import (
+    validate_final_resolved_config, validate_final_selection)
 
 LEARNING_CONTROLLERS = (
     "shared_ddqn_legacy",
@@ -22,7 +27,6 @@ REQUIRED_ARTIFACTS = (
     "resolved-config.json", "baseline-tuning.json", "run-manifest.json",
 )
 EVALUATOR_COMMAND = ["python3", "scripts/evaluate_haichau_network.py"]
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _sha256(path):
@@ -84,7 +88,8 @@ def _expected_directory(controller, seed):
     return "legacy-final-seed%d" % seed
 
 
-def _read_final_run(root, training_root, controller, seed, manifest_hash):
+def _read_final_run(root, training_root, controller, seed, manifest_hash,
+                    selected_config):
     directory = training_root / _expected_directory(controller, seed)
     if not directory.is_dir():
         raise ValueError("final training directory is missing: %s" % (
@@ -113,9 +118,10 @@ def _read_final_run(root, training_root, controller, seed, manifest_hash):
             or run_manifest.get("mode") != "final"):
         raise ValueError("final training identity drift")
     resolved = documents["resolved-config.json"]
-    if (resolved.get("mode") != "final"
-            or resolved.get("learning_seed") != seed):
-        raise ValueError("final training resolved config drift")
+    try:
+        validate_final_resolved_config(resolved, selected_config, seed)
+    except ValueError as exc:
+        raise ValueError("final training resolved config drift: %s" % exc)
     reward = resolved.get("reward")
     if not isinstance(reward, dict):
         raise ValueError("final training reward is missing")
@@ -204,7 +210,8 @@ def _write_once(path, encoded):
     temporary.replace(path)
 
 
-def build_release_inputs(project_root, manifest, training_root, output_dir):
+def build_release_inputs(project_root, manifest, training_root, output_dir,
+                         pilot_epsilon_selection):
     """Validate final training artifacts and write freeze-ready input JSON."""
     root = Path(project_root).resolve()
     manifest_path = _project_file(root, manifest, "experiment manifest")
@@ -218,11 +225,14 @@ def build_release_inputs(project_root, manifest, training_root, output_dir):
         raise ValueError("training root must remain inside project root")
     manifest_document, resolved = _manifest_configuration(root, manifest_path)
     manifest_hash = _canonical_hash(manifest_document)
+    selection = validate_final_selection(root, pilot_epsilon_selection)
+    selected_config = selection["selected_config"]["config"]
     runs = []
     for controller in LEARNING_CONTROLLERS:
         for seed in SEEDS:
             runs.append((controller, seed, _read_final_run(
-                root, training_path, controller, seed, manifest_hash)))
+                root, training_path, controller, seed, manifest_hash,
+                selected_config)))
     rewards = set(json.dumps(run[2]["reward"], sort_keys=True)
                   for run in runs)
     if len(rewards) != 1:
@@ -245,9 +255,17 @@ def build_release_inputs(project_root, manifest, training_root, output_dir):
     })
     document = {
         "resolved_config": resolved,
+        "pilot_epsilon_selection": {
+            key: value for key, value in selection.items()
+            if key != "selected_config"
+        },
         "controller_configs": configs,
         "controller_commands": dict(
             (controller, list(EVALUATOR_COMMAND)) for controller in CONTROLLERS),
+    }
+    document["pilot_epsilon_selection"]["selected_config"] = {
+        key: value for key, value in selection["selected_config"].items()
+        if key != "config"
     }
     output_path = Path(output_dir)
     if not output_path.is_absolute():
@@ -281,10 +299,14 @@ def main(argv=None):
         "--training-root", default="results/haichau_network_v2/training")
     parser.add_argument(
         "--output-dir", default="results/haichau_network_v2/release-inputs")
+    parser.add_argument(
+        "--pilot-epsilon-selection",
+        default="results/haichau_network_v2/training/pilot-epsilon-selection.json")
     args = parser.parse_args(argv)
     try:
         result = build_release_inputs(
-            args.project_root, args.manifest, args.training_root, args.output_dir)
+            args.project_root, args.manifest, args.training_root, args.output_dir,
+            args.pilot_epsilon_selection)
     except ValueError as exc:
         print("release inputs refused: %s" % exc, file=sys.stderr)
         return 1

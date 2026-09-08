@@ -10,7 +10,8 @@ from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from scripts.export_haichau_replays import export_bundle
 from scripts.verify_haichau_thesis import (
-    _checkpoint_contract_valid, audit_demo, verify_project)
+    _checkpoint_contract_valid, _pilot_epsilon_selection_gate, audit_demo,
+    verify_project)
 from traffic_rl.eval.network_campaign import bind_frozen_manifest, expand_runs, run_pending
 from traffic_rl.eval.checkpoint_selection import (
     CHECKPOINT_ELIGIBILITY_POLICY, score_validation)
@@ -260,6 +261,71 @@ def _checkpoint_contract(network_sha256, controller="neighbor_phase_ddqn",
     }
 
 
+def _pilot_selection(root, manifest_path):
+    canonical = {
+        "schema_version": 2,
+        "exploration": {"epsilon_decay_decisions": 10000},
+        "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.1,
+                   "switch_penalty": 0.05},
+        "tiers": {"final": {"episodes": 80, "horizon_seconds": 3600}},
+    }
+    fast = json.loads(json.dumps(canonical))
+    fast["exploration"]["epsilon_decay_decisions"] = 2160
+    configs = {}
+    for name, source in (("canonical", canonical), ("epsilon2160", fast)):
+        path = root / "release" / (name + ".yaml")
+        _write(path, json.dumps(source))
+        configs[name] = {
+            "path": str(path.relative_to(root)), "sha256": _digest(path),
+            "epsilon_decay_decisions": source["exploration"]["epsilon_decay_decisions"],
+        }
+    selected_path = root / "release" / "selected.yaml"
+    _write(selected_path, json.dumps(fast))
+    baseline = root / "release" / "pilot-baseline.json"
+    _write(baseline, "fixture")
+    required = (
+        "status.json", "run-manifest.json", "resolved-config.json",
+        "baseline-tuning.json", "baseline-tuning-provenance.json",
+        "validation.json", "selection.json",
+    )
+    schedules = {}
+    for name in ("canonical", "epsilon2160"):
+        run_dir = root / "release" / ("pilot-" + name)
+        artifacts = {}
+        for artifact in required:
+            _write(run_dir / artifact, "fixture:" + artifact)
+            artifacts[artifact] = _digest(run_dir / artifact)
+        schedules[name] = {"run_dir": str(run_dir.relative_to(root)),
+                           "artifacts": artifacts}
+    decision = {
+        "schema_version": 1,
+        "decision_type": "haichau_pilot_epsilon_schedule_selection",
+        "inputs": {
+            "code_commit": "a" * 40,
+            "manifest": {"path": str(manifest_path.relative_to(root)),
+                         "sha256": _digest(manifest_path)},
+            "baseline_tuning": {"path": str(baseline.relative_to(root)),
+                               "sha256": _digest(baseline)},
+            "configs": configs,
+        },
+        "schedules": schedules,
+        "winner": {"schedule": "epsilon2160", "config": configs["epsilon2160"]},
+        "selected_config": {"path": str(selected_path.relative_to(root)),
+                            "sha256": _digest(selected_path)},
+    }
+    decision["decision_identity_sha256"] = _json_digest(decision)
+    decision_path = root / "release" / "pilot-epsilon-selection.json"
+    _write(decision_path, json.dumps(decision))
+    return fast, {
+        "path": str(decision_path.relative_to(root)),
+        "sha256": _digest(decision_path),
+        "decision_identity_sha256": decision["decision_identity_sha256"],
+        "winner": {"schedule": "epsilon2160", "config": configs["epsilon2160"]},
+        "selected_config": {"path": str(selected_path.relative_to(root)),
+                            "sha256": _digest(selected_path)},
+    }
+
+
 def _write_bound_project(root):
     runtime_dockerfile = root / "docker/haichau-evaluation.Dockerfile"
     _write(runtime_dockerfile, "FROM %s\n" % RUNTIME_IMAGE)
@@ -340,6 +406,7 @@ def _write_bound_project(root):
     phase_sha = "b" * 64
     generator_sha = "c" * 64
     experiment_sha = "d" * 64
+    selected_config, selection_binding = _pilot_selection(root, case_manifest_path)
     checkpoints = []
     for controller in ("shared_ddqn_legacy", "neighbor_phase_ddqn"):
         for seed in range(11, 16):
@@ -381,12 +448,13 @@ def _write_bound_project(root):
                 "eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
                 "score": score,
             }))
-            _write(resolved_path, json.dumps({
+            resolved = json.loads(json.dumps(selected_config))
+            resolved.update({
                 "mode": "final", "learning_seed": seed,
                 "network_sha256": network_sha,
-                "run": {"episodes": 80, "horizon_seconds": 3600},
-                "reward": dict(contract["training_objective"]["reward"]),
-            }))
+                "run": selected_config["tiers"]["final"],
+            })
+            _write(resolved_path, json.dumps(resolved))
             _write(tuning_path, json.dumps({
                 "selection_cases": [case["case_id"] for case in validation_cases],
                 "selected": {"fixed_green_duration": 30},
@@ -495,6 +563,7 @@ def _write_bound_project(root):
         },
         "controller_configs": controller_configs,
         "controller_commands": controller_commands,
+        "pilot_epsilon_selection": selection_binding,
         "checkpoints": checkpoints,
         "acceptance_rules": rules,
         "code_commit": code_commit,
@@ -663,6 +732,28 @@ def test_final_verifier_lists_missing_requirements(tmp_path):
     assert "five_learning_seeds" in report["failed_gates"]
     assert "offline_demo" in report["failed_gates"]
     assert "network_53_signals" in report["failed_gates"]
+
+
+def test_final_verifier_has_a_fail_closed_pilot_selection_gate(tmp_path):
+    gate = _pilot_epsilon_selection_gate(tmp_path, {})
+
+    assert gate["passed"] is False
+    assert "pilot epsilon selection" in gate["detail"]
+
+
+def test_final_verifier_rejects_one_final_config_that_drifts_from_selected_config(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    source = tmp_path / protocol["checkpoints"][0]["source_run_dir"] / "resolved-config.json"
+    resolved = json.loads(source.read_text())
+    resolved["exploration"]["epsilon_decay_decisions"] = 10000
+    _write(source, json.dumps(resolved))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["pilot_epsilon_selection"]["passed"] is False
+    assert "selected config" in report["gates"]["pilot_epsilon_selection"]["detail"]
 
 
 def test_final_verifier_rejects_disjoint_placeholder_evidence(tmp_path):

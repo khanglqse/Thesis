@@ -93,7 +93,7 @@ def _contract(network_sha, phase_contract_sha, generator_config_sha,
 
 def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
                        generator_config_sha, manifest_sha, validation_cases,
-                       include_test=False):
+                       selected_config, include_test=False):
     relative = "release-training/%s/final-seed%d" % (controller, seed)
     run_dir = root / relative
     contract = _contract(
@@ -129,13 +129,13 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
         "eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
         "score": score,
     })
-    _write(run_dir / "resolved-config.json", {
-        "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.1,
-                   "switch_penalty": 0.05},
+    resolved = json.loads(json.dumps(selected_config))
+    resolved.update({
         "mode": "final", "learning_seed": seed,
         "network_sha256": network_sha,
-        "run": {"episodes": 80, "horizon_seconds": 3600},
+        "run": selected_config["tiers"]["final"],
     })
+    _write(run_dir / "resolved-config.json", resolved)
     _write(run_dir / "baseline-tuning.json", {
         "selection_cases": [case["case_id"] for case in validation_cases],
         "selected": {"fixed_green_duration": 30},
@@ -164,6 +164,72 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
         "artifact_sha256": artifacts,
     })
     return relative
+
+
+def _pilot_selection(root, manifest_path):
+    canonical = {
+        "schema_version": 2,
+        "exploration": {"epsilon_decay_decisions": 10000},
+        "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.1,
+                   "switch_penalty": 0.05},
+        "tiers": {"final": {"episodes": 80, "horizon_seconds": 3600}},
+    }
+    fast = json.loads(json.dumps(canonical))
+    fast["exploration"]["epsilon_decay_decisions"] = 2160
+    configs = {}
+    for name, source in (("canonical", canonical), ("epsilon2160", fast)):
+        path = root / "release" / (name + ".yaml")
+        _write(path, source)
+        configs[name] = {
+            "path": str(path.relative_to(root)), "sha256": _sha256(path),
+            "epsilon_decay_decisions": source["exploration"]["epsilon_decay_decisions"],
+        }
+    selected_path = root / "release" / "selected.yaml"
+    _write(selected_path, fast)
+    baseline = root / "release" / "pilot-baseline.json"
+    _write(baseline, {"fixture": "pilot baseline"})
+    required = (
+        "status.json", "run-manifest.json", "resolved-config.json",
+        "baseline-tuning.json", "baseline-tuning-provenance.json",
+        "validation.json", "selection.json",
+    )
+    schedules = {}
+    for name in ("canonical", "epsilon2160"):
+        run_dir = root / "release" / ("pilot-" + name)
+        artifacts = {}
+        for artifact in required:
+            _write(run_dir / artifact, {"fixture": artifact})
+            artifacts[artifact] = _sha256(run_dir / artifact)
+        schedules[name] = {"run_dir": str(run_dir.relative_to(root)),
+                           "artifacts": artifacts}
+    decision = {
+        "schema_version": 1,
+        "decision_type": "haichau_pilot_epsilon_schedule_selection",
+        "inputs": {
+            "code_commit": "a" * 40,
+            "manifest": {"path": str(manifest_path.relative_to(root)),
+                         "sha256": _sha256(manifest_path)},
+            "baseline_tuning": {"path": str(baseline.relative_to(root)),
+                               "sha256": _sha256(baseline)},
+            "configs": configs,
+        },
+        "schedules": schedules,
+        "winner": {"schedule": "epsilon2160", "config": configs["epsilon2160"]},
+        "selected_config": {"path": str(selected_path.relative_to(root)),
+                            "sha256": _sha256(selected_path)},
+    }
+    decision["decision_identity_sha256"] = _canonical_hash(decision)
+    decision_path = root / "release" / "pilot-epsilon-selection.json"
+    _write(decision_path, decision)
+    binding = {
+        "path": str(decision_path.relative_to(root)),
+        "sha256": _sha256(decision_path),
+        "decision_identity_sha256": decision["decision_identity_sha256"],
+        "winner": {"schedule": "epsilon2160", "config": configs["epsilon2160"]},
+        "selected_config": {"path": str(selected_path.relative_to(root)),
+                            "sha256": _sha256(selected_path)},
+    }
+    return fast, binding
 
 
 def _fixture(root):
@@ -214,6 +280,7 @@ def _fixture(root):
     manifest_sha = hashlib.sha256(json.dumps(
         manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     validation_cases = [case for case in cases if case["split"] == "validation"]
+    selected_config, selection_binding = _pilot_selection(root, manifest_path)
     dockerfile = root / "docker/haichau-evaluation.Dockerfile"
     _write(dockerfile, "FROM %s\n" % RUNTIME_IMAGE)
     controller_configs = dict(
@@ -239,6 +306,7 @@ def _fixture(root):
             },
         },
         "controller_configs": controller_configs,
+        "pilot_epsilon_selection": selection_binding,
         "controller_commands": dict(
             (controller, ["python3", "scripts/evaluate_haichau_network.py"])
             for controller in CONTROLLERS),
@@ -252,7 +320,7 @@ def _fixture(root):
                 root, controller, seed, network_sha,
                 manifest["phase_contract"]["sha256"],
                 manifest["generator_config_sha256"], manifest_sha,
-                validation_cases)
+                validation_cases, selected_config)
     index_path = root / "release/training-index.json"
     _write(index_path, index)
     commit = _commit(root)
@@ -503,6 +571,21 @@ def test_freeze_writes_hash_bound_protocol_from_all_final_eligible_cells(tmp_pat
     assert verify_haichau_thesis._acceptance_rules(protocol)["bootstrap_samples"] == 10000
 
 
+def test_freeze_requires_pilot_epsilon_selection_binding(tmp_path):
+    fixture = _fixture(tmp_path)
+    document = json.loads(fixture["config"].read_text())
+    del document["pilot_epsilon_selection"]
+    _write(fixture["config"], document)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "remove selection binding")
+
+    with pytest.raises(ValueError, match="pilot epsilon selection"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
 def test_freeze_requires_and_preserves_scheduled_vehicle_counts(tmp_path):
     fixture = _fixture(tmp_path)
     manifest = json.loads(fixture["manifest"].read_text())
@@ -611,7 +694,7 @@ def test_freeze_refuses_a_short_horizon_disguised_as_final_training(tmp_path):
     _git(tmp_path, "add", ".")
     _git(tmp_path, "commit", "-qm", "short final run")
 
-    with pytest.raises(ValueError, match="full 3600-second horizon"):
+    with pytest.raises(ValueError, match="selected config drift|full 3600-second horizon"):
         freeze_protocol(
             tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
             fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
@@ -755,7 +838,7 @@ def test_freeze_rejects_training_objective_drift(tmp_path, mutation):
     _write(status_path, status)
     _git(tmp_path, 'add', '.')
     _git(tmp_path, 'commit', '-qm', 'training objective drift')
-    with pytest.raises(ValueError, match='training objective'):
+    with pytest.raises(ValueError, match='selected config drift|training objective'):
         freeze_protocol(
             tmp_path, fixture['manifest'], fixture['viewer'], fixture['config'],
             fixture['index'], RUNTIME_IMAGE, fixture['dockerfile'],

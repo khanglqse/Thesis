@@ -22,6 +22,8 @@ from traffic_rl.eval.release_attestation import validate_attestation
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.eval.checkpoint_selection import (
     CHECKPOINT_ELIGIBILITY_POLICY, validate_checkpoint_selection)
+from traffic_rl.research.pilot_epsilon_selector import (
+    validate_final_resolved_config, validate_final_selection)
 from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.haichau_demo_fallbacks import validate_fallbacks
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
@@ -222,6 +224,47 @@ def _runtime_gate(root, protocol):
         identity = verify_runtime(root, protocol)
         return _gate(
             True, "CityFlow Docker image and Dockerfile identities are verified", identity)
+    except Exception as exc:
+        return _gate(False, str(exc))
+
+
+def _pilot_epsilon_selection_gate(root, protocol):
+    try:
+        declared = (protocol or {}).get("pilot_epsilon_selection")
+        if not isinstance(declared, dict):
+            raise ValueError("pilot epsilon selection binding is missing")
+        selection = validate_final_selection(root, declared.get("path"))
+        actual = {key: value for key, value in selection.items()
+                  if key != "selected_config"}
+        actual["selected_config"] = {
+            key: value for key, value in selection["selected_config"].items()
+            if key != "config"
+        }
+        if declared != actual:
+            raise ValueError("pilot epsilon selection binding drift")
+        expected_cells = set(
+            (controller, seed) for controller in LEARNING_CONTROLLERS
+            for seed in REQUIRED_SEEDS)
+        observed = set()
+        for checkpoint in (protocol or {}).get("checkpoints", []):
+            if not isinstance(checkpoint, dict):
+                raise ValueError("pilot selection checkpoint entry is invalid")
+            controller = checkpoint.get("controller_id")
+            seed = checkpoint.get("learning_seed")
+            run_dir = _inside(root, checkpoint.get("source_run_dir"))
+            if not run_dir or not run_dir.is_dir():
+                raise ValueError("pilot selection source run is missing")
+            validate_final_resolved_config(
+                _json(run_dir / "resolved-config.json"),
+                selection["selected_config"]["config"], seed)
+            observed.add((controller, seed))
+        if observed != expected_cells:
+            raise ValueError("pilot selection does not cover all final runs")
+        return _gate(True, "pilot epsilon decision and selected config bind all final runs", {
+            "decision_identity_sha256": selection["decision_identity_sha256"],
+            "winner": selection["winner"]["schedule"],
+            "selected_config": actual["selected_config"],
+        })
     except Exception as exc:
         return _gate(False, str(exc))
 
@@ -844,6 +887,7 @@ def verify_project(root, skip_clean_checkout=False):
         "network_53_signals": _network_gate(root, protocol),
         "thirty_case_split": _case_gate(root, protocol),
         "runtime_pinned": _runtime_gate(root, protocol),
+        "pilot_epsilon_selection": _pilot_epsilon_selection_gate(root, protocol),
         "five_learning_seeds": _checkpoint_gate(root, protocol),
         "fresh_matched_runs": matched,
         "scenario_coverage": scenarios,

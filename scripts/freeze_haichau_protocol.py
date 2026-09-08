@@ -22,6 +22,8 @@ from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.eval.checkpoint_selection import (
     CHECKPOINT_ELIGIBILITY_POLICY, validate_checkpoint_selection)
+from traffic_rl.research.pilot_epsilon_selector import (
+    validate_final_resolved_config, validate_final_selection)
 from traffic_rl.sim.phase_encoder import FEATURES
 from traffic_rl.train.network_trainer import (
     _tuning_binding, _validate_precomputed_tuning)
@@ -293,6 +295,8 @@ def _controller_configuration(root, path):
         raise ValueError("controller commands must define every controller")
     if not isinstance(resolved, dict):
         raise ValueError("resolved campaign configuration must be an object")
+    if not isinstance(document.get("pilot_epsilon_selection"), dict):
+        raise ValueError("pilot epsilon selection binding is required")
     for controller in CONTROLLERS:
         if not isinstance(configs[controller], dict) or not configs[controller]:
             raise ValueError("controller config is invalid: %s" % controller)
@@ -373,7 +377,8 @@ def _run_artifact_path(run_dir, relative):
 
 
 def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
-                      normalization, validation_ids, manifest, expected_objective):
+                      normalization, validation_ids, manifest, expected_objective,
+                      selected_config):
     run_path, normalized_relative = _relative_file(
         root, run_relative + "/status.json", "training artifact status")
     run_dir = run_path.parent
@@ -400,8 +405,11 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
             or run_manifest.get("learning_seed") != seed):
         raise ValueError("training artifact controller/seed identity drift")
     resolved = _json(run_dir / "resolved-config.json", "resolved training config")
-    if (resolved.get("mode") != "final" or resolved.get("learning_seed") != seed
-            or resolved.get("network_sha256") != compatibility["network_sha256"]):
+    try:
+        validate_final_resolved_config(resolved, selected_config, seed)
+    except ValueError as exc:
+        raise ValueError("final training selected config drift: %s" % exc)
+    if resolved.get("network_sha256") != compatibility["network_sha256"]:
         raise ValueError("training artifact is not a final run for this network")
     run_config = resolved.get("run")
     if (not isinstance(run_config, dict)
@@ -463,7 +471,8 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
 
 
 def _training_checkpoints(root, index_path, compatibility, normalization,
-                          validation_ids, manifest, expected_objective):
+                          validation_ids, manifest, expected_objective,
+                          selected_config):
     index_path, relative = _relative_file(root, index_path, "training index")
     index = _json(index_path, "training index")
     if set(index or ()) != set(LEARNING_CONTROLLERS):
@@ -479,7 +488,8 @@ def _training_checkpoints(root, index_path, compatibility, normalization,
                 raise ValueError("training index run path is invalid")
             checkpoints.append(_checkpoint_entry(
                 root, controller, seed, run_relative, compatibility,
-                normalization, validation_ids, manifest, expected_objective))
+                normalization, validation_ids, manifest, expected_objective,
+                selected_config))
     return checkpoints, relative, _sha256(index_path)
 
 
@@ -560,9 +570,22 @@ def freeze_protocol(root, experiment_manifest, viewer_network, controller_config
     validation_ids = set(case["case_id"] for case in cases
                          if case["split"] == "validation")
     config, config_relative, config_sha = _controller_configuration(root, controller_configs)
+    selection = validate_final_selection(
+        root, config["pilot_epsilon_selection"].get("path"))
+    declared_selection = config["pilot_epsilon_selection"]
+    actual_selection = {
+        key: value for key, value in selection.items() if key != "selected_config"
+    }
+    actual_selection["selected_config"] = {
+        key: value for key, value in selection["selected_config"].items()
+        if key != "config"
+    }
+    if declared_selection != actual_selection:
+        raise ValueError("pilot epsilon selection binding drift")
     checkpoints, index_relative, index_sha = _training_checkpoints(
         root, training_index, compatibility, normalization, validation_ids,
-        manifest, training_objective(config["resolved_config"].get("reward")))
+        manifest, training_objective(config["resolved_config"].get("reward")),
+        selection["selected_config"]["config"])
     runtime = _runtime(root, runtime_image, runtime_dockerfile, runtime_inspector)
     case_manifest = {
         "schema_version": 1,
@@ -589,6 +612,7 @@ def freeze_protocol(root, experiment_manifest, viewer_network, controller_config
         "controller_config_sha256": config_sha,
         "training_index_path": index_relative,
         "training_index_sha256": index_sha,
+        "pilot_epsilon_selection": actual_selection,
         "resolved_config": config["resolved_config"],
         "controller_configs": config["controller_configs"],
         "controller_commands": config["controller_commands"],

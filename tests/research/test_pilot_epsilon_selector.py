@@ -212,6 +212,35 @@ def test_selects_fast_only_when_its_eligible_validation_tuple_is_strictly_better
     assert "test" not in json.dumps(decision).lower()
 
 
+def test_final_selection_binding_rechecks_decision_identity_and_selected_config(tmp_path):
+    from traffic_rl.research.pilot_epsilon_selector import (
+        select_from_spec, validate_final_selection)
+
+    root, spec = _fixture(tmp_path, canonical_regrets=(-1.0, -2.0, -3.0),
+                          fast_regrets=(-2.0, -3.0, -4.0))
+    decision = select_from_spec(root, root / "spec.yaml")
+
+    binding = validate_final_selection(root, root / spec["decision_output"])
+
+    assert binding["decision_identity_sha256"] == decision["decision_identity_sha256"]
+    assert binding["selected_config"]["path"] == spec["selected_config_output"]
+    assert binding["selected_config"]["config"] == _config(2160)
+
+
+def test_final_selection_binding_rejects_tampered_selected_config(tmp_path):
+    from traffic_rl.research.pilot_epsilon_selector import (
+        select_from_spec, validate_final_selection)
+
+    root, spec = _fixture(tmp_path, canonical_regrets=(-1.0, -2.0, -3.0),
+                          fast_regrets=(-2.0, -3.0, -4.0))
+    select_from_spec(root, root / "spec.yaml")
+    selected = root / spec["selected_config_output"]
+    selected.write_text(yaml.safe_dump(_config(10000), sort_keys=True))
+
+    with pytest.raises(ValueError, match="selected config hash drift"):
+        validate_final_selection(root, root / spec["decision_output"])
+
+
 def test_tie_retains_canonical_schedule(tmp_path):
     from traffic_rl.research.pilot_epsilon_selector import select_from_spec
 
