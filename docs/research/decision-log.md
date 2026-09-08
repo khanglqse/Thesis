@@ -180,3 +180,23 @@ be mixed with the ten canonical final runs, frozen protocol, paper result, or
 defense replay. Any decision to change the canonical final epsilon schedule
 requires a separate logged decision made from pilot/validation evidence before
 final training starts; otherwise the final schedule remains 10,000 decisions.
+
+## 2026-09-08 — Respect safety masks in pressure baselines
+
+Decision: raw and hysteretic Max-Pressure choose only valid real green actions.
+When the current action is invalid, choose the highest-pressure valid action,
+breaking ties by the lowest action index; a singleton mask overrides pressure,
+hold time, and switching margin. Hysteretic hold/margin remain in force while
+the current action is valid. Missing masks retain the prior unconstrained API;
+a supplied mask with no valid real action fails closed.
+
+Reason: the Hai Chau environment enforces maximum red by exposing a forced
+mask. Ignoring that mask could repeatedly request an action the environment
+rejects and starve a movement. New tests exercise both controllers through a
+400-second environment rollout and verify the maximum-red bound.
+
+Consequence: regenerate Hai Chau pressure results with the corrected controllers.
+This bug does not invalidate the published single-junction SUMO results:
+`SumoSingleJunctionEnv` exposes all three actions as valid and enforces minimum
+green internally, with no maximum-red forced mask. Tests confirm pressure
+controller decisions are unchanged under that all-valid mask contract.
