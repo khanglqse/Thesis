@@ -46,6 +46,11 @@ CHECKPOINT_CONTRACT_FIELDS = {
     "obs_schema_version", "feature_order", "normalization", "hidden_size",
     "action_contract", "network_compatibility", "controller_family",
 }
+REQUIRED_TRAINING_ARTIFACTS = (
+    "checkpoint/weights.npz", "checkpoint/contract.json", "validation.json",
+    "selection.json", "resolved-config.json", "baseline-tuning.json",
+    "run-manifest.json",
+)
 ACTION_CONTRACTS = {
     "neighbor_phase_ddqn": {
         "type": "phase_rows", "version": 1,
@@ -277,10 +282,167 @@ def _checkpoint_contract_valid(contract, protocol, controller):
         return False
 
 
+def _contains_test_reference(value):
+    if isinstance(value, dict):
+        return any(
+            ((key != "eligible_for_test_evaluation"
+              and _contains_test_reference(key))
+             or _contains_test_reference(item))
+            for key, item in value.items())
+    if isinstance(value, list):
+        return any(_contains_test_reference(item) for item in value)
+    if isinstance(value, str):
+        lowered = value.lower().replace("\\", "/")
+        tokens = [token for token in re.split(r"[/\s_.-]+", lowered) if token]
+        return any(token == "test" or token.startswith("testcase")
+                   for token in tokens)
+    return False
+
+
+def _source_run_file(run_dir, relative):
+    if not isinstance(relative, str) or not relative:
+        raise ValueError("source artifact path is invalid")
+    candidate = (run_dir / relative).resolve()
+    try:
+        candidate.relative_to(run_dir.resolve())
+    except ValueError:
+        raise ValueError("source artifact path escapes the training run")
+    return candidate
+
+
+def _source_selection_valid(validation, selection, tuning, validation_ids):
+    if (_contains_test_reference(validation) or _contains_test_reference(selection)
+            or _contains_test_reference(tuning)):
+        raise ValueError("test metric appears in source checkpoint selection evidence")
+    if not isinstance(validation, dict) or not validation:
+        raise ValueError("source validation evidence is missing")
+    if not isinstance(selection, dict):
+        raise ValueError("source checkpoint selection is invalid")
+    score = selection.get("score")
+    if not isinstance(score, dict):
+        raise ValueError("source checkpoint selection score is invalid")
+    selected = selection.get("selected_checkpoint")
+    if (not isinstance(selected, str)
+            or not re.fullmatch(r"[A-Za-z0-9_.-]+", selected)
+            or selected in (".", "..")
+            or selected not in validation):
+        raise ValueError("source selected checkpoint lacks validation evidence")
+    selected_evidence = validation[selected]
+    if not isinstance(selected_evidence, dict) or not selected_evidence.get("score"):
+        raise ValueError("source selected checkpoint validation score is missing")
+    if selection.get("score") != selected_evidence.get("score"):
+        raise ValueError("source selection score drifts from validation evidence")
+    if (selection.get("status") != "eligible"
+            or selection.get("eligible_for_test_evaluation") is not True
+            or score.get("eligible") is not True):
+        raise ValueError("source checkpoint selection is not validation-eligible")
+    for item in validation.values():
+        if not isinstance(item, dict) or not isinstance(item.get("rows"), list):
+            raise ValueError("source validation checkpoint rows are missing")
+        for row in item["rows"]:
+            if not isinstance(row, dict) or row.get("case_id") not in validation_ids:
+                raise ValueError("source checkpoint selection uses a non-validation case")
+    selection_cases = tuning.get("selection_cases", []) if isinstance(tuning, dict) else []
+    if selection_cases and any(case_id not in validation_ids for case_id in selection_cases):
+        raise ValueError("source baseline tuning uses a non-validation case")
+    return selected
+
+
+def _source_checkpoint_valid(root, entry, protocol, controller, seed,
+                             validation_ids):
+    source_relative = entry.get("source_run_dir")
+    if not isinstance(source_relative, str) or not source_relative:
+        raise ValueError("checkpoint source run directory is missing")
+    run_dir = _inside(root, source_relative)
+    if not run_dir or not run_dir.is_dir():
+        raise ValueError("checkpoint source run directory is invalid")
+    status_path = _source_run_file(run_dir, "status.json")
+    if (not status_path.is_file()
+            or not re.fullmatch(r"[0-9a-f]{64}",
+                                str(entry.get("source_status_sha256") or ""))
+            or _sha256(status_path) != entry["source_status_sha256"]):
+        raise ValueError("checkpoint source status hash drift")
+    status = _json(status_path)
+    if not isinstance(status, dict):
+        raise ValueError("checkpoint source status is invalid")
+    artifact_hashes = status.get("artifact_sha256")
+    if (status.get("status") != "complete"
+            or status.get("eligible_for_test_evaluation") is not True
+            or not isinstance(artifact_hashes, dict)):
+        raise ValueError("checkpoint source status is not validation-eligible")
+    source_artifacts = entry.get("source_artifacts")
+    if not isinstance(source_artifacts, dict):
+        raise ValueError("checkpoint source artifact hashes are missing")
+    if not set(REQUIRED_TRAINING_ARTIFACTS).issubset(artifact_hashes):
+        raise ValueError("checkpoint source status omits required artifacts")
+    validation = _json(_source_run_file(run_dir, "validation.json"))
+    selection = _json(_source_run_file(run_dir, "selection.json"))
+    tuning = _json(_source_run_file(run_dir, "baseline-tuning.json"))
+    selected = _source_selection_valid(
+        validation, selection, tuning, validation_ids)
+    selected_prefix = "checkpoints/%s/" % selected
+    selected_artifacts = {
+        selected_prefix + "weights.npz", selected_prefix + "contract.json",
+    }
+    if set(source_artifacts) != set(artifact_hashes).union(selected_artifacts):
+        raise ValueError("checkpoint source artifact set drift")
+    for relative, expected in source_artifacts.items():
+        path = _source_run_file(run_dir, relative)
+        if (not path.is_file()
+                or not re.fullmatch(r"[0-9a-f]{64}", str(expected or ""))
+                or _sha256(path) != expected):
+            raise ValueError("checkpoint source artifact hash drift")
+    for relative, expected in artifact_hashes.items():
+        if source_artifacts.get(relative) != expected:
+            raise ValueError("checkpoint source status artifact hash drift")
+    run_manifest = _json(_source_run_file(run_dir, "run-manifest.json"))
+    if (not isinstance(run_manifest, dict)
+            or run_manifest.get("controller_id") != controller
+            or run_manifest.get("learning_seed") != seed):
+        raise ValueError("checkpoint source run identity drift")
+    resolved = _json(_source_run_file(run_dir, "resolved-config.json"))
+    if not isinstance(resolved, dict):
+        raise ValueError("checkpoint source resolved training configuration is invalid")
+    run_config = resolved.get("run")
+    protocol_resolved = (protocol or {}).get("resolved_config")
+    if not isinstance(protocol_resolved, dict):
+        raise ValueError("frozen resolved training configuration is invalid")
+    expected_objective = training_objective(protocol_resolved.get("reward"))
+    if (resolved.get("mode") != "final" or resolved.get("learning_seed") != seed
+            or resolved.get("network_sha256") != (protocol or {}).get("network_sha256")
+            or not isinstance(run_config, dict)
+            or int(run_config.get("episodes", 0)) <= 0
+            or int(run_config.get("horizon_seconds", 0)) != 3600
+            or training_objective(resolved.get("reward")) != expected_objective):
+        raise ValueError("checkpoint source resolved training configuration drift")
+    weights_relative = str((run_dir / "checkpoint/weights.npz").relative_to(root))
+    contract_relative = str((run_dir / "checkpoint/contract.json").relative_to(root))
+    if (entry.get("path") != weights_relative
+            or entry.get("contract_path") != contract_relative
+            or entry.get("sha256") != source_artifacts["checkpoint/weights.npz"]
+            or entry.get("contract_file_sha256")
+            != source_artifacts["checkpoint/contract.json"]
+            or source_artifacts[selected_prefix + "weights.npz"]
+            != source_artifacts["checkpoint/weights.npz"]):
+        raise ValueError("checkpoint source bundle identity drift")
+    contract = _json(_source_run_file(run_dir, "checkpoint/contract.json"))
+    selected_contract = _json(
+        _source_run_file(run_dir, selected_prefix + "contract.json"))
+    if _canonical_hash(selected_contract) != _canonical_hash(contract):
+        raise ValueError("selected source checkpoint contract drift")
+
+
 def _checkpoint_gate(root, protocol):
     entries = (protocol or {}).get("checkpoints", [])
     if not isinstance(entries, list):
         return _gate(False, "frozen checkpoint list must be an array")
+    try:
+        case_manifest, _, _ = _load_cases(root, protocol)
+        validation_ids = set(
+            case["case_id"] for case in case_manifest["cases"]
+            if case.get("split") == "validation")
+    except (KeyError, OSError, ValueError, TypeError):
+        validation_ids = None
     cells, valid, evidence = set(), True, []
     for entry in entries:
         if not isinstance(entry, dict):
@@ -316,6 +478,14 @@ def _checkpoint_gate(root, protocol):
                 bundle_valid = True
             except (KeyError, OSError, ValueError, TypeError):
                 bundle_valid = False
+        source_valid = False
+        if validation_ids is not None:
+            try:
+                _source_checkpoint_valid(
+                    root, entry, protocol, controller, seed, validation_ids)
+                source_valid = True
+            except (KeyError, OSError, ValueError, TypeError, OverflowError):
+                source_valid = False
         okay = bool(
             controller in LEARNING_CONTROLLERS and seed in REQUIRED_SEEDS
             and cell not in cells and path and path.is_file() and expected
@@ -323,6 +493,7 @@ def _checkpoint_gate(root, protocol):
             and entry.get("validation_eligible") is True
             and stored_contract == contract
             and bundle_valid
+            and source_valid
             and _checkpoint_contract_valid(contract, protocol, controller)
             and entry.get("checkpoint_contract_sha256") == _canonical_hash(contract))
         valid = valid and okay

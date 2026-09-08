@@ -330,6 +330,8 @@ def _write_bound_project(root):
     case_manifest = {"protocol_version": 2, "cases": cases}
     case_manifest_path = root / "release/case-manifest.json"
     _write(case_manifest_path, json.dumps(case_manifest))
+    validation_case = next(case["case_id"] for case in cases
+                           if case["split"] == "validation")
 
     phase_sha = "b" * 64
     generator_sha = "c" * 64
@@ -345,9 +347,53 @@ def _write_bound_project(root):
             else:
                 model = PhaseScoringDDQN(
                     len(FEATURES), hidden=64, lr=1e-3, seed=seed)
-            model.save_bundle(str(bundle), contract)
-            path = bundle / "weights.npz"
-            contract_path = bundle / "contract.json"
+            model.save_bundle(str(bundle / "checkpoint"), contract)
+            model.save_bundle(str(bundle / "checkpoints/step-80"), contract)
+            path = bundle / "checkpoint/weights.npz"
+            contract_path = bundle / "checkpoint/contract.json"
+            validation_path = bundle / "validation.json"
+            selection_path = bundle / "selection.json"
+            resolved_path = bundle / "resolved-config.json"
+            tuning_path = bundle / "baseline-tuning.json"
+            run_manifest_path = bundle / "run-manifest.json"
+            _write(validation_path, json.dumps({
+                "step-80": {
+                    "rows": [{"case_id": validation_case}],
+                    "score": {"eligible": True},
+                },
+            }))
+            _write(selection_path, json.dumps({
+                "status": "eligible",
+                "selected_checkpoint": "step-80",
+                "eligible_for_test_evaluation": True,
+                "score": {"eligible": True},
+            }))
+            _write(resolved_path, json.dumps({
+                "mode": "final", "learning_seed": seed,
+                "network_sha256": network_sha,
+                "run": {"episodes": 80, "horizon_seconds": 3600},
+                "reward": dict(contract["training_objective"]["reward"]),
+            }))
+            _write(tuning_path, json.dumps({"selection_cases": [validation_case]}))
+            _write(run_manifest_path, json.dumps({
+                "controller_id": controller, "learning_seed": seed,
+            }))
+            artifacts = {}
+            for name in (
+                    "checkpoint/weights.npz", "checkpoint/contract.json",
+                    "validation.json", "selection.json", "resolved-config.json",
+                    "baseline-tuning.json", "run-manifest.json"):
+                artifacts[name] = _digest(bundle / name)
+            status_path = bundle / "status.json"
+            _write(status_path, json.dumps({
+                "status": "complete", "eligible_for_test_evaluation": True,
+                "artifact_sha256": artifacts,
+            }))
+            source_artifacts = dict(artifacts)
+            source_artifacts["checkpoints/step-80/weights.npz"] = _digest(
+                bundle / "checkpoints/step-80/weights.npz")
+            source_artifacts["checkpoints/step-80/contract.json"] = _digest(
+                bundle / "checkpoints/step-80/contract.json")
             checkpoints.append({
                 "controller_id": controller,
                 "learning_seed": seed,
@@ -358,6 +404,9 @@ def _write_bound_project(root):
                 "validation_eligible": True,
                 "checkpoint_contract": contract,
                 "checkpoint_contract_sha256": _json_digest(contract),
+                "source_run_dir": str(bundle.relative_to(root)),
+                "source_status_sha256": _digest(status_path),
+                "source_artifacts": source_artifacts,
             })
     controller_configs = {
         controller: {"controller_version": 2}
@@ -809,6 +858,73 @@ def test_non_object_checkpoint_entry_fails_gate_without_crashing(tmp_path):
     protocol = json.loads(path.read_text())
     protocol["checkpoints"][0] = None
     path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
+
+
+def test_checkpoint_gate_rejects_post_freeze_source_status_drift(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    entry = protocol["checkpoints"][0]
+    status_path = tmp_path / entry["source_run_dir"] / "status.json"
+    status = json.loads(status_path.read_text())
+    status["status"] = "failed"
+    status_path.write_text(json.dumps(status))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
+
+
+def test_checkpoint_gate_revalidates_rehashed_source_selection_evidence(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    entry = protocol["checkpoints"][0]
+    run_dir = tmp_path / entry["source_run_dir"]
+    validation_path = run_dir / "validation.json"
+    validation = json.loads(validation_path.read_text())
+    validation["step-80"]["rows"] = [{"case_id": "test-normal-0"}]
+    validation_path.write_text(json.dumps(validation))
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["validation.json"] = _digest(validation_path)
+    status_path.write_text(json.dumps(status))
+    entry["source_artifacts"]["validation.json"] = _digest(validation_path)
+    entry["source_status_sha256"] = _digest(status_path)
+    protocol_path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
+
+
+def test_checkpoint_gate_fails_closed_for_rehashed_non_object_source_status(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    entry = protocol["checkpoints"][0]
+    status_path = tmp_path / entry["source_run_dir"] / "status.json"
+    status_path.write_text("[]")
+    entry["source_status_sha256"] = _digest(status_path)
+    protocol_path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
+
+
+def test_checkpoint_gate_fails_closed_for_non_object_protocol_resolved_config(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    protocol["resolved_config"] = []
+    protocol_path.write_text(json.dumps(protocol))
 
     report = verify_project(tmp_path)
 
