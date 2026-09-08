@@ -1,0 +1,155 @@
+{
+  "agent_ids": [
+    "1333258672",
+    "1333258675",
+    "1333258678",
+    "1333303403",
+    "1333730385",
+    "1333762614",
+    "1334170383",
+    "3761464424",
+    "420248538",
+    "420248590",
+    "420248766",
+    "420248835",
+    "420248842",
+    "420248975",
+    "420248999",
+    "420249023",
+    "420249060",
+    "420249080",
+    "420249146",
+    "420249151",
+    "420249236",
+    "420249421",
+    "420249521",
+    "420249525",
+    "5896811072",
+    "cluster_10925625407_3070396769_3070396791",
+    "cluster_11568485806_420249005_6513691661",
+    "cluster_1261738019_3070396244_3070396254_6522135551",
+    "cluster_1261738236_2996178189",
+    "cluster_1333246012_1333246028_3540437805_6040645617",
+    "cluster_1333246087_3078041918",
+    "cluster_1333246117_2991183833",
+    "cluster_1333258669_1333279736",
+    "cluster_1334202699_3080182071",
+    "cluster_1334305553_420249257",
+    "cluster_1616276760_2991819238",
+    "cluster_1726781971_1726781974",
+    "cluster_2623083098_2988146967_2988146972_9662761813",
+    "cluster_2988146960_2988146981",
+    "cluster_2988146980_3068684702",
+    "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+    "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+    "cluster_2991183856_2991183859_2991183862_6548202094",
+    "cluster_2991819236_420249033",
+    "cluster_3065559064_3065559065",
+    "cluster_3070269464_3070269465",
+    "cluster_3501206652_420248485_6531294016",
+    "cluster_420249139_6525355442",
+    "cluster_420249144_6524986722",
+    "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+    "cluster_420249565_6525355441",
+    "cluster_6164917307_6164917332_6164917334_6164917335",
+    "cluster_6521341372_6521341373_6521341380"
+  ],
+  "case_id": "validation_pm_peak_demand31",
+  "code_commit": "fc7d7b0cd8b067d1792b20c1a43e89c7678628f6",
+  "code_sha256": {
+    "scripts/calibrate_haichau_capacity.py": "2d6a1363a1b8573b3caeb51c21cecb39316dcaa7bf6ee4059b08c875cea1a866",
+    "src/traffic_rl/eval/capacity_calibration.py": "c5f1858baa93f6927def1d146f8b08888ad77f7263d96e9a08be7469b0221e11"
+  },
+  "controlled_signals": 53,
+  "controller_id": "fixed_time_30",
+  "controller_version": "shared_nominal_fixed_time_v1",
+  "demand_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s035/runs/stage-d__validation_pm_peak_demand31__fixed_time_30__s0p35__h3600/flow.json",
+  "demand_seed": 31,
+  "demand_sha256": "bd723d618ac17f822c6c56c7b56450c8d20282fbba961e2d9779707abd9480c4",
+  "eligible_for_release": false,
+  "eligible_for_test_evaluation": false,
+  "evidence_namespace": "haichau_capacity_calibration_diagnostic",
+  "fixed_green_duration": 30,
+  "free_flow_eligible_by_snapshot": {
+    "1200": 1687,
+    "1500": 2488,
+    "1800": 3375,
+    "2100": 4419,
+    "2400": 5488,
+    "2700": 6583,
+    "300": 16,
+    "3000": 7685,
+    "3300": 8809,
+    "3600": 9936,
+    "600": 280,
+    "900": 913
+  },
+  "gate_policy": {
+    "aggregate": {
+      "pm_completion_less_than_normal": true,
+      "pm_queue_integral_greater_than_normal": true
+    },
+    "at_3600": {
+      "removed": 0,
+      "unreleased": 0
+    },
+    "drain_5400": {
+      "maximum_pending_rate": 0.01,
+      "minimum_completion_rate": 0.9
+    },
+    "drain_7200": {
+      "maximum_pending_rate": 0.01,
+      "minimum_completion_rate": 0.98
+    },
+    "normal": {
+      "maximum_pending_rate": 0.05,
+      "minimum_free_flow_eligible_completion": 0.7,
+      "minimum_insertion_rate": 0.95
+    },
+    "pm_peak": {
+      "minimum_insertion_rate": 0.9
+    },
+    "snapshot_conservation": true
+  },
+  "horizon_steps": 3600,
+  "injection_horizon_seconds": 3600,
+  "network_path": "datasets/haichau_network_v2/roadnet.json",
+  "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+  "normalization": {
+    "capacity_norm": 40.0,
+    "count_norm": 20.0
+  },
+  "phase_contract_path": "datasets/haichau_network_v2/phase-contract.json",
+  "phase_contract_sha256": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae",
+  "reward": {
+    "downstream_block_weight": 0.2,
+    "queue_weight": 1.0,
+    "switch_penalty": 0.05
+  },
+  "run_id": "stage-d__validation_pm_peak_demand31__fixed_time_30__s0p35__h3600",
+  "runtime": {
+    "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "derived_image_tag": "traffic-rl-cityflow-research:v2",
+    "dockerfile": {
+      "path": "docker/cityflow-research/Dockerfile",
+      "sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf"
+    },
+    "platform": "linux/amd64"
+  },
+  "scale": 0.35,
+  "scenario": "pm_peak",
+  "scheduled_vehicles": 12111,
+  "schema_version": 1,
+  "simulation": {
+    "action_interval": 10,
+    "maximum_red": 180,
+    "min_green": 20,
+    "yellow_time": 3
+  },
+  "simulator_seed": 131,
+  "snapshot_interval_seconds": 300,
+  "source_flow_path": "results/haichau_network_v2/demands/validation_pm_peak_demand31.json",
+  "source_flow_sha256": "77a02840f3baad44b78c9e50dcf0d79b64c7be7955a545563f62ba28245bfc13",
+  "split": "validation",
+  "stage": "stage-d"
+}
