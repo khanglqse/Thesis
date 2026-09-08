@@ -464,6 +464,7 @@ def _write_bound_project(root):
             "checkpoint_contract_sha256": run.get("checkpoint_contract_sha256"),
             "completed_steps": 10, "observed_steps": 10, "observed_seconds": 10,
             "queue_integral_vehicle_seconds": base_queue,
+            "network_queue_integral_vehicle_seconds": base_queue,
             "queue_integral_vehicle_hours": base_queue / 3600,
             "pending_integral_vehicle_seconds": 0.0,
             "per_node_queue_integral_vehicle_seconds": per_node,

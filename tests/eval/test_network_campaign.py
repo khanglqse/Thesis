@@ -273,6 +273,7 @@ def _executor(run, run_dir):
             "observed_steps": run["horizon_steps"],
             "observed_seconds": run["horizon_steps"],
             "queue_integral_vehicle_seconds": 123.0,
+            "network_queue_integral_vehicle_seconds": 123.0,
             "queue_integral_vehicle_hours": 123.0 / 3600,
             "pending_integral_vehicle_seconds": 0.0,
             "per_node_queue_integral_vehicle_seconds": nodes,
@@ -598,6 +599,21 @@ def test_metrics_scheduled_count_must_match_frozen_case(tmp_path):
     status = json.loads(
         (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
     assert "scheduled_vehicles" in status["error"]
+
+
+def test_primary_queue_integral_must_include_pending_integral(tmp_path):
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    _write_campaign(tmp_path, [run])
+
+    def inconsistent_queue_executor(run, run_dir):
+        result = _executor(run, run_dir)
+        result["metrics"]["pending_integral_vehicle_seconds"] = 1.0
+        return result
+
+    assert run_pending(tmp_path, inconsistent_queue_executor)["failed"] == 1
+    status = json.loads(
+        (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
+    assert "include pending demand" in status["error"]
 
 
 def test_incomplete_run_is_rebuilt_and_only_then_marked_complete(tmp_path):

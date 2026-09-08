@@ -621,6 +621,7 @@ def _validate_network_metrics(run, metrics):
     required = (
         "observed_steps", "observed_seconds",
         "queue_integral_vehicle_seconds", "queue_integral_vehicle_hours",
+        "network_queue_integral_vehicle_seconds",
         "pending_integral_vehicle_seconds", "per_node_queue_integral_vehicle_seconds",
         "per_node_max_queue", "spillback_lane_seconds", "scheduled", "inserted",
         "departed", "arrived", "running", "pending", "removed",
@@ -634,7 +635,8 @@ def _validate_network_metrics(run, metrics):
         raise ValueError("network metric schema is incomplete: %s" % ", ".join(missing))
     finite_fields = (
         "observed_steps", "observed_seconds", "queue_integral_vehicle_seconds",
-        "queue_integral_vehicle_hours", "pending_integral_vehicle_seconds",
+        "queue_integral_vehicle_hours", "network_queue_integral_vehicle_seconds",
+        "pending_integral_vehicle_seconds",
         "scheduled", "inserted", "departed", "arrived", "running", "pending",
         "removed", "censored_or_unfinished", "phase_switches",
         "intergreen_seconds", "max_red_seconds", "completed_travel_time_count",
@@ -653,6 +655,10 @@ def _validate_network_metrics(run, metrics):
     expected_hours = float(metrics["queue_integral_vehicle_seconds"]) / 3600.0
     if abs(float(metrics["queue_integral_vehicle_hours"]) - expected_hours) > 1e-12:
         raise ValueError("network queue integral units are inconsistent")
+    expected_total = (float(metrics["network_queue_integral_vehicle_seconds"])
+                      + float(metrics["pending_integral_vehicle_seconds"]))
+    if abs(float(metrics["queue_integral_vehicle_seconds"]) - expected_total) > 1e-9:
+        raise ValueError("primary queue integral must include pending demand")
     if metrics["completion_denominator"] != "scheduled":
         raise ValueError("network metric completion denominator must be scheduled")
     scheduled = int(metrics["scheduled"])

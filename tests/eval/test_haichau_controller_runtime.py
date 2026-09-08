@@ -83,6 +83,7 @@ class FakeEnv(object):
         final = {
             "observed_steps": 10, "observed_seconds": 10.0,
             "queue_integral_vehicle_seconds": 0.0,
+            "network_queue_integral_vehicle_seconds": 0.0,
             "queue_integral_vehicle_hours": 0.0,
             "pending_integral_vehicle_seconds": 0.0,
             "per_node_queue_integral_vehicle_seconds": nodes,
