@@ -21,4 +21,19 @@ cf-test:
 cf-smoke:
 	docker run --rm $(CF_IMAGE) python3 -c 'import cityflow; print("cityflow OK")'
 
-.PHONY: cf-run test cf-test cf-smoke
+LEARNING_SEED ?=
+HAICHAU_IMAGE ?= traffic-rl-cityflow-research:v2
+
+haichau-train-smoke:
+	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
+		--mode smoke --learning-seed $(LEARNING_SEED)
+
+haichau-train-pilot:
+	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
+		--mode pilot --learning-seed $(LEARNING_SEED)
+
+.PHONY: cf-run test cf-test cf-smoke haichau-train-smoke haichau-train-pilot

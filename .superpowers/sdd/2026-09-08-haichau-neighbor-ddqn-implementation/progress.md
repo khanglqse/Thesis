@@ -13,7 +13,8 @@
 - [x] Task 3: phase-scoring Double DQN and checkpoint contract
 - [x] Task 4: balanced case sampler and replay
 - [x] Task 5: validation regret and non-inferiority selection
-- [ ] Task 6: multi-case trainer and 53-node training smoke/pilot
+- [x] Task 6 code/config/unit tests: multi-case trainer and training CLI
+- [ ] Task 6 runtime gate: rerun 53-node smoke/pilot against corrected foundation
 
 ## RED/GREEN evidence
 
@@ -28,11 +29,21 @@
 - Task 4 GREEN: same command -> 4 passed, including ring-buffer overwrite coverage.
 - Task 5 RED: `PYTHONPATH=src pytest tests/eval/test_checkpoint_selection.py -v` -> collection failed with expected missing checkpoint-selection module.
 - Task 5 GREEN: same command -> 6 passed, including normal/completion gates and deterministic tie-breaking.
+- Task 6 RED: `PYTHONPATH=src pytest tests/train/test_network_trainer.py -v` -> collection failed with expected missing network trainer.
+- Task 6 GREEN (trainer): same command -> 2 passed; after tier-resolution RED, 3 passed.
+- Completion fail-closed RED: missing completion was incorrectly eligible and env lacked arrived/completion fields -> 2 expected failures.
+- Completion fail-closed GREEN: checkpoint/environment focused suites -> 20 passed; CityFlow runtime now tracks seen/active vehicle IDs when the engine exposes no finished counter.
+- Task 6 integration unit suite: `PYTHONPATH=src pytest tests/train/test_network_trainer.py tests/train/test_case_sampler.py tests/train/test_network_replay.py tests/agents/test_phase_ddqn.py -v` -> 12 passed.
+- Final host verification: `PYTHONPATH=src pytest -q --ignore=tests/network/test_roadnet_neighbors.py` -> 140 passed, 1 deselected.
+- Python 3.6 runtime verification in `traffic-rl-cityflow-research:v2`: selected new suites -> 30 passed (one pytest config warning because pytest 6.2.5 does not recognize the host `pythonpath` option).
+- Read-only local roadnet encoder smoke: 53 agents, `max_green=6`, feature shape `(6, 12)` for every agent.
+- `python3 -m compileall -q src/traffic_rl scripts/train_haichau_network.py` and `git diff --check` -> exit 0.
 
 ## Runtime evidence
 
-Pending. No smoke, pilot, or final evidence has been claimed.
+No valid real smoke, pilot, or final evidence is claimed. Temporary runs against foundation commit `e7b41e3` were deleted after data review found 100% route-family leakage and invalidated that manifest. Fake multi-case smoke covers three regimes, fresh candidate/baseline environments, checkpoint reload, replay coverage, and locked-test exclusion.
 
 ## Blockers and dependencies
 
-- The parallel foundation branch must provide the versioned Hai Chau manifest/dataset/runtime interfaces before a real 53-node smoke or pilot can be considered valid.
+- The corrected foundation branch must provide its final leak-free manifest/flows/schema and roadnet phase contract before rerunning real 53-node smoke/pilot.
+- The model completion gate remains closed until the corrected smoke/pilot succeeds and at least one candidate satisfies validation normal non-inferiority with complete completion evidence.

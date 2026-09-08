@@ -96,3 +96,43 @@ def test_injected_phase_encoder_produces_phase_rows(tmp_path):
     assert observations["A"].shape == (2, 12)
     np.testing.assert_array_equal(env.action_masks()["A"], [True, True])
 
+
+def test_reward_weights_local_queue_and_downstream_blocking(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    engine = FakeEngine(
+        vehicle_counts={"rin_0": 3, "rin_1": 2, "rout_0": 4},
+        waiting_counts={"rin_0": 3, "rin_1": 2, "rout_0": 4})
+    env = MultiAgentTrafficEnv(
+        roadnet, engine, action_interval=1, min_green=0,
+        reward_type="queue_norm", queue_weight=1.0,
+        downstream_block_weight=0.2, switch_penalty=0.0)
+    env.reset()
+
+    _, rewards, _, _ = env.step({"A": 0})
+
+    assert rewards["A"] == -3.3  # -mean(3,2) - 0.2 * mean(4)
+
+
+def test_info_reports_completion_from_active_and_finished_vehicles(tmp_path):
+    env = _env(tmp_path, action_interval=1)
+    env.engine.finished_vehicle_count = lambda: 6
+    env.reset()
+
+    _, _, _, info = env.step({"A": 0})
+
+    assert info["arrived"] == 6
+    assert info["active_vehicles"] == 5
+    assert info["completion_rate"] == 6.0 / 11.0
+
+
+def test_info_tracks_completed_vehicle_ids_when_engine_has_no_counter(tmp_path):
+    env = _env(tmp_path, action_interval=1)
+    env.engine.vehicle_ids = lambda: (
+        ["finished", "active"] if env.engine._t == 0 else ["active"])
+    env.reset()
+
+    _, _, _, info = env.step({"A": 0})
+
+    assert info["arrived"] == 1
+    assert info["active_vehicles"] == 1
+    assert info["completion_rate"] == 0.5

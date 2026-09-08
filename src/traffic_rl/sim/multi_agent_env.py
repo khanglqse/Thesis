@@ -17,7 +17,8 @@ class MultiAgentTrafficEnv:
                  yellow_time=3, min_green=10, count_norm=10.0,
                  reward_type="pressure", state_mode="basic",
                  sim_step_seconds=1.0, maximum_red=180,
-                 switch_penalty=0.05, encoder=None):
+                 switch_penalty=0.05, encoder=None, queue_weight=1.0,
+                 downstream_block_weight=0.0):
         self.roadnet = roadnet
         self.engine = engine
         self.action_interval = action_interval
@@ -26,6 +27,8 @@ class MultiAgentTrafficEnv:
         self.min_green = min_green
         self.maximum_red = maximum_red
         self.switch_penalty = float(switch_penalty)
+        self.queue_weight = float(queue_weight)
+        self.downstream_block_weight = float(downstream_block_weight)
         self.reward_type = reward_type
         self.state_mode = state_mode
         self.sim_step_seconds = float(sim_step_seconds)
@@ -52,6 +55,8 @@ class MultiAgentTrafficEnv:
         self._phase_switches = 0
         self._intergreen_vehicle_seconds = 0.0
         self._has_reset = False
+        self._seen_vehicle_ids = None
+        self._active_vehicle_ids = None
         self._t = 0
         self._queue_integral_vehicle_seconds = 0.0
 
@@ -101,6 +106,12 @@ class MultiAgentTrafficEnv:
         self._phase_switches = 0
         self._intergreen_vehicle_seconds = 0.0
         self._has_reset = True
+        if hasattr(self.engine, "vehicle_ids"):
+            self._active_vehicle_ids = set(self.engine.vehicle_ids())
+            self._seen_vehicle_ids = set(self._active_vehicle_ids)
+        else:
+            self._active_vehicle_ids = None
+            self._seen_vehicle_ids = None
         self._t = 0
         self._queue_integral_vehicle_seconds = 0.0
         for a in self.agent_ids:
@@ -124,6 +135,9 @@ class MultiAgentTrafficEnv:
         for _ in range(n):
             self.engine.step()
             self._t += 1
+            if self._seen_vehicle_ids is not None:
+                self._active_vehicle_ids = set(self.engine.vehicle_ids())
+                self._seen_vehicle_ids.update(self._active_vehicle_ids)
             elapsed = self.sim_step_seconds
             for a in self.agent_ids:
                 timers = self._time_since_service[a]
@@ -145,9 +159,10 @@ class MultiAgentTrafficEnv:
     def step(self, actions):
         # decide switches (respecting min-green + validity)
         switching = {}
+        valid_masks = self.action_masks()
         for a, choice in actions.items():
             choice = int(choice)
-            mask = self.action_masks()[a]
+            mask = valid_masks[a]
             if 0 <= choice < self.num_actions[a] and mask[choice] \
                     and choice != self._green[a]:
                 switching[a] = choice
@@ -176,9 +191,16 @@ class MultiAgentTrafficEnv:
             self._engine_steps(green_steps)
 
         waiting = self.engine.lane_waiting_counts()
-        rewards = {a: apply_switch_penalty(
-            self._reward_fn(self.states[a], waiting), a in switching,
-            self.switch_penalty) for a in self.agent_ids}
+        rewards = {}
+        for a in self.agent_ids:
+            outgoing = self.states[a].outgoing_lanes
+            downstream_queue = (float(sum(waiting.get(lane, 0.0)
+                                          for lane in outgoing)) / len(outgoing)
+                                if outgoing else 0.0)
+            objective = (self.queue_weight * self._reward_fn(self.states[a], waiting)
+                         - self.downstream_block_weight * downstream_queue)
+            rewards[a] = apply_switch_penalty(
+                objective, a in switching, self.switch_penalty)
         done = self._t >= self.max_steps
         # Metric uses GROUND-TRUTH queue (== waiting for a real engine; unperturbed under
         # PerturbedEngine) so sensor-noise robustness measures true performance, not the
@@ -189,9 +211,22 @@ class MultiAgentTrafficEnv:
             a: float(sum(true_waiting.get(lane, 0.0)
                          for lane in self.states[a].incoming_lanes))
             for a in self.agent_ids}
+        active_vehicles = self.engine.vehicle_count()
+        arrived = None
+        if self._seen_vehicle_ids is not None:
+            active_vehicles = len(self._active_vehicle_ids)
+            arrived = len(self._seen_vehicle_ids - self._active_vehicle_ids)
+        elif hasattr(self.engine, "finished_vehicle_count"):
+            arrived = self.engine.finished_vehicle_count()
+        completion_rate = None
+        if arrived is not None and active_vehicles + arrived > 0:
+            completion_rate = float(arrived) / (active_vehicles + arrived)
         info = {
             "average_travel_time": self.engine.average_travel_time(),
-            "vehicle_count": self.engine.vehicle_count(),
+            "vehicle_count": active_vehicles,
+            "active_vehicles": active_vehicles,
+            "arrived": arrived,
+            "completion_rate": completion_rate,
             "total_queue": float(sum(true_waiting.values())),
             "queue_integral_vehicle_seconds": self._queue_integral_vehicle_seconds,
             "step": self._t,

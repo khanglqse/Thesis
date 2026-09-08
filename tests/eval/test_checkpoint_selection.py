@@ -33,6 +33,14 @@ def test_completion_degradation_over_two_points_is_ineligible():
     assert score_validation(rows)["eligible"] is False
 
 
+def test_missing_completion_is_ineligible():
+    rows = [{"scenario": scenario, "candidate_queue": 90,
+             "baseline_queue": 100}
+            for scenario in ("normal", "am_peak", "pm_peak")]
+
+    assert score_validation(rows)["eligible"] is False
+
+
 def test_score_averages_seeds_within_each_regime():
     rows = [_row("normal", 90, 100), _row("normal", 100, 100),
             _row("am_peak", 80, 100), _row("pm_peak", 70, 100)]
@@ -62,4 +70,3 @@ def test_selection_minimizes_worst_regret_then_mean_then_step():
 def test_selection_fails_closed_when_no_candidate_is_eligible():
     with pytest.raises(ValueError, match="eligible"):
         choose_checkpoint({"bad": {"eligible": False}})
-

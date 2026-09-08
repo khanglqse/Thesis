@@ -31,13 +31,15 @@ def score_validation(rows):
     regrets = list(scenario_regrets.values())
     normal_regret = scenario_regrets.get("normal", float("inf"))
     max_completion_degradation = max(completion_degradations or [0.0])
+    completion_evidence_complete = len(completion_degradations) == len(rows)
     return {
         "worst_regret": max(regrets),
         "mean_regret": sum(regrets) / len(regrets),
         "normal_regret": normal_regret,
         "max_completion_degradation": max_completion_degradation,
+        "completion_evidence_complete": completion_evidence_complete,
         "scenario_regrets": scenario_regrets,
-        "eligible": bool(normal_regret <= 0.0
+        "eligible": bool(completion_evidence_complete and normal_regret <= 0.0
                          and max_completion_degradation <= 0.02),
     }
 

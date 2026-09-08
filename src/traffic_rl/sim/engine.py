@@ -47,3 +47,12 @@ class CityFlowEngine(object):
     def average_travel_time(self):
         # type: () -> float
         return float(self._eng.get_average_travel_time())
+
+    def finished_vehicle_count(self):
+        # type: () -> int
+        getter = getattr(self._eng, "get_finished_vehicle_count", None)
+        return int(getter()) if getter is not None else None
+
+    def vehicle_ids(self):
+        # type: () -> list
+        return list(self._eng.get_vehicles(True))
