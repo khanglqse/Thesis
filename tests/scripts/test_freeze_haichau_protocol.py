@@ -57,6 +57,11 @@ def _commit(root):
 def _contract(network_sha, phase_contract_sha, generator_config_sha,
               manifest_sha, controller_family):
     return {
+        "training_objective": {
+            "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.1,
+                       "switch_penalty": 0.05},
+            "temporal_aggregation": "mean_over_simulator_steps_in_action_interval",
+        },
         "obs_schema_version": 2,
         "feature_order": (list(FEATURES)
                           if controller_family == "neighbor_phase_ddqn"
@@ -113,6 +118,8 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
         "score": {"eligible": True},
     })
     _write(run_dir / "resolved-config.json", {
+        "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.1,
+                   "switch_penalty": 0.05},
         "mode": "final", "learning_seed": seed,
         "network_sha256": network_sha,
         "run": {"episodes": 80, "horizon_seconds": 3600},
@@ -672,4 +679,38 @@ def test_freeze_requires_exact_neighbor_contract(tmp_path, mutate, error):
         freeze_protocol(
             tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
             fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+@pytest.mark.parametrize('mutation', ['missing', 'endpoint', 'reward', 'resolved_reward'])
+def test_freeze_rejects_training_objective_drift(tmp_path, mutation):
+    fixture = _fixture(tmp_path)
+    relative = json.loads(fixture['index'].read_text())['neighbor_phase_ddqn']['11']
+    run_dir = tmp_path / relative
+    for path in [run_dir / 'checkpoint/contract.json',
+                 run_dir / 'checkpoints/step-80/contract.json']:
+        contract = json.loads(path.read_text())
+        if mutation == 'missing':
+            del contract['training_objective']
+        elif mutation == 'endpoint':
+            contract['training_objective']['temporal_aggregation'] = 'endpoint'
+        elif mutation == 'reward':
+            contract['training_objective']['reward']['queue_weight'] = 2.0
+        _write(path, contract)
+    if mutation == 'resolved_reward':
+        path = run_dir / 'resolved-config.json'
+        resolved = json.loads(path.read_text())
+        resolved['reward']['queue_weight'] = 2.0
+        _write(path, resolved)
+    status_path = run_dir / 'status.json'
+    status = json.loads(status_path.read_text())
+    for relative in status['artifact_sha256']:
+        status['artifact_sha256'][relative] = _sha256(run_dir / relative)
+    _write(status_path, status)
+    _git(tmp_path, 'add', '.')
+    _git(tmp_path, 'commit', '-qm', 'training objective drift')
+    with pytest.raises(ValueError, match='training objective'):
+        freeze_protocol(
+            tmp_path, fixture['manifest'], fixture['viewer'], fixture['config'],
+            fixture['index'], RUNTIME_IMAGE, fixture['dockerfile'],
             runtime_inspector=_runtime)

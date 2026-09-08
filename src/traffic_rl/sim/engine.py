@@ -5,6 +5,9 @@ so all higher-level logic stays pure-Python and testable without cityflow.
 """
 
 
+import math
+
+
 class CityFlowEngine(object):
     def __init__(self, config_path, thread_num=1):
         # type: (str, int) -> None
@@ -71,15 +74,17 @@ class CityFlowEngine(object):
                                 phase_switches=0, intergreen_seconds=0,
                                 max_red_seconds=0, travel_times=None,
                                 scheduled=None, inserted=None, departed=None,
-                                arrived=None, pending=None, removed=None):
+                                arrived=None, pending=None, removed=None,
+                                due=None, unreleased=None):
         """Return plain metric inputs without advancing or mutating CityFlow.
 
         CityFlow itself exposes current and finished vehicle counts but not the
         environment's full scheduled/inserted accounting.  The default therefore
         reports only vehicles observed in the network.  A campaign environment
         must pass authoritative ``scheduled``, ``inserted``/``departed``,
-        ``pending`` and ``removed`` counters when demand is unreleased or a
-        vehicle leaves without arriving.
+        and ``due`` (or explicit ``pending``/``unreleased``) counters when
+        demand exceeds observed insertions. Future demand is never assumed
+        pending. ``removed`` distinguishes non-arrival exits when known.
         """
         waiting = self.lane_waiting_counts()
         per_node = {}
@@ -100,11 +105,32 @@ class CityFlowEngine(object):
         inserted = (running + arrived + int(removed)
                     if inserted is None else int(inserted))
         departed = inserted
-        scheduled = inserted if scheduled is None else int(scheduled)
-        pending = scheduled - inserted if pending is None else int(pending)
+        if due is None:
+            if pending is not None:
+                due = inserted + pending
+            elif unreleased is not None and scheduled is not None:
+                due = scheduled - unreleased
+            elif scheduled is None or scheduled == inserted:
+                due = inserted
+            else:
+                raise ValueError("due accounting is required for scheduled demand")
+        scheduled = due if scheduled is None else scheduled
+        pending = due - inserted if pending is None else pending
+        unreleased = scheduled - due if unreleased is None else unreleased
+        counters = (scheduled, due, unreleased, inserted, departed, arrived,
+                    running, pending, removed)
+        if any(isinstance(value, bool) or not math.isfinite(float(value))
+               or float(value) < 0 or float(value) != int(float(value))
+               for value in counters):
+            raise ValueError("vehicle accounting counters must be non-negative integers")
+        if (scheduled != due + unreleased or due != inserted + pending
+                or inserted != arrived + running + removed):
+            raise ValueError("vehicle accounting does not conserve")
         return {
             "queued": float(sum(waiting.values())),
-            "scheduled": scheduled,
+            "scheduled": int(scheduled),
+            "due": int(due),
+            "unreleased": int(unreleased),
             "inserted": inserted,
             "running": running,
             "departed": departed,

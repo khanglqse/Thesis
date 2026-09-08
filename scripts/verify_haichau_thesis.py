@@ -10,6 +10,7 @@ import re
 import subprocess
 from pathlib import Path
 
+from traffic_rl.train.objective_contract import training_objective
 from traffic_rl.eval.network_campaign import (
     bind_frozen_manifest,
     expand_runs,
@@ -220,6 +221,14 @@ def _checkpoint_contract_valid(contract, protocol, controller):
     if not isinstance(contract, dict) or not CHECKPOINT_CONTRACT_FIELDS.issubset(contract):
         return False
     try:
+        resolved = (protocol or {}).get("resolved_config")
+        if not isinstance(resolved, dict):
+            return False
+        expected_objective = training_objective(resolved.get("reward"))
+        if (contract.get("training_objective") != expected_objective
+                or training_objective(contract["training_objective"]["reward"])
+                != expected_objective):
+            return False
         features = contract["feature_order"]
         normalization = contract["normalization"]
         compatibility = contract["network_compatibility"]

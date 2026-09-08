@@ -375,3 +375,46 @@ def test_observer_rejects_more_insertions_than_scheduled():
     observer.reset(active_vehicle_ids=[])
     with pytest.raises(ValueError, match="scheduled"):
         observer.observe(waiting_counts={}, active_vehicle_ids=["v0", "v1"])
+
+
+def test_engine_snapshot_distinguishes_future_from_pending_demand():
+    class NativeEngine(object):
+        def get_lane_waiting_vehicle_count(self):
+            return {}
+        def get_vehicle_count(self):
+            return 3
+        def get_finished_vehicle_count(self):
+            return 6
+    engine = CityFlowEngine.__new__(CityFlowEngine)
+    engine._eng = NativeEngine()
+    snapshot = engine.network_metric_snapshot(
+        scheduled=20, inserted=9, due=12, travel_times=[1] * 6)
+    assert snapshot['pending'] == 3
+    assert snapshot['unreleased'] == 8
+    accumulator = NetworkMetricAccumulator()
+    accumulator.observe(snapshot)
+    assert accumulator.finalize()['pending_integral_vehicle_seconds'] == 3
+
+
+def test_engine_snapshot_requires_due_when_schedule_exceeds_insertions():
+    class NativeEngine(object):
+        def get_lane_waiting_vehicle_count(self):
+            return {}
+        def get_vehicle_count(self):
+            return 0
+    engine = CityFlowEngine.__new__(CityFlowEngine)
+    engine._eng = NativeEngine()
+    with pytest.raises(ValueError, match='due'):
+        engine.network_metric_snapshot(scheduled=20)
+
+
+def test_engine_snapshot_rejects_inconsistent_due_accounting():
+    class NativeEngine(object):
+        def get_lane_waiting_vehicle_count(self):
+            return {}
+        def get_vehicle_count(self):
+            return 3
+    engine = CityFlowEngine.__new__(CityFlowEngine)
+    engine._eng = NativeEngine()
+    with pytest.raises(ValueError, match='accounting'):
+        engine.network_metric_snapshot(scheduled=20, due=10, pending=9)

@@ -225,6 +225,11 @@ def _checkpoint_contract(network_sha256, controller="neighbor_phase_ddqn",
     generator_sha256 = generator_sha256 or "c" * 64
     manifest_sha256 = manifest_sha256 or "d" * 64
     return {
+        "training_objective": {
+            "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.1,
+                       "switch_penalty": 0.05},
+            "temporal_aggregation": "mean_over_simulator_steps_in_action_interval",
+        },
         "obs_schema_version": 2,
         "feature_order": (list(FEATURES)
                           if controller == "neighbor_phase_ddqn"
@@ -759,6 +764,9 @@ def test_checkpoint_contract_validator_rejects_semantic_drift(mutate):
         "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
     }
     contract = _checkpoint_contract("a" * 64)
+    protocol["resolved_config"] = {
+        "reward": dict(contract["training_objective"]["reward"])}
+    assert _checkpoint_contract_valid(contract, protocol, "neighbor_phase_ddqn")
     mutate(contract)
 
     assert _checkpoint_contract_valid(
@@ -873,3 +881,30 @@ def test_offline_demo_requires_every_payload_file_in_hash_set(tmp_path):
 
     assert result["passed"] is False
     assert "file set" in result["detail"]
+
+
+@pytest.mark.parametrize('mutation', ['missing', 'endpoint', 'reward', 'protocol_reward', 'boolean_reward', 'invalid_resolved'])
+def test_checkpoint_contract_rejects_training_objective_drift(mutation):
+    contract = _checkpoint_contract('a' * 64)
+    protocol = {
+        'network_sha256': 'a' * 64,
+        'phase_contract_sha256': 'b' * 64,
+        'generator_config_sha256': 'c' * 64,
+        'experiment_manifest_sha256': 'd' * 64,
+        'normalization': dict(contract['normalization']),
+        'resolved_config': {'reward': dict(contract['training_objective']['reward'])},
+    }
+    assert _checkpoint_contract_valid(contract, protocol, 'neighbor_phase_ddqn')
+    if mutation == 'missing':
+        del contract['training_objective']
+    elif mutation == 'endpoint':
+        contract['training_objective']['temporal_aggregation'] = 'endpoint'
+    elif mutation == 'reward':
+        contract['training_objective']['reward']['queue_weight'] = 2.0
+    elif mutation == 'boolean_reward':
+        contract['training_objective']['reward']['queue_weight'] = True
+    elif mutation == 'invalid_resolved':
+        protocol['resolved_config'] = None
+    else:
+        protocol['resolved_config']['reward']['queue_weight'] = 2.0
+    assert not _checkpoint_contract_valid(contract, protocol, 'neighbor_phase_ddqn')

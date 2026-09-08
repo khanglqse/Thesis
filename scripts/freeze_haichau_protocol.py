@@ -16,6 +16,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from traffic_rl.train.objective_contract import training_objective
 from traffic_rl.eval.release_identity import inspect_runtime_image, verify_git_checkout
 from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
@@ -382,7 +383,7 @@ def _run_artifact_path(run_dir, relative):
 
 
 def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
-                      normalization, validation_ids, manifest):
+                      normalization, validation_ids, manifest, expected_objective):
     run_path, normalized_relative = _relative_file(
         root, run_relative + "/status.json", "training artifact status")
     run_dir = run_path.parent
@@ -427,6 +428,11 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
     _validate_selection_inputs(validation, selection, tuning, validation_ids)
     contract = _json(run_dir / "checkpoint/contract.json", "checkpoint contract")
     _checkpoint_contract(contract, controller, compatibility, normalization)
+    if (contract.get("training_objective") != expected_objective
+            or training_objective(contract["training_objective"]["reward"])
+            != expected_objective
+            or training_objective(resolved.get("reward")) != expected_objective):
+        raise ValueError("checkpoint training objective drift")
     _validate_precomputed_tuning_provenance(
         run_dir, run_manifest, tuning, source_artifacts, manifest, resolved,
         contract)
@@ -467,7 +473,7 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
 
 
 def _training_checkpoints(root, index_path, compatibility, normalization,
-                          validation_ids, manifest):
+                          validation_ids, manifest, expected_objective):
     index_path, relative = _relative_file(root, index_path, "training index")
     index = _json(index_path, "training index")
     if set(index or ()) != set(LEARNING_CONTROLLERS):
@@ -483,7 +489,7 @@ def _training_checkpoints(root, index_path, compatibility, normalization,
                 raise ValueError("training index run path is invalid")
             checkpoints.append(_checkpoint_entry(
                 root, controller, seed, run_relative, compatibility,
-                normalization, validation_ids, manifest))
+                normalization, validation_ids, manifest, expected_objective))
     return checkpoints, relative, _sha256(index_path)
 
 
@@ -566,7 +572,7 @@ def freeze_protocol(root, experiment_manifest, viewer_network, controller_config
     config, config_relative, config_sha = _controller_configuration(root, controller_configs)
     checkpoints, index_relative, index_sha = _training_checkpoints(
         root, training_index, compatibility, normalization, validation_ids,
-        manifest)
+        manifest, training_objective(config["resolved_config"].get("reward")))
     runtime = _runtime(root, runtime_image, runtime_dockerfile, runtime_inspector)
     case_manifest = {
         "schema_version": 1,
