@@ -122,3 +122,15 @@ class RoadNet:
                 if up != inter_id and up in sig and up not in out:
                     out.append(up)
         return out
+
+    def downstream_neighbors(self, inter_id: str) -> List[str]:
+        """Signalized intersections reached directly from ``inter_id``."""
+        sig = set(self.signalized_ids())
+        out: List[str] = []
+        for road_id in self._by_id[inter_id]["roads"]:
+            road = self._road_by_id[road_id]
+            if road["startIntersection"] == inter_id:
+                downstream = road["endIntersection"]
+                if downstream != inter_id and downstream in sig and downstream not in out:
+                    out.append(downstream)
+        return out
