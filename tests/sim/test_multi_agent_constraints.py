@@ -172,3 +172,34 @@ def test_switch_executes_nonempty_transition_without_exposing_it_as_action(tmp_p
     assert ("set", "A", 1) in engine.calls
     assert len(engine.steps_of("step")) == 10
     assert info["intergreen_vehicle_seconds"] == 5.0
+
+
+def test_long_transition_sequence_continues_across_decision_intervals(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
+    phases[:] = [
+        {"time": 40, "availableRoadLinks": [0]},
+        {"time": 3, "availableRoadLinks": []},
+        {"time": 3, "availableRoadLinks": []},
+        {"time": 3, "availableRoadLinks": []},
+        {"time": 40, "availableRoadLinks": [1]},
+        {"time": 3, "availableRoadLinks": []},
+    ]
+    engine = FakeEngine()
+    env = MultiAgentTrafficEnv(roadnet, engine, action_interval=5,
+                               min_green=0, maximum_red=180)
+    env.reset()
+
+    env.step({"A": 1})
+    assert env._green["A"] == 0
+    assert env.action_masks()["A"].tolist() == [True, False]
+    _, _, _, info = env.step({"A": 0})
+
+    assert env._green["A"] == 1
+    assert info["step"] == 10
+    assert info["intergreen_vehicle_seconds"] == 9.0
+    assert env._elapsed_green["A"] == 1.0
+    assert ("set", "A", 1) in engine.calls
+    assert ("set", "A", 2) in engine.calls
+    assert ("set", "A", 3) in engine.calls
+    assert ("set", "A", 4) in engine.calls

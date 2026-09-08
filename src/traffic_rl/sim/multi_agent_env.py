@@ -71,17 +71,13 @@ class MultiAgentTrafficEnv:
                 raise ValueError(
                     "maximum_red is infeasible for {}: {} < {}".format(
                         a, self.maximum_red, required_red))
-            longest_path = max(
-                sum(duration for _, duration in path)
-                for key, path in self._transition_paths.items() if key[0] == a)
-            if longest_path > self.action_interval:
-                raise ValueError("transition path exceeds action_interval for %s" % a)
         self.obs_dim = getattr(self.encoder, "obs_dim", 12)
         self._green = {a: 0 for a in self.agent_ids}       # current green INDEX
         self._since_switch = {a: 0 for a in self.agent_ids}
         self._elapsed_green = {a: 0.0 for a in self.agent_ids}
         self._time_since_service = {
             a: [0.0] * len(self._green_phases[a]) for a in self.agent_ids}
+        self._pending_transitions = {a: None for a in self.agent_ids}
         self._phase_switches = 0
         self._intergreen_vehicle_seconds = 0.0
         self._has_reset = False
@@ -98,7 +94,10 @@ class MultiAgentTrafficEnv:
             if not self._has_reset:
                 masks[a] = mask
                 continue
-            if self._elapsed_green[a] < float(self.min_green):
+            if self._pending_transitions[a] is not None:
+                mask[:] = False
+                mask[self._green[a]] = True
+            elif self._elapsed_green[a] < float(self.min_green):
                 mask[:] = False
                 mask[self._green[a]] = True
             else:
@@ -134,6 +133,7 @@ class MultiAgentTrafficEnv:
         self._elapsed_green = {a: 0.0 for a in self.agent_ids}
         self._time_since_service = {
             a: [0.0] * len(self._green_phases[a]) for a in self.agent_ids}
+        self._pending_transitions = {a: None for a in self.agent_ids}
         self._phase_switches = 0
         self._intergreen_vehicle_seconds = 0.0
         self._has_reset = True
@@ -198,53 +198,50 @@ class MultiAgentTrafficEnv:
                     and choice != self._green[a]:
                 switching[a] = choice
 
-        # Execute each signal's declared transition sequence for its exact
-        # duration. Signals with shorter paths enter their target green while
-        # other signals finish; transition phases are never held as actions.
-        path_totals = {}
-        schedules = {}
+        # Start accepted transitions. A sequence may span multiple policy
+        # intervals; while pending, its signal exposes only the source action
+        # and ignores new requests until every declared transition completes.
         for a, choice in switching.items():
             path = self._transition_paths[(a, self._green[a], choice)]
-            schedules[a] = path
-            path_totals[a] = sum(duration for _, duration in path)
+            self._pending_transitions[a] = {
+                "target": choice,
+                "sequence": [[phase, duration] for phase, duration in path],
+                "index": 0,
+                "remaining": path[0][1],
+                "phase_set": False,
+            }
             self._elapsed_green[a] = 0.0
-        transition_steps = max(list(path_totals.values()) or [0])
-        committed = set()
-        for transition_step in range(transition_steps):
+
+        self._phase_switches += len(switching)
+        steps = min(int(self.action_interval), max(0, self.max_steps - self._t))
+        for _ in range(steps):
             clearing = set()
-            for a, choice in switching.items():
-                elapsed = 0
-                active_phase = None
-                for phase_index, duration in schedules[a]:
-                    if elapsed <= transition_step < elapsed + duration:
-                        active_phase = phase_index
-                        break
-                    elapsed += duration
-                if active_phase is None:
-                    if a not in committed:
-                        self._green[a] = choice
-                        self._since_switch[a] = 0
-                        self.engine.set_tl_phase(
-                            a, self._green_phases[a][choice])
-                        committed.add(a)
-                else:
-                    clearing.add(a)
-                    if transition_step == elapsed:
-                        self.engine.set_tl_phase(a, active_phase)
+            for a in self.agent_ids:
+                pending = self._pending_transitions[a]
+                if pending is None:
+                    continue
+                clearing.add(a)
+                if not pending["phase_set"]:
+                    phase_index = pending["sequence"][pending["index"]][0]
+                    self.engine.set_tl_phase(a, phase_index)
+                    pending["phase_set"] = True
             self._engine_steps(1, clearing=clearing)
-        for a, choice in switching.items():
-            if a not in committed:
+            for a in list(clearing):
+                pending = self._pending_transitions[a]
+                pending["remaining"] -= 1
+                if pending["remaining"] > 0:
+                    continue
+                pending["index"] += 1
+                if pending["index"] < len(pending["sequence"]):
+                    pending["remaining"] = pending["sequence"][
+                        pending["index"]][1]
+                    pending["phase_set"] = False
+                    continue
+                choice = pending["target"]
                 self._green[a] = choice
                 self._since_switch[a] = 0
                 self.engine.set_tl_phase(a, self._green_phases[a][choice])
-        green_steps = self.action_interval - transition_steps
-
-        self._phase_switches += len(switching)
-        for a in self.agent_ids:
-            self.engine.set_tl_phase(a, self._green_phases[a][self._green[a]])
-
-        if green_steps > 0:
-            self._engine_steps(green_steps)
+                self._pending_transitions[a] = None
 
         waiting = self.engine.lane_waiting_counts()
         rewards = {}
