@@ -59,6 +59,14 @@ class CityFlowEngine(object):
         # lane.  Those vehicles have not been inserted and belong in ``pending``.
         return list(self._eng.get_vehicles(False))
 
+    def due_vehicle_ids(self):
+        """Return vehicles whose requested departure time has elapsed.
+
+        CityFlow's ``include_waiting`` form includes vehicles held outside a
+        saturated entry lane, but does not include future departures.
+        """
+        return list(self._eng.get_vehicles(True))
+
     def network_metric_snapshot(self, lane_to_node=None, spillback_lanes=None,
                                 phase_switches=0, intergreen_seconds=0,
                                 max_red_seconds=0, travel_times=None,

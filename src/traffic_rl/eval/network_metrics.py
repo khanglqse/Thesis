@@ -11,15 +11,15 @@ import numpy as np
 
 
 _FIELDS = (
-    "queued", "scheduled", "inserted", "departed", "arrived", "running",
-    "pending", "removed", "travel_times",
+    "queued", "scheduled", "due", "unreleased", "inserted", "departed",
+    "arrived", "running", "pending", "removed", "travel_times",
     "per_node_queue", "spillback_lanes", "phase_switches",
     "intergreen_seconds", "max_red_seconds",
 )
 
 _SCALARS = (
-    "queued", "scheduled", "inserted", "departed", "arrived", "running",
-    "pending", "removed", "phase_switches", "intergreen_seconds",
+    "queued", "scheduled", "due", "unreleased", "inserted", "departed",
+    "arrived", "running", "pending", "removed", "phase_switches", "intergreen_seconds",
     "max_red_seconds",
 )
 
@@ -48,15 +48,19 @@ class NetworkMetricAccumulator(object):
             if value < 0:
                 raise ValueError("snapshot values must be non-negative")
         for field in (
-                "scheduled", "inserted", "departed", "arrived", "running",
-                "pending", "removed", "phase_switches"):
+                "scheduled", "due", "unreleased", "inserted", "departed",
+                "arrived", "running", "pending", "removed", "phase_switches"):
             if float(snapshot[field]) != int(float(snapshot[field])):
                 raise ValueError("vehicle and switch counters must be integers")
         if int(snapshot["inserted"]) != int(snapshot["departed"]):
             raise ValueError("inserted must equal departed")
         if int(snapshot["scheduled"]) != (
+                int(snapshot["due"]) + int(snapshot["unreleased"])):
+            raise ValueError(
+                "vehicle accounting requires scheduled = due + unreleased")
+        if int(snapshot["due"]) != (
                 int(snapshot["inserted"]) + int(snapshot["pending"])):
-            raise ValueError("vehicle accounting requires scheduled = inserted + pending")
+            raise ValueError("vehicle accounting requires due = inserted + pending")
         if int(snapshot["inserted"]) != (
                 int(snapshot["arrived"]) + int(snapshot["running"])
                 + int(snapshot["removed"])):
@@ -89,6 +93,8 @@ class NetworkMetricAccumulator(object):
         terminal["travel_times"] = terminal.get("travel_times") or []
         travel_times = [float(value) for value in terminal["travel_times"]]
         scheduled = int(terminal.get("scheduled", 0))
+        due = int(terminal.get("due", 0))
+        unreleased = int(terminal.get("unreleased", 0))
         inserted = int(terminal.get("inserted", 0))
         arrived = int(terminal.get("arrived", 0))
         departed = int(terminal.get("departed", 0))
@@ -112,6 +118,8 @@ class NetworkMetricAccumulator(object):
             "per_node_max_queue": dict(sorted(self._per_node_max.items())),
             "spillback_lane_seconds": dict(sorted(self._spillback_seconds.items())),
             "scheduled": scheduled,
+            "due": due,
+            "unreleased": unreleased,
             "inserted": inserted,
             "departed": departed,
             "arrived": arrived,
@@ -176,22 +184,32 @@ class NetworkMetricsObserver(object):
             raise ValueError("active_vehicle_ids must be unique")
         return set(values)
 
-    def reset(self, active_vehicle_ids=None):
+    def reset(self, active_vehicle_ids=None, due_vehicle_ids=None):
         active = self._vehicle_id_set(active_vehicle_ids or [])
+        due = self._vehicle_id_set(
+            active if due_vehicle_ids is None else due_vehicle_ids)
+        if not active.issubset(due):
+            raise ValueError("inserted vehicles must be due")
+        if len(due) > self.scheduled_vehicles:
+            raise ValueError("due vehicles exceed scheduled vehicles")
         if len(active) > self.scheduled_vehicles:
             raise ValueError("inserted vehicles exceed scheduled vehicles")
         self._metrics = NetworkMetricAccumulator(self.step_seconds)
         self._elapsed_seconds = 0.0
         self._active_ids = active
         self._seen_ids = set(active)
+        self._due_ids = set(due)
         self._completed_ids = set()
         self._entry_seconds = dict((vehicle_id, 0.0) for vehicle_id in active)
         self._completed_travel_times = []
 
-    def observe(self, waiting_counts, active_vehicle_ids,
+    def observe(self, waiting_counts, active_vehicle_ids, due_vehicle_ids=None,
                 phase_switches=0, intergreen_seconds=0,
                 max_red_seconds=0):
         active = self._vehicle_id_set(active_vehicle_ids)
+        due_now = self._vehicle_id_set(
+            active if due_vehicle_ids is None else due_vehicle_ids)
+        due = self._due_ids.union(due_now)
         reappeared = active.intersection(self._completed_ids)
         if reappeared:
             raise ValueError("completed vehicle IDs reappeared: %s" %
@@ -199,6 +217,10 @@ class NetworkMetricsObserver(object):
 
         elapsed = self._elapsed_seconds + self.step_seconds
         seen = self._seen_ids.union(active)
+        if not seen.issubset(due):
+            raise ValueError("inserted vehicles must be due")
+        if len(due) > self.scheduled_vehicles:
+            raise ValueError("due vehicles exceed scheduled vehicles")
         if len(seen) > self.scheduled_vehicles:
             raise ValueError("inserted vehicles exceed scheduled vehicles")
         entry_seconds = dict(self._entry_seconds)
@@ -224,14 +246,17 @@ class NetworkMetricsObserver(object):
                      self.spillback_thresholds.items()
                      if queues.get(lane_id, 0.0) >= threshold]
         inserted = len(seen)
+        due_count = len(due)
         snapshot = {
             "queued": sum(queues.values()),
             "scheduled": self.scheduled_vehicles,
+            "due": due_count,
+            "unreleased": self.scheduled_vehicles - due_count,
             "inserted": inserted,
             "departed": inserted,
             "arrived": len(completed),
             "running": len(active),
-            "pending": self.scheduled_vehicles - inserted,
+            "pending": due_count - inserted,
             "removed": 0,
             "travel_times": travel_times,
             "per_node_queue": per_node,
@@ -244,6 +269,7 @@ class NetworkMetricsObserver(object):
         self._elapsed_seconds = elapsed
         self._active_ids = active
         self._seen_ids = seen
+        self._due_ids = due
         self._completed_ids = completed
         self._entry_seconds = entry_seconds
         self._completed_travel_times = travel_times

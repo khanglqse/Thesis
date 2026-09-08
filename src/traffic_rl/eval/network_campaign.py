@@ -623,8 +623,8 @@ def _validate_network_metrics(run, metrics):
         "queue_integral_vehicle_seconds", "queue_integral_vehicle_hours",
         "network_queue_integral_vehicle_seconds",
         "pending_integral_vehicle_seconds", "per_node_queue_integral_vehicle_seconds",
-        "per_node_max_queue", "spillback_lane_seconds", "scheduled", "inserted",
-        "departed", "arrived", "running", "pending", "removed",
+        "per_node_max_queue", "spillback_lane_seconds", "scheduled", "due",
+        "unreleased", "inserted", "departed", "arrived", "running", "pending", "removed",
         "censored_or_unfinished", "completion_denominator", "completion_rate",
         "insertion_rate", "completed_travel_time_count", "phase_switches",
         "intergreen_seconds", "max_red_seconds", "travel_time_completed_mean",
@@ -637,7 +637,7 @@ def _validate_network_metrics(run, metrics):
         "observed_steps", "observed_seconds", "queue_integral_vehicle_seconds",
         "queue_integral_vehicle_hours", "network_queue_integral_vehicle_seconds",
         "pending_integral_vehicle_seconds",
-        "scheduled", "inserted", "departed", "arrived", "running", "pending",
+        "scheduled", "due", "unreleased", "inserted", "departed", "arrived", "running", "pending",
         "removed", "censored_or_unfinished", "phase_switches",
         "intergreen_seconds", "max_red_seconds", "completed_travel_time_count",
     )
@@ -645,7 +645,7 @@ def _validate_network_metrics(run, metrics):
            for field in finite_fields):
         raise ValueError("network metric scalars must be finite and non-negative")
     integer_fields = (
-        "observed_steps", "scheduled", "inserted", "departed", "arrived",
+        "observed_steps", "scheduled", "due", "unreleased", "inserted", "departed", "arrived",
         "running", "pending", "removed", "censored_or_unfinished",
         "phase_switches", "completed_travel_time_count",
     )
@@ -666,14 +666,19 @@ def _validate_network_metrics(run, metrics):
         raise ValueError(
             "network metric scheduled differs from frozen scheduled_vehicles")
     inserted = int(metrics["inserted"])
+    due = int(metrics["due"])
+    unreleased = int(metrics["unreleased"])
     arrived = int(metrics["arrived"])
     running = int(metrics["running"])
     pending = int(metrics["pending"])
     removed = int(metrics["removed"])
     if inserted != int(metrics["departed"]):
         raise ValueError("network metric inserted/departed mismatch")
-    if scheduled != inserted + pending or inserted != arrived + running + removed:
+    if (scheduled != due + unreleased or due != inserted + pending
+            or inserted != arrived + running + removed):
         raise ValueError("network metric vehicle accounting does not conserve")
+    if due != scheduled or unreleased != 0:
+        raise ValueError("full-horizon run must release all scheduled vehicles")
     if int(metrics["censored_or_unfinished"]) != pending + running + removed:
         raise ValueError("network metric censored count does not conserve")
     completion = metrics["completion_rate"]

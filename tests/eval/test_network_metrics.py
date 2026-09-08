@@ -12,6 +12,8 @@ def _snapshot(**overrides):
     value = {
         "queued": 0,
         "scheduled": 0,
+        "due": 0,
+        "unreleased": 0,
         "inserted": 0,
         "running": 0,
         "departed": 0,
@@ -26,6 +28,10 @@ def _snapshot(**overrides):
         "max_red_seconds": 0,
     }
     value.update(overrides)
+    if "due" not in overrides:
+        value["due"] = value["inserted"] + value["pending"]
+    if "unreleased" not in overrides:
+        value["unreleased"] = value["scheduled"] - value["due"]
     return value
 
 
@@ -148,10 +154,11 @@ def test_vehicle_accounting_separates_unreleased_running_and_removed():
 
 def test_vehicle_accounting_must_conserve():
     metrics = NetworkMetricAccumulator(step_seconds=1)
-    with pytest.raises(ValueError, match=r"scheduled = inserted \+ pending"):
+    with pytest.raises(ValueError, match=r"due = inserted \+ pending"):
         metrics.observe(_snapshot(
             scheduled=10, inserted=8, departed=8, arrived=5, running=2,
-            pending=1, removed=1, travel_times=[1, 2, 3, 4, 5],
+            due=10, unreleased=0, pending=1, removed=1,
+            travel_times=[1, 2, 3, 4, 5],
         ))
 
 
@@ -234,6 +241,27 @@ def test_cityflow_vehicle_ids_exclude_vehicles_waiting_to_enter():
     assert engine.vehicle_ids() == ["inserted"]
     assert engine._eng.include_waiting is False
 
+    assert engine.due_vehicle_ids() == ["inserted"]
+    assert engine._eng.include_waiting is True
+
+
+def test_future_departures_are_unreleased_and_not_counted_as_pending_queue():
+    observer = NetworkMetricsObserver(scheduled_vehicles=3, step_seconds=1)
+    observer.reset(active_vehicle_ids=[], due_vehicle_ids=[])
+
+    observer.observe(
+        waiting_counts={}, active_vehicle_ids=["v0"], due_vehicle_ids=["v0"])
+    observer.observe(
+        waiting_counts={}, active_vehicle_ids=["v0"],
+        due_vehicle_ids=["v0", "v1"])
+
+    result = observer.finalize()
+    assert result["due"] == 2
+    assert result["unreleased"] == 1
+    assert result["inserted"] == 1
+    assert result["pending"] == 1
+    assert result["pending_integral_vehicle_seconds"] == 1
+
 
 def test_runner_preserves_complete_network_metric_contract():
     final_metrics = {
@@ -287,11 +315,13 @@ def test_observer_accounts_vehicles_and_samples_ground_truth_every_step():
         lane_to_node={"in_0": "A"},
         spillback_thresholds={"in_0": 2},
     )
-    observer.reset(active_vehicle_ids=["v0"])
+    observer.reset(
+        active_vehicle_ids=["v0"], due_vehicle_ids=["v0", "v1", "v2"])
 
     observer.observe(
         waiting_counts={"in_0": 2, "boundary_0": 1},
         active_vehicle_ids=["v0", "v1"],
+        due_vehicle_ids=["v0", "v1", "v2"],
         phase_switches=1,
         intergreen_seconds=1,
         max_red_seconds=4,
@@ -299,6 +329,7 @@ def test_observer_accounts_vehicles_and_samples_ground_truth_every_step():
     observer.observe(
         waiting_counts={"in_0": 1, "boundary_0": 0},
         active_vehicle_ids=["v1"],
+        due_vehicle_ids=["v0", "v1", "v2"],
         phase_switches=1,
         intergreen_seconds=1,
         max_red_seconds=5,

@@ -80,7 +80,7 @@ def run_episode(env, controller, max_decisions=None):
         # analysed/plotted (one value per action_interval).
         "queue_series": [float(q) for q in queues],
     }
-    for field in ("scheduled", "inserted", "arrived", "running", "pending",
+    for field in ("scheduled", "due", "unreleased", "inserted", "arrived", "running", "pending",
                   "network_queue", "collisions", "emergency_braking",
                   "phase_switches"):
         result[field] = info.get(field)

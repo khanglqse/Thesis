@@ -280,6 +280,8 @@ def _executor(run, run_dir):
             "per_node_max_queue": nodes,
             "spillback_lane_seconds": {},
             "scheduled": run["scheduled_vehicles"],
+            "due": run["scheduled_vehicles"],
+            "unreleased": 0,
             "inserted": 0,
             "departed": 0,
             "arrived": 0,

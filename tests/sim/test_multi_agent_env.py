@@ -99,6 +99,9 @@ def test_network_observer_is_sampled_after_every_engine_step(tmp_path):
         def vehicle_ids(self):
             return list(self._active)
 
+        def due_vehicle_ids(self):
+            return list(self._active)
+
     observer = NetworkMetricsObserver(
         scheduled_vehicles=2,
         step_seconds=1,
@@ -107,14 +110,14 @@ def test_network_observer_is_sampled_after_every_engine_step(tmp_path):
     )
     env = MultiAgentTrafficEnv(
         _net(tmp_path), TimelineEngine(), action_interval=2, max_steps=4,
-        min_green=0, network_metric_observer=observer)
+        min_green=0, network_metric_observer=observer, scheduled_vehicles=2)
 
     env.reset()
     _, _, done, first = env.step({"A": 0})
     assert done is False
     assert first["network_metrics"]["observed_steps"] == 2
     assert first["network_metrics"]["network_queue_integral_vehicle_seconds"] == 4
-    assert first["network_metrics"]["queue_integral_vehicle_seconds"] == 5
+    assert first["network_metrics"]["queue_integral_vehicle_seconds"] == 4
 
     _, _, done, final = env.step({"A": 0})
 
@@ -122,7 +125,7 @@ def test_network_observer_is_sampled_after_every_engine_step(tmp_path):
     metrics = final["network_metrics"]
     assert metrics["observed_steps"] == 4
     assert metrics["network_queue_integral_vehicle_seconds"] == 6
-    assert metrics["queue_integral_vehicle_seconds"] == 7
+    assert metrics["queue_integral_vehicle_seconds"] == 6
     assert metrics["per_node_queue_integral_vehicle_seconds"] == {"A": 6.0}
     assert metrics["spillback_lane_seconds"] == {"rin_0": 1.0}
     assert metrics["scheduled"] == 2
@@ -141,6 +144,10 @@ def test_scheduled_pending_demand_is_part_of_primary_queue_integral(tmp_path):
         def vehicle_ids(self):
             return ["v0"] if self._t else []
 
+        def due_vehicle_ids(self):
+            return (["v0"] + ["waiting%d" % index for index in range(9)]
+                    if self._t else [])
+
     eng = EntryEngine(waiting_counts={"rin_0": 2})
     env = MultiAgentTrafficEnv(
         _net(tmp_path), eng, action_interval=1, max_steps=1, min_green=0,
@@ -154,3 +161,25 @@ def test_scheduled_pending_demand_is_part_of_primary_queue_integral(tmp_path):
     assert info["pending_integral_vehicle_seconds"] == 9
     assert info["queue_integral_vehicle_seconds"] == 11
     assert info["pending"] == 9
+
+
+def test_not_yet_due_demand_is_not_integrated_as_pending_queue(tmp_path):
+    class ScheduledEngine(FakeEngine):
+        def vehicle_ids(self):
+            return ["v0"] if self._t else []
+
+        def due_vehicle_ids(self):
+            return ["v0"] if self._t == 1 else []
+
+    env = MultiAgentTrafficEnv(
+        _net(tmp_path), ScheduledEngine(waiting_counts={}),
+        action_interval=1, max_steps=1, min_green=0, scheduled_vehicles=10)
+
+    env.reset()
+    _, _, _, info = env.step({"A": 0})
+
+    assert info["pending_integral_vehicle_seconds"] == 0
+    assert info["queue_integral_vehicle_seconds"] == 0
+    assert info["due"] == 1
+    assert info["unreleased"] == 9
+    assert info["pending"] == 0

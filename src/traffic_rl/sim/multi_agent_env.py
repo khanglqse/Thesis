@@ -132,6 +132,7 @@ class MultiAgentTrafficEnv:
         self._has_reset = False
         self._seen_vehicle_ids = None
         self._active_vehicle_ids = None
+        self._due_vehicle_ids = None
         self._t = 0
         self._queue_integral_vehicle_seconds = 0.0
         self._network_queue_integral_vehicle_seconds = 0.0
@@ -206,6 +207,16 @@ class MultiAgentTrafficEnv:
         if hasattr(self.engine, "vehicle_ids"):
             self._active_vehicle_ids = set(self.engine.vehicle_ids())
             self._seen_vehicle_ids = set(self._active_vehicle_ids)
+            if (self.scheduled_vehicles is not None
+                    or self.network_metric_observer is not None):
+                if not hasattr(self.engine, "due_vehicle_ids"):
+                    raise ValueError(
+                        "scheduled_vehicles requires engine.due_vehicle_ids()")
+                self._due_vehicle_ids = set(self.engine.due_vehicle_ids())
+                if not self._active_vehicle_ids.issubset(self._due_vehicle_ids):
+                    raise ValueError("inserted vehicles must be due")
+            else:
+                self._due_vehicle_ids = set(self._active_vehicle_ids)
         else:
             self._active_vehicle_ids = None
             self._seen_vehicle_ids = None
@@ -214,7 +225,8 @@ class MultiAgentTrafficEnv:
                 raise ValueError(
                     "network_metric_observer requires engine.vehicle_ids()")
             self.network_metric_observer.reset(
-                active_vehicle_ids=self._active_vehicle_ids)
+                active_vehicle_ids=self._active_vehicle_ids,
+                due_vehicle_ids=self._due_vehicle_ids)
         self._t = 0
         self._queue_integral_vehicle_seconds = 0.0
         self._network_queue_integral_vehicle_seconds = 0.0
@@ -261,6 +273,11 @@ class MultiAgentTrafficEnv:
             if self._seen_vehicle_ids is not None:
                 self._active_vehicle_ids = set(self.engine.vehicle_ids())
                 self._seen_vehicle_ids.update(self._active_vehicle_ids)
+                if (self.scheduled_vehicles is not None
+                        or self.network_metric_observer is not None):
+                    self._due_vehicle_ids.update(self.engine.due_vehicle_ids())
+                    if not self._seen_vehicle_ids.issubset(self._due_vehicle_ids):
+                        raise ValueError("inserted vehicles must be due")
             elapsed = self.sim_step_seconds
             for a in self.agent_ids:
                 movement_timers = self._movement_time_since_service[a]
@@ -291,7 +308,7 @@ class MultiAgentTrafficEnv:
                 if self._seen_vehicle_ids is None:
                     raise ValueError(
                         "scheduled_vehicles requires engine.vehicle_ids()")
-                pending = self.scheduled_vehicles - len(self._seen_vehicle_ids)
+                pending = len(self._due_vehicle_ids) - len(self._seen_vehicle_ids)
                 if pending < 0:
                     raise ValueError("inserted vehicles exceed scheduled vehicles")
             self._network_queue_integral_vehicle_seconds += (
@@ -304,6 +321,7 @@ class MultiAgentTrafficEnv:
                 self.network_metric_observer.observe(
                     waiting_counts=waiting,
                     active_vehicle_ids=self._active_vehicle_ids,
+                    due_vehicle_ids=self._due_vehicle_ids,
                     phase_switches=self._phase_switches,
                     intergreen_seconds=self._intergreen_vehicle_seconds,
                     max_red_seconds=self._episode_max_red_seconds,
@@ -406,11 +424,15 @@ class MultiAgentTrafficEnv:
             arrived = self.engine.finished_vehicle_count()
         completion_rate = None
         pending = None
+        due = None
+        unreleased = None
         if arrived is not None and active_vehicles + arrived > 0:
             completion_rate = float(arrived) / (active_vehicles + arrived)
         if self.scheduled_vehicles is not None and self._seen_vehicle_ids is not None:
             inserted = len(self._seen_vehicle_ids)
-            pending = self.scheduled_vehicles - inserted
+            due = len(self._due_vehicle_ids)
+            unreleased = self.scheduled_vehicles - due
+            pending = due - inserted
             completion_rate = (float(arrived) / self.scheduled_vehicles
                                if self.scheduled_vehicles else None)
         network_metrics = None
@@ -441,11 +463,14 @@ class MultiAgentTrafficEnv:
             "maximum_red_trigger_seconds": dict(self._maximum_red_trigger),
             "per_agent_queue": per_agent_queue,
             "scheduled": self.scheduled_vehicles,
+            "due": due,
+            "unreleased": unreleased,
             "pending": pending,
         }
         if network_metrics is not None:
             info["network_metrics"] = network_metrics
-            for field in ("scheduled", "inserted", "departed", "arrived",
-                          "running", "pending", "removed", "completion_rate"):
+            for field in ("scheduled", "due", "unreleased", "inserted",
+                          "departed", "arrived", "running", "pending",
+                          "removed", "completion_rate"):
                 info[field] = network_metrics[field]
         return self._observations(), rewards, done, info
