@@ -113,7 +113,17 @@ manifest, thesis source and compiled PDF. Run the project verifier again after a
 figure, table or PDF change.
 
 Choose one matched tuned-fixed/DDQN pair for each of `normal`, `am_peak` and `pm_peak`.
-Export all six run IDs with fallbacks made from the same frozen evidence:
+First generate the three fallback files. This command refuses all legacy single-junction or
+SUMO evidence, verifies the frozen network/summary/thesis hashes, renders a walkthrough from
+the final matched replays, then decodes all generated media. Its provenance sidecar is retained
+with the staged media; do not substitute manually made media.
+
+```sh
+PYTHONPATH=src python3 scripts/build_haichau_demo_fallbacks.py \
+  --output results/haichau_network_v2/demo-fallbacks
+```
+
+Export all six run IDs with these fallbacks made from the same frozen evidence:
 
 `NORMAL_FIXED`, `NORMAL_DDQN`, `AM_FIXED`, `AM_DDQN`, `PM_FIXED`, and `PM_DDQN`
 below are deliberate placeholders. Replace them only with exact run IDs from the verified
@@ -126,15 +136,16 @@ PYTHONPATH=src python3 scripts/export_haichau_replays.py \
   --run-id NORMAL_FIXED --run-id NORMAL_DDQN \
   --run-id AM_FIXED --run-id AM_DDQN \
   --run-id PM_FIXED --run-id PM_DDQN \
-  --fallback-mp4 path/to/demo-walkthrough.mp4 \
-  --fallback-pdf path/to/result-summary.pdf \
-  --fallback-png path/to/network-overview.png
-python3 -m http.server 8765 --directory results/haichau_network_v2/demo
+  --fallback-mp4 results/haichau_network_v2/demo-fallbacks/demo-walkthrough.mp4 \
+  --fallback-pdf results/haichau_network_v2/demo-fallbacks/result-summary.pdf \
+  --fallback-png results/haichau_network_v2/demo-fallbacks/network-overview.png
+PYTHONPATH=src python3 scripts/serve_haichau_demo.py
 ```
 
-Open `http://127.0.0.1:8765/` with the network disabled. Confirm **Verified bundle
-loaded**, then exercise play/pause, seek, all three regimes and node selection. The browser
-console must have no warning or error.
+The launch command re-runs the offline-demo audit before binding localhost; it refuses an
+incomplete, legacy, stale or hash-drifted v2 bundle. Open `http://127.0.0.1:8080/index.html`
+with the network disabled. Confirm **Verified bundle loaded**, then exercise play/pause, seek,
+all three regimes and node selection. The browser console must have no warning or error.
 
 Every selected replay contains the exact `0, 5, ..., horizon` time grid. The exporter binds
 the viewer network, campaign manifest and aggregate summary hashes; the final verifier
