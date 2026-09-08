@@ -100,6 +100,26 @@ def test_thesis_states_pointwise_network_ci_limitation():
     assert "frozen matched demand/simulator cases" in text
 
 
+def test_thesis_network_related_work_cites_and_limits_comparator_methods():
+    root = Path(__file__).resolve().parents[2]
+    thesis = (root / "paper/thesis_danang.tex").read_text()
+    bibliography = (root / "paper/references_verified.bib").read_text()
+    assert "haklay2008osm" in thesis
+    assert "haklay2010osm" not in thesis
+    assert "zheng2019frap" in thesis
+    assert "chen2020mplight" in thesis
+    assert "mean-pooled upstream/downstream queues" in thesis
+    assert "does not claim to implement CoLight graph attention" in thesis
+    assert "Efficient Pressure is a 2021 arXiv preprint" in thesis
+    assert "@inproceedings{zheng2019frap," in bibliography
+    assert "@inproceedings{chen2020mplight," in bibliography
+    assert "@article{haklay2008osm," in bibliography
+    assert "@techreport{dacriss2010danang," in bibliography
+    mplight = bibliography.split("@inproceedings{chen2020mplight,", 1)[1]
+    mplight = mplight.split("@", 1)[0]
+    assert "number = {4}" not in mplight
+
+
 def test_claim_validator_rejects_citywide_observed_claim():
     errors = validate_claims("Results cover 53 observed intersections.", _summary())
     assert errors
