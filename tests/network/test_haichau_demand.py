@@ -90,6 +90,21 @@ def test_route_catalog_fails_closed_when_coverage_is_impossible(tmp_path):
         build_route_catalog(_parallel_roadnet(tmp_path), min_signals=3)
 
 
+def test_per_split_coverage_requires_three_route_families(tmp_path):
+    from traffic_rl.network.haichau_dataset import build_flow_cases
+
+    config = _config()
+    config["route_coverage"] = {
+        "required_controlled_signals": "all",
+        "minimum_route_families_per_signal": 2,
+        "max_route_stretch_ratio": 1.25,
+        "require_each_split": True,
+        "require_each_case": True,
+    }
+    with pytest.raises(ValueError, match="minimum.*at least three"):
+        build_flow_cases(_parallel_roadnet(tmp_path), config)
+
+
 def test_cases_sample_only_their_disjoint_route_partition(tmp_path):
     from traffic_rl.network.haichau_dataset import build_flow_cases
 
@@ -156,3 +171,68 @@ def test_real_dataset_route_family_splits_are_pairwise_disjoint():
     assert by_split["train"].isdisjoint(by_split["validation"])
     assert by_split["train"].isdisjoint(by_split["test"])
     assert by_split["validation"].isdisjoint(by_split["test"])
+
+
+def test_real_catalog_can_cover_every_declared_controlled_signal():
+    """Catches a shortest-only catalog that silently leaves agents demand-free."""
+    import yaml
+    from traffic_rl.network.haichau_dataset import build_route_catalog
+
+    root = Path(__file__).resolve().parents[2]
+    roadnet = RoadNet.load(str(root / "datasets/haichau_network_v2/roadnet.json"))
+    config = yaml.safe_load((root / "configs/haichau_network_v2.yaml").read_text())
+    required = sorted(roadnet.signalized_ids())
+    catalog = build_route_catalog(
+        roadnet,
+        config["min_controlled_signals_per_route"],
+        required_signal_ids=required,
+        minimum_route_families_per_signal=3,
+    )
+
+    covered = {
+        signal_id
+        for family in catalog
+        for signal_id in family["controlled_signal_ids"]
+    }
+    assert covered == set(required)
+    assert all(family["road_count"] == len(family["route"]) for family in catalog)
+    assert all(family["route_length_meters"] > 0 for family in catalog)
+    assert all(len(family["route"]) == len(set(family["route"])) for family in catalog)
+    for family in catalog:
+        crossed = [
+            roadnet._road_by_id[road_id]["startIntersection"]
+            for road_id in family["route"]
+        ] + [roadnet._road_by_id[family["route"][-1]]["endIntersection"]]
+        assert len(crossed) == len(set(crossed))
+
+
+def test_real_split_and_case_sampling_cover_all_53_signals():
+    """Catches coverage loss during route-family partitioning or seeded sampling."""
+    import yaml
+    from traffic_rl.network.haichau_dataset import build_flow_cases
+
+    root = Path(__file__).resolve().parents[2]
+    roadnet = RoadNet.load(str(root / "datasets/haichau_network_v2/roadnet.json"))
+    config = yaml.safe_load((root / "configs/haichau_network_v2.yaml").read_text())
+    cases, catalog = build_flow_cases(roadnet, config, include_catalog=True)
+    required = set(roadnet.signalized_ids())
+
+    assert len(cases) == 30
+    assert {
+        (case["split"], case["demand_seed"], case["sim_seed"])
+        for case in cases
+    } == {
+        (split, demand_seed, sim_seed)
+        for split, seeds in config["splits"].items()
+        for demand_seed, sim_seed in zip(seeds["demand_seeds"], seeds["sim_seeds"])
+    }
+    for split in ("train", "validation", "test"):
+        active = {
+            signal_id
+            for family in catalog if family["split"] == split
+            for signal_id in family["controlled_signal_ids"]
+        }
+        assert active == required
+    assert all(set(case["active_controlled_signal_ids"]) == required for case in cases)
+    assert all(case["inactive_controlled_signal_ids"] == [] for case in cases)
+    assert all(case["active_controlled_signals"] == 53 for case in cases)

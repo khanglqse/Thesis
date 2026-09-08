@@ -17,6 +17,7 @@ from traffic_rl.network.haichau_dataset import (
     VEHICLE_TEMPLATES,
     audit_network,
     build_flow_cases,
+    build_route_coverage_provenance,
     count_controlled_signals,
     route_is_valid,
     validate_phase_contract,
@@ -485,6 +486,18 @@ def verify_foundation(root, manifest):
     split_counts = _verify_cases(
         root, manifest, config, roadnet, expected_cases, catalog_by_hash
     )
+    expected_coverage = build_route_coverage_provenance(
+        roadnet, config, expected_catalog, expected_cases
+    )
+    if manifest.get("route_coverage") != expected_coverage:
+        raise ValueError("route coverage provenance or strict gates mismatch")
+    if (config.get("dataset_id") == "haichau_network_v2"
+            and (expected_coverage["required_controlled_signals"] != 53
+                 or any(record["inactive_required_signal_ids"]
+                        for record in expected_coverage["split_coverage"].values())
+                 or any(record["inactive_required_signal_ids"]
+                        for record in expected_coverage["case_coverage"].values()))):
+        raise ValueError("canonical route coverage must activate all 53 signals")
     return {
         "status": "verified",
         "protocol_version": 2,
@@ -497,6 +510,7 @@ def verify_foundation(root, manifest):
         "generator_config_sha256": manifest["generator_config_sha256"],
         "runtime_digest": manifest["runtime"]["base_image_digest"],
         "route_families": len(expected_catalog),
+        "route_coverage": expected_coverage,
     }
 
 

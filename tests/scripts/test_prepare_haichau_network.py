@@ -135,6 +135,11 @@ def test_prepare_writes_hash_bound_cases(tmp_path):
     }
     assert manifest["runtime"]["base_image_digest"].startswith("sha256:")
     assert len(manifest["runtime"]["dockerfile"]["sha256"]) == 64
+    assert manifest["route_coverage"]["required_controlled_signals"] == 0
+    assert manifest["route_coverage"]["catalog_inactive_required_signal_ids"] == []
+    assert set(manifest["route_coverage"]["split_coverage"]) == {
+        "train", "validation", "test"
+    }
 
     for case in manifest["cases"]:
         flow_path = tmp_path / case["flow_path"]

@@ -284,6 +284,8 @@ def test_foundation_verifier_rejects_rehashed_phase_semantic_drift(
         (lambda m: m["cases"][0].update(case_id="wrong"), "case registry"),
         (lambda m: m["runtime"].update(base_image="attacker/image:latest"), "runtime identity"),
         (lambda m: m["network"].update(controlled_signals=52), "controlled signal count"),
+        (lambda m: m["route_coverage"].update(required_controlled_signals=52),
+         "route coverage"),
     ],
 )
 def test_foundation_verifier_rejects_manifest_semantic_drift(valid_foundation, mutation, message):

@@ -7,7 +7,11 @@ from pathlib import Path
 
 import yaml
 
-from traffic_rl.network.haichau_dataset import audit_network, build_flow_cases
+from traffic_rl.network.haichau_dataset import (
+    audit_network,
+    build_flow_cases,
+    build_route_coverage_provenance,
+)
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.research.artifacts import sha256_file, verify_artifact
 
@@ -130,6 +134,9 @@ def prepare(config_path, root=None, new_version=False):
                 for split in ("train", "validation", "test")
             },
         },
+        "route_coverage": build_route_coverage_provenance(
+            roadnet, config, route_catalog, generated_cases
+        ),
         "cases": case_records,
         "runtime": {
             "base_image": BASE_IMAGE_NAME,

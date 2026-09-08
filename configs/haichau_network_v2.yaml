@@ -14,6 +14,12 @@ horizon_seconds: 3600
 motorcycle_ratio: 0.90
 reference_interval_seconds: 72.0
 route_family_split: {train: 0.50, validation: 0.25, test: 0.25}
+route_coverage:
+  required_controlled_signals: all
+  minimum_route_families_per_signal: 3
+  max_route_stretch_ratio: 1.25
+  require_each_split: true
+  require_each_case: true
 temporal_profile_source:
   path: datasets/danang_published/phan2025_camera_hourly_digitized.csv
   sha256: 5dbfb6282b45996932fa6ed1f8378a910d83fc467fd858b4e58360c6cb9295fa

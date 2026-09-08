@@ -1,7 +1,10 @@
 """Audit and demand tooling for the versioned Hai Chau CityFlow dataset."""
 
 from collections import Counter, deque
+import heapq
+import math
 import random
+import statistics
 from xml.etree import ElementTree
 
 from traffic_rl.network.roadnet import RoadNet
@@ -479,18 +482,66 @@ def count_controlled_signals(roadnet, route):
     )
 
 
-def _shortest_route(roadnet, start, target):
-    pending = deque([[start]])
-    visited = {start}
+def controlled_signal_ids(roadnet, route):
+    """Return the stable controlled-intersection set crossed by a route."""
+    controlled = set(roadnet.signalized_ids())
+    return sorted({
+        roadnet._road_by_id[road_id]["endIntersection"]
+        for road_id in route
+        if road_id in roadnet._road_by_id
+        and roadnet._road_by_id[road_id]["endIntersection"] in controlled
+    })
+
+
+def route_length_meters(roadnet, route):
+    """Measure a CityFlow route from its projected road polylines."""
+    total = 0.0
+    for road_id in route:
+        road = roadnet._road_by_id[road_id]
+        points = road.get("points", [])
+        length = sum(
+            math.hypot(float(end["x"]) - float(start["x"]),
+                       float(end["y"]) - float(start["y"]))
+            for start, end in zip(points, points[1:])
+        )
+        # Small unit fixtures omit geometry. The fallback preserves a positive,
+        # deterministic edge cost without making claims about physical length.
+        total += length if length > 0 else 1.0
+    return total
+
+
+def _shortest_path_tree(roadnet, start):
+    """Return deterministic metric-shortest paths from one boundary road."""
+    initial = route_length_meters(roadnet, [start])
+    costs = {start: initial}
+    previous = {}
+    pending = [(initial, start)]
     while pending:
-        path = pending.popleft()
-        if path[-1] == target and len(path) > 1:
-            return path
-        for next_road in sorted(roadnet.next_roads(path[-1])):
-            if next_road not in visited and next_road in roadnet._road_by_id:
-                visited.add(next_road)
-                pending.append(path + [next_road])
-    return None
+        cost, road_id = heapq.heappop(pending)
+        if costs.get(road_id) != cost:
+            continue
+        for next_road in sorted(roadnet.next_roads(road_id)):
+            if next_road not in roadnet._road_by_id:
+                continue
+            next_cost = cost + route_length_meters(roadnet, [next_road])
+            if (next_road not in costs or next_cost < costs[next_road]
+                    or (next_cost == costs[next_road]
+                        and road_id < previous.get(next_road, road_id + "\uffff"))):
+                costs[next_road] = next_cost
+                previous[next_road] = road_id
+                heapq.heappush(pending, (next_cost, next_road))
+    paths = {}
+    for target in costs:
+        route = [target]
+        while route[-1] != start:
+            route.append(previous[route[-1]])
+        paths[target] = list(reversed(route))
+    return paths
+
+
+def _shortest_route(roadnet, start, target):
+    path = _shortest_path_tree(roadnet, start).get(target)
+    return path if path is not None and len(path) > 1 else None
 
 
 def route_is_valid(roadnet, route, min_signals=0):
@@ -510,34 +561,169 @@ def route_is_valid(roadnet, route, min_signals=0):
     return count_controlled_signals(roadnet, route) >= min_signals
 
 
-def build_route_catalog(roadnet, min_signals):
-    """Enumerate one stable shortest route for every valid boundary OD pair."""
+def _route_family(roadnet, route, derivation, shortest_length, coverage_target=None):
+    route_hash = canonical_sha256(route)
+    length = route_length_meters(roadnet, route)
+    record = {
+        "route_family_id": "rf_" + route_hash,
+        "route_sha256": route_hash,
+        "origin_road": route[0],
+        "destination_road": route[-1],
+        "controlled_signals": count_controlled_signals(roadnet, route),
+        "controlled_signal_ids": controlled_signal_ids(roadnet, route),
+        "road_count": len(route),
+        "route_length_meters": round(length, 6),
+        "shortest_od_length_meters": round(shortest_length, 6),
+        "stretch_ratio": round(length / shortest_length, 6),
+        "derivation": derivation,
+        "route": route,
+    }
+    if coverage_target is not None:
+        record["coverage_target_signal_id"] = coverage_target
+    return record
+
+
+def _route_has_repeated_intersection(roadnet, route):
+    intersections = [roadnet._road_by_id[road_id]["startIntersection"]
+                     for road_id in route]
+    intersections.append(roadnet._road_by_id[route[-1]]["endIntersection"])
+    return len(intersections) != len(set(intersections))
+
+
+def _supplemental_signal_routes(roadnet, signal_id, min_signals, entries,
+                                exits, trees, known_hashes, count,
+                                max_stretch_ratio):
+    """Choose short, simple boundary routes constrained through one signal."""
+    incoming = sorted(
+        road["id"] for road in roadnet.roads
+        if road.get("endIntersection") == signal_id
+    )
+    candidates = {}
+    for entry in entries:
+        entry_tree = trees[entry]
+        for anchor in incoming:
+            prefix = entry_tree.get(anchor)
+            anchor_tree = trees.get(anchor, {})
+            if prefix is None:
+                continue
+            for exit_road in exits:
+                suffix = anchor_tree.get(exit_road)
+                shortest = entry_tree.get(exit_road)
+                if suffix is None or shortest is None:
+                    continue
+                route = prefix + suffix[1:]
+                route_hash = canonical_sha256(route)
+                if (route_hash in known_hashes or route_hash in candidates
+                        or signal_id not in controlled_signal_ids(roadnet, route)
+                        or _route_has_repeated_intersection(roadnet, route)
+                        or not route_is_valid(roadnet, route, min_signals)):
+                    continue
+                length = route_length_meters(roadnet, route)
+                shortest_length = route_length_meters(roadnet, shortest)
+                stretch = length / shortest_length
+                if stretch <= max_stretch_ratio:
+                    candidates[route_hash] = (
+                        stretch, length, entry, exit_road, route, shortest_length
+                    )
+    ordered = sorted(candidates.values(), key=lambda item: item[:4])
+    selected = []
+    used_od = set()
+    # Distinct ODs are preferred so coverage routes do not create one artificial
+    # origin/destination hotspot. A second pass fills only if the graph requires it.
+    for allow_repeated_od in (False, True):
+        for _, _, entry, exit_road, route, shortest_length in ordered:
+            od = (entry, exit_road)
+            if not allow_repeated_od and od in used_od:
+                continue
+            route_hash = canonical_sha256(route)
+            if route_hash in {item["route_sha256"] for item in selected}:
+                continue
+            selected.append(_route_family(
+                roadnet, route, "coverage_constrained_metric_shortest",
+                shortest_length, signal_id
+            ))
+            used_od.add(od)
+            if len(selected) == count:
+                return selected
+    return selected
+
+
+def build_route_catalog(roadnet, min_signals, required_signal_ids=None,
+                        minimum_route_families_per_signal=0,
+                        max_stretch_ratio=1.25):
+    """Build metric-shortest OD routes plus bounded signal-coverage routes."""
     entries = sorted(roadnet.entry_roads())
     virtual = {i["id"] for i in roadnet.intersections if i.get("virtual")}
     exits = sorted(r["id"] for r in roadnet.roads
                    if r.get("endIntersection") in virtual)
+    if (isinstance(minimum_route_families_per_signal, bool)
+            or not isinstance(minimum_route_families_per_signal, int)
+            or minimum_route_families_per_signal < 0
+            or isinstance(max_stretch_ratio, bool)
+            or not isinstance(max_stretch_ratio, (int, float))
+            or max_stretch_ratio < 1.0):
+        raise ValueError("route coverage settings are invalid")
+    controlled = set(roadnet.signalized_ids())
+    required = sorted(set(required_signal_ids or []))
+    unknown = sorted(set(required) - controlled)
+    if unknown:
+        raise ValueError("route coverage references unknown controlled signals: %s" % unknown)
+    trees = {start: _shortest_path_tree(roadnet, start) for start in entries}
     catalog = []
     for entry in entries:
         for exit_road in exits:
-            route = _shortest_route(roadnet, entry, exit_road)
-            if route is None or not route_is_valid(roadnet, route, min_signals):
+            route = trees[entry].get(exit_road)
+            if (route is None or _route_has_repeated_intersection(roadnet, route)
+                    or not route_is_valid(roadnet, route, min_signals)):
                 continue
-            route_hash = canonical_sha256(route)
-            catalog.append({
-                "route_family_id": "rf_" + route_hash,
-                "route_sha256": route_hash,
-                "origin_road": route[0],
-                "destination_road": route[-1],
-                "controlled_signals": count_controlled_signals(roadnet, route),
-                "route": route,
-            })
+            length = route_length_meters(roadnet, route)
+            catalog.append(_route_family(
+                roadnet, route, "metric_shortest_boundary_od", length
+            ))
+    known_hashes = {family["route_sha256"] for family in catalog}
+    for signal_id in required:
+        existing_count = sum(
+            signal_id in family["controlled_signal_ids"] for family in catalog
+        )
+        needed = max(0, minimum_route_families_per_signal - existing_count)
+        if not needed:
+            continue
+        for road in roadnet.roads:
+            if road.get("endIntersection") == signal_id and road["id"] not in trees:
+                trees[road["id"]] = _shortest_path_tree(roadnet, road["id"])
+        additions = _supplemental_signal_routes(
+            roadnet, signal_id, min_signals, entries, exits, trees,
+            known_hashes, needed, max_stretch_ratio
+        )
+        catalog.extend(additions)
+        known_hashes.update(family["route_sha256"] for family in additions)
     catalog.sort(key=lambda family: family["route_sha256"])
     if not catalog:
         raise ValueError("insufficient multi-signal route families")
+    missing = sorted(set(required) - {
+        signal_id for family in catalog
+        for signal_id in family["controlled_signal_ids"]
+    })
+    insufficient = sorted(
+        signal_id for signal_id in required
+        if sum(signal_id in family["controlled_signal_ids"] for family in catalog) < 3
+    )
+    if missing or insufficient:
+        raise ValueError(
+            "plausible boundary routes cannot cover required controlled signals; "
+            "inactive=%s fewer_than_three_families=%s" % (missing, insufficient)
+        )
     return catalog
 
 
-def partition_route_families(catalog, split_weights):
+def _covered_signals(families):
+    return {
+        signal_id for family in families
+        for signal_id in family.get("controlled_signal_ids", [])
+    }
+
+
+def partition_route_families(catalog, split_weights, required_signal_ids=None):
     """Assign every canonical family once using stable weighted partitions."""
     splits = ("train", "validation", "test")
     if set(split_weights) != set(splits) or any(float(split_weights[s]) <= 0 for s in splits):
@@ -555,11 +741,67 @@ def partition_route_families(catalog, split_weights):
     for split in order[:leftover]:
         counts[split] += 1
 
-    partitions = {}
+    required = set(required_signal_ids or [])
+    partitions = {split: [] for split in splits}
+    unassigned = {family["route_sha256"]: family for family in catalog}
+    if required:
+        absent = sorted(required - _covered_signals(catalog))
+        if absent:
+            raise ValueError("route partition cannot cover controlled signals: %s" % absent)
+        for split_index, split in enumerate(splits):
+            uncovered = set(required)
+            future_splits = len(splits) - split_index - 1
+            while uncovered:
+                signal_counts = Counter(
+                    signal_id for family in unassigned.values()
+                    for signal_id in set(family["controlled_signal_ids"]) & required
+                )
+                candidates = []
+                for family in unassigned.values():
+                    gains = set(family["controlled_signal_ids"]) & uncovered
+                    if not gains:
+                        continue
+                    covered_required = set(family["controlled_signal_ids"]) & required
+                    if any(signal_counts[signal_id] <= future_splits
+                           for signal_id in covered_required):
+                        continue
+                    candidates.append((
+                        -len(gains),
+                        family["stretch_ratio"],
+                        family["route_length_meters"],
+                        family["route_sha256"],
+                        family,
+                    ))
+                if not candidates:
+                    raise ValueError(
+                        "route partition cannot preserve per-split coverage; "
+                        "split=%s inactive=%s" % (split, sorted(uncovered))
+                    )
+                family = min(candidates)[-1]
+                partitions[split].append(dict(family))
+                del unassigned[family["route_sha256"]]
+                uncovered.difference_update(family["controlled_signal_ids"])
+
+    ordered_remaining = [family for family in catalog
+                         if family["route_sha256"] in unassigned]
     offset = 0
     for split in splits:
-        partitions[split] = [dict(family) for family in catalog[offset:offset + counts[split]]]
-        offset += counts[split]
+        needed = counts[split] - len(partitions[split])
+        if needed < 0:
+            raise ValueError("route coverage seed exceeds weighted split capacity")
+        partitions[split].extend(
+            dict(family) for family in ordered_remaining[offset:offset + needed]
+        )
+        offset += needed
+    if offset != len(ordered_remaining):
+        raise ValueError("route partition accounting mismatch")
+    if required:
+        inactive = {
+            split: sorted(required - _covered_signals(partitions[split]))
+            for split in splits
+        }
+        if any(inactive.values()):
+            raise ValueError("route partition coverage failed: %s" % inactive)
     return partitions
 
 
@@ -582,14 +824,81 @@ def _vehicle_family(seed, count, motorcycle_ratio):
     ]
 
 
-def _sample_families(pool, seed, count):
+def _sample_families(pool, seed, count, required_signal_ids=None):
+    if not pool and count:
+        raise ValueError("cannot sample routes from an empty partition")
     rng = random.Random(seed)
     shuffled = list(pool)
     rng.shuffle(shuffled)
-    selected = shuffled[:min(count, len(shuffled))]
+    required = set(required_signal_ids or [])
+    selected = []
+    uncovered = set(required)
+    while uncovered:
+        candidates = [family for family in shuffled if family not in selected]
+        candidates = [
+            family for family in candidates
+            if set(family.get("controlled_signal_ids", [])) & uncovered
+        ]
+        if not candidates or len(selected) >= count:
+            raise ValueError(
+                "route sample cannot cover controlled signals; inactive=%s count=%s"
+                % (sorted(uncovered), count)
+            )
+        family = max(
+            candidates,
+            key=lambda item: len(set(item["controlled_signal_ids"]) & uncovered)
+        )
+        selected.append(family)
+        uncovered.difference_update(family["controlled_signal_ids"])
+    selected.extend(
+        family for family in shuffled
+        if family not in selected and len(selected) < count
+    )
     while len(selected) < count:
         selected.append(rng.choice(pool))
     return selected
+
+
+def _coverage_config(roadnet, config):
+    contract = config.get("route_coverage")
+    if contract is None:
+        return {
+            "required": [],
+            "minimum_route_families_per_signal": 0,
+            "max_route_stretch_ratio": 1.25,
+            "require_each_split": False,
+            "require_each_case": False,
+        }
+    expected = {
+        "required_controlled_signals", "minimum_route_families_per_signal",
+        "max_route_stretch_ratio", "require_each_split", "require_each_case",
+    }
+    if not isinstance(contract, dict) or set(contract) != expected:
+        raise ValueError("route_coverage contract schema mismatch")
+    requested = contract["required_controlled_signals"]
+    if requested == "all":
+        required = sorted(roadnet.signalized_ids())
+    elif isinstance(requested, list) and all(isinstance(item, str) for item in requested):
+        required = sorted(set(requested))
+    else:
+        raise ValueError("required_controlled_signals must be all or a list")
+    if (not isinstance(contract["require_each_split"], bool)
+            or not isinstance(contract["require_each_case"], bool)):
+        raise ValueError("route coverage gates must be boolean")
+    minimum = contract["minimum_route_families_per_signal"]
+    if (isinstance(minimum, bool) or not isinstance(minimum, int) or minimum < 0):
+        raise ValueError("minimum route families per signal must be a non-negative integer")
+    if contract["require_each_split"] and required and minimum < 3:
+        raise ValueError(
+            "minimum route families per signal must be at least three for disjoint splits"
+        )
+    return {
+        "required": required,
+        "minimum_route_families_per_signal": minimum,
+        "max_route_stretch_ratio": contract["max_route_stretch_ratio"],
+        "require_each_split": contract["require_each_split"],
+        "require_each_case": contract["require_each_case"],
+    }
 
 
 def _scheduled_departures(flow_row):
@@ -627,10 +936,19 @@ def build_flow_cases(roadnet, config, include_catalog=False):
     regimes = config["regimes"]
     if set(regimes) != {"normal", "am_peak", "pm_peak"}:
         raise ValueError("normal regime is required")
+    coverage = _coverage_config(roadnet, config)
     catalog = build_route_catalog(
-        roadnet, int(config["min_controlled_signals_per_route"])
+        roadnet,
+        int(config["min_controlled_signals_per_route"]),
+        required_signal_ids=coverage["required"],
+        minimum_route_families_per_signal=coverage["minimum_route_families_per_signal"],
+        max_stretch_ratio=coverage["max_route_stretch_ratio"],
     )
-    partitions = partition_route_families(catalog, config["route_family_split"])
+    partitions = partition_route_families(
+        catalog,
+        config["route_family_split"],
+        coverage["required"] if coverage["require_each_split"] else None,
+    )
     partitioned_catalog = []
     for split in ("train", "validation", "test"):
         for family in partitions[split]:
@@ -649,7 +967,8 @@ def build_flow_cases(roadnet, config, include_catalog=False):
             raise ValueError("demand and simulation seeds must be paired")
         for demand_seed, sim_seed in zip(demand_seeds, sim_seeds):
             sampled = _sample_families(
-                partitions[split], demand_seed, int(config["route_count"])
+                partitions[split], demand_seed, int(config["route_count"]),
+                coverage["required"] if coverage["require_each_case"] else None,
             )
             routes = [family["route"] for family in sampled]
             vehicle_kinds = _vehicle_family(
@@ -658,6 +977,20 @@ def build_flow_cases(roadnet, config, include_catalog=False):
             histogram = Counter(
                 count_controlled_signals(roadnet, route) for route in routes
             )
+            active_signal_ids = sorted(_covered_signals(sampled))
+            inactive_signal_ids = sorted(
+                set(coverage["required"]) - set(active_signal_ids)
+            )
+            if coverage["require_each_case"] and inactive_signal_ids:
+                raise ValueError(
+                    "case route coverage failed; split=%s demand_seed=%s inactive=%s"
+                    % (split, demand_seed, inactive_signal_ids)
+                )
+            route_lengths = [family["route_length_meters"] for family in sampled]
+            unique_ods = {
+                (family["origin_road"], family["destination_road"])
+                for family in sampled
+            }
             for scenario, regime in regimes.items():
                 profile = _profile(config, scenario)
                 flow = []
@@ -709,6 +1042,16 @@ def build_flow_cases(roadnet, config, include_catalog=False):
                             str(signal_count): histogram[signal_count]
                             for signal_count in sorted(histogram)
                         },
+                        "active_controlled_signal_ids": active_signal_ids,
+                        "active_controlled_signals": len(active_signal_ids),
+                        "inactive_controlled_signal_ids": inactive_signal_ids,
+                        "unique_origin_destination_pairs": len(unique_ods),
+                        "route_length_meters": {
+                            "minimum": round(min(route_lengths), 6),
+                            "median": round(statistics.median(route_lengths), 6),
+                            "mean": round(statistics.mean(route_lengths), 6),
+                            "maximum": round(max(route_lengths), 6),
+                        },
                         "data_source_label": config["demand_label"],
                     }
                 )
@@ -716,3 +1059,72 @@ def build_flow_cases(roadnet, config, include_catalog=False):
     if include_catalog:
         return cases, partitioned_catalog
     return cases
+
+
+def build_route_coverage_provenance(roadnet, config, catalog, cases):
+    """Summarize the route-generation gates bound into the experiment manifest."""
+    coverage = _coverage_config(roadnet, config)
+    required = set(coverage["required"])
+    lengths = [family["route_length_meters"] for family in catalog]
+    by_split = {}
+    for split in ("train", "validation", "test"):
+        families = [family for family in catalog if family["split"] == split]
+        active = _covered_signals(families)
+        by_split[split] = {
+            "active_controlled_signal_ids": sorted(active),
+            "active_controlled_signals": len(active),
+            "inactive_required_signal_ids": sorted(required - active),
+            "route_families": len(families),
+            "unique_origin_destination_pairs": len({
+                (family["origin_road"], family["destination_road"])
+                for family in families
+            }),
+        }
+    per_case = {
+        case["case_id"]: {
+            "active_controlled_signals": case["active_controlled_signals"],
+            "inactive_required_signal_ids": case["inactive_controlled_signal_ids"],
+            "unique_origin_destination_pairs": case["unique_origin_destination_pairs"],
+        }
+        for case in cases
+    }
+    inactive_catalog = sorted(required - _covered_signals(catalog))
+    if inactive_catalog:
+        raise ValueError("route coverage provenance has inactive signals: %s" % inactive_catalog)
+    return {
+        "schema_version": 1,
+        "required_controlled_signal_ids": sorted(required),
+        "required_controlled_signals": len(required),
+        "catalog_active_controlled_signal_ids": sorted(_covered_signals(catalog)),
+        "catalog_inactive_required_signal_ids": inactive_catalog,
+        "base_route_algorithm": "deterministic_metric_shortest_boundary_od",
+        "supplemental_route_algorithm": (
+            "deterministic_simple_boundary_route_constrained_through_signal"
+        ),
+        "minimum_route_families_per_signal": coverage["minimum_route_families_per_signal"],
+        "maximum_supplemental_stretch_ratio": coverage["max_route_stretch_ratio"],
+        "loop_rule": "no repeated road or intersection in any route family",
+        "partition_rule": "disjoint weighted partitions seeded by required-signal set cover",
+        "case_sampling_rule": "seeded required-signal set cover then seeded family sample",
+        "require_each_split": coverage["require_each_split"],
+        "require_each_case": coverage["require_each_case"],
+        "split_coverage": by_split,
+        "case_coverage": per_case,
+        "catalog_statistics": {
+            "route_families": len(catalog),
+            "unique_origin_destination_pairs": len({
+                (family["origin_road"], family["destination_road"])
+                for family in catalog
+            }),
+            "alternative_route_families": sum(
+                family["derivation"] == "coverage_constrained_metric_shortest"
+                for family in catalog
+            ),
+            "route_length_meters": {
+                "minimum": round(min(lengths), 6),
+                "median": round(statistics.median(lengths), 6),
+                "mean": round(statistics.mean(lengths), 6),
+                "maximum": round(max(lengths), 6),
+            },
+        },
+    }
