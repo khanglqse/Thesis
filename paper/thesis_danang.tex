@@ -481,6 +481,21 @@ python3 scripts/summarize_danang_sensitivity.py
 python3 scripts/build_thesis_figures.py
 # 53-signal extension: OSM topology and synthetic network demand.
 make haichau-precompute-final-baseline
+docker run --rm --platform linux/amd64 -v "$PWD:/work" -w /work \
+  traffic-rl-cityflow-research:v2 python3 scripts/train_haichau_network.py \
+  --mode pilot --learning-seed 11 --controller-family neighbor_phase_ddqn \
+  --output /work/results/haichau_network_v2/training/pilot-seed11 \
+  --baseline-tuning-artifact \
+  /work/results/haichau_network_v2/training/final-baseline-tuning.json
+docker run --rm --platform linux/amd64 -v "$PWD:/work" -w /work \
+  traffic-rl-cityflow-research:v2 python3 scripts/train_haichau_network.py \
+  --mode pilot --learning-seed 11 --controller-family neighbor_phase_ddqn \
+  --config /work/configs/haichau_training_v2_pilot_epsilon2160.yaml \
+  --output \
+  /work/results/haichau_network_v2/training/pilot-epsilon2160-seed11 \
+  --baseline-tuning-artifact \
+  /work/results/haichau_network_v2/training/final-baseline-tuning.json
+PYTHONPATH=src python3 scripts/select_haichau_pilot_epsilon.py
 make haichau-train-final-campaign
 python3 scripts/prepare_haichau_release_inputs.py
 python3 scripts/prepare_haichau_viewer_network.py
