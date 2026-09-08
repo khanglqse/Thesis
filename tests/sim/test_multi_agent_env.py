@@ -54,7 +54,8 @@ def test_switching_inserts_yellow_then_new_green(tmp_path):
 
 def test_min_green_blocks_early_switch(tmp_path):
     eng = FakeEngine()
-    env = MultiAgentTrafficEnv(_net(tmp_path), eng, action_interval=10, yellow_time=3, min_green=100)
+    env = MultiAgentTrafficEnv(_net(tmp_path), eng, action_interval=10,
+                               yellow_time=3, min_green=100, maximum_red=None)
     env.reset()
     env.step({"A": 1})            # min_green not satisfied -> stay on green 0
     assert ("set", "A", 1) not in eng.calls
