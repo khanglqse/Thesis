@@ -3,38 +3,28 @@ import json
 import scripts.run_haichau_campaign as campaign_script
 
 
-def test_executor_runs_controller_inside_verified_offline_docker(monkeypatch, tmp_path):
-    digest = "sha256:" + "b" * 64
-    image = "cityflowproject/cityflow@" + digest
-    run = {
-        "command": ["python3", "scripts/evaluate.py", "--case", "case-1"],
-        "runtime_digest": digest,
-        "runtime_image": image,
-        "runtime_image_id": digest,
-    }
+def test_release_cli_uses_library_owned_docker_executor(monkeypatch, tmp_path):
+    protocol = tmp_path / "protocol.json"
+    protocol.write_text(json.dumps({
+        "code_commit": "a" * 40,
+        "runtime_digest": "sha256:" + "b" * 64,
+    }))
+    campaign_dir = tmp_path / "campaign"
+    campaign_dir.mkdir()
     calls = []
-
     monkeypatch.setattr(campaign_script, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(campaign_script, "verify_runtime", lambda root, value: {
-        "runtime_image": image, "runtime_image_id": digest,
-    })
+    monkeypatch.setattr(
+        campaign_script, "verify_git_checkout", lambda *args, **kwargs: {})
+    monkeypatch.setattr(campaign_script, "verify_runtime", lambda *args: {})
 
-    class Completed(object):
-        returncode = 0
-        stdout = "log line\n" + json.dumps({
-            "resolved_config": {}, "metrics": {},
-        }) + "\n"
-        stderr = ""
+    def run_pending(campaign, **kwargs):
+        calls.append((campaign, kwargs))
+        return {"completed": 1, "failed": 0, "skipped": 0, "total": 1}
 
-    def execute(argv, **kwargs):
-        calls.append((argv, kwargs))
-        return Completed()
+    monkeypatch.setattr(campaign_script, "run_pending", run_pending)
 
-    monkeypatch.setattr(campaign_script.subprocess, "run", execute)
-
-    result = campaign_script._subprocess_executor(run, tmp_path / "run")
-
-    assert calls[0][0][:5] == ["docker", "run", "--rm", "--network", "none"]
-    assert image in calls[0][0]
-    assert calls[0][0][-4:] == run["command"]
-    assert result["stdout"].startswith("log line")
+    assert campaign_script.main([
+        "--campaign-dir", str(campaign_dir),
+        "--protocol", str(protocol),
+    ]) == 0
+    assert calls == [(campaign_dir, {"project_root": tmp_path})]

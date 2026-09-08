@@ -34,11 +34,13 @@ def _canonical_hash(value):
 
 
 def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
-                  fallback_paths=None):
+                  fallback_paths=None, require_release_provenance=False):
     campaign_dir = Path(campaign_dir)
     output_dir = Path(output_dir)
     network_path = Path(network_path)
-    verify_campaign(campaign_dir)
+    verify_campaign(
+        campaign_dir, require_release_provenance=require_release_provenance,
+        project_root=Path(__file__).resolve().parent.parent)
     campaign = json.loads((campaign_dir / "campaign-manifest.json").read_text())
     runs = dict((run["run_id"], run) for run in campaign["runs"])
     if len(selected_run_ids) != len(set(selected_run_ids)):
@@ -172,7 +174,8 @@ def main(argv=None):
         if value:
             fallbacks[name] = value
     manifest = export_bundle(
-        args.campaign_dir, args.output, args.network, args.run_ids, fallbacks)
+        args.campaign_dir, args.output, args.network, args.run_ids, fallbacks,
+        require_release_provenance=True)
     print(json.dumps(manifest, sort_keys=True))
     return 0
 

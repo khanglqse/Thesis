@@ -166,8 +166,11 @@ checkpoint, code commit, inspected Docker image and resolved config). Every one 
 learning seeds must contain the exact tuned-fixed demand/simulator cells, with at least two
 cells in every gated regime. The current checkout must be clean, descend from the frozen
 40-character commit and leave `src/`, `scripts/`, `frontend/`, `docker/` and build config
-unchanged. Paper/demo artifacts are content-hashed; `pdfinfo`/`pdftoppm` and `ffprobe`
-must also parse/render the PDFs, PNGs and MP4, and replays cover the full horizon.
+unchanged. Paper/demo artifacts are content-hashed; `pdfinfo`/`pdftoppm`, `ffprobe` and a
+full `ffmpeg -xerror` decode must parse/render the PDFs, PNGs and MP4, and replays cover the
+full horizon. `scripts/attest_haichau_release.py` generates the clean-checkout evidence with
+exact command results, tool versions and hashed stdout/stderr logs; the final verifier
+rejects hand-written summary records.
 
 ## Scope: validated vs proposed
 

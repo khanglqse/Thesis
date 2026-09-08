@@ -32,7 +32,15 @@ def _sha256(path):
     return digest.hexdigest()
 
 
-def verify_git_checkout(root, code_commit, runner=subprocess.run):
+def _dirty_path(line):
+    value = line[3:] if len(line) > 3 else ""
+    if " -> " in value:
+        value = value.rsplit(" -> ", 1)[-1]
+    return value.strip('"')
+
+
+def verify_git_checkout(root, code_commit, runner=subprocess.run,
+                        allowed_dirty_prefixes=()):
     """Require a clean checkout descended from unchanged frozen code paths."""
     root = Path(root).resolve()
     expected = str(code_commit or "")
@@ -46,8 +54,12 @@ def verify_git_checkout(root, code_commit, runner=subprocess.run):
     dirty = _run(
         ("git", "status", "--porcelain", "--untracked-files=all"),
         cwd=root, runner=runner)
-    if dirty:
-        raise ValueError("release checkout is dirty")
+    dirty_paths = [_dirty_path(line) for line in dirty.splitlines() if line]
+    allowed = tuple(str(Path(value)).rstrip("/") for value in allowed_dirty_prefixes)
+    unexpected = [path for path in dirty_paths if not any(
+        path == prefix or path.startswith(prefix + "/") for prefix in allowed)]
+    if unexpected:
+        raise ValueError("release checkout is dirty: %s" % unexpected[0])
     command = ("git", "diff", "--quiet", expected, head, "--") + _CODE_PATHS
     completed = runner(
         list(command), cwd=str(root), stdout=subprocess.PIPE,
@@ -57,7 +69,12 @@ def verify_git_checkout(root, code_commit, runner=subprocess.run):
     if completed.returncode:
         raise ValueError("unable to compare frozen code paths: %s" %
                          completed.stderr.strip())
-    return {"code_commit": expected, "head_commit": head, "dirty": False}
+    return {
+        "code_commit": expected,
+        "head_commit": head,
+        "dirty": bool(dirty_paths),
+        "allowed_dirty_paths": dirty_paths,
+    }
 
 
 def inspect_runtime_image(image, runner=subprocess.run):

@@ -110,3 +110,44 @@ All Critical and Important findings in `/tmp/review-haichau-evaluation-demo.md` 
 - `make cf-test`: 1 passed, 1 skipped, 162 deselected.
 - Live offline Chrome check: the new topology validation loaded the 53-node fixture, switched normal to PM peak, preserved synchronized metrics/detail rendering, and logged zero console warnings/errors. HTTP traffic remained localhost-only.
 - Current verifier version 4 exits 1 with 13 dependency gates, including the new `source_revision` gate. No release artifact was created to clear them.
+
+## Final-review trust-boundary remediation
+
+- [x] Release execution provenance: `run_pending(..., executor=...)` remains available for
+  unit fixtures but records `mode: injected` and `release_eligible: false`; the final audit,
+  summarizer, replay CLI and `--verify-only` reject it. The production runner now uses only
+  the library-owned Docker path with networking disabled and an immutable image.
+- [x] Container-output binding: every release status stores the exact Docker argv, Docker
+  container ID from `--cidfile`, actual execution Git head, inspected image identity, exit
+  status and stdout/stderr hashes. Verification re-hashes both logs and compares the final
+  stdout JSON with the resolved-config, metrics and optional replay artifacts.
+- [x] Generated clean-checkout attestation: `scripts/attest_haichau_release.py` verifies a
+  clean frozen checkout and actual Docker runtime, executes the canonical host, CityFlow,
+  replay, Tectonic and pre-attestation audit commands, probes eleven tool versions, and
+  writes version-3 records with exact argv/environment/exit/duration and hashed logs. The
+  final gate validates the generator hash, command contract, Git ancestry/cleanliness,
+  runtime identity, seven release hashes and every file under `final/runs`.
+- [x] Full media decode: PNG validation decodes the complete selected image frame and MP4
+  validation decodes the complete video stream through `ffmpeg -v error -xerror` after
+  metadata checks. PDF page-one rendering passes through the same PNG decoder.
+- [x] No positive synthetic release proof remains: the former all-green in-process fixture
+  now explicitly asserts `complete=false` at the injected-executor and handwritten-record
+  gates. It remains useful only for independent summary/thesis/demo mutation tests.
+
+### Final-review adversarial RED to GREEN
+
+- RED: 4/4 focused failures proved that an injected executor could omit provenance, a
+  handwritten five-field record could complete the release, a corrupted PNG IDAT still
+  exposed dimensions to ffprobe, and a truncated fast-start MP4 still exposed duration.
+- GREEN: 48 focused campaign/attestation/media/export/runner/verifier tests passed before
+  the allowed-dirty resume regression; the final focused set passed 52 tests. The broader
+  eval/report/script group passed 118 tests on the committed implementation.
+- Python 3.6.5 pinned-image check: 37 campaign/attestation/identity/statistics/runner tests
+  passed (one pytest config warning). `make cf-test`: 1 passed, 1 skipped, 167 deselected.
+- Viewer core: 5 Node tests passed.
+- Full host `make test`: 200 passed, 1 failed, 1 deselected. The only failure remains the
+  pre-existing absent Git-ignored `data/danang/roadnet_haichau.json` fixture.
+- Dependency gap remains unchanged: no frozen protocol, 30-case release split, ten learned
+  checkpoints, real campaign, derived thesis/demo artifacts or clean attestation exists on
+  this branch. The generator was tested only in temporary fixtures; no release evidence was
+  fabricated.

@@ -5,7 +5,10 @@ import hashlib
 import json
 import math
 import re
+import subprocess
 from pathlib import Path
+
+from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
 
 
 CONTROLLERS = (
@@ -194,7 +197,126 @@ def expand_runs(manifest, learning_seeds, controller_ids):
     return runs
 
 
-def _verify_complete(run_dir, status, expected_run):
+def _docker_argv(run, project_root, run_dir):
+    command = run.get("command")
+    if not isinstance(command, list) or not command:
+        raise ValueError("run has no command; integrate the controller before execution")
+    return [
+        "docker", "run", "--rm", "--network", "none",
+        "--cidfile", str(Path(run_dir).resolve() / ".docker-container-id"),
+        "-v", "%s:/work" % Path(project_root).resolve(), "-w", "/work",
+        run["runtime_image"],
+    ] + [str(token) for token in command]
+
+
+def _trusted_docker_executor(run, run_dir, project_root, source, runtime):
+    """Execute one release run through the library-owned immutable Docker path."""
+    project_root = Path(project_root).resolve()
+    if source.get("code_commit") != run.get("code_commit"):
+        raise ValueError("executor Git identity differs from frozen run")
+    if any(runtime.get(field) != run.get(field) for field in (
+            "runtime_image", "runtime_image_id", "runtime_digest")):
+        raise ValueError("executor Docker identity differs from frozen run")
+    cidfile = Path(run_dir).resolve() / ".docker-container-id"
+    if cidfile.exists():
+        cidfile.unlink()
+    argv = _docker_argv(run, project_root, run_dir)
+    try:
+        completed = subprocess.run(
+            argv, cwd=str(project_root), universal_newlines=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        container_id = cidfile.read_text().strip() if cidfile.is_file() else ""
+    finally:
+        if cidfile.exists():
+            cidfile.unlink()
+    if completed.returncode:
+        raise RuntimeError("executor exited %s: %s" % (
+            completed.returncode, completed.stderr.strip()))
+    lines = [line for line in completed.stdout.splitlines() if line.strip()]
+    if not lines:
+        raise ValueError("executor must print a JSON result on its final line")
+    result = json.loads(lines[-1])
+    result["stdout"] = completed.stdout
+    result["stderr"] = completed.stderr
+    provenance = {
+        "provenance_version": 1,
+        "mode": "network_campaign_docker",
+        "docker_argv": argv,
+        "container_id": container_id,
+        "exit_code": completed.returncode,
+        "code_commit": run.get("code_commit"),
+        "execution_head_commit": source["head_commit"],
+        "runtime_image": runtime["runtime_image"],
+        "runtime_image_id": runtime["runtime_image_id"],
+        "runtime_digest": runtime["runtime_digest"],
+        "stdout_sha256": hashlib.sha256(
+            completed.stdout.encode("utf-8")).hexdigest(),
+        "stderr_sha256": hashlib.sha256(
+            completed.stderr.encode("utf-8")).hexdigest(),
+    }
+    return result, provenance
+
+
+def _assert_git_ancestor(project_root, older, newer):
+    if older == newer:
+        return
+    for argv in (("git", "cat-file", "-e", older + "^{commit}"),
+                 ("git", "merge-base", "--is-ancestor", older, newer)):
+        completed = subprocess.run(
+            list(argv), cwd=str(project_root), stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, universal_newlines=True)
+        if completed.returncode:
+            raise ValueError("trusted Docker execution Git commit is not an ancestor")
+
+
+def _verify_execution_provenance(run_dir, status, expected_run, project_root,
+                                 current_head=None):
+    provenance = status.get("execution_provenance", {})
+    if provenance.get("mode") != "network_campaign_docker" \
+            or provenance.get("provenance_version") != 1:
+        raise ValueError("release run requires the trusted Docker executor")
+    expected_argv = _docker_argv(expected_run, project_root, run_dir)
+    if provenance.get("docker_argv") != expected_argv:
+        raise ValueError("trusted Docker executor argv differs from the frozen run")
+    expected_identity = {
+        "code_commit": expected_run.get("code_commit"),
+        "runtime_image": expected_run.get("runtime_image"),
+        "runtime_image_id": expected_run.get("runtime_image_id"),
+        "runtime_digest": expected_run.get("runtime_digest"),
+    }
+    if any(provenance.get(key) != value for key, value in expected_identity.items()):
+        raise ValueError("trusted Docker executor identity differs from the frozen run")
+    if provenance.get("exit_code") != 0:
+        raise ValueError("trusted Docker executor did not exit successfully")
+    if not re.fullmatch(r"[0-9a-f]{64}", str(provenance.get("container_id", ""))):
+        raise ValueError("trusted Docker executor requires the Docker container ID")
+    for name in ("stdout", "stderr"):
+        if provenance.get(name + "_sha256") != _sha256(run_dir / (name + ".log")):
+            raise ValueError("trusted Docker executor %s hash mismatch" % name)
+    lines = [line for line in (run_dir / "stdout.log").read_text().splitlines()
+             if line.strip()]
+    try:
+        emitted = json.loads(lines[-1])
+    except (IndexError, ValueError):
+        raise ValueError("trusted Docker stdout does not end with its JSON result")
+    for key, artifact in (("resolved_config", "resolved-config.json"),
+                          ("metrics", "metrics.json")):
+        if emitted.get(key) != json.loads((run_dir / artifact).read_text()):
+            raise ValueError("trusted Docker stdout %s differs from artifact" % key)
+    replay_path = run_dir / "replay.json"
+    if replay_path.is_file() and emitted.get("replay") != json.loads(replay_path.read_text()):
+        raise ValueError("trusted Docker stdout replay differs from artifact")
+    execution_head = str(provenance.get("execution_head_commit", ""))
+    if not re.fullmatch(r"[0-9a-f]{40}", execution_head):
+        raise ValueError("trusted Docker executor requires its Git head commit")
+    _assert_git_ancestor(project_root, expected_run["code_commit"], execution_head)
+    if current_head:
+        _assert_git_ancestor(project_root, execution_head, current_head)
+
+
+def _verify_complete(run_dir, status, expected_run,
+                     require_release_provenance=False, project_root=None,
+                     current_head=None):
     if status.get("run_spec_sha256") != canonical_sha256(expected_run):
         raise ValueError("complete run spec digest does not match campaign")
     if any(status.get(field) != expected_run.get(field) for field in (
@@ -220,6 +342,9 @@ def _verify_complete(run_dir, status, expected_run):
         raise ValueError("resolved config differs from frozen run spec")
     metrics = json.loads((run_dir / "metrics.json").read_text())
     _validate_result(expected_run, {"resolved_config": resolved, "metrics": metrics})
+    if require_release_provenance:
+        _verify_execution_provenance(
+            run_dir, status, expected_run, project_root or run_dir, current_head)
 
 
 def _finite(value):
@@ -345,13 +470,33 @@ def _validate_result(run, result):
     _validate_network_metrics(run, metrics)
 
 
-def verify_campaign(campaign_dir):
+def verify_campaign(campaign_dir, require_release_provenance=False, project_root=None):
     campaign_dir = Path(campaign_dir)
     manifest_path = campaign_dir / "campaign-manifest.json"
     if not manifest_path.is_file():
         raise ValueError("campaign-manifest.json is missing")
     campaign = json.loads(manifest_path.read_text())
     runs = campaign.get("runs", [])
+    current_head = None
+    if require_release_provenance:
+        if not runs:
+            raise ValueError("release campaign contains no runs")
+        for run in runs:
+            status_path = campaign_dir / "runs" / _safe_id(run["run_id"]) / "status.json"
+            if not status_path.is_file() or json.loads(status_path.read_text()).get(
+                    "execution_provenance", {}).get("mode") \
+                    != "network_campaign_docker":
+                raise ValueError("release run requires the trusted Docker executor")
+        project_root = Path(project_root or campaign_dir).resolve()
+        try:
+            campaign_relative = str(campaign_dir.resolve().relative_to(project_root))
+        except ValueError:
+            raise ValueError("release campaign directory must remain inside project root")
+        source = verify_git_checkout(
+            project_root, runs[0].get("code_commit"),
+            allowed_dirty_prefixes=(campaign_relative,))
+        verify_runtime(project_root, runs[0])
+        current_head = source["head_commit"]
     for run in runs:
         run_dir = campaign_dir / "runs" / _safe_id(run["run_id"])
         status_path = run_dir / "status.json"
@@ -360,11 +505,12 @@ def verify_campaign(campaign_dir):
         status = json.loads(status_path.read_text())
         if status.get("status") != "complete":
             raise ValueError("run is not complete: %s" % run["run_id"])
-        _verify_complete(run_dir, status, run)
+        _verify_complete(run_dir, status, run, require_release_provenance,
+                         project_root or campaign_dir, current_head)
     return {"complete": len(runs), "total": len(runs)}
 
 
-def run_pending(campaign_dir, executor):
+def run_pending(campaign_dir, executor=None, project_root=None):
     """Run incomplete bundles and verify immutable completed bundles."""
     campaign_dir = Path(campaign_dir)
     manifest_path = campaign_dir / "campaign-manifest.json"
@@ -374,6 +520,19 @@ def run_pending(campaign_dir, executor):
     if campaign.get("evidence_namespace") != "haichau_network_v2":
         raise ValueError("campaign evidence_namespace must be haichau_network_v2")
     runs = campaign.get("runs", [])
+    source = runtime = None
+    if executor is None:
+        project_root = Path(project_root or campaign_dir).resolve()
+        try:
+            campaign_relative = str(campaign_dir.resolve().relative_to(project_root))
+        except ValueError:
+            raise ValueError("release campaign directory must remain inside project root")
+        if not runs:
+            raise ValueError("release campaign contains no runs")
+        source = verify_git_checkout(
+            project_root, runs[0].get("code_commit"),
+            allowed_dirty_prefixes=(campaign_relative,))
+        runtime = verify_runtime(project_root, runs[0])
     counts = {"completed": 0, "failed": 0, "skipped": 0, "total": len(runs)}
     for run in runs:
         run_dir = campaign_dir / "runs" / _safe_id(run["run_id"])
@@ -382,7 +541,10 @@ def run_pending(campaign_dir, executor):
         if status_path.is_file():
             status = json.loads(status_path.read_text())
             if status.get("status") == "complete":
-                _verify_complete(run_dir, status, run)
+                _verify_complete(
+                    run_dir, status, run, executor is None,
+                    project_root or campaign_dir,
+                    source["head_commit"] if source else None)
                 counts["skipped"] += 1
                 continue
 
@@ -390,7 +552,16 @@ def run_pending(campaign_dir, executor):
             "status": "running", "started_at": _utc_now(),
         })
         try:
-            result = executor(dict(run), run_dir)
+            if executor is None:
+                result, provenance = _trusted_docker_executor(
+                    dict(run), run_dir, project_root, source, runtime)
+            else:
+                result = executor(dict(run), run_dir)
+                provenance = {
+                    "provenance_version": 1,
+                    "mode": "injected",
+                    "release_eligible": False,
+                }
             _validate_result(run, result)
             _write_json(run_dir / "run-manifest.json", run)
             _write_json(run_dir / "resolved-config.json", result["resolved_config"])
@@ -414,6 +585,7 @@ def run_pending(campaign_dir, executor):
                 "runtime_digest": run.get("runtime_digest"),
                 "runtime_dockerfile_sha256": run.get(
                     "runtime_dockerfile_sha256"),
+                "execution_provenance": provenance,
                 "artifact_sha256": hashes,
             })
             counts["completed"] += 1

@@ -29,6 +29,11 @@ Dockerfile `FROM` line must use that exact image. Preparation and verification r
 clean descendant checkout with no changes to code paths since `code_commit`; campaign
 execution re-inspects the image and runs every controller command inside it with networking
 disabled. A digest-shaped string that is absent from `docker image inspect` is rejected.
+The release runner owns this Docker invocation; an injected Python executor is marked as
+test-only and cannot pass the final audit. Each completed status records the exact Docker
+argv, container ID, execution Git head, inspected image identity, exit code and hashes of
+the container stdout/stderr logs. The verifier parses the final stdout JSON and requires
+its config, metrics and replay to equal the hashed run artifacts.
 
 Prepare the immutable run set from the frozen case manifest, then execute it. Every
 controller command in the case manifest must run a fresh evaluation and print its result
@@ -82,26 +87,33 @@ the viewer network, campaign manifest and aggregate summary hashes; the final ve
 parses each replay again and compares it with the immutable source run. Every viewer node
 must have finite coordinates and an explicit neighbor list containing only known node IDs.
 
-Install `ffprobe`, `pdfinfo` and `pdftoppm` on the verification host. The audit decodes the
-PNG/MP4 files, requires nonzero image dimensions and video duration, parses every PDF and
-renders its first page; a valid-looking file signature is insufficient.
+Install `ffmpeg`, `ffprobe`, `pdfinfo` and `pdftoppm` on the verification host. The audit
+fully decodes the PNG frame and every MP4 video frame with decoder errors promoted to a
+failure, requires nonzero image dimensions and video duration, parses every PDF and renders
+its first page. Readable container metadata or a valid-looking signature is insufficient.
 
-Repeat the documented tests, paper build, demo launch and audit from a clean checkout that
-contains only tracked files plus the checksum-verified release inputs. Record the tested
-commit and wall time in
-`results/haichau_network_v2/verification/clean-checkout.json`; set `passed` to true only
-after those commands actually succeed. Use `verification_version: 2` and store the full
-evidence commit as `verified_commit`; it must be an ancestor of the current clean checkout,
-and release artifacts may not change afterward. Its `artifact_sha256` map covers the frozen
-protocol, campaign manifest, summary, generated-artifact manifest, thesis release manifest,
-compiled PDF and demo manifest. Then run:
+Create the clean-checkout attestation with the repository command below. It first verifies
+that the checkout is clean and that the frozen Git and Docker identities are real. It then
+runs the exact host, integration, replay, paper-build and pre-attestation audit commands
+itself. It records each argv, environment override, exit code, duration and tool-version
+probe, writes stdout/stderr logs with SHA-256 hashes, and hashes the release artifacts. Do
+not write `clean-checkout.json` by hand.
 
 ```sh
-make test
-make cf-test
-npm run test:replay
+PYTHONPATH=src python3 scripts/attest_haichau_release.py
+git add results/haichau_network_v2/verification
+git commit -m "verify: attest Hai Chau release checkout"
 PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
 ```
+
+The generator writes `verification_version: 3` and binds the pre-attestation commit, actual
+Docker image ID, generator hash, exact command contract, logs, every campaign run-file hash
+and release hashes. Commit
+only the generated verification record and logs after it exits zero. The final verifier
+requires that commit to descend from the recorded checkout, rejects later changes outside
+the verification directory, re-inspects Git and Docker, and re-hashes every log and release
+artifact. The pre-attestation audit uses `--skip-clean-checkout --no-write` internally to
+avoid a circular record dependency.
 
 The extension is release-ready only when the final command exits zero and its report has
 `"complete": true` with no failed gates.

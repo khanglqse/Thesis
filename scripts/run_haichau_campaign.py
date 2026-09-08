@@ -4,7 +4,6 @@
 import argparse
 import hashlib
 import json
-import subprocess
 from pathlib import Path
 
 from traffic_rl.eval.network_campaign import (
@@ -38,34 +37,6 @@ def _write_campaign(path, runs):
     target.write_text(encoded)
 
 
-def _subprocess_executor(run, run_dir):
-    command = run.get("command")
-    if not command:
-        raise ValueError("run has no command; integrate the controller before execution")
-    runtime = verify_runtime(PROJECT_ROOT, run)
-    if runtime["runtime_image_id"] != run.get("runtime_image_id"):
-        raise ValueError("executor Docker image ID differs from frozen run")
-    docker_command = [
-        "docker", "run", "--rm", "--network", "none",
-        "-v", "%s:/work" % PROJECT_ROOT, "-w", "/work",
-        run["runtime_image"],
-    ] + list(command)
-    completed = subprocess.run(
-        docker_command, cwd=str(PROJECT_ROOT), universal_newlines=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    )
-    if completed.returncode:
-        raise RuntimeError("executor exited %s: %s" % (
-            completed.returncode, completed.stderr.strip()))
-    lines = [line for line in completed.stdout.splitlines() if line.strip()]
-    if not lines:
-        raise ValueError("executor must print a JSON result on its final line")
-    result = json.loads(lines[-1])
-    result["stdout"] = completed.stdout
-    result["stderr"] = completed.stderr
-    return result
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--campaign-dir", default="results/haichau_network_v2/final")
@@ -87,7 +58,16 @@ def main(argv=None):
     if not protocol_path.is_file():
         raise ValueError("frozen protocol is required")
     protocol = json.loads(protocol_path.read_text())
-    verify_git_checkout(PROJECT_ROOT, protocol.get("code_commit"))
+    allowed_dirty = ()
+    if not args.prepare_only:
+        try:
+            allowed_dirty = (str(
+                campaign_dir.resolve().relative_to(PROJECT_ROOT.resolve())),)
+        except ValueError:
+            raise ValueError("campaign directory must remain inside project root")
+    verify_git_checkout(
+        PROJECT_ROOT, protocol.get("code_commit"),
+        allowed_dirty_prefixes=allowed_dirty)
     verify_runtime(PROJECT_ROOT, protocol)
 
     if args.verify_only:
@@ -106,7 +86,9 @@ def main(argv=None):
             (campaign_dir / "campaign-manifest.json").read_text()).get("runs")
         if actual != expected:
             raise ValueError("campaign differs from frozen protocol")
-        print(json.dumps(verify_campaign(campaign_dir), sort_keys=True))
+        print(json.dumps(verify_campaign(
+            campaign_dir, require_release_provenance=True,
+            project_root=PROJECT_ROOT), sort_keys=True))
         return 0
     if args.manifest:
         manifest_path = Path(args.manifest)
@@ -125,7 +107,7 @@ def main(argv=None):
         _write_campaign(campaign_dir, expand_runs(manifest, seeds, controllers))
     if args.prepare_only:
         return 0
-    result = run_pending(campaign_dir, _subprocess_executor)
+    result = run_pending(campaign_dir, project_root=PROJECT_ROOT)
     print(json.dumps(result, sort_keys=True))
     return 1 if result["failed"] else 0
 

@@ -31,6 +31,17 @@ def _ffprobe(path):
         raise ValueError("media decoder returned invalid JSON")
 
 
+def _decode_video_stream(path, first_frame_only=False):
+    argv = [
+        "ffmpeg", "-nostdin", "-v", "error", "-xerror",
+        "-i", Path(path), "-map", "0:v:0",
+    ]
+    if first_frame_only:
+        argv.extend(("-frames:v", "1"))
+    argv.extend(("-f", "null", "-"))
+    _run(argv)
+
+
 def _positive(value):
     try:
         return math.isfinite(float(value)) and float(value) > 0
@@ -46,6 +57,7 @@ def probe_png(path):
             or not _positive(streams[0].get("width")) \
             or not _positive(streams[0].get("height")):
         raise ValueError("PNG is not a usable decoded image")
+    _decode_video_stream(path, first_frame_only=True)
     return {
         "width": int(streams[0]["width"]),
         "height": int(streams[0]["height"]),
@@ -64,6 +76,7 @@ def probe_video(path):
             or not _positive(streams[0].get("height")) \
             or not _positive(duration):
         raise ValueError("fallback video requires a decodable video stream and duration")
+    _decode_video_stream(path)
     return {
         "width": int(streams[0]["width"]),
         "height": int(streams[0]["height"]),

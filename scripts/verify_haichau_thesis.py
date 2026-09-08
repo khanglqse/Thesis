@@ -16,6 +16,7 @@ from traffic_rl.eval.network_campaign import (
 )
 from traffic_rl.eval.network_replay import validate_network, validate_replay
 from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
+from traffic_rl.eval.release_attestation import validate_attestation
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
@@ -293,6 +294,12 @@ def _campaign_gates(root, protocol):
         if campaign.get("runs") != expected_runs:
             raise ValueError("campaign run matrix differs from frozen cases/config/checkpoints")
         verified = verify_campaign(campaign_dir)
+        provenance_error = None
+        try:
+            verify_campaign(
+                campaign_dir, require_release_provenance=True, project_root=root)
+        except Exception as exc:
+            provenance_error = str(exc)
         runs = campaign["runs"]
         metrics_rows = []
         for run in runs:
@@ -304,7 +311,11 @@ def _campaign_gates(root, protocol):
         horizon_ok = all(row["completed_steps"] == row["horizon_steps"]
                          and row["observed_steps"] == row["horizon_steps"]
                          for row in metrics_rows)
-        matched = _gate(True, "campaign exactly matches frozen cases/config/checkpoints", {
+        matched = _gate(
+            provenance_error is None,
+            ("campaign exactly matches frozen cases/config/checkpoints and trusted execution"
+             if provenance_error is None else
+             "campaign verification failed: %s" % provenance_error), {
             "verified_runs": verified["complete"],
             "campaign_sha256": _sha256(campaign_dir / "campaign-manifest.json"),
         })
@@ -549,62 +560,23 @@ def _clean_checkout_gate(root, protocol):
         return _gate(False, "clean-checkout verification record is missing")
     try:
         record = _json(path)
-        required_hashes = {
-            "results/haichau_network_v2/final/frozen-protocol.json",
-            "results/haichau_network_v2/final/campaign-manifest.json",
-            "results/haichau_network_v2/final/summary.json",
-            "paper/generated/haichau_network/artifact-manifest.json",
-            "paper/generated/haichau_network/thesis-release.json",
-            "paper/thesis_danang.pdf",
-            "results/haichau_network_v2/demo/manifest.json",
-        }
-        hashes = record.get("artifact_sha256", {})
-        identity = verify_git_checkout(root, (protocol or {}).get("code_commit"))
-        verified_commit = str(record.get("verified_commit", ""))
-        if not re.fullmatch(r"[0-9a-f]{40}", verified_commit):
-            raise ValueError("clean-checkout verified_commit must be a full Git commit")
-        for argv in (
-                ("git", "cat-file", "-e", verified_commit + "^{commit}"),
-                ("git", "merge-base", "--is-ancestor", verified_commit,
-                 identity["head_commit"])):
-            completed = subprocess.run(
-                list(argv), cwd=str(root), stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, universal_newlines=True)
-            if completed.returncode:
-                raise ValueError("clean-checkout verified_commit is not an ancestor")
-        completed = subprocess.run(
-            ["git", "diff", "--quiet", verified_commit,
-             identity["head_commit"], "--"] + sorted(required_hashes),
-            cwd=str(root), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
-        if completed.returncode:
-            raise ValueError("release artifacts changed after clean-checkout verification")
-        passed = record.get("verification_version") == 2 \
-            and record.get("passed") is True \
-            and bool(record.get("wall_time_seconds")) \
-            and required_hashes.issubset(hashes)
-        for relative in required_hashes:
-            artifact = _inside(root, relative)
-            passed = passed and bool(
-                artifact and artifact.is_file() and _sha256(artifact) == hashes.get(relative))
-        evidence = dict(record)
-        evidence["actual_head_commit"] = identity["head_commit"]
+        evidence = validate_attestation(root, protocol or {}, record)
         return _gate(
-            passed,
-            "current Git state and release hashes verify a recorded clean checkout",
+            True,
+            "verifier-generated command logs bind the clean checkout and release hashes",
             evidence)
     except Exception as exc:
         return _gate(False, "clean-checkout verification failed: %s" % exc)
 
 
-def verify_project(root):
+def verify_project(root, skip_clean_checkout=False):
     root = Path(root).resolve()
     protocol, protocol_path = _protocol(root)
     matched, scenarios, horizons, rows = _campaign_gates(root, protocol)
     statistics_gate, acceptance_gate, summary = _summary_gates(root, protocol, rows)
     campaign = None
     campaign_path = root / "results/haichau_network_v2/final/campaign-manifest.json"
-    if matched["passed"] and campaign_path.is_file():
+    if campaign_path.is_file():
         campaign = _json(campaign_path)
     gates = {
         "source_revision": _source_gate(root, protocol),
@@ -619,11 +591,12 @@ def verify_project(root):
         "acceptance_reported": acceptance_gate,
         "thesis_artifacts": _thesis_gate(root, summary),
         "offline_demo": audit_demo(root, protocol, campaign, summary),
-        "clean_checkout": _clean_checkout_gate(root, protocol),
     }
+    if not skip_clean_checkout:
+        gates["clean_checkout"] = _clean_checkout_gate(root, protocol)
     failed = [name for name, value in gates.items() if not value["passed"]]
     return {
-        "verification_version": 4,
+        "verification_version": 5,
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "protocol_path": str(protocol_path.relative_to(root)),
         "complete": not failed,
@@ -637,18 +610,21 @@ def main(argv=None):
     parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent))
     parser.add_argument(
         "--output", default="results/haichau_network_v2/verification/final-report.json")
+    parser.add_argument("--skip-clean-checkout", action="store_true")
+    parser.add_argument("--no-write", action="store_true")
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
-    report = verify_project(root)
+    report = verify_project(root, skip_clean_checkout=args.skip_clean_checkout)
     output = _inside(root, args.output)
-    if output is None:
-        raise ValueError("output must remain inside the project root")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    if not args.no_write:
+        if output is None:
+            raise ValueError("output must remain inside the project root")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(json.dumps({
         "complete": report["complete"],
         "failed_gates": report["failed_gates"],
-        "report": str(output.relative_to(root)),
+        "report": None if args.no_write else str(output.relative_to(root)),
     }, sort_keys=True))
     return 0 if report["complete"] else 1
 

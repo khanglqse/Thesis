@@ -1,3 +1,4 @@
+import struct
 import subprocess
 
 import pytest
@@ -30,6 +31,45 @@ def test_media_probes_open_rendered_nonempty_files(tmp_path):
     assert probe_pdf(pdf)["pages"] >= 1
     assert probe_png(png)["width"] > 0
     assert probe_video(mp4)["duration_seconds"] > 0
+
+
+def test_png_probe_rejects_corrupt_idat_even_when_ffprobe_reads_dimensions(tmp_path):
+    png = tmp_path / "corrupt.png"
+    _figure(png)
+    payload = bytearray(png.read_bytes())
+    offset = 8
+    while offset < len(payload):
+        length = struct.unpack(">I", payload[offset:offset + 4])[0]
+        kind = bytes(payload[offset + 4:offset + 8])
+        if kind == b"IDAT":
+            payload[offset + 8 + max(1, length // 2)] ^= 0xFF
+            break
+        offset += 12 + length
+    else:
+        pytest.fail("fixture PNG has no IDAT chunk")
+    png.write_bytes(payload)
+    assert subprocess.call([
+        "ffprobe", "-v", "error", "-show_streams", str(png),
+    ]) == 0
+
+    with pytest.raises(ValueError, match="decode/parse"):
+        probe_png(png)
+
+
+def test_video_probe_rejects_truncated_faststart_payload(tmp_path):
+    mp4 = tmp_path / "corrupt.mp4"
+    subprocess.check_call([
+        "ffmpeg", "-v", "error", "-f", "lavfi", "-i",
+        "color=c=blue:s=32x24:d=1", "-an", "-c:v", "libx264",
+        "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(mp4),
+    ])
+    mp4.write_bytes(mp4.read_bytes()[:-128])
+    assert subprocess.call([
+        "ffprobe", "-v", "error", "-show_streams", str(mp4),
+    ]) == 0
+
+    with pytest.raises(ValueError, match="decode/parse"):
+        probe_video(mp4)
 
 
 @pytest.mark.parametrize("kind, payload", [

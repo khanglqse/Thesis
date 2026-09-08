@@ -48,6 +48,26 @@ def test_git_identity_requires_clean_tree_and_unchanged_code_since_frozen_commit
         verify_git_checkout(tmp_path, frozen)
 
 
+def test_campaign_resume_may_only_leave_its_own_output_dirty(tmp_path):
+    frozen = _repo(tmp_path)
+    status = tmp_path / "results/haichau_network_v2/final/runs/r1/status.json"
+    status.parent.mkdir(parents=True)
+    status.write_text("{}")
+
+    identity = verify_git_checkout(
+        tmp_path, frozen,
+        allowed_dirty_prefixes=("results/haichau_network_v2/final",))
+
+    assert identity["dirty"] is True
+    assert identity["allowed_dirty_paths"] == [
+        "results/haichau_network_v2/final/runs/r1/status.json"]
+    (tmp_path / "outside.txt").write_text("dirty")
+    with pytest.raises(ValueError, match="outside.txt"):
+        verify_git_checkout(
+            tmp_path, frozen,
+            allowed_dirty_prefixes=("results/haichau_network_v2/final",))
+
+
 def test_runtime_verification_hashes_dockerfile_and_inspects_image(tmp_path):
     dockerfile = tmp_path / "docker/runtime.Dockerfile"
     dockerfile.parent.mkdir(parents=True)

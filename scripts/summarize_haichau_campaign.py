@@ -11,7 +11,9 @@ from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acce
 
 
 def _load_runs(campaign_dir):
-    verify_campaign(campaign_dir)
+    verify_campaign(
+        campaign_dir, require_release_provenance=True,
+        project_root=Path(__file__).resolve().parent.parent)
     manifest = json.loads((campaign_dir / "campaign-manifest.json").read_text())
     rows = []
     for run in manifest["runs"]:

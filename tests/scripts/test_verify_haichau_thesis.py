@@ -531,12 +531,16 @@ def test_final_verifier_rejects_disjoint_placeholder_evidence(tmp_path):
     assert "thesis_artifacts" in report["failed_gates"]
 
 
-def test_hash_bound_negative_result_can_complete_every_release_gate(tmp_path):
+def test_injected_campaign_and_handwritten_clean_record_cannot_complete_release(tmp_path):
     summary = _write_bound_project(tmp_path)
 
     report = verify_project(tmp_path)
 
-    assert report["complete"] is True
+    assert report["complete"] is False
+    assert report["gates"]["fresh_matched_runs"]["passed"] is False
+    assert "trusted Docker executor" in report["gates"]["fresh_matched_runs"]["detail"]
+    assert report["gates"]["clean_checkout"]["passed"] is False
+    assert "attestation" in report["gates"]["clean_checkout"]["detail"]
     assert report["gates"]["acceptance_reported"]["passed"] is True
     assert report["gates"]["acceptance_reported"]["evidence"]["accepted"] is False
     assert summary["acceptance"]["accepted"] is False
