@@ -375,9 +375,10 @@ def select_from_spec(root, spec_path):
         "schema_version": 1,
         "decision_type": spec["decision_type"],
         "selection_rule": (
-            "canonical must be eligible; epsilon2160 wins only when eligible and "
-            "strictly lexicographically better by worst normalized queue regret, "
-            "mean normalized queue regret, then earlier training step; ties retain canonical"),
+            "select the sole eligible schedule; when both are eligible epsilon2160 "
+            "wins only when strictly lexicographically better by worst normalized "
+            "queue regret, mean normalized queue regret, then earlier training step; "
+            "ties retain canonical; neither eligible fails closed"),
         "specification": {"path": str(spec_path.relative_to(root)),
                           "sha256": sha256_file(spec_path)},
         "inputs": {
