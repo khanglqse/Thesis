@@ -21,7 +21,8 @@ class MultiAgentTrafficEnv:
                  reward_type="pressure", state_mode="basic",
                  sim_step_seconds=1.0, maximum_red=180,
                  switch_penalty=0.05, encoder=None, queue_weight=1.0,
-                 downstream_block_weight=0.0, network_metric_observer=None):
+                 downstream_block_weight=0.0, network_metric_observer=None,
+                 network_replay_observer=None):
         self.roadnet = roadnet
         self.engine = engine
         self.action_interval = action_interval
@@ -33,6 +34,7 @@ class MultiAgentTrafficEnv:
         self.queue_weight = float(queue_weight)
         self.downstream_block_weight = float(downstream_block_weight)
         self.network_metric_observer = network_metric_observer
+        self.network_replay_observer = network_replay_observer
         self.reward_type = reward_type
         self.state_mode = state_mode
         self.sim_step_seconds = float(sim_step_seconds)
@@ -209,6 +211,12 @@ class MultiAgentTrafficEnv:
         self._episode_max_red_seconds = 0.0
         for a in self.agent_ids:
             self._set_phase(a, self._green_phases[a][0])
+        if self.network_replay_observer is not None:
+            waiting = (self.engine.true_lane_waiting_counts()
+                       if hasattr(self.engine, "true_lane_waiting_counts")
+                       else self.engine.lane_waiting_counts())
+            self.network_replay_observer.reset(
+                waiting_counts=waiting, phases=self._active_lightphase)
         return self._observations()
 
     def _set_phase(self, inter_id, phase_index):
@@ -276,6 +284,10 @@ class MultiAgentTrafficEnv:
                     intergreen_seconds=self._intergreen_vehicle_seconds,
                     max_red_seconds=self._episode_max_red_seconds,
                 )
+            if self.network_replay_observer is not None:
+                self.network_replay_observer.observe(
+                    elapsed_seconds=self._t, waiting_counts=waiting,
+                    phases=self._active_lightphase)
         for a in self.agent_ids:
             self._since_switch[a] += n * self.sim_step_seconds
 

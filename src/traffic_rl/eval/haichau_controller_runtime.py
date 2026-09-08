@@ -19,6 +19,7 @@ from traffic_rl.agents.max_pressure import (
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.eval.network_campaign import CONTROLLERS, canonical_sha256
 from traffic_rl.eval.network_metrics import NetworkMetricsObserver
+from traffic_rl.eval.network_replay import NetworkReplayObserver
 from traffic_rl.eval.runner import run_episode
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.encoder import ObservationEncoder
@@ -205,6 +206,10 @@ def build_controller_runtime(project_root, run, runtime_dir,
         lane_to_node=lane_to_node,
         spillback_thresholds=dict(
             (lane_id, spillback_threshold) for lane_id in lane_to_node))
+    replay_observer = NetworkReplayObserver(
+        roadnet.signalized_ids(), dict(
+            (node_id, roadnet.incoming_lanes(node_id))
+            for node_id in roadnet.signalized_ids()), sample_seconds=5)
 
     runtime_dir = Path(runtime_dir)
     runtime_dir.mkdir(parents=True, exist_ok=True)
@@ -237,7 +242,8 @@ def build_controller_runtime(project_root, run, runtime_dir,
         queue_weight=float(reward["queue_weight"]),
         downstream_block_weight=float(reward["downstream_block_weight"]),
         switch_penalty=float(reward["switch_penalty"]),
-        network_metric_observer=metric_observer)
+        network_metric_observer=metric_observer,
+        network_replay_observer=replay_observer)
 
     if controller_id == "tuned_fixed":
         controller = FixedTimeController(
@@ -279,4 +285,6 @@ def evaluate_run(project_root, run, runtime_dir,
             "checkpoint_contract_sha256"):
         metrics[field] = run.get(field)
     metrics["fresh_evaluation"] = True
-    return {"resolved_config": run["resolved_config"], "metrics": metrics}
+    replay = env.network_replay_observer.finalize(metrics)
+    return {"resolved_config": run["resolved_config"], "metrics": metrics,
+            "replay": replay}

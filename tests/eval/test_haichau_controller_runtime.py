@@ -58,12 +58,15 @@ class FakeEnv(object):
         self.roadnet = roadnet
         self.engine = engine
         self.encoder = kwargs.get("encoder")
+        self.network_replay_observer = kwargs.get("network_replay_observer")
         self.kwargs = kwargs
         self.agent_ids = roadnet.signalized_ids()
         self.num_actions = {"A": 2}
         FakeEnv.instances.append(self)
 
     def reset(self):
+        if self.network_replay_observer is not None:
+            self.network_replay_observer.reset({"in_0": 0}, {"A": 0})
         return {"A": [0.0]}
 
     def action_masks(self):
@@ -73,6 +76,9 @@ class FakeEnv(object):
         return {"in_0": 0}
 
     def step(self, actions):
+        if self.network_replay_observer is not None:
+            self.network_replay_observer.observe(5, {"in_0": 1}, {"A": 0})
+            self.network_replay_observer.observe(10, {"in_0": 0}, {"A": 1})
         nodes = {"A": 0.0}
         final = {
             "observed_steps": 10, "observed_seconds": 10.0,
@@ -188,6 +194,7 @@ def test_builds_each_deterministic_controller_from_frozen_config(
     assert observer.scheduled_vehicles == 0
     assert observer.lane_to_node == {"in_0": "A"}
     assert observer.spillback_thresholds == {"in_0": 40.0}
+    assert env.kwargs["network_replay_observer"].sample_seconds == 5
     if controller_id == "tuned_fixed":
         assert controller.green_duration == 30
     if controller_id == "hysteretic_mp":
@@ -292,3 +299,4 @@ def test_evaluate_run_binds_metrics_to_run_identity(tmp_path, monkeypatch):
             "checkpoint_sha256", "checkpoint_contract_sha256"):
         assert result["metrics"].get(field) == run.get(field)
     assert result["metrics"]["fresh_evaluation"] is True
+    assert [frame["t"] for frame in result["replay"]["frames"]] == [0, 5, 10]

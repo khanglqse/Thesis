@@ -9,6 +9,47 @@ METRIC_KEYS = (
 )
 
 
+class NetworkReplayObserver(object):
+    """Record compact node states on the five-second defense time grid."""
+
+    def __init__(self, agent_ids, incoming_lanes, sample_seconds=5):
+        self.agent_ids = list(agent_ids)
+        if len(self.agent_ids) != len(set(self.agent_ids)):
+            raise ValueError("replay agent IDs must be unique")
+        self.incoming_lanes = dict(
+            (node, list(incoming_lanes[node])) for node in self.agent_ids)
+        self.sample_seconds = int(sample_seconds)
+        if self.sample_seconds <= 0:
+            raise ValueError("replay sample_seconds must be positive")
+        self.frames = []
+
+    def _frame(self, elapsed_seconds, waiting_counts, phases):
+        if set(phases) != set(self.agent_ids):
+            raise ValueError("replay phases must cover every controlled signal")
+        nodes = {}
+        for node_id in self.agent_ids:
+            queue = sum(float(waiting_counts.get(lane_id, 0.0))
+                        for lane_id in self.incoming_lanes[node_id])
+            nodes[node_id] = {"queue": queue, "phase": int(phases[node_id])}
+        return {"t": int(elapsed_seconds), "nodes": nodes, "vehicles": []}
+
+    def reset(self, waiting_counts, phases):
+        self.frames = [self._frame(0, waiting_counts, phases)]
+
+    def observe(self, elapsed_seconds, waiting_counts, phases):
+        elapsed = int(elapsed_seconds)
+        if elapsed % self.sample_seconds == 0:
+            self.frames.append(self._frame(elapsed, waiting_counts, phases))
+
+    def finalize(self, metrics):
+        return {
+            "sample_seconds": self.sample_seconds,
+            "frames": list(self.frames),
+            "metrics": dict((key, metrics.get(key)) for key in METRIC_KEYS
+                            if key in metrics),
+        }
+
+
 def validate_network(network):
     nodes = network.get("nodes", [])
     if network.get("controlled_signals") != 53 or len(nodes) != 53:
