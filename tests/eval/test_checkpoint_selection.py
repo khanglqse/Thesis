@@ -1,7 +1,8 @@
 import pytest
 
 from traffic_rl.eval.checkpoint_selection import (
-    choose_checkpoint, relative_regret, score_validation)
+    choose_checkpoint, choose_reporting_checkpoint, relative_regret,
+    score_validation)
 
 
 def _row(scenario, candidate_queue, baseline_queue,
@@ -70,3 +71,16 @@ def test_selection_minimizes_worst_regret_then_mean_then_step():
 def test_selection_fails_closed_when_no_candidate_is_eligible():
     with pytest.raises(ValueError, match="eligible"):
         choose_checkpoint({"bad": {"eligible": False}})
+
+
+def test_reporting_selection_chooses_best_validation_when_all_ineligible():
+    evaluations = {
+        "step-30": {"eligible": False, "worst_regret": 0.30,
+                    "mean_regret": 0.10, "training_step": 30},
+        "step-20": {"eligible": False, "worst_regret": 0.20,
+                    "mean_regret": 0.15, "training_step": 20},
+        "step-10": {"eligible": False, "worst_regret": 0.20,
+                    "mean_regret": 0.15, "training_step": 10},
+    }
+
+    assert choose_reporting_checkpoint(evaluations) == "step-10"

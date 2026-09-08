@@ -24,16 +24,20 @@ cf-smoke:
 LEARNING_SEED ?=
 HAICHAU_IMAGE ?= traffic-rl-cityflow-research:v2
 
-haichau-train-smoke:
+haichau-foundation-verify:
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/verify_haichau_foundation.py
+
+haichau-train-smoke: haichau-foundation-verify
 	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
 	docker run --rm --platform linux/amd64 -v "$(CURDIR)":/work -w /work \
 		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
 		--mode smoke --learning-seed $(LEARNING_SEED)
 
-haichau-train-pilot:
+haichau-train-pilot: haichau-foundation-verify
 	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
 	docker run --rm --platform linux/amd64 -v "$(CURDIR)":/work -w /work \
 		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
 		--mode pilot --learning-seed $(LEARNING_SEED)
 
-.PHONY: cf-run test cf-test cf-smoke haichau-train-smoke haichau-train-pilot
+.PHONY: cf-run test cf-test cf-smoke haichau-foundation-verify haichau-train-smoke haichau-train-pilot

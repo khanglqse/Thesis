@@ -58,3 +58,19 @@ def choose_checkpoint(evaluations):
         raise ValueError("no eligible validation checkpoint")
     eligible.sort()
     return eligible[0][3]
+
+
+def choose_reporting_checkpoint(evaluations):
+    """Choose best validation score even when the eligibility gate rejects all."""
+    ranked = []
+    for checkpoint_id, evaluation in evaluations.items():
+        score = (score_validation(evaluation)
+                 if isinstance(evaluation, list) else evaluation)
+        training_step = score.get("training_step", float("inf"))
+        ranked.append((float(score["worst_regret"]),
+                       float(score["mean_regret"]),
+                       float(training_step), checkpoint_id))
+    if not ranked:
+        raise ValueError("no validation checkpoint")
+    ranked.sort()
+    return ranked[0][3]

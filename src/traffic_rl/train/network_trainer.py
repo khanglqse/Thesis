@@ -1,13 +1,16 @@
 """Balanced multi-case training for the neighbor-aware phase DDQN."""
 import json
+import hashlib
 import os
+import subprocess
 import time
 
 import numpy as np
 
 from traffic_rl.agents.dqn import NStepAccumulator
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
-from traffic_rl.eval.checkpoint_selection import choose_checkpoint, score_validation
+from traffic_rl.eval.checkpoint_selection import (
+    choose_checkpoint, choose_reporting_checkpoint, score_validation)
 from traffic_rl.sim.phase_encoder import FEATURES
 from traffic_rl.train.case_sampler import BalancedCaseSampler
 from traffic_rl.train.network_replay import NetworkReplayBuffer
@@ -19,6 +22,55 @@ def _write_json(path, value):
         json.dump(value, output, indent=2, sort_keys=True)
         output.write("\n")
     os.replace(temporary, path)
+
+
+def canonical_json_sha256(value):
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"),
+                         ensure_ascii=True).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _file_sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as source:
+        while True:
+            block = source.read(1024 * 1024)
+            if not block:
+                break
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _git_sha(root):
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=root,
+            stderr=subprocess.STDOUT).decode("ascii").strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def _default_foundation_verifier(root, manifest):
+    try:
+        from scripts.verify_haichau_foundation import verify_foundation
+    except ImportError as exc:
+        raise ValueError("foundation verifier is unavailable: %s" % exc)
+    return verify_foundation(root, manifest)
+
+
+def _verify_training_foundation(root, manifest, verifier):
+    evidence = verifier(root, manifest)
+    if not isinstance(evidence, dict) or evidence.get("status") != "verified":
+        raise ValueError("foundation verifier did not return verified status")
+    expected = {
+        "network_sha256": manifest.get("network", {}).get("sha256"),
+        "generator_config_sha256": manifest.get("generator_config_sha256"),
+        "runtime_digest": manifest.get("runtime", {}).get("base_image_digest"),
+    }
+    for field, value in expected.items():
+        if not value or evidence.get(field) != value:
+            raise ValueError("foundation verification %s mismatch" % field)
+    return evidence
 
 
 def resolve_training_config(config, mode, learning_seed):
@@ -74,9 +126,55 @@ def _rollout(env, net, fixed_green_duration=None, action_interval=10):
     return info
 
 
-def _validation_rows(env_factory, cases, horizon_seconds, net, config):
+def _tune_fixed_time(env_factory, cases, horizon_seconds, config, binding):
+    baseline = config.get("baseline", {})
+    if baseline.get("controller") != "validation_tuned_fixed":
+        raise ValueError("baseline controller must be validation_tuned_fixed")
+    durations = baseline.get("search_green_durations", [])
+    if not durations or any(int(value) <= 0 for value in durations):
+        raise ValueError("baseline search_green_durations must be positive")
+    action_interval = config.get("simulation", {}).get("action_interval", 10)
+    candidates = []
+    for duration in sorted(set(int(value) for value in durations)):
+        rows = []
+        for case in cases:
+            env = env_factory(case, horizon_seconds)
+            try:
+                info = _rollout(env, None, fixed_green_duration=duration,
+                                action_interval=action_interval)
+            finally:
+                _close(env)
+            rows.append({
+                "case_id": case["case_id"],
+                "scenario": case["scenario"],
+                "queue_integral_vehicle_seconds": float(
+                    info["queue_integral_vehicle_seconds"]),
+                "completion_rate": info.get("completion_rate"),
+            })
+        mean_queue = sum(row["queue_integral_vehicle_seconds"]
+                         for row in rows) / len(rows)
+        candidates.append({"fixed_green_duration": duration,
+                           "mean_queue_integral_vehicle_seconds": mean_queue,
+                           "rows": rows})
+    selected = min(candidates, key=lambda row: (
+        row["mean_queue_integral_vehicle_seconds"],
+        row["fixed_green_duration"]))
+    result = {
+        "schema_version": 1,
+        "method": "validation_grid_search",
+        "search_space": {"fixed_green_duration": sorted(
+            set(int(value) for value in durations))},
+        "selected": {"fixed_green_duration": selected["fixed_green_duration"]},
+        "candidates": candidates,
+        "binding": binding,
+    }
+    result["tuning_sha256"] = canonical_json_sha256(result)
+    return result
+
+
+def _validation_rows(env_factory, cases, horizon_seconds, net, config,
+                     fixed_duration):
     rows = []
-    fixed_duration = config.get("baseline", {}).get("fixed_green_duration", 40)
     action_interval = config.get("simulation", {}).get("action_interval", 10)
     for case in cases:
         candidate_env = env_factory(case, horizon_seconds)
@@ -110,7 +208,7 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config):
     return rows
 
 
-def _checkpoint_contract(manifest, config, max_green):
+def _checkpoint_contract(manifest, config, max_green, tuning, verification):
     preprocessing = manifest["preprocessing"]
     model = config["model"]
     return {
@@ -122,11 +220,19 @@ def _checkpoint_contract(manifest, config, max_green):
         "capacity_norm": float(preprocessing["capacity_norm"]),
         "max_green": int(max_green),
         "action_contract": "phase_rows_with_boolean_mask_v1",
+        "phase_contract_schema_version": 1,
+        "phase_contract_sha256": manifest["phase_contract"]["sha256"],
         "network_sha256": manifest["network"]["sha256"],
+        "manifest_sha256": canonical_json_sha256(manifest),
+        "generator_config_sha256": manifest["generator_config_sha256"],
+        "runtime": manifest["runtime"],
+        "baseline_tuning_sha256": tuning["tuning_sha256"],
+        "foundation_verification": verification,
     }
 
 
-def train_network(env_factory, manifest, config, output_dir):
+def _train_network_impl(env_factory, manifest, config, output_dir,
+                        foundation_root, verification):
     """Train without opening the manifest's locked test split."""
     if manifest.get("protocol_version") != 2:
         raise ValueError("Hai Chau manifest protocol_version must be 2")
@@ -153,10 +259,38 @@ def train_network(env_factory, manifest, config, output_dir):
     checkpoints_dir = os.path.join(output_dir, "checkpoints")
     if not os.path.isdir(checkpoints_dir):
         os.makedirs(checkpoints_dir)
+    _write_json(os.path.join(output_dir, "status.json"), {
+        "status": "partial", "reason": "run in progress"})
+    manifest_sha256 = canonical_json_sha256(manifest)
+    validation_case_hashes = {
+        case["case_id"]: case.get("flow_sha256") for case in validation_cases}
+    tuning_binding = {
+        "manifest_sha256": manifest_sha256,
+        "network_sha256": manifest["network"]["sha256"],
+        "generator_config_sha256": manifest["generator_config_sha256"],
+        "runtime": manifest["runtime"],
+        "validation_case_hashes": validation_case_hashes,
+    }
+    tuning = _tune_fixed_time(
+        env_factory, validation_cases, int(run["horizon_seconds"]), config,
+        tuning_binding)
+    fixed_duration = tuning["selected"]["fixed_green_duration"]
+    _write_json(os.path.join(output_dir, "baseline-tuning.json"), tuning)
     resolved = json.loads(json.dumps(config))
     resolved["manifest_protocol_version"] = manifest["protocol_version"]
     resolved["network_sha256"] = manifest["network"]["sha256"]
+    resolved["manifest_sha256"] = manifest_sha256
+    resolved["generator_config_sha256"] = manifest["generator_config_sha256"]
+    resolved["runtime"] = manifest["runtime"]
+    resolved["baseline_tuning_sha256"] = tuning["tuning_sha256"]
     _write_json(os.path.join(output_dir, "resolved-config.json"), resolved)
+    _write_json(os.path.join(output_dir, "run-manifest.json"), {
+        "manifest": manifest,
+        "manifest_sha256": manifest_sha256,
+        "foundation_verification": verification,
+        "code_commit": _git_sha(foundation_root),
+        "learning_seed": learning_seed,
+    })
 
     rng = np.random.RandomState(learning_seed)
     sampler = BalancedCaseSampler(train_cases, seed=learning_seed)
@@ -172,6 +306,7 @@ def train_network(env_factory, manifest, config, output_dir):
     start_time = time.time()
 
     for episode in range(int(run["episodes"])):
+        episode_start = time.time()
         case = sampler.next_case()
         env = env_factory(case, int(run["horizon_seconds"]))
         try:
@@ -189,7 +324,8 @@ def train_network(env_factory, manifest, config, output_dir):
                 replay = NetworkReplayBuffer(
                     int(optimizer["buffer_capacity"]), max_green, feature_dim,
                     seed=learning_seed)
-                contract = _checkpoint_contract(manifest, config, max_green)
+                contract = _checkpoint_contract(
+                    manifest, config, max_green, tuning, verification)
             elif observations[first_agent].shape != (contract["max_green"],
                                                        contract["feature_dim"]):
                 raise ValueError("environment observation shape drifted across cases")
@@ -204,6 +340,7 @@ def train_network(env_factory, manifest, config, output_dir):
             done = False
             losses = []
             rewards_log = []
+            inference_seconds = 0.0
             info = {}
             while not done:
                 masks = env.action_masks()
@@ -213,8 +350,10 @@ def train_network(env_factory, manifest, config, output_dir):
                     [observations[agent_id] for agent_id in env.agent_ids])
                 mask_batch = np.asarray(
                     [masks[agent_id] for agent_id in env.agent_ids])
+                inference_start = time.time()
                 greedy = np.argmax(
                     network.q_values(feature_batch, mask_batch), axis=1)
+                inference_seconds += time.time() - inference_start
                 for agent_index, agent_id in enumerate(env.agent_ids):
                     valid = np.flatnonzero(masks[agent_id])
                     if rng.rand() < epsilon:
@@ -233,7 +372,9 @@ def train_network(env_factory, manifest, config, output_dir):
                 observations = next_observations
                 decisions += 1
                 rewards_log.append(float(sum(rewards.values())) / len(rewards))
-                if len(replay) >= int(optimizer["train_start"]):
+                train_start = int(run.get("train_start",
+                                          optimizer["train_start"]))
+                if len(replay) >= train_start:
                     batch = replay.sample(int(optimizer["batch_size"]))
                     loss = network.train_step(
                         batch["features"], batch["actions"], batch["rewards"],
@@ -250,11 +391,37 @@ def train_network(env_factory, manifest, config, output_dir):
                 "episode": episode + 1,
                 "case_id": case["case_id"],
                 "scenario": case["scenario"],
+                "demand_seed": case.get("demand_seed"),
+                "sim_seed": case.get("sim_seed"),
+                "flow_sha256": case.get("flow_sha256"),
+                "flow_path": case.get("flow_path"),
+                "route_family_hashes": case.get("route_family_hashes"),
                 "agent_count": len(env.agent_ids),
                 "simulated_seconds": float(info.get("step", 0)),
                 "mean_reward": (float(np.mean(rewards_log)) if rewards_log else 0.0),
                 "mean_loss": (float(np.mean(losses)) if losses else None),
                 "phase_switches": info.get("phase_switches"),
+                "queue_integral_vehicle_seconds": info.get(
+                    "queue_integral_vehicle_seconds"),
+                "queue_integral_vehicle_hours": (
+                    float(info["queue_integral_vehicle_seconds"]) / 3600.0
+                    if info.get("queue_integral_vehicle_seconds") is not None
+                    else None),
+                "total_queue": info.get("total_queue"),
+                "arrived": info.get("arrived"),
+                "active_vehicles": info.get("active_vehicles"),
+                "pending": info.get("active_vehicles"),
+                "completion_rate": info.get("completion_rate"),
+                "average_travel_time": info.get("average_travel_time"),
+                "arrived_throughput_vehicles_per_hour": (
+                    float(info["arrived"]) * 3600.0 / float(info["step"])
+                    if info.get("arrived") is not None and info.get("step")
+                    else None),
+                "max_red_seconds": info.get("max_red_seconds"),
+                "intergreen_vehicle_seconds": info.get(
+                    "intergreen_vehicle_seconds"),
+                "wall_time_seconds": time.time() - episode_start,
+                "inference_seconds": inference_seconds,
             })
             _write_json(os.path.join(output_dir, "train-log.json"), episode_log)
         finally:
@@ -267,7 +434,7 @@ def train_network(env_factory, manifest, config, output_dir):
             validation_start = time.time()
             rows = _validation_rows(
                 env_factory, validation_cases, int(run["horizon_seconds"]),
-                network, config)
+                network, config, fixed_duration)
             validation_seconds += time.time() - validation_start
             score = score_validation(rows)
             score["training_step"] = episode + 1
@@ -280,11 +447,12 @@ def train_network(env_factory, manifest, config, output_dir):
               for checkpoint_id, value in validation_log.items()}
     try:
         selected = choose_checkpoint(scores)
+        selection_status = "eligible"
     except ValueError:
-        selected = None
-    final_network = (PhaseScoringDDQN.load_bundle(
+        selected = choose_reporting_checkpoint(scores)
+        selection_status = "ineligible_negative_result"
+    final_network = PhaseScoringDDQN.load_bundle(
         os.path.join(checkpoints_dir, selected), contract)
-                     if selected is not None else network)
     final_checkpoint = os.path.join(output_dir, "checkpoint")
     final_network.save_bundle(final_checkpoint, contract)
     reloaded = PhaseScoringDDQN.load_bundle(final_checkpoint, contract)
@@ -320,10 +488,55 @@ def train_network(env_factory, manifest, config, output_dir):
         "updates_per_second": updates / wall_time if wall_time > 0 else None,
         "validation_wall_time_seconds": validation_seconds,
         "selected_checkpoint": selected,
+        "selection_status": selection_status,
         "checkpoint_reload": reload_verification,
     }
+    if run.get("require_optimizer_updates") and updates <= 0:
+        raise ValueError("run requires at least one optimizer update")
     _write_json(os.path.join(output_dir, "train-log.json"), episode_log)
     _write_json(os.path.join(output_dir, "validation.json"), validation_log)
     _write_json(os.path.join(output_dir, "replay-coverage.json"), coverage)
+    _write_json(os.path.join(output_dir, "selection.json"), {
+        "status": selection_status,
+        "selected_checkpoint": selected,
+        "eligible_for_test_evaluation": selection_status == "eligible",
+        "score": scores[selected],
+    })
     _write_json(os.path.join(output_dir, "summary.json"), summary)
+    artifact_paths = [
+        "baseline-tuning.json", "resolved-config.json", "run-manifest.json",
+        "train-log.json", "validation.json", "replay-coverage.json",
+        "selection.json", "summary.json", "checkpoint/contract.json",
+        "checkpoint/weights.npz",
+    ]
+    artifact_hashes = {}
+    for relative_path in artifact_paths:
+        artifact_path = os.path.join(output_dir, relative_path)
+        if not os.path.isfile(artifact_path):
+            raise ValueError("required artifact missing: %s" % relative_path)
+        artifact_hashes[relative_path] = _file_sha256(artifact_path)
+    _write_json(os.path.join(output_dir, "status.json"), {
+        "status": ("complete" if selection_status == "eligible"
+                   else "ineligible"),
+        "eligible_for_test_evaluation": selection_status == "eligible",
+        "artifact_sha256": artifact_hashes,
+    })
     return summary
+
+
+def train_network(env_factory, manifest, config, output_dir,
+                  foundation_root=None, foundation_verifier=None):
+    """Verify the immutable foundation, then train without opening test cases."""
+    root = os.path.abspath(foundation_root or os.getcwd())
+    verifier = foundation_verifier or _default_foundation_verifier
+    verification = _verify_training_foundation(root, manifest, verifier)
+    try:
+        return _train_network_impl(
+            env_factory, manifest, config, output_dir, root, verification)
+    except Exception as exc:
+        absolute_output = os.path.abspath(output_dir)
+        if os.path.isdir(absolute_output):
+            _write_json(os.path.join(absolute_output, "status.json"), {
+                "status": "failed", "error_type": type(exc).__name__,
+                "error": str(exc)})
+        raise
