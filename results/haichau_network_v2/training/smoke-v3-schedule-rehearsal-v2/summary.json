@@ -1,0 +1,210 @@
+{
+  "baseline_tuning_wall_time_seconds": 27.514007568359375,
+  "behavior_pretraining": {
+    "bc_epochs": 1,
+    "conditional_cross_entropy": 0.5133004399660042,
+    "fixed_green_duration": 25,
+    "forced_labels_excluded": 3744,
+    "labels": 1980,
+    "loss_name": "conditional_cross_entropy",
+    "mean_loss": 0.5133004399660042,
+    "rehearsal": {
+      "batch_size": 128,
+      "enabled": true,
+      "every_td_updates": 1,
+      "type": "behavior_clone"
+    },
+    "rehearsal_pool_switch_eligible_labels": 1980,
+    "schema_version": 2,
+    "source_case_ids": [
+      "train_normal_demand11",
+      "train_am_peak_demand11",
+      "train_pm_peak_demand11",
+      "train_normal_demand12",
+      "train_am_peak_demand12",
+      "train_pm_peak_demand12",
+      "train_normal_demand13",
+      "train_am_peak_demand13",
+      "train_pm_peak_demand13"
+    ],
+    "source_split": "train",
+    "switch_eligible_labels": 1980,
+    "teacher": "validation_tuned_fixed",
+    "teacher_labels": 5724,
+    "top1_agreement": 0.8782828282828283,
+    "train_cases": [
+      {
+        "case_id": "train_normal_demand11",
+        "decisions": 12,
+        "flow_sha256": "4600e46c9e537f52b8ecaf88948cbc763f454b042c2e849fdc2ca4ea6197dfbf",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "normal",
+        "teacher_labels": 636
+      },
+      {
+        "case_id": "train_am_peak_demand11",
+        "decisions": 12,
+        "flow_sha256": "9ad0f3e2fba89c2c9e7000b99b8ead02618addec82d773e490e5caaf760506f1",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "am_peak",
+        "teacher_labels": 636
+      },
+      {
+        "case_id": "train_pm_peak_demand11",
+        "decisions": 12,
+        "flow_sha256": "a81138ce21137ed70fd4c8d98796cefa9375e0f22a802cb3016ecda7946f38d9",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "pm_peak",
+        "teacher_labels": 636
+      },
+      {
+        "case_id": "train_normal_demand12",
+        "decisions": 12,
+        "flow_sha256": "56bce2d30d1ed27f5b6d01e0a2a24763086e2027afd28a94872ca929682522d9",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "normal",
+        "teacher_labels": 636
+      },
+      {
+        "case_id": "train_am_peak_demand12",
+        "decisions": 12,
+        "flow_sha256": "b54c12791d4531b5a00ed07dc7f522cdf6d5ac19f6e28f2790b3a2384c5a98eb",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "am_peak",
+        "teacher_labels": 636
+      },
+      {
+        "case_id": "train_pm_peak_demand12",
+        "decisions": 12,
+        "flow_sha256": "122bccaf2c059779aa6e83fd471fa7e816710dc37e325b4e613ed4d326cc6dce",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "pm_peak",
+        "teacher_labels": 636
+      },
+      {
+        "case_id": "train_normal_demand13",
+        "decisions": 12,
+        "flow_sha256": "b3aedc4f7029497a21d70e464f1a27ad127901c35cc9ae8e6e3d0ba0f48db090",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "normal",
+        "teacher_labels": 636
+      },
+      {
+        "case_id": "train_am_peak_demand13",
+        "decisions": 12,
+        "flow_sha256": "2697e2561fbdc004944e2c40aad6fab47548906511fce602301cc35dde6e2dd8",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "am_peak",
+        "teacher_labels": 636
+      },
+      {
+        "case_id": "train_pm_peak_demand13",
+        "decisions": 12,
+        "flow_sha256": "8221c330c2c13510f08de8b328a801840d89959ed27a63ec72b4e73fd3444561",
+        "forced_labels_excluded": 416,
+        "labels": 220,
+        "scenario": "pm_peak",
+        "teacher_labels": 636
+      }
+    ],
+    "updates": 63
+  },
+  "behavior_rehearsal": {
+    "batch_size": 128,
+    "conditional_cross_entropy": 0.3462210705763015,
+    "enabled": true,
+    "every_td_updates": 1,
+    "pool_switch_eligible_labels": 1980,
+    "source_split": "train",
+    "switch_eligible_labels_sampled": 3200,
+    "top1_agreement": 0.995625,
+    "type": "behavior_clone",
+    "updates": 25
+  },
+  "checkpoint_eligibility_policy": {
+    "comparison_unit": "matched_validation_case",
+    "maximum_completion_loss": 0.02,
+    "maximum_insertion_loss": 0.02,
+    "queue_regret_limit_per_regime": 0.0,
+    "required_regimes": [
+      "normal",
+      "am_peak",
+      "pm_peak"
+    ],
+    "schema_version": 2
+  },
+  "checkpoint_reload": {
+    "case_id": "validation_normal_demand31",
+    "completed_steps": 120,
+    "queue_integral_vehicle_seconds": 1091.0
+  },
+  "decisions": 36,
+  "episode_agent_counts": [
+    53,
+    53,
+    53
+  ],
+  "episode_regimes": [
+    "normal",
+    "pm_peak",
+    "am_peak"
+  ],
+  "foundation_verification_wall_time_seconds": 154.14404559135437,
+  "measured_scope": "foundation_verification_through_artifact_verification",
+  "selected_checkpoint": "step-3",
+  "selected_validation_score": {
+    "completion_evidence_complete": true,
+    "eligibility_policy": {
+      "comparison_unit": "matched_validation_case",
+      "maximum_completion_loss": 0.02,
+      "maximum_insertion_loss": 0.02,
+      "queue_regret_limit_per_regime": 0.0,
+      "required_regimes": [
+        "normal",
+        "am_peak",
+        "pm_peak"
+      ],
+      "schema_version": 2
+    },
+    "eligible": true,
+    "insertion_evidence_complete": true,
+    "max_completion_degradation": 0.0,
+    "max_insertion_degradation": 0.0,
+    "mean_regret": 0.0,
+    "normal_regret": 0.0,
+    "scenario_regrets": {
+      "am_peak": 0.0,
+      "normal": 0.0,
+      "pm_peak": 0.0
+    },
+    "training_step": 3,
+    "worst_regret": 0.0
+  },
+  "selection_status": "eligible",
+  "simulated_seconds": 360.0,
+  "simulated_seconds_per_second": 0.9904975196662275,
+  "training_and_validation_wall_time_seconds": 177.72398138046265,
+  "training_policy_audit": {
+    "eligible_decisions": 1908,
+    "executed_intervention_rate": 0.01519916142557652,
+    "executed_interventions": 29,
+    "learned_actions_executed": 1795,
+    "learned_reference_disagreements": 8,
+    "random_actions_executed": 113,
+    "reference_actions_executed": 0,
+    "switch_eligible_decisions": 684,
+    "switch_eligible_learned_reference_disagreements": 8
+  },
+  "updates": 25,
+  "updates_per_second": 0.06878454997682135,
+  "validation_wall_time_seconds": 112.26239085197449,
+  "wall_time_seconds": 363.45371174812317
+}
