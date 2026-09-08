@@ -142,6 +142,7 @@ def _run(tmp_path, controller_id, checkpoint=None, contract=None):
         "runtime_dockerfile_sha256": "d" * 64,
         "code_commit": "c" * 40, "fresh_evaluation": True,
         "controlled_signals": 1, "agent_ids": ["A"],
+        "scheduled_vehicles": 0,
     }
     if checkpoint is not None:
         run.update({
@@ -183,6 +184,10 @@ def test_builds_each_deterministic_controller_from_frozen_config(
 
     assert isinstance(controller, expected)
     assert env.kwargs["max_steps"] == 10
+    observer = env.kwargs["network_metric_observer"]
+    assert observer.scheduled_vehicles == 0
+    assert observer.lane_to_node == {"in_0": "A"}
+    assert observer.spillback_thresholds == {"in_0": 40.0}
     if controller_id == "tuned_fixed":
         assert controller.green_duration == 30
     if controller_id == "hysteretic_mp":

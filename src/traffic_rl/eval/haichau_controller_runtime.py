@@ -18,6 +18,7 @@ from traffic_rl.agents.max_pressure import (
 )
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.eval.network_campaign import CONTROLLERS, canonical_sha256
+from traffic_rl.eval.network_metrics import NetworkMetricsObserver
 from traffic_rl.eval.runner import run_episode
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.encoder import ObservationEncoder
@@ -187,6 +188,23 @@ def build_controller_runtime(project_root, run, runtime_dir,
         raise ValueError("run agent IDs differ from network")
     if len(run.get("agent_ids", ())) != int(run.get("controlled_signals", -1)):
         raise ValueError("run controlled signal count differs from agent IDs")
+    scheduled = run.get("scheduled_vehicles")
+    if isinstance(scheduled, bool) or not isinstance(scheduled, int) or scheduled < 0:
+        raise ValueError("scheduled_vehicles must be a non-negative integer")
+
+    lane_to_node = {}
+    for node_id in roadnet.signalized_ids():
+        for lane_id in roadnet.incoming_lanes(node_id):
+            lane_to_node[lane_id] = node_id
+    spillback_threshold = _positive(
+        config.get("spillback_queue_threshold", normalization["capacity_norm"]),
+        "spillback_queue_threshold")
+    metric_observer = NetworkMetricsObserver(
+        scheduled_vehicles=scheduled,
+        step_seconds=float(config.get("step_seconds", 1.0)),
+        lane_to_node=lane_to_node,
+        spillback_thresholds=dict(
+            (lane_id, spillback_threshold) for lane_id in lane_to_node))
 
     runtime_dir = Path(runtime_dir)
     runtime_dir.mkdir(parents=True, exist_ok=True)
@@ -218,7 +236,8 @@ def build_controller_runtime(project_root, run, runtime_dir,
         count_norm=float(normalization["count_norm"]),
         queue_weight=float(reward["queue_weight"]),
         downstream_block_weight=float(reward["downstream_block_weight"]),
-        switch_penalty=float(reward["switch_penalty"]))
+        switch_penalty=float(reward["switch_penalty"]),
+        network_metric_observer=metric_observer)
 
     if controller_id == "tuned_fixed":
         controller = FixedTimeController(
