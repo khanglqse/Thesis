@@ -14,7 +14,8 @@
 - [x] Task 4: balanced case sampler and replay
 - [x] Task 5: validation regret and non-inferiority selection
 - [x] Task 6 code/config/unit tests: multi-case trainer and training CLI
-- [ ] Task 6 runtime gate: rerun 53-node smoke/pilot against corrected foundation
+- [x] Task 6 runtime smoke gate: final 53-node contract, real CityFlow, updates > 0
+- [ ] Task 6 pilot/final campaign: requires a separately authorized full-horizon run
 - [x] Review C1/I1/M1: explicit phase-role contract, safe transition state machine,
   min-green-first arbitration, feasible max-red validation, lane-link movement count
 - [x] Review I2-I5/M2 code gates: validation grid tuning, mandatory foundation
@@ -22,6 +23,8 @@
   smoke optimizer-update assertion
 - [x] Review R2: maximum-red early scheduling/episode peak and end-to-end
   tuning-inclusive wall-time/profile projection
+- [x] Foundation R3: source-bound phase semantics, movement service during
+  compound stages, clearance-only lost time, and final contract integration
 
 ## RED/GREEN evidence
 
@@ -66,22 +69,50 @@
   20 seconds on a declared 18-second path. GREEN: early deadline reservation,
   decision-granularity feasibility, and episode peak tracking pass two- and
   three-green adversarial tests. A read-only 53-signal/3600-step contract run
-  reports a true peak of 178 seconds against the 180-second bound.
+  reported a true peak of 178 seconds against the 180-second bound on the
+  superseded pre-R3 contract; the final R3 real smoke evidence is recorded below.
 - R2 timing RED showed tuning time absent from `wall_time_seconds`. GREEN:
   focused host/Python 3.6 suites each pass 36 tests; summary records foundation,
   baseline-tuning, training/validation, and measured end-to-end time, while the
   five-seed profile projects from end-to-end elapsed.
+- Foundation R3 RED: compound service stages were counted as intergreen and
+  their declared movements did not reset maximum-red timers; on the final
+  contract this produced a 190-second movement peak. GREEN: role-aware service
+  and movement-deadline scheduling pass focused tests; the 53-signal/3600-step
+  deterministic probe reached 144 seconds.
+- Final R3 fresh verification after runtime smoke: host full suite `163 passed,
+  1 deselected`; Python 3.6.5 focused suite `53 passed`; compileall and
+  `git diff --check` exited zero.
 
 ## Runtime evidence
 
-No valid real smoke, pilot, or final evidence is claimed. Temporary runs against foundation commit `e7b41e3` were deleted after data review found 100% route-family leakage and invalidated that manifest. Fake multi-case smoke covers three regimes, fresh candidate/baseline environments, checkpoint reload, replay coverage, and locked-test exclusion.
+- Final foundation evidence HEAD: `a186d9a62aaf9a44f7db052000c7293464de9669`; phase-contract SHA-256: `41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae`.
+- The final contract loads 53 controlled signals, 107 selectable greens, 127
+  transition phases, and 10 compound-service stages. Exact roles are 107
+  `selectable_green`, 10 `compound_service`, 116 `clearance_yellow`, and one
+  `all_red`.
+- Real CityFlow smoke, learning seed 11: foundation verifier succeeded before
+  training; train regimes were normal/PM peak/AM peak with 53 agents each;
+  25 optimizer updates; selected reporting checkpoint `step-3`; selection status
+  `ineligible_negative_result`; true peak maximum-red 120/180 seconds.
+- Measured end-to-end wall time was 283.191 seconds, including 208.488 seconds
+  of Fixed-Time validation tuning and 54.050 seconds of validation. Scope was
+  `foundation_verification_through_artifact_verification`.
+- Smoke artifacts were written only inside the disposable Docker container and
+  were removed with it. No foundation dataset or result was copied or committed.
+- No real pilot or final result is claimed. Runs against foundation `e7b41e3`
+  remain invalidated and deleted after route-family leakage review.
 
 ## Blockers and dependencies
 
-- The corrected foundation branch must provide its final leak-free manifest/flows/schema and roadnet phase contract before rerunning real 53-node smoke/pilot.
+- The final leak-free foundation is available and the real smoke gate passed. A
+  full-horizon pilot/five-seed campaign remains outside this implementation run.
 - The DDQN production loader requires manifest `phase_contract.path/sha256`,
   checks the artifact and roadnet hashes, and validates the exact 53-agent role
   partition plus every directed transition. Deterministic phase derivation remains
   available only to small unit fixtures and legacy callers; the training CLI does
   not use it.
-- The model completion gate remains closed until the corrected smoke/pilot succeeds and at least one candidate satisfies validation normal non-inferiority with complete completion evidence.
+- The smoke reporting checkpoint is intentionally ineligible because it is a
+  negative validation result. Test evaluation remains closed until a later
+  full-horizon candidate satisfies validation non-inferiority with complete
+  completion evidence.
