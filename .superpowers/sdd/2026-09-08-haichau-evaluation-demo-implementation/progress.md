@@ -14,7 +14,7 @@ Branch: `feat/haichau-evaluation-demo`
 - [x] Hierarchical statistics and acceptance gates
 - [ ] Frozen five-seed campaign — BLOCKED pending canonical case manifest, checkpoint contracts and five trained model seeds from the foundation/model branches.
 - [x] Thesis artifact and claim generator
-- [ ] Replay exporter and offline 53-node viewer
+- [x] Replay exporter and offline 53-node viewer framework
 - [ ] Fail-closed project verifier and operator documentation
 
 ## TDD log
@@ -30,3 +30,7 @@ RED and GREEN commands are recorded here as each task is implemented.
 - Task 5 RED: `PYTHONPATH=src pytest tests/report/test_haichau_network.py -v` — 4 expected failures from unimplemented table, claim and artifact functions.
 - Task 5 GREEN: same command — 4 passed.
 - Task 5 PDF: `tectonic paper/thesis_danang.tex` succeeded. Rendered physical pages 20 and 26 at 140 DPI; the new protocol/status sections have no clipping or overflow. No generated network result table was inserted because a frozen summary does not yet exist.
+- Task 6 RED: Node core tests failed 4/4 and Python exporter tests failed 2/2 against explicit stubs; replay hash-set test failed before optional `replay.json` was included in run status.
+- Task 6 GREEN: `node --test tests/replay_ab/haichau_network_demo_core.test.cjs` — 4 passed; `PYTHONPATH=src pytest tests/report/test_haichau_replay_export.py -v` — 2 passed; campaign suite — 7 passed.
+- Task 6 UI: exported a synthetic 53-node test fixture, served it only on `127.0.0.1:8766`, and exercised Chrome play/pause, seek to 00:05 and canvas node selection (N37). Status showed `Verified bundle loaded`; console had 0 warnings/errors; source scan found no remote URL/CDN/import. Superdesign draft informed the map-first comparison/detail/aggregate layout, while fabricated draft numbers and its Tailwind CDN were excluded.
+- Task 6 dependency gap: no MP4/PDF/PNG fallbacks were generated because the frozen representative runs and summary do not exist. The exporter accepts only caller-supplied real fallback files and hashes them into the bundle.

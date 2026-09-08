@@ -104,9 +104,11 @@ def expand_runs(manifest, learning_seeds, controller_ids):
 
 def _verify_complete(run_dir, status):
     hashes = status.get("artifact_sha256", {})
-    if set(hashes) != set(_ARTIFACTS):
+    if not set(_ARTIFACTS).issubset(set(hashes)):
         raise ValueError("complete run has an incomplete artifact hash set")
-    for name in _ARTIFACTS:
+    for name in hashes:
+        if Path(name).name != name:
+            raise ValueError("artifact name must not contain a path")
         path = run_dir / name
         if not path.is_file():
             raise ValueError("complete run is missing artifact: %s" % name)
@@ -192,7 +194,13 @@ def run_pending(campaign_dir, executor):
             _write_json(run_dir / "metrics.json", result["metrics"])
             (run_dir / "stdout.log").write_text(str(result.get("stdout", "")))
             (run_dir / "stderr.log").write_text(str(result.get("stderr", "")))
-            hashes = dict((name, _sha256(run_dir / name)) for name in _ARTIFACTS)
+            artifacts = list(_ARTIFACTS)
+            if "replay" in result:
+                if not isinstance(result["replay"], dict):
+                    raise ValueError("executor replay must be a JSON object")
+                _write_json(run_dir / "replay.json", result["replay"])
+                artifacts.append("replay.json")
+            hashes = dict((name, _sha256(run_dir / name)) for name in artifacts)
             _write_json(status_path, {
                 "status": "complete",
                 "completed_at": _utc_now(),

@@ -146,3 +146,23 @@ def test_campaign_rejects_legacy_source_rows(tmp_path):
     status = json.loads(
         (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
     assert "legacy" in status["error"]
+
+
+def test_executor_replay_is_part_of_the_immutable_hash_set(tmp_path):
+    run = expand_runs(_manifest(), [11], ["neighbor_phase_ddqn"])[0]
+    _write_campaign(tmp_path, [run])
+
+    def replay_executor(run, run_dir):
+        result = _executor(run, run_dir)
+        result["replay"] = {
+            "sample_seconds": 5,
+            "frames": [{"t": 0, "nodes": {}}, {"t": 5, "nodes": {}}],
+            "metrics": {"queue_integral_vehicle_seconds": 123.0},
+        }
+        return result
+
+    assert run_pending(tmp_path, replay_executor)["completed"] == 1
+    run_dir = tmp_path / "runs" / run["run_id"]
+    status = json.loads((run_dir / "status.json").read_text())
+    assert "replay.json" in status["artifact_sha256"]
+    assert (run_dir / "replay.json").is_file()
