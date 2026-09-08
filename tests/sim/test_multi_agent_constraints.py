@@ -1,4 +1,5 @@
 import json
+import hashlib
 
 import numpy as np
 
@@ -188,7 +189,72 @@ def test_switch_executes_nonempty_transition_without_exposing_it_as_action(tmp_p
     assert env.num_actions == {"A": 2}
     assert ("set", "A", 1) in engine.calls
     assert len(engine.steps_of("step")) == 10
-    assert info["intergreen_vehicle_seconds"] == 5.0
+    assert info["intergreen_vehicle_seconds"] == 0.0
+    assert env._time_since_service["A"] == [5.0, 0.0]
+
+
+def test_compound_service_resets_movements_but_only_clearance_is_lost_time(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
+    phases[:] = [
+        {"time": 40, "availableRoadLinks": [0]},
+        {"time": 3, "availableRoadLinks": [0]},
+        {"time": 2, "availableRoadLinks": []},
+        {"time": 40, "availableRoadLinks": [1]},
+        {"time": 2, "availableRoadLinks": []},
+    ]
+    env = MultiAgentTrafficEnv(roadnet, FakeEngine(), action_interval=10,
+                               min_green=0, maximum_red=180)
+    env.reset()
+
+    _, _, _, info = env.step({"A": 1})
+
+    assert roadnet.phase_role("A", 1) == "compound_service"
+    assert roadnet.phase_role("A", 2) == "all_red"
+    assert info["intergreen_vehicle_seconds"] == 2.0
+    assert env._time_since_service["A"] == [7.0, 0.0]
+
+
+def test_explicit_yellow_with_movements_is_clearance_not_service(tmp_path):
+    _roadnet(tmp_path)
+    roadnet_path = tmp_path / "roadnet.json"
+    value = json.loads(roadnet_path.read_text())
+    value["intersections"][0]["trafficLight"]["lightphases"][1] = {
+        "time": 3, "availableRoadLinks": [0]}
+    roadnet_path.write_text(json.dumps(value))
+    roles = ("selectable_green", "clearance_yellow",
+             "selectable_green", "all_red")
+    contract = {
+        "schema_version": 1,
+        "dataset_id": "fixture",
+        "roadnet_sha256": hashlib.sha256(roadnet_path.read_bytes()).hexdigest(),
+        "derivation": {"min_green_seconds": 20},
+        "agents": {"A": {
+            "selectable_phases": [0, 2],
+            "transition_phases": [1, 3],
+            "compound_phases": [],
+            "phase_semantics": [
+                {"phase_index": index, "duration_seconds": duration,
+                 "source_state": "y" if role == "clearance_yellow" else "x",
+                 "role": role}
+                for index, (duration, role) in enumerate(
+                    zip((40, 3, 40, 3), roles))],
+            "transitions": {
+                "0": {"2": [[1, 3]]}, "2": {"0": [[3, 3]]}},
+        }},
+    }
+    contract_path = tmp_path / "phase-contract.json"
+    contract_path.write_text(json.dumps(contract))
+    roadnet = RoadNet.load(str(roadnet_path), str(contract_path),
+                           require_phase_contract=True)
+    env = MultiAgentTrafficEnv(roadnet, FakeEngine(), action_interval=10,
+                               min_green=0, maximum_red=180)
+    env.reset()
+
+    _, _, _, info = env.step({"A": 1})
+
+    assert info["intergreen_vehicle_seconds"] == 3.0
+    assert env._time_since_service["A"] == [10.0, 0.0]
 
 
 def test_long_transition_sequence_continues_across_decision_intervals(tmp_path):
@@ -254,9 +320,13 @@ def test_maximum_red_includes_clearance_and_reports_episode_peak(tmp_path):
 
 def test_maximum_red_bound_serves_multiple_urgent_phases(tmp_path):
     roadnet = _roadnet(tmp_path)
+    roadnet._road_by_id["rin"]["lanes"].append({})
+    roadnet._by_id["A"]["roadLinks"].append({
+        "startRoad": "rin", "endRoad": "rout",
+        "laneLinks": [{"startLaneIndex": 2, "endLaneIndex": 0}]})
     phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
     phases[:] = []
-    for movement in ([0], [1], [0, 1]):
+    for movement in ([0], [1], [2]):
         phases.append({"time": 40, "availableRoadLinks": movement})
         phases.extend({"time": 6, "availableRoadLinks": []}
                       for _ in range(3))

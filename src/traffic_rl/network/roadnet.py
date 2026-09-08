@@ -210,12 +210,18 @@ class RoadNet:
                 str(target): list(transitions_after[str(source)])
                 for target in selectable if target != source}
             for source in selectable}
+        phase_roles = {
+            index: ("selectable_green" if index in selectable_set
+                    else "compound_service" if movements[index]
+                    else "all_red")
+            for index in range(len(phases))}
         return {
             "schema_version": 1,
             "selectable_phases": selectable,
             "transition_phases": sorted(transition_phases),
             "transitions_after": transitions_after,
             "transitions": directed,
+            "phase_roles": phase_roles,
             "errors": sorted(set(errors)),
         }
 
@@ -235,6 +241,7 @@ class RoadNet:
         record = agents.get(inter_id, {})
         selectable = record.get("selectable_phases", [])
         transitions = record.get("transition_phases", [])
+        compound = record.get("compound_phases", [])
         phase_count = self.num_phases(inter_id)
         all_indices = selectable + transitions
         if len(selectable) < 2:
@@ -264,6 +271,50 @@ class RoadNet:
                 errors.append(
                     "intersection {} transition phase {} is selectable by rule".format(
                         inter_id, phase_index))
+        allowed_roles = set(("selectable_green", "compound_service",
+                             "clearance_yellow", "all_red"))
+        semantics = record.get("phase_semantics", [])
+        phase_roles = {}
+        if len(semantics) != phase_count:
+            errors.append("intersection {} phase_semantics length mismatch".format(
+                inter_id))
+        for semantic in semantics:
+            phase_index = semantic.get("phase_index")
+            role = semantic.get("role")
+            if not isinstance(phase_index, int) or not 0 <= phase_index < phase_count:
+                errors.append("intersection {} phase semantic index is invalid".format(
+                    inter_id))
+                continue
+            if role not in allowed_roles:
+                errors.append("intersection {} phase {} role is invalid".format(
+                    inter_id, phase_index))
+                continue
+            if phase_index in phase_roles:
+                errors.append("intersection {} phase semantic is duplicated".format(
+                    inter_id))
+            phase_roles[phase_index] = role
+            duration = semantic.get("duration_seconds")
+            if duration != self._lightphases(inter_id)[phase_index].get("time"):
+                errors.append("intersection {} phase {} duration mismatch".format(
+                    inter_id, phase_index))
+        semantic_selectable = sorted(
+            index for index, role in phase_roles.items()
+            if role == "selectable_green")
+        semantic_compound = sorted(
+            index for index, role in phase_roles.items()
+            if role == "compound_service")
+        semantic_transitions = sorted(
+            index for index, role in phase_roles.items()
+            if role != "selectable_green")
+        if semantic_selectable != sorted(selectable):
+            errors.append("intersection {} selectable phase semantics mismatch".format(
+                inter_id))
+        if semantic_compound != sorted(compound):
+            errors.append("intersection {} compound phase semantics mismatch".format(
+                inter_id))
+        if semantic_transitions != sorted(transitions):
+            errors.append("intersection {} transition phase semantics mismatch".format(
+                inter_id))
         mapping = record.get("transitions", {})
         normalized = {}
         for source in selectable:
@@ -301,9 +352,18 @@ class RoadNet:
             "schema_version": 1,
             "selectable_phases": list(selectable),
             "transition_phases": list(transitions),
+            "compound_phases": list(compound),
             "transitions": normalized,
+            "phase_roles": phase_roles,
             "errors": sorted(set(errors)),
         }
+
+    def phase_role(self, inter_id, phase_index):
+        """Return the explicit service/clearance role for one lightphase."""
+        contract = self.phase_contract(inter_id)
+        if contract["errors"]:
+            raise ValueError("; ".join(contract["errors"]))
+        return contract["phase_roles"][phase_index]
 
     def transition_sequence(self, inter_id, from_phase, to_phase):
         contract = self.phase_contract(inter_id)
@@ -333,6 +393,9 @@ class RoadNet:
                 for inter_id, contract in contracts.items()},
             "transitions": {
                 inter_id: contract["transitions"]
+                for inter_id, contract in contracts.items()},
+            "phase_roles": {
+                inter_id: contract["phase_roles"]
                 for inter_id, contract in contracts.items()},
             "errors": {inter_id: contract["errors"]
                        for inter_id, contract in contracts.items()

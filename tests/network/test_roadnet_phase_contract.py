@@ -108,6 +108,17 @@ def test_explicit_contract_is_hash_bound_and_controls_roles(tmp_path):
         "agents": {"A": {
             "selectable_phases": [0, 2],
             "transition_phases": [1, 3],
+            "compound_phases": [1],
+            "phase_semantics": [
+                {"phase_index": 0, "duration_seconds": 40,
+                 "source_state": "G", "role": "selectable_green"},
+                {"phase_index": 1, "duration_seconds": 10,
+                 "source_state": "g", "role": "compound_service"},
+                {"phase_index": 2, "duration_seconds": 40,
+                 "source_state": "G", "role": "selectable_green"},
+                {"phase_index": 3, "duration_seconds": 5,
+                 "source_state": "r", "role": "all_red"},
+            ],
             "transitions": {
                 "0": {"2": [[1, 10]]},
                 "2": {"0": [[3, 5]]},
@@ -122,6 +133,7 @@ def test_explicit_contract_is_hash_bound_and_controls_roles(tmp_path):
 
     assert roadnet.green_phases("A") == [0, 2]
     assert roadnet.transition_sequence("A", 0, 2) == [(1, 10)]
+    assert roadnet.phase_role("A", 1) == "compound_service"
 
 
 def test_explicit_contract_rejects_roadnet_hash_mismatch(tmp_path):

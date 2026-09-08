@@ -42,6 +42,8 @@ class MultiAgentTrafficEnv:
                                            state_mode=state_mode))
         self._green_phases = {a: roadnet.green_phases(a) for a in self.agent_ids}
         self._phase_contracts = {a: roadnet.phase_contract(a) for a in self.agent_ids}
+        self._phase_roles = {
+            a: self._phase_contracts[a]["phase_roles"] for a in self.agent_ids}
         contract_errors = []
         for contract in self._phase_contracts.values():
             contract_errors.extend(contract["errors"])
@@ -98,6 +100,21 @@ class MultiAgentTrafficEnv:
         self._elapsed_green = {a: 0.0 for a in self.agent_ids}
         self._time_since_service = {
             a: [0.0] * len(self._green_phases[a]) for a in self.agent_ids}
+        self._phase_movements = {
+            a: [set(roadnet.phase_movement_pairs(a, phase))
+                for phase in self._green_phases[a]]
+            for a in self.agent_ids}
+        self._service_movements = {
+            a: {movement
+                for phase_index, role in self._phase_roles[a].items()
+                if role in ("selectable_green", "compound_service")
+                for movement in roadnet.phase_movement_pairs(a, phase_index)}
+            for a in self.agent_ids}
+        self._movement_time_since_service = {
+            a: {movement: 0.0 for movement in self._service_movements[a]}
+            for a in self.agent_ids}
+        self._active_lightphase = {
+            a: self._green_phases[a][0] for a in self.agent_ids}
         self._pending_transitions = {a: None for a in self.agent_ids}
         self._phase_switches = 0
         self._intergreen_vehicle_seconds = 0.0
@@ -156,6 +173,11 @@ class MultiAgentTrafficEnv:
         self._elapsed_green = {a: 0.0 for a in self.agent_ids}
         self._time_since_service = {
             a: [0.0] * len(self._green_phases[a]) for a in self.agent_ids}
+        self._movement_time_since_service = {
+            a: {movement: 0.0 for movement in self._service_movements[a]}
+            for a in self.agent_ids}
+        self._active_lightphase = {
+            a: self._green_phases[a][0] for a in self.agent_ids}
         self._pending_transitions = {a: None for a in self.agent_ids}
         self._phase_switches = 0
         self._intergreen_vehicle_seconds = 0.0
@@ -170,8 +192,18 @@ class MultiAgentTrafficEnv:
         self._queue_integral_vehicle_seconds = 0.0
         self._episode_max_red_seconds = 0.0
         for a in self.agent_ids:
-            self.engine.set_tl_phase(a, self._green_phases[a][0])
+            self._set_phase(a, self._green_phases[a][0])
         return self._observations()
+
+    def _set_phase(self, inter_id, phase_index):
+        self.engine.set_tl_phase(inter_id, phase_index)
+        self._active_lightphase[inter_id] = phase_index
+
+    def _refresh_phase_service_timers(self, inter_id):
+        movement_timers = self._movement_time_since_service[inter_id]
+        self._time_since_service[inter_id] = [
+            max([movement_timers[movement] for movement in movements] or [0.0])
+            for movements in self._phase_movements[inter_id]]
 
     def _observations(self):
         counts = self.engine.lane_vehicle_counts()
@@ -185,8 +217,9 @@ class MultiAgentTrafficEnv:
         return {a: self.encoder.encode(a, counts, self._green[a], waiting)
                 for a in self.agent_ids}
 
-    def _engine_steps(self, n, clearing=None):
+    def _engine_steps(self, n, clearing=None, transitioning=None):
         clearing = set(clearing or [])
+        transitioning = set(transitioning or [])
         for _ in range(n):
             self.engine.step()
             self._t += 1
@@ -195,18 +228,26 @@ class MultiAgentTrafficEnv:
                 self._seen_vehicle_ids.update(self._active_vehicle_ids)
             elapsed = self.sim_step_seconds
             for a in self.agent_ids:
-                timers = self._time_since_service[a]
-                for phase_idx in range(len(timers)):
-                    timers[phase_idx] += elapsed
+                movement_timers = self._movement_time_since_service[a]
+                for movement in movement_timers:
+                    movement_timers[movement] += elapsed
+                phase_index = self._active_lightphase[a]
+                role = self._phase_roles[a][phase_index]
+                if role in ("selectable_green", "compound_service"):
+                    for movement in self.roadnet.phase_movement_pairs(
+                            a, phase_index):
+                        if movement in movement_timers:
+                            movement_timers[movement] = 0.0
                 if a in clearing:
                     self._intergreen_vehicle_seconds += elapsed
-                else:
+                if a not in transitioning:
                     self._elapsed_green[a] += elapsed
-                    timers[self._green[a]] = 0.0
+                self._refresh_phase_service_timers(a)
             self._episode_max_red_seconds = max(
                 self._episode_max_red_seconds,
-                max([max(values) for values in
-                     self._time_since_service.values()] or [0.0]))
+                max([max(values.values()) for values in
+                     self._movement_time_since_service.values()
+                     if values] or [0.0]))
             waiting = (self.engine.true_lane_waiting_counts()
                        if hasattr(self.engine, "true_lane_waiting_counts")
                        else self.engine.lane_waiting_counts())
@@ -244,17 +285,22 @@ class MultiAgentTrafficEnv:
         steps = min(int(self.action_interval), max(0, self.max_steps - self._t))
         for _ in range(steps):
             clearing = set()
+            transitioning = set()
             for a in self.agent_ids:
                 pending = self._pending_transitions[a]
                 if pending is None:
                     continue
-                clearing.add(a)
+                transitioning.add(a)
                 if not pending["phase_set"]:
                     phase_index = pending["sequence"][pending["index"]][0]
-                    self.engine.set_tl_phase(a, phase_index)
+                    self._set_phase(a, phase_index)
                     pending["phase_set"] = True
-            self._engine_steps(1, clearing=clearing)
-            for a in list(clearing):
+                role = self._phase_roles[a][self._active_lightphase[a]]
+                if role in ("clearance_yellow", "all_red"):
+                    clearing.add(a)
+            self._engine_steps(1, clearing=clearing,
+                               transitioning=transitioning)
+            for a in list(transitioning):
                 pending = self._pending_transitions[a]
                 pending["remaining"] -= 1
                 if pending["remaining"] > 0:
@@ -268,7 +314,7 @@ class MultiAgentTrafficEnv:
                 choice = pending["target"]
                 self._green[a] = choice
                 self._since_switch[a] = 0
-                self.engine.set_tl_phase(a, self._green_phases[a][choice])
+                self._set_phase(a, self._green_phases[a][choice])
                 self._pending_transitions[a] = None
 
         waiting = self.engine.lane_waiting_counts()
