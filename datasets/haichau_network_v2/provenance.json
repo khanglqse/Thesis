@@ -1,0 +1,14 @@
+{
+  "bbox_wgs84": [
+    108.1888,
+    16.0213,
+    108.236,
+    16.1037
+  ],
+  "data_source_label": "osm_topology_synthetic_demand",
+  "dataset_id": "haichau_network_v2",
+  "expected_controlled_signals": 53,
+  "license": "OpenStreetMap ODbL; derived topology",
+  "osm_source": "Geofabrik Vietnam extract clipped to Hai Chau bbox",
+  "roadnet_expected_sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040"
+}
