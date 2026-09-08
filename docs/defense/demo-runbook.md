@@ -31,9 +31,13 @@ execution re-inspects the image and runs every controller command inside it with
 disabled. A digest-shaped string that is absent from `docker image inspect` is rejected.
 The release runner owns this Docker invocation; an injected Python executor is marked as
 test-only and cannot pass the final audit. Release containers remain stopped after their
-command exits. Each completed status records the exact Docker argv, container ID, execution
-Git head, inspected image identity, exit code and hashes of the container stdout/stderr
-logs. The verifier calls `docker container inspect` and `docker logs` itself, verifies the
+command exits. The runner starts each container detached, waits for its exit, and stores the
+two streams returned by `docker logs` as canonical `stdout.log` and `stderr.log`. Docker
+client or daemon diagnostics, including platform warnings, go in
+`docker-cli-diagnostics.json` and never enter the container stderr hash. Each completed
+status records the exact run/wait argv, container ID, execution Git head, inspected image
+identity, exit code and hashes of all three records. The verifier calls
+`docker container inspect` and `docker logs` itself, verifies the
 retained container's image ID/reference, command, working directory, disabled network,
 project mount and exit state, then requires its stdout JSON to equal the hashed config,
 metrics and replay artifacts. Keep these containers until the final audit succeeds.

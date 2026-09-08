@@ -208,11 +208,20 @@ def _docker_argv(run, project_root, run_dir):
     if not isinstance(command, list) or not command:
         raise ValueError("run has no command; integrate the controller before execution")
     return [
-        "docker", "run", "--network", "none",
+        "docker", "run", "--detach", "--network", "none",
         "--cidfile", str(Path(run_dir).resolve() / ".docker-container-id"),
         "-v", "%s:/work" % Path(project_root).resolve(), "-w", "/work",
         run["runtime_image"],
     ] + [str(token) for token in command]
+
+
+def _docker_cli_diagnostics(run_stderr, wait_stderr):
+    """Keep Docker client/daemon stderr distinct from container stderr."""
+    return {
+        "schema_version": 1,
+        "docker_run_stderr": str(run_stderr),
+        "docker_wait_stderr": str(wait_stderr),
+    }
 
 
 def _direct_command(argv, cwd):
@@ -225,7 +234,8 @@ def _direct_command(argv, cwd):
     return completed
 
 
-def _retained_container_receipt(run, run_dir, project_root, container_id):
+def _retained_container_evidence(run, run_dir, project_root, container_id,
+                                 compare_artifacts=True):
     completed = _direct_command(
         ("docker", "container", "inspect", container_id), project_root)
     if completed.returncode:
@@ -258,13 +268,15 @@ def _retained_container_receipt(run, run_dir, project_root, container_id):
         raise ValueError("retained Docker container logs are unavailable")
     stdout_path = Path(run_dir) / "stdout.log"
     stderr_path = Path(run_dir) / "stderr.log"
-    if stdout_path.is_file() and _sha256_bytes(logs.stdout.encode("utf-8")) \
+    if compare_artifacts and stdout_path.is_file() \
+            and _sha256_bytes(logs.stdout.encode("utf-8")) \
             != _sha256(stdout_path):
         raise ValueError("retained Docker stdout differs from run artifact")
-    if stderr_path.is_file() and _sha256_bytes(logs.stderr.encode("utf-8")) \
+    if compare_artifacts and stderr_path.is_file() \
+            and _sha256_bytes(logs.stderr.encode("utf-8")) \
             != _sha256(stderr_path):
         raise ValueError("retained Docker stderr differs from run artifact")
-    return {
+    receipt = {
         "container_id": record["Id"],
         "image_id": record["Image"],
         "image_reference": config["Image"],
@@ -278,6 +290,13 @@ def _retained_container_receipt(run, run_dir, project_root, container_id):
         "stdout_sha256": _sha256_bytes(logs.stdout.encode("utf-8")),
         "stderr_sha256": _sha256_bytes(logs.stderr.encode("utf-8")),
     }
+    return receipt, logs.stdout, logs.stderr
+
+
+def _retained_container_receipt(run, run_dir, project_root, container_id):
+    receipt, unused_stdout, unused_stderr = _retained_container_evidence(
+        run, run_dir, project_root, container_id)
+    return receipt
 
 
 def _trusted_docker_executor(run, run_dir, project_root, source, runtime):
@@ -293,39 +312,59 @@ def _trusted_docker_executor(run, run_dir, project_root, source, runtime):
         cidfile.unlink()
     argv = _docker_argv(run, project_root, run_dir)
     try:
-        completed = _DIRECT_SUBPROCESS_RUN(
+        launched = _DIRECT_SUBPROCESS_RUN(
             argv, cwd=str(project_root), universal_newlines=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         container_id = cidfile.read_text().strip() if cidfile.is_file() else ""
     finally:
         if cidfile.exists():
             cidfile.unlink()
-    if completed.returncode:
+    if launched.returncode:
         raise RuntimeError("executor exited %s: %s" % (
-            completed.returncode, completed.stderr.strip()))
-    lines = [line for line in completed.stdout.splitlines() if line.strip()]
+            launched.returncode, launched.stderr.strip()))
+    if not re.fullmatch(r"[0-9a-f]{64}", container_id):
+        raise ValueError("Docker did not retain a valid container ID")
+    launched_ids = [line.strip() for line in launched.stdout.splitlines()
+                    if line.strip()]
+    if launched_ids != [container_id]:
+        raise ValueError("Docker run output differs from its retained container ID")
+    wait_argv = ["docker", "wait", container_id]
+    waited = _direct_command(wait_argv, project_root)
+    if waited.returncode:
+        raise RuntimeError("Docker wait exited %s: %s" % (
+            waited.returncode, waited.stderr.strip()))
+    if waited.stdout.strip() != "0":
+        raise RuntimeError("container exited %s" % waited.stdout.strip())
+    receipt, container_stdout, container_stderr = _retained_container_evidence(
+        run, run_dir, project_root, container_id, compare_artifacts=False)
+    lines = [line for line in container_stdout.splitlines() if line.strip()]
     if not lines:
         raise ValueError("executor must print a JSON result on its final line")
     result = json.loads(lines[-1])
-    result["stdout"] = completed.stdout
-    result["stderr"] = completed.stderr
-    receipt = _retained_container_receipt(
-        run, run_dir, project_root, container_id)
+    result["stdout"] = container_stdout
+    result["stderr"] = container_stderr
+    diagnostics = _docker_cli_diagnostics(launched.stderr, waited.stderr)
+    result["docker_cli_diagnostics"] = diagnostics
     provenance = {
-        "provenance_version": 2,
+        "provenance_version": 3,
         "mode": "retained_docker_container",
         "docker_argv": argv,
+        "docker_wait_argv": wait_argv,
         "container_id": container_id,
-        "exit_code": completed.returncode,
+        "exit_code": int(waited.stdout.strip()),
         "code_commit": run.get("code_commit"),
         "execution_head_commit": source["head_commit"],
         "runtime_image": runtime["runtime_image"],
         "runtime_image_id": runtime["runtime_image_id"],
         "runtime_digest": runtime["runtime_digest"],
-        "stdout_sha256": hashlib.sha256(
-            completed.stdout.encode("utf-8")).hexdigest(),
-        "stderr_sha256": hashlib.sha256(
-            completed.stderr.encode("utf-8")).hexdigest(),
+        "stdout_sha256": receipt["stdout_sha256"],
+        "stderr_sha256": receipt["stderr_sha256"],
+        "docker_run_stdout_sha256": _sha256_bytes(
+            launched.stdout.encode("utf-8")),
+        "docker_wait_stdout_sha256": _sha256_bytes(
+            waited.stdout.encode("utf-8")),
+        "docker_cli_diagnostics_sha256": _sha256_bytes(
+            _json_bytes(diagnostics)),
         "container_receipt_sha256": canonical_sha256(receipt),
     }
     return result, provenance
@@ -347,11 +386,14 @@ def _verify_execution_provenance(run_dir, status, expected_run, project_root,
                                  current_head=None):
     provenance = status.get("execution_provenance", {})
     if provenance.get("mode") != "retained_docker_container" \
-            or provenance.get("provenance_version") != 2:
+            or provenance.get("provenance_version") != 3:
         raise ValueError("release run requires the trusted Docker executor")
     expected_argv = _docker_argv(expected_run, project_root, run_dir)
     if provenance.get("docker_argv") != expected_argv:
         raise ValueError("trusted Docker executor argv differs from the frozen run")
+    if provenance.get("docker_wait_argv") != [
+            "docker", "wait", provenance.get("container_id")]:
+        raise ValueError("trusted Docker wait argv differs from its container")
     expected_identity = {
         "code_commit": expected_run.get("code_commit"),
         "runtime_image": expected_run.get("runtime_image"),
@@ -364,6 +406,10 @@ def _verify_execution_provenance(run_dir, status, expected_run, project_root,
         raise ValueError("trusted Docker executor did not exit successfully")
     if not re.fullmatch(r"[0-9a-f]{64}", str(provenance.get("container_id", ""))):
         raise ValueError("trusted Docker executor requires the Docker container ID")
+    if provenance.get("docker_run_stdout_sha256") != _sha256_bytes(
+            (provenance["container_id"] + "\n").encode("utf-8")) \
+            or provenance.get("docker_wait_stdout_sha256") != _sha256_bytes(b"0\n"):
+        raise ValueError("trusted Docker launch/wait output differs")
     receipt = _retained_container_receipt(
         expected_run, run_dir, project_root, provenance["container_id"])
     if provenance.get("container_receipt_sha256") != canonical_sha256(receipt):
@@ -371,6 +417,24 @@ def _verify_execution_provenance(run_dir, status, expected_run, project_root,
     for name in ("stdout", "stderr"):
         if provenance.get(name + "_sha256") != _sha256(run_dir / (name + ".log")):
             raise ValueError("trusted Docker executor %s hash mismatch" % name)
+    diagnostics_path = run_dir / "docker-cli-diagnostics.json"
+    if status.get("artifact_sha256", {}).get(
+            "docker-cli-diagnostics.json") != (
+                _sha256(diagnostics_path) if diagnostics_path.is_file() else None) \
+            or not diagnostics_path.is_file() \
+            or provenance.get("docker_cli_diagnostics_sha256") \
+            != _sha256(diagnostics_path):
+        raise ValueError("trusted Docker CLI diagnostics hash mismatch")
+    try:
+        diagnostics = json.loads(diagnostics_path.read_text())
+    except ValueError:
+        raise ValueError("trusted Docker CLI diagnostics are invalid")
+    if not isinstance(diagnostics, dict) or set(diagnostics) != {
+            "schema_version", "docker_run_stderr", "docker_wait_stderr"} \
+            or diagnostics.get("schema_version") != 1 \
+            or not isinstance(diagnostics.get("docker_run_stderr"), str) \
+            or not isinstance(diagnostics.get("docker_wait_stderr"), str):
+        raise ValueError("trusted Docker CLI diagnostics are invalid")
     lines = [line for line in (run_dir / "stdout.log").read_text().splitlines()
              if line.strip()]
     try:
@@ -647,6 +711,15 @@ def run_pending(campaign_dir, executor=None, project_root=None):
             (run_dir / "stdout.log").write_text(str(result.get("stdout", "")))
             (run_dir / "stderr.log").write_text(str(result.get("stderr", "")))
             artifacts = list(_ARTIFACTS)
+            if "docker_cli_diagnostics" in result:
+                diagnostics = result["docker_cli_diagnostics"]
+                if not isinstance(diagnostics, dict) \
+                        or diagnostics != _docker_cli_diagnostics(
+                        diagnostics.get("docker_run_stderr", ""),
+                        diagnostics.get("docker_wait_stderr", "")):
+                    raise ValueError("Docker CLI diagnostics are invalid")
+                _write_json(run_dir / "docker-cli-diagnostics.json", diagnostics)
+                artifacts.append("docker-cli-diagnostics.json")
             if "replay" in result:
                 if not isinstance(result["replay"], dict):
                     raise ValueError("executor replay must be a JSON object")

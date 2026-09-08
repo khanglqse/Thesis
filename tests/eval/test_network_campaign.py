@@ -1,5 +1,7 @@
 import hashlib
 import json
+import platform
+import subprocess
 
 import pytest
 
@@ -266,6 +268,85 @@ def test_hand_edited_docker_status_requires_a_real_retained_container(
     with pytest.raises(ValueError, match="Docker"):
         network_campaign._verify_execution_provenance(
             run_dir, status, run, tmp_path, run["code_commit"])
+
+
+def test_docker_launch_is_detached_and_keeps_cli_diagnostics_out_of_container_logs():
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    run["command"] = ["python3", "evaluate.py"]
+
+    argv = network_campaign._docker_argv(run, "/project", "/project/results/run")
+    diagnostics = network_campaign._docker_cli_diagnostics(
+        "WARNING: image platform linux/amd64 differs from host linux/arm64/v8\n",
+        "")
+
+    assert "--detach" in argv
+    assert diagnostics == {
+        "schema_version": 1,
+        "docker_run_stderr": (
+            "WARNING: image platform linux/amd64 differs from host linux/arm64/v8\n"
+        ),
+        "docker_wait_stderr": "",
+    }
+
+
+@pytest.mark.docker_host
+def test_live_platform_warning_is_separate_and_retained_logs_reverify(tmp_path):
+    image = (
+        "traffic-rl-cityflow-research@sha256:"
+        "8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517"
+    )
+    image_id = (
+        "sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517"
+    )
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    run = {
+        "command": [
+            "python3", "-c",
+            "import json,sys; print('container-stderr', file=sys.stderr); "
+            "print(json.dumps({'probe': True}))",
+        ],
+        "code_commit": "1" * 40,
+        "runtime_image": image,
+        "runtime_image_id": image_id,
+        "runtime_digest": image.split("@", 1)[1],
+    }
+    source = {"code_commit": run["code_commit"], "head_commit": run["code_commit"]}
+    runtime = dict((key, run[key]) for key in (
+        "runtime_image", "runtime_image_id", "runtime_digest"))
+    container_id = None
+    try:
+        result, provenance = network_campaign._trusted_docker_executor(
+            run, run_dir, tmp_path, source, runtime)
+        container_id = provenance["container_id"]
+        (run_dir / "stdout.log").write_text(result["stdout"])
+        (run_dir / "stderr.log").write_text(result["stderr"])
+
+        assert result["stderr"] == "container-stderr\n"
+        assert "container-stderr" not in result["docker_cli_diagnostics"][
+            "docker_run_stderr"]
+        if platform.machine().lower() in ("arm64", "aarch64"):
+            assert "platform" in result["docker_cli_diagnostics"][
+                "docker_run_stderr"].lower()
+            assert "linux/amd64" in result["docker_cli_diagnostics"][
+                "docker_run_stderr"]
+        receipt = network_campaign._retained_container_receipt(
+            run, run_dir, tmp_path, container_id)
+        assert receipt["stderr_sha256"] == hashlib.sha256(
+            b"container-stderr\n").hexdigest()
+
+        cli_stderr = result["docker_cli_diagnostics"]["docker_run_stderr"]
+        (run_dir / "stderr.log").write_text(
+            (cli_stderr or "synthetic CLI diagnostic\n") + result["stderr"])
+        with pytest.raises(ValueError, match="stderr differs"):
+            network_campaign._retained_container_receipt(
+                run, run_dir, tmp_path, container_id)
+    finally:
+        if container_id:
+            subprocess.run(
+                ["docker", "rm", "-f", container_id],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, check=False)
 
 
 def test_incomplete_network_metric_schema_is_never_marked_complete(tmp_path):

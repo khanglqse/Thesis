@@ -173,6 +173,10 @@ exact command results, tool versions and hashed stdout/stderr logs; the final ve
 rejects hand-written summary records, reads artifacts from the attested Git commit and
 directly re-runs the release command contract. Campaign release verification also requires
 the stopped Docker containers so it can inspect their real image/config/exit state and logs.
+Release execution uses detached `docker run` plus `docker wait`: `stdout.log` and
+`stderr.log` come only from `docker logs`, while Docker CLI/daemon stderr (such as the
+Apple Silicon x86-image platform warning) is hashed separately in
+`docker-cli-diagnostics.json`.
 
 ## Scope: validated vs proposed
 
