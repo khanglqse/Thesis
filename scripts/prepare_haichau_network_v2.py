@@ -12,13 +12,18 @@ from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.research.artifacts import sha256_file
 
 
-IMAGE_DIGEST = "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32"
-IMAGE_NAME = "cityflowproject/cityflow"
+BASE_IMAGE_DIGEST = "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32"
+BASE_IMAGE_NAME = "cityflowproject/cityflow"
+DERIVED_IMAGE_TAG = "traffic-rl-cityflow-research:v2"
 
 
-def _canonical_write(path, value):
+def _canonical_write(path, value, compact=False):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+    if compact:
+        payload = json.dumps(value, sort_keys=True, separators=(",", ":"))
+    else:
+        payload = json.dumps(value, indent=2, sort_keys=True)
+    path.write_text(payload + "\n")
 
 
 def _under_root(root, path):
@@ -60,13 +65,17 @@ def prepare(config_path, root=None, new_version=False):
             )
 
     roadnet = RoadNet.load(str(roadnet_path))
-    generated_cases = build_flow_cases(roadnet, config)
+    generated_cases, route_catalog = build_flow_cases(
+        roadnet, config, include_catalog=True
+    )
+    route_catalog_path = result_dir / "route-families.json"
+    _canonical_write(route_catalog_path, route_catalog, compact=True)
     case_records = []
     for generated in generated_cases:
         case = dict(generated)
         flow = case.pop("flow")
         flow_path = result_dir / "demands" / (case["case_id"] + ".json")
-        _canonical_write(flow_path, flow)
+        _canonical_write(flow_path, flow, compact=True)
         case["flow_path"] = _under_root(root, flow_path)
         case["flow_sha256"] = sha256_file(flow_path)
         case_records.append(case)
@@ -81,6 +90,9 @@ def prepare(config_path, root=None, new_version=False):
             "sha256": sha256_file(provenance_path),
         }
 
+    dockerfile_path = root / "docker" / "cityflow-research" / "Dockerfile"
+    if not dockerfile_path.is_file():
+        raise ValueError("CityFlow research Dockerfile is required")
     manifest = {
         "protocol_version": 2,
         "dataset_id": config["dataset_id"],
@@ -88,10 +100,24 @@ def prepare(config_path, root=None, new_version=False):
         "generator_config_path": _under_root(root, config_path),
         "generator_config_sha256": generator_hash,
         "network": network,
+        "route_families": {
+            "path": _under_root(root, route_catalog_path),
+            "sha256": sha256_file(route_catalog_path),
+            "count": len(route_catalog),
+            "partition_counts": {
+                split: sum(1 for family in route_catalog if family["split"] == split)
+                for split in ("train", "validation", "test")
+            },
+        },
         "cases": case_records,
         "runtime": {
-            "image": IMAGE_NAME,
-            "image_digest": IMAGE_DIGEST,
+            "base_image": BASE_IMAGE_NAME,
+            "base_image_digest": BASE_IMAGE_DIGEST,
+            "derived_image_tag": DERIVED_IMAGE_TAG,
+            "dockerfile": {
+                "path": _under_root(root, dockerfile_path),
+                "sha256": sha256_file(dockerfile_path),
+            },
             "platform": "linux/amd64",
         },
         "preprocessing": config["preprocessing"],

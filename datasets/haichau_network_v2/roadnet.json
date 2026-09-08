@@ -81954,14 +81954,19 @@
         "lightphases": [
           {
             "availableRoadLinks": [
-              0,
-              1
+              0
             ],
-            "time": 80
+            "time": 40
           },
           {
             "availableRoadLinks": [],
             "time": 5
+          },
+          {
+            "availableRoadLinks": [
+              1
+            ],
+            "time": 40
           },
           {
             "availableRoadLinks": [],

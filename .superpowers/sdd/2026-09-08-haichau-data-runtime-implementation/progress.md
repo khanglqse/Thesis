@@ -40,3 +40,22 @@ Entries below record the command and observed reason for RED before production c
 - Runtime smoke: `make haichau-smoke` completed a real 60-step Fixed-Time CityFlow episode on `train_normal_demand11`: 53 controlled signals, 496 active vehicles, 1,938 vehicle-seconds queue integral, average travel time 60.0 seconds.
 - Full-suite RED: `make test` reached 132 passed and 1 failed because `tests/network/test_roadnet_neighbors.py` still referenced ignored `data/danang/roadnet_haichau.json`; the original-checkout file has the same SHA-256 as the new tracked roadnet. Updated the test to consume the tracked clean-checkout dataset.
 - Full-suite GREEN: `make test` — 133 passed, 1 Docker-marked test deselected, zero failures.
+
+## Review remediation
+
+- C1 route-family partition RED: `PYTHONPATH=src pytest tests/network/test_haichau_demand.py -v` — 7 failures because no canonical catalog or disjoint family partition existed and all splits sampled the same route pool.
+- C1 route-family partition GREEN: the canonical network yields 1,418 stable route families; deterministic weighted partitioning assigns every family to exactly one of train/validation/test before any case sampling. Real-dataset and artifact-contract tests reject cross-split family reuse.
+- C2 semantic verification RED: 12 mutation cases passed unexpectedly after changing preprocessing, simulation, labels, scale, histogram, seeds/case IDs, runtime identity, regime flow content, route-family split, vehicle mix, and provenance.
+- C2 semantic verification GREEN: `PYTHONPATH=src pytest tests/scripts/test_verify_haichau_foundation.py -v` — 20 passed. The verifier reconstructs the catalog and every expected flow from the tracked inputs, parses every route and vehicle row, checks family/histogram/split membership, and binds YAML, manifest, provenance, temporal source, Dockerfile, and runtime identity.
+- I1 network audit RED: the canonical dataset gate exposed agent `5896811072` with only one movement-serving green phase.
+- I1 network audit GREEN: deterministically split its two simultaneous movements into two 40-second green phases separated by the existing 5-second clearance phases, preserving the 90-second cycle. The repaired network SHA-256 is `a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1`; all 53 agents now have at least two movement-serving green phases.
+- I2 provenance GREEN: provenance records the available source artifact hashes, extraction/conversion commands and flags, demand aggregation, license, bounding box, source definition commit, and deterministic network repair. Tool versions and original retrieval date were not recorded at creation time and are explicitly `unknown_not_recorded`; verifier-required auditable fields fail closed.
+- I3 temporal-profile RED: generated streams used synchronized, constant-hour starts.
+- I3 temporal-profile GREEN: tracked source counts define three bins for normal, AM peak, and PM peak; deterministic staggering schedules the exact integer count for every bin. Mutation tests reject source-count, interval, and scheduled-count drift.
+- I4 runtime identity RED: smoke accepted only the mutable derived tag.
+- I4 runtime identity GREEN: `make haichau-smoke` rebuilds the linux/amd64 image, validates base-digest and Dockerfile-hash labels, passes the immutable derived image ID into the verifier, and completed a real 60-step CityFlow episode with image ID `sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517`.
+- Deterministic regeneration: two consecutive builder runs produced the same tracked/untracked artifact digest `4a95d973bf54e4627179141cb567451c03e5ab964ec9f1f35f706052b3ada104`.
+- Review full-suite GREEN: `make test` — 153 passed, 1 Docker-marked test deselected, zero failures.
+- Review host verifier GREEN: 53 controlled signals, 30 cases, 1,418 route families, split counts 9/6/15, and verified network/config/runtime hashes.
+- Review runtime smoke GREEN: `make haichau-smoke` — real 60-step Fixed-Time episode on `train_normal_demand11`, 485 vehicles, 627 vehicle-seconds queue integral, 30.896-second average travel time, linux/amd64 derived image identity attested.
+- [ ] I5 clean-checkout evidence: populated after the candidate implementation commit is verified from a separate clone.

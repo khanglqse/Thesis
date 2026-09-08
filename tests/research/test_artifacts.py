@@ -59,3 +59,18 @@ def test_split_validator_requires_nonempty_splits_and_unique_flow_hashes():
 
     with pytest.raises(ValueError, match="non-empty"):
         validate_disjoint_splits(cases[:2])
+
+
+def test_split_validator_rejects_route_family_hash_across_splits():
+    from traffic_rl.research.artifacts import validate_disjoint_splits
+
+    cases = [
+        {"split": "train", "demand_seed": 11, "flow_sha256": "a" * 64,
+         "route_family_hashes": ["1" * 64]},
+        {"split": "validation", "demand_seed": 31, "flow_sha256": "b" * 64,
+         "route_family_hashes": ["2" * 64]},
+        {"split": "test", "demand_seed": 101, "flow_sha256": "c" * 64,
+         "route_family_hashes": ["1" * 64]},
+    ]
+    with pytest.raises(ValueError, match="route family hash.*multiple splits"):
+        validate_disjoint_splits(cases)

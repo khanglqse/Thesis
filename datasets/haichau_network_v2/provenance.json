@@ -5,10 +5,109 @@
     108.236,
     16.1037
   ],
+  "conversion": {
+    "commands": [
+      "osmium extract --overwrite -b 108.1888,16.0213,108.236,16.1037 data/osm/vietnam-latest.osm.pbf -o data/osm/danang_haichau.osm.pbf",
+      "osmium cat --overwrite data/osm/danang_haichau.osm.pbf -o data/osm/danang_haichau.osm",
+      "netconvert --osm-files data/osm/danang_haichau.osm --output-file data/osm/danang_haichau.net.xml --keep-edges.by-vclass passenger --remove-edges.isolated true --geometry.remove true --roundabouts.guess true --ramps.guess true --junctions.join true --tls.guess-signals true --tls.join true --tls.discard-simple true --tls.default-type actuated --no-turnarounds true --remove-edges.by-type highway.residential --keep-edges.components 1",
+      "python3 /home/cityflow/tools/converter/converter.py --sumonet data/osm/danang_haichau.net.xml --cityflownet data/danang/roadnet_haichau.json"
+    ],
+    "configuration_definition_commit": "9f4deae7d0b2390593c52a18d78f7894f7579251",
+    "converter_image_digest": "unknown_not_recorded",
+    "netconvert_version": "unknown_not_recorded",
+    "osmium_version": "unknown_not_recorded"
+  },
   "data_source_label": "osm_topology_synthetic_demand",
   "dataset_id": "haichau_network_v2",
+  "demand_provenance": {
+    "applied_motorcycle_ratio": 0.9,
+    "temporal_aggregation": "sum car, motorcycle, truck and bus vehicle counts across all four camera lines and movements at each selected source hour",
+    "temporal_profile_path": "datasets/danang_published/phan2025_camera_hourly_digitized.csv",
+    "temporal_profile_sha256": "5dbfb6282b45996932fa6ed1f8378a910d83fc467fd858b4e58360c6cb9295fa",
+    "vehicle_mix_basis": "docs/network_demand_analysis.md section 2 records 74.3 million registered motorbikes and 6.3 million registered cars in Vietnam at end-2023; 0.90 is a conservative rounded synthetic network parameter",
+    "vehicle_mix_scope": "national registration share used only as a synthetic composition constraint, not an observed Hai Chau OD mix"
+  },
   "expected_controlled_signals": 53,
+  "expected_min_green_phases_per_agent": 2,
   "license": "OpenStreetMap ODbL; derived topology",
-  "osm_source": "Geofabrik Vietnam extract clipped to Hai Chau bbox",
-  "roadnet_expected_sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040"
+  "osm_source": {
+    "extract_provider": "Geofabrik",
+    "retrieval_date": "unknown_not_recorded",
+    "url": "https://download.geofabrik.de/asia/vietnam-latest.osm.pbf"
+  },
+  "repairs": [
+    {
+      "after": [
+        {
+          "availableRoadLinks": [
+            0
+          ],
+          "time": 40
+        },
+        {
+          "availableRoadLinks": [],
+          "time": 5
+        },
+        {
+          "availableRoadLinks": [
+            1
+          ],
+          "time": 40
+        },
+        {
+          "availableRoadLinks": [],
+          "time": 5
+        }
+      ],
+      "before": [
+        {
+          "availableRoadLinks": [
+            0,
+            1
+          ],
+          "time": 80
+        },
+        {
+          "availableRoadLinks": [],
+          "time": 5
+        },
+        {
+          "availableRoadLinks": [],
+          "time": 5
+        }
+      ],
+      "intersection_id": "5896811072",
+      "rationale": "The converter emitted one 80-second action serving both valid movements and two empty phases. Split that action deterministically by roadLink index into two 40-second greens and retain two 5-second intergreens, preserving the 90-second cycle while making both movements controllable.",
+      "type": "split_single_action_by_road_link"
+    }
+  ],
+  "roadnet_expected_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+  "schema_version": 2,
+  "source_artifacts": [
+    {
+      "availability": "untracked_local_only",
+      "path_at_conversion": "data/osm/danang_haichau.osm.pbf",
+      "role": "clipped_osm_pbf",
+      "sha256": "cc091baf523d0fa7a8be0b32a62d5e4bccc4d6452e51b38c1b1a88ffc518a331"
+    },
+    {
+      "availability": "untracked_local_only",
+      "path_at_conversion": "data/osm/danang_haichau.osm",
+      "role": "clipped_osm_xml",
+      "sha256": "0e71b672e12fb9c6601750be554abd560737a62e8557df3c5cf7f116403d26f1"
+    },
+    {
+      "availability": "untracked_local_only",
+      "path_at_conversion": "data/osm/danang_haichau.net.xml",
+      "role": "sumo_network",
+      "sha256": "0b4e0750134697de1a9d5c7d19fb71bc6cbade58506a7fd816410a487ee3faba"
+    },
+    {
+      "availability": "untracked_local_only",
+      "path_at_conversion": "data/danang/roadnet_haichau_rush.json",
+      "role": "source_cityflow_roadnet",
+      "sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040"
+    }
+  ],
+  "source_roadnet_sha256": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040"
 }

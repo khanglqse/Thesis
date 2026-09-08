@@ -8,33 +8,34 @@ import yaml
 def _write_inputs(root):
     dataset = root / "datasets" / "mini"
     dataset.mkdir(parents=True)
-    roadnet = {
-        "intersections": [
-            {"id": "west", "virtual": True, "roads": ["in"]},
-            {
-                "id": "signal",
-                "virtual": False,
-                "roads": ["in", "out"],
-                "roadLinks": [
-                    {"startRoad": "in", "endRoad": "out", "laneLinks": []}
-                ],
-                "trafficLight": {
-                    "lightphases": [
-                        {"availableRoadLinks": [0]},
-                        {"availableRoadLinks": []},
-                    ]
-                },
-            },
-            {"id": "east", "virtual": True, "roads": ["out"]},
-        ],
-        "roads": [
-            {"id": "in", "startIntersection": "west", "endIntersection": "signal", "lanes": [{}]},
-            {"id": "out", "startIntersection": "signal", "endIntersection": "east", "lanes": [{}]},
-        ],
-    }
+    docker_dir = root / "docker" / "cityflow-research"
+    docker_dir.mkdir(parents=True)
+    (docker_dir / "Dockerfile").write_text(
+        "FROM cityflowproject/cityflow@sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32\n"
+    )
+    intersections, roads = [], []
+    for branch in range(3):
+        route = ["r%d0" % branch, "r%d1" % branch, "r%d2" % branch]
+        west, first, second, east = "w%d" % branch, "a%d" % branch, "b%d" % branch, "e%d" % branch
+        intersections.extend([
+            {"id": west, "virtual": True, "roads": [route[0]]},
+            {"id": first, "virtual": False, "roads": route[:2],
+             "roadLinks": [{"startRoad": route[0], "endRoad": route[1], "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}]}],
+             "trafficLight": {"lightphases": [{"availableRoadLinks": [0]}, {"availableRoadLinks": [0]}]}},
+            {"id": second, "virtual": False, "roads": route[1:],
+             "roadLinks": [{"startRoad": route[1], "endRoad": route[2], "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}]}],
+             "trafficLight": {"lightphases": [{"availableRoadLinks": [0]}, {"availableRoadLinks": [0]}]}},
+            {"id": east, "virtual": True, "roads": [route[2]]},
+        ])
+        roads.extend([
+            {"id": route[0], "startIntersection": west, "endIntersection": first, "lanes": [{}]},
+            {"id": route[1], "startIntersection": first, "endIntersection": second, "lanes": [{}]},
+            {"id": route[2], "startIntersection": second, "endIntersection": east, "lanes": [{}]},
+        ])
+    roadnet = {"intersections": intersections, "roads": roads}
     (dataset / "roadnet.json").write_text(json.dumps(roadnet))
     (dataset / "provenance.json").write_text(
-        json.dumps({"dataset_id": "mini", "expected_controlled_signals": 1})
+        json.dumps({"dataset_id": "mini", "expected_controlled_signals": 6})
     )
     config = {
         "schema_version": 2,
@@ -42,10 +43,23 @@ def _write_inputs(root):
         "roadnet": "datasets/mini/roadnet.json",
         "demand_label": "synthetic_test_demand",
         "route_count": 2,
-        "min_controlled_signals_per_route": 1,
+        "min_controlled_signals_per_route": 2,
         "horizon_seconds": 60,
         "motorcycle_ratio": 1.0,
-        "regimes": {"normal": {"interval_seconds": 10.0}},
+        "reference_interval_seconds": 10.0,
+        "route_family_split": {"train": 0.5, "validation": 0.25, "test": 0.25},
+        "regimes": {
+            scenario: {"profile_bins": [
+                {"start": 0, "end": 20, "source_hour": hours[0], "source_vehicle_count": counts[0]},
+                {"start": 20, "end": 40, "source_hour": hours[1], "source_vehicle_count": counts[1]},
+                {"start": 40, "end": 60, "source_hour": hours[2], "source_vehicle_count": counts[2]},
+            ]}
+            for scenario, hours, counts in (
+                ("normal", ["12:00", "13:00", "14:00"], [100, 80, 90]),
+                ("am_peak", ["07:00", "08:00", "09:00"], [70, 140, 100]),
+                ("pm_peak", ["16:00", "17:00", "18:00"], [80, 120, 150]),
+            )
+        },
         "splits": {
             "train": {"demand_seeds": [11], "sim_seeds": [111]},
             "validation": {"demand_seeds": [31], "sim_seeds": [131]},
@@ -65,17 +79,24 @@ def test_prepare_writes_hash_bound_cases(tmp_path):
     config_path = _write_inputs(tmp_path)
     manifest = prepare(config_path, tmp_path)
     assert manifest["protocol_version"] == 2
-    assert len(manifest["cases"]) == 3
+    assert len(manifest["cases"]) == 9
     assert all(len(case["flow_sha256"]) == 64 for case in manifest["cases"])
-    assert manifest["network"]["controlled_signals"] == 1
+    assert manifest["network"]["controlled_signals"] == 6
     assert manifest["network"]["path"] == "datasets/mini/roadnet.json"
-    assert manifest["runtime"]["image_digest"].startswith("sha256:")
+    assert manifest["runtime"]["base_image_digest"].startswith("sha256:")
+    assert len(manifest["runtime"]["dockerfile"]["sha256"]) == 64
 
     for case in manifest["cases"]:
         flow_path = tmp_path / case["flow_path"]
         assert flow_path.is_file()
-        assert json.loads(flow_path.read_text())[0]["route"] == ["in", "out"]
+        assert len(json.loads(flow_path.read_text())) == 6
         assert flow_path.read_text().endswith("\n")
+
+    route_catalog = manifest["route_families"]
+    assert len(route_catalog["sha256"]) == 64
+    families = json.loads((tmp_path / route_catalog["path"]).read_text())
+    assert len(families) == 3
+    assert {family["split"] for family in families} == {"train", "validation", "test"}
 
     manifest_path = tmp_path / "results" / "mini" / "experiment-manifest.json"
     assert json.loads(manifest_path.read_text()) == manifest
@@ -88,7 +109,7 @@ def test_prepare_refuses_generator_drift_without_new_version(tmp_path):
     config_path = _write_inputs(tmp_path)
     prepare(config_path, tmp_path)
     config = yaml.safe_load(config_path.read_text())
-    config["horizon_seconds"] = 120
+    config["reference_interval_seconds"] = 12.0
     config_path.write_text(yaml.safe_dump(config, sort_keys=False))
     with pytest.raises(ValueError, match="existing manifest.*differs"):
         prepare(config_path, tmp_path)
@@ -100,7 +121,7 @@ def test_prepare_new_version_flag_allows_deliberate_rebuild(tmp_path):
     config_path = _write_inputs(tmp_path)
     old = prepare(config_path, tmp_path)
     config = yaml.safe_load(config_path.read_text())
-    config["horizon_seconds"] = 120
+    config["reference_interval_seconds"] = 12.0
     config_path.write_text(yaml.safe_dump(config, sort_keys=False))
     new = prepare(config_path, tmp_path, new_version=True)
     assert old["generator_config_sha256"] != new["generator_config_sha256"]

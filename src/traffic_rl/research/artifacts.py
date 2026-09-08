@@ -44,6 +44,7 @@ def validate_disjoint_splits(cases):
     counts = {split: 0 for split in _REQUIRED_SPLITS}
     seed_splits = {}
     hash_splits = {}
+    route_family_splits = {}
     for case in cases:
         split = case.get("split")
         if split not in counts:
@@ -54,6 +55,8 @@ def validate_disjoint_splits(cases):
         flow_hash = case.get("flow_sha256")
         if flow_hash is not None:
             hash_splits.setdefault(flow_hash, set()).add(split)
+        for route_hash in case.get("route_family_hashes", []):
+            route_family_splits.setdefault(route_hash, set()).add(split)
 
     for seed, splits in seed_splits.items():
         if len(splits) > 1:
@@ -61,6 +64,11 @@ def validate_disjoint_splits(cases):
     for flow_hash, splits in hash_splits.items():
         if len(splits) > 1:
             raise ValueError("flow hash %s appears in multiple splits" % flow_hash)
+    for route_hash, splits in route_family_splits.items():
+        if len(splits) > 1:
+            raise ValueError(
+                "route family hash %s appears in multiple splits" % route_hash
+            )
     if any(count == 0 for count in counts.values()):
         raise ValueError("train, validation and test splits must each be non-empty")
     return {split: counts[split] for split in sorted(counts)}

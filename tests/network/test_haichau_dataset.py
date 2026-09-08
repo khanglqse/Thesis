@@ -20,11 +20,17 @@ def _mini_data():
                         "startRoad": "in",
                         "endRoad": "out",
                         "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}],
-                    }
+                    },
+                    {
+                        "startRoad": "in",
+                        "endRoad": "out",
+                        "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}],
+                    },
                 ],
                 "trafficLight": {
                     "lightphases": [
                         {"time": 30, "availableRoadLinks": [0]},
+                        {"time": 30, "availableRoadLinks": [1]},
                         {"time": 3, "availableRoadLinks": []},
                     ]
                 },
@@ -65,8 +71,11 @@ def test_audit_network_counts_only_multi_phase_signals(tmp_path):
     report = audit_network(_write_roadnet(tmp_path, data))
     assert report == {
         "roads": 2,
+        "lanes": 2,
         "intersections": 4,
         "controlled_signals": 1,
+        "green_phases": 2,
+        "agent_green_phase_counts": {"signal": 2},
         "agent_ids": ["signal"],
         "directed_signal_edges": [],
         "weak_components": 1,
@@ -124,3 +133,28 @@ def test_audit_network_reports_invalid_phase_road_link_index(tmp_path):
     ] = [7]
     report = audit_network(_write_roadnet(tmp_path, data))
     assert any("roadLink index" in error for error in report["phase_errors"])
+
+
+def test_audit_network_rejects_agent_with_fewer_than_two_movement_phases(tmp_path):
+    from traffic_rl.network.haichau_dataset import audit_network
+
+    data = _mini_data()
+    data["intersections"][1]["trafficLight"]["lightphases"][1][
+        "availableRoadLinks"
+    ] = []
+    report = audit_network(_write_roadnet(tmp_path, data))
+    assert report["agent_green_phase_counts"] == {"signal": 1}
+    assert any("fewer than two movement-serving green phases" in error
+               for error in report["phase_errors"])
+
+
+def test_canonical_network_has_53_agents_with_two_movement_phases():
+    from pathlib import Path
+
+    from traffic_rl.network.haichau_dataset import audit_network
+
+    root = Path(__file__).resolve().parents[2]
+    report = audit_network(root / "datasets/haichau_network_v2/roadnet.json")
+    assert report["controlled_signals"] == 53
+    assert min(report["agent_green_phase_counts"].values()) >= 2
+    assert report["phase_errors"] == []

@@ -4,7 +4,7 @@ from collections import Counter, deque
 import random
 
 from traffic_rl.network.roadnet import RoadNet
-from traffic_rl.research.artifacts import validate_disjoint_splits
+from traffic_rl.research.artifacts import canonical_sha256, validate_disjoint_splits
 
 
 # Kept local so the pinned Python 3.6 research runtime does not import the
@@ -63,6 +63,7 @@ def audit_network(path):
     intersection_ids = set(roadnet._by_id)
     agents = sorted(roadnet.signalized_ids())
     agent_set = set(agents)
+    green_phase_counts = {agent_id: 0 for agent_id in agents}
     errors = []
 
     for road in sorted(roadnet.roads, key=lambda item: item["id"]):
@@ -121,6 +122,7 @@ def audit_network(path):
 
         traffic_light = intersection.get("trafficLight") or {}
         for phase_index, phase in enumerate(traffic_light.get("lightphases", [])):
+            serves_movement = False
             for road_link_index in phase.get("availableRoadLinks", []):
                 if (
                     not isinstance(road_link_index, int)
@@ -131,6 +133,24 @@ def audit_network(path):
                         "intersection %s phase %d has invalid roadLink index %s"
                         % (intersection_id, phase_index, road_link_index)
                     )
+                elif road_links[road_link_index].get("laneLinks"):
+                    serves_movement = True
+                else:
+                    errors.append(
+                        "intersection %s phase %d roadLink %d has no lane movements"
+                        % (intersection_id, phase_index, road_link_index)
+                    )
+            if intersection_id in agent_set and serves_movement:
+                green_phase_counts[intersection_id] += 1
+
+        if (
+            intersection_id in agent_set
+            and green_phase_counts[intersection_id] < 2
+        ):
+            errors.append(
+                "intersection %s has fewer than two movement-serving green phases"
+                % intersection_id
+            )
 
     edges = sorted(
         {
@@ -142,8 +162,11 @@ def audit_network(path):
     )
     return {
         "roads": len(roadnet.roads),
+        "lanes": sum(len(road.get("lanes", [])) for road in roadnet.roads),
         "intersections": len(roadnet.intersections),
         "controlled_signals": len(agents),
+        "green_phases": sum(green_phase_counts.values()),
+        "agent_green_phase_counts": green_phase_counts,
         "agent_ids": agents,
         "directed_signal_edges": [list(edge) for edge in edges],
         "weak_components": _weak_component_count(agents, edges),
@@ -164,60 +187,97 @@ def count_controlled_signals(roadnet, route):
     )
 
 
-def _seeded_boundary_route(roadnet, entries, exits, min_signals, rng):
-    starts = list(entries)
-    rng.shuffle(starts)
-    controlled = set(roadnet.signalized_ids())
-    for start in starts:
-        start_intersection = roadnet._road_by_id[start]["endIntersection"]
-        start_count = int(start_intersection in controlled)
-        pending = deque([(start, [start], {start_intersection} & controlled)])
-        visited = {(start, min(start_count, min_signals))}
-        while pending:
-            current, path, signals = pending.popleft()
-            if current in exits and len(path) > 1 and len(signals) >= min_signals:
-                return path
-            neighbors = sorted(roadnet.next_roads(current))
-            rng.shuffle(neighbors)
-            for next_road in neighbors:
-                if next_road in path or next_road not in roadnet._road_by_id:
-                    continue
-                next_intersection = roadnet._road_by_id[next_road]["endIntersection"]
-                next_signals = signals | ({next_intersection} & controlled)
-                state = (next_road, min(len(next_signals), min_signals))
-                if state in visited:
-                    continue
-                visited.add(state)
-                pending.append((next_road, path + [next_road], next_signals))
+def _shortest_route(roadnet, start, target):
+    pending = deque([[start]])
+    visited = {start}
+    while pending:
+        path = pending.popleft()
+        if path[-1] == target and len(path) > 1:
+            return path
+        for next_road in sorted(roadnet.next_roads(path[-1])):
+            if next_road not in visited and next_road in roadnet._road_by_id:
+                visited.add(next_road)
+                pending.append(path + [next_road])
     return None
 
 
+def route_is_valid(roadnet, route, min_signals=0):
+    """Return whether a loop-free route connects boundaries through valid links."""
+    if not route or len(route) != len(set(route)):
+        return False
+    if any(road_id not in roadnet._road_by_id for road_id in route):
+        return False
+    virtual = {i["id"] for i in roadnet.intersections if i.get("virtual")}
+    if roadnet._road_by_id[route[0]]["startIntersection"] not in virtual:
+        return False
+    if roadnet._road_by_id[route[-1]]["endIntersection"] not in virtual:
+        return False
+    if any(route[index + 1] not in roadnet.next_roads(route[index])
+           for index in range(len(route) - 1)):
+        return False
+    return count_controlled_signals(roadnet, route) >= min_signals
+
+
+def build_route_catalog(roadnet, min_signals):
+    """Enumerate one stable shortest route for every valid boundary OD pair."""
+    entries = sorted(roadnet.entry_roads())
+    virtual = {i["id"] for i in roadnet.intersections if i.get("virtual")}
+    exits = sorted(r["id"] for r in roadnet.roads
+                   if r.get("endIntersection") in virtual)
+    catalog = []
+    for entry in entries:
+        for exit_road in exits:
+            route = _shortest_route(roadnet, entry, exit_road)
+            if route is None or not route_is_valid(roadnet, route, min_signals):
+                continue
+            route_hash = canonical_sha256(route)
+            catalog.append({
+                "route_family_id": "rf_" + route_hash,
+                "route_sha256": route_hash,
+                "origin_road": route[0],
+                "destination_road": route[-1],
+                "controlled_signals": count_controlled_signals(roadnet, route),
+                "route": route,
+            })
+    catalog.sort(key=lambda family: family["route_sha256"])
+    if not catalog:
+        raise ValueError("insufficient multi-signal route families")
+    return catalog
+
+
+def partition_route_families(catalog, split_weights):
+    """Assign every canonical family once using stable weighted partitions."""
+    splits = ("train", "validation", "test")
+    if set(split_weights) != set(splits) or any(float(split_weights[s]) <= 0 for s in splits):
+        raise ValueError("route family split must define positive train/validation/test weights")
+    if len(catalog) < len(splits):
+        raise ValueError("insufficient route families for disjoint splits")
+    total_weight = sum(float(split_weights[s]) for s in splits)
+    counts = {split: 1 for split in splits}
+    remaining = len(catalog) - len(splits)
+    raw = {split: remaining * float(split_weights[split]) / total_weight for split in splits}
+    for split in splits:
+        counts[split] += int(raw[split])
+    leftover = len(catalog) - sum(counts.values())
+    order = sorted(splits, key=lambda split: (-(raw[split] - int(raw[split])), split))
+    for split in order[:leftover]:
+        counts[split] += 1
+
+    partitions = {}
+    offset = 0
+    for split in splits:
+        partitions[split] = [dict(family) for family in catalog[offset:offset + counts[split]]]
+        offset += counts[split]
+    return partitions
+
+
 def generate_routes(roadnet, seed, route_count, min_signals):
-    """Generate seeded boundary-to-boundary routes meeting signal coverage."""
+    """Sample seeded routes from the stable canonical boundary OD catalog."""
     if route_count < 0 or min_signals < 0:
         raise ValueError("route_count and min_signals must be non-negative")
-    entries = sorted(roadnet.entry_roads())
-    virtual = {
-        intersection["id"]
-        for intersection in roadnet.intersections
-        if intersection.get("virtual")
-    }
-    exits = {
-        road["id"]
-        for road in roadnet.roads
-        if road.get("endIntersection") in virtual
-    }
-    if not entries or not exits:
-        raise ValueError("insufficient multi-signal routes")
-
+    catalog = build_route_catalog(roadnet, min_signals)
     rng = random.Random(seed)
-    routes = []
-    for _ in range(route_count):
-        route = _seeded_boundary_route(roadnet, entries, exits, min_signals, rng)
-        if route is None:
-            raise ValueError("insufficient multi-signal routes")
-        routes.append(route)
-    return routes
+    return [list(rng.choice(catalog)["route"]) for _ in range(route_count)]
 
 
 def _vehicle_family(seed, count, motorcycle_ratio):
@@ -230,14 +290,63 @@ def _vehicle_family(seed, count, motorcycle_ratio):
     ]
 
 
-def build_flow_cases(roadnet, config):
+def _sample_families(pool, seed, count):
+    rng = random.Random(seed)
+    shuffled = list(pool)
+    rng.shuffle(shuffled)
+    selected = shuffled[:min(count, len(shuffled))]
+    while len(selected) < count:
+        selected.append(rng.choice(pool))
+    return selected
+
+
+def _scheduled_departures(flow_row):
+    if flow_row["startTime"] > flow_row["endTime"]:
+        return 0
+    return 1 + int((flow_row["endTime"] - flow_row["startTime"])
+                   // flow_row["interval"])
+
+
+def _profile(config, scenario):
+    bins = config["regimes"][scenario]["profile_bins"]
+    if not bins or bins[0]["start"] != 0 or bins[-1]["end"] != config["horizon_seconds"]:
+        raise ValueError("temporal profile must cover the complete horizon")
+    if any(bins[index]["end"] != bins[index + 1]["start"]
+           for index in range(len(bins) - 1)):
+        raise ValueError("temporal profile bins must be contiguous")
+    normal_counts = [float(item["source_vehicle_count"])
+                     for item in config["regimes"]["normal"]["profile_bins"]]
+    normal_mean = sum(normal_counts) / len(normal_counts)
+    output = []
+    for item in bins:
+        count = float(item["source_vehicle_count"])
+        if count <= 0 or item["end"] <= item["start"]:
+            raise ValueError("temporal profile counts and durations must be positive")
+        enriched = dict(item)
+        enriched["interval_seconds"] = round(
+            float(config["reference_interval_seconds"]) * normal_mean / count, 6
+        )
+        output.append(enriched)
+    return output
+
+
+def build_flow_cases(roadnet, config, include_catalog=False):
     """Build all seeded split/regime CityFlow cases from resolved inputs."""
     regimes = config["regimes"]
-    if "normal" not in regimes:
+    if set(regimes) != {"normal", "am_peak", "pm_peak"}:
         raise ValueError("normal regime is required")
-    normal_interval = float(regimes["normal"]["interval_seconds"])
-    if normal_interval <= 0:
-        raise ValueError("regime intervals must be positive")
+    catalog = build_route_catalog(
+        roadnet, int(config["min_controlled_signals_per_route"])
+    )
+    partitions = partition_route_families(catalog, config["route_family_split"])
+    partitioned_catalog = []
+    for split in ("train", "validation", "test"):
+        for family in partitions[split]:
+            record = dict(family)
+            record["split"] = split
+            partitioned_catalog.append(record)
+    normal_total = sum(item["source_vehicle_count"]
+                       for item in regimes["normal"]["profile_bins"])
 
     cases = []
     for split in ("train", "validation", "test"):
@@ -247,12 +356,10 @@ def build_flow_cases(roadnet, config):
         if len(demand_seeds) != len(sim_seeds):
             raise ValueError("demand and simulation seeds must be paired")
         for demand_seed, sim_seed in zip(demand_seeds, sim_seeds):
-            routes = generate_routes(
-                roadnet,
-                seed=demand_seed,
-                route_count=int(config["route_count"]),
-                min_signals=int(config["min_controlled_signals_per_route"]),
+            sampled = _sample_families(
+                partitions[split], demand_seed, int(config["route_count"])
             )
+            routes = [family["route"] for family in sampled]
             vehicle_kinds = _vehicle_family(
                 demand_seed, len(routes), float(config["motorcycle_ratio"])
             )
@@ -260,19 +367,36 @@ def build_flow_cases(roadnet, config):
                 count_controlled_signals(roadnet, route) for route in routes
             )
             for scenario, regime in regimes.items():
-                interval = float(regime["interval_seconds"])
-                if interval <= 0:
-                    raise ValueError("regime intervals must be positive")
-                flow = [
-                    {
-                        "vehicle": dict(VEHICLE_TEMPLATES[kind]),
-                        "route": list(route),
-                        "interval": interval,
-                        "startTime": 0,
-                        "endTime": int(config["horizon_seconds"]),
-                    }
-                    for route, kind in zip(routes, vehicle_kinds)
-                ]
+                profile = _profile(config, scenario)
+                flow = []
+                bin_summaries = []
+                scheduled_vehicle_counts = {"motorbike": 0, "car": 0}
+                for bin_index, profile_bin in enumerate(profile):
+                    interval = profile_bin["interval_seconds"]
+                    stagger_rng = random.Random(
+                        int(demand_seed) * 1009
+                        + sum(ord(char) for char in scenario) * 31
+                        + bin_index
+                    )
+                    bin_rows = []
+                    for route, kind in zip(routes, vehicle_kinds):
+                        offset_bound = max(1, int(interval))
+                        row = {
+                            "vehicle": dict(VEHICLE_TEMPLATES[kind]),
+                            "route": list(route),
+                            "interval": interval,
+                            "startTime": int(profile_bin["start"]) + stagger_rng.randrange(offset_bound),
+                            "endTime": int(profile_bin["end"]) - 1,
+                        }
+                        bin_rows.append(row)
+                        scheduled_vehicle_counts[kind] += _scheduled_departures(row)
+                    flow.extend(bin_rows)
+                    bin_summary = dict(profile_bin)
+                    bin_summary["streams"] = len(bin_rows)
+                    bin_summary["scheduled"] = sum(_scheduled_departures(row) for row in bin_rows)
+                    bin_summaries.append(bin_summary)
+                family_hashes = sorted({family["route_sha256"] for family in sampled})
+                family_ids = sorted({family["route_family_id"] for family in sampled})
                 cases.append(
                     {
                         "case_id": "%s_%s_demand%s" % (split, scenario, demand_seed),
@@ -280,8 +404,15 @@ def build_flow_cases(roadnet, config):
                         "scenario": scenario,
                         "demand_seed": demand_seed,
                         "sim_seed": sim_seed,
-                        "scale": normal_interval / interval,
+                        "scale": sum(item["source_vehicle_count"] for item in regime["profile_bins"]) / float(normal_total),
                         "flow": flow,
+                        "flow_streams": len(flow),
+                        "scheduled_vehicles": sum(scheduled_vehicle_counts.values()),
+                        "scheduled_vehicle_counts": scheduled_vehicle_counts,
+                        "scheduled_departures_by_bin": bin_summaries,
+                        "temporal_profile": profile,
+                        "route_family_ids": family_ids,
+                        "route_family_hashes": family_hashes,
                         "route_signal_histogram": {
                             str(signal_count): histogram[signal_count]
                             for signal_count in sorted(histogram)
@@ -290,4 +421,6 @@ def build_flow_cases(roadnet, config):
                     }
                 )
     validate_disjoint_splits(cases)
+    if include_catalog:
+        return cases, partitioned_catalog
     return cases
