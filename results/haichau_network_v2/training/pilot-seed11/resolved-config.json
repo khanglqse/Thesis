@@ -1,0 +1,93 @@
+{
+  "baseline": {
+    "controller": "validation_tuned_fixed",
+    "search_green_durations": [
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      60
+    ]
+  },
+  "baseline_tuning": {
+    "copied_artifact_sha256": "fec62a7421f2a7cf6512a74aff41dfb470c89eac354ea2f1e9efe793135d145e",
+    "mode": "precomputed",
+    "provenance_sha256": "cfedf42d7c6f5af725d9c6a78aa098948d37cf4fb67c3ae78f75a0488ff75ea8"
+  },
+  "baseline_tuning_sha256": "864a1d556eda6bf9e7d33a93624112415753a41f401121a2a5c30c552bbe1e8b",
+  "exploration": {
+    "epsilon_decay_decisions": 10000,
+    "epsilon_end": 0.05,
+    "epsilon_start": 1.0
+  },
+  "generator_config_sha256": "55eb359b6afaca87a901ce53731e5d455d8c5845c2a1f374cdcf582ed1863987",
+  "learning_seed": 11,
+  "manifest_protocol_version": 2,
+  "manifest_sha256": "75f236b330c81c5af70c62bf66393cee7c30fb1af144ef3f461e0a59e4a09154",
+  "mode": "pilot",
+  "model": {
+    "feature_dim": 12,
+    "gamma": 0.99,
+    "hidden": 128,
+    "lr": 0.0003,
+    "n_step": 3
+  },
+  "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+  "optimizer": {
+    "batch_size": 128,
+    "buffer_capacity": 200000,
+    "grad_clip": 10.0,
+    "huber_delta": 1.0,
+    "target_sync": 500,
+    "train_start": 2000
+  },
+  "reward": {
+    "downstream_block_weight": 0.2,
+    "queue_weight": 1.0,
+    "switch_penalty": 0.05
+  },
+  "run": {
+    "episodes": 12,
+    "eval_every": 4,
+    "horizon_seconds": 3600
+  },
+  "runtime": {
+    "base_image": "cityflowproject/cityflow",
+    "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "derived_image_tag": "traffic-rl-cityflow-research:v2",
+    "dockerfile": {
+      "path": "docker/cityflow-research/Dockerfile",
+      "sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf"
+    },
+    "platform": "linux/amd64"
+  },
+  "schema_version": 2,
+  "simulation": {
+    "action_interval": 10,
+    "maximum_red": 180,
+    "min_green": 20,
+    "yellow_time": 3
+  },
+  "tiers": {
+    "final": {
+      "episodes": 80,
+      "eval_every": 20,
+      "horizon_seconds": 3600
+    },
+    "pilot": {
+      "episodes": 12,
+      "eval_every": 4,
+      "horizon_seconds": 3600
+    },
+    "smoke": {
+      "episodes": 3,
+      "eval_every": 3,
+      "horizon_seconds": 120,
+      "require_optimizer_updates": true,
+      "train_start": 512
+    }
+  }
+}

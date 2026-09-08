@@ -12,6 +12,14 @@ CHECKPOINT_ELIGIBILITY_POLICY = {
 }
 
 
+def _deterministic_sum(values):
+    """Sum floats left-to-right so evidence is stable across Python runtimes."""
+    total = 0.0
+    for value in values:
+        total += value
+    return total
+
+
 def relative_regret(candidate, baseline):
     baseline = float(baseline)
     if baseline <= 0:
@@ -47,7 +55,7 @@ def score_validation(rows):
                 baseline_insertion - candidate_insertion)
 
     scenario_regrets = {
-        scenario: sum(values) / len(values)
+        scenario: _deterministic_sum(values) / len(values)
         for scenario, values in by_scenario.items()
     }
     regrets = list(scenario_regrets.values())
@@ -61,7 +69,7 @@ def score_validation(rows):
                                and all(regret <= 0.0 for regret in regrets))
     return {
         "worst_regret": max(regrets),
-        "mean_regret": sum(regrets) / len(regrets),
+        "mean_regret": _deterministic_sum(regrets) / len(regrets),
         "normal_regret": normal_regret,
         "max_completion_degradation": max_completion_degradation,
         "completion_evidence_complete": completion_evidence_complete,

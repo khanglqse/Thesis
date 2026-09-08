@@ -1,0 +1,45 @@
+{
+  "eligibility_policy": {
+    "comparison_unit": "matched_validation_case",
+    "maximum_completion_loss": 0.02,
+    "maximum_insertion_loss": 0.02,
+    "queue_regret_limit_per_regime": 0.0,
+    "required_regimes": [
+      "normal",
+      "am_peak",
+      "pm_peak"
+    ],
+    "schema_version": 2
+  },
+  "eligible_for_test_evaluation": false,
+  "score": {
+    "completion_evidence_complete": true,
+    "eligibility_policy": {
+      "comparison_unit": "matched_validation_case",
+      "maximum_completion_loss": 0.02,
+      "maximum_insertion_loss": 0.02,
+      "queue_regret_limit_per_regime": 0.0,
+      "required_regimes": [
+        "normal",
+        "am_peak",
+        "pm_peak"
+      ],
+      "schema_version": 2
+    },
+    "eligible": false,
+    "insertion_evidence_complete": true,
+    "max_completion_degradation": 0.3729535471848796,
+    "max_insertion_degradation": 0.08651670437907621,
+    "mean_regret": 2.8832862034515343,
+    "normal_regret": 4.261269135486705,
+    "scenario_regrets": {
+      "am_peak": 2.179765477705233,
+      "normal": 4.261269135486705,
+      "pm_peak": 2.208823997162665
+    },
+    "training_step": 12,
+    "worst_regret": 4.261269135486705
+  },
+  "selected_checkpoint": "step-12",
+  "status": "ineligible_negative_result"
+}

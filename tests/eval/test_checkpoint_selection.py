@@ -126,6 +126,18 @@ def test_score_averages_seeds_within_each_regime():
     assert score["eligible"] is True
 
 
+def test_validation_mean_is_stable_across_python_sum_implementations():
+    from traffic_rl.eval.checkpoint_selection import _deterministic_sum
+
+    regrets = [
+        3.5619589294679868,
+        1.7591974067585805,
+        1.7762790158116415,
+    ]
+
+    assert _deterministic_sum(regrets) / len(regrets) == 2.365811784012736
+
+
 def test_selection_minimizes_worst_regret_then_mean_then_step():
     evaluations = {
         "step-30": {"eligible": True, "worst_regret": -0.01,

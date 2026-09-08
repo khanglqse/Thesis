@@ -1,0 +1,368 @@
+{
+  "step-12": {
+    "rows": [
+      {
+        "baseline_completion": 0.7814454944762412,
+        "baseline_insertion": 1.0,
+        "baseline_queue": 1016909.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.6858778117928923,
+        "candidate_insertion": 0.9962731265805936,
+        "candidate_queue": 2083167.0,
+        "case_id": "validation_normal_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "normal",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.6819092516205068,
+        "baseline_insertion": 0.987389510901591,
+        "baseline_queue": 1598310.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.5385975250441957,
+        "candidate_insertion": 0.9680612846199175,
+        "candidate_queue": 2921546.0,
+        "case_id": "validation_am_peak_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "am_peak",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.6253872966692486,
+        "baseline_insertion": 0.9724051123160341,
+        "baseline_queue": 2418243.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.44132455460883036,
+        "candidate_insertion": 0.9390975987606507,
+        "candidate_queue": 4799691.0,
+        "case_id": "validation_pm_peak_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "pm_peak",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.771180787191461,
+        "baseline_insertion": 1.0,
+        "baseline_queue": 1126638.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.6776517678452302,
+        "candidate_insertion": 0.9958639092728485,
+        "candidate_queue": 2135677.0,
+        "case_id": "validation_normal_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "normal",
+        "sim_seed": 132
+      },
+      {
+        "baseline_completion": 0.665178046774004,
+        "baseline_insertion": 0.9641555999529909,
+        "baseline_queue": 1888024.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.4753790104595135,
+        "candidate_insertion": 0.950640498295922,
+        "candidate_queue": 3673607.0,
+        "case_id": "validation_am_peak_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "am_peak",
+        "sim_seed": 132
+      },
+      {
+        "baseline_completion": 0.6153399748525002,
+        "baseline_insertion": 0.9730147983363961,
+        "baseline_queue": 2607341.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.41106489989360673,
+        "candidate_insertion": 0.9500918850952703,
+        "candidate_queue": 5425104.0,
+        "case_id": "validation_pm_peak_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "pm_peak",
+        "sim_seed": 132
+      }
+    ],
+    "score": {
+      "completion_evidence_complete": true,
+      "eligibility_policy": {
+        "comparison_unit": "matched_validation_case",
+        "maximum_completion_loss": 0.02,
+        "maximum_insertion_loss": 0.02,
+        "queue_regret_limit_per_regime": 0.0,
+        "required_regimes": [
+          "normal",
+          "am_peak",
+          "pm_peak"
+        ],
+        "schema_version": 2
+      },
+      "eligible": false,
+      "insertion_evidence_complete": true,
+      "max_completion_degradation": 0.20427507495889352,
+      "max_insertion_degradation": 0.03330751355538342,
+      "mean_regret": 0.9638791166942493,
+      "normal_regret": 0.9720739831228552,
+      "scenario_regrets": {
+        "am_peak": 0.8868193258287832,
+        "normal": 0.9720739831228552,
+        "pm_peak": 1.0327440411311095
+      },
+      "training_step": 12,
+      "worst_regret": 1.0327440411311095
+    }
+  },
+  "step-4": {
+    "rows": [
+      {
+        "baseline_completion": 0.7814454944762412,
+        "baseline_insertion": 1.0,
+        "baseline_queue": 1016909.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.4802342606149341,
+        "candidate_insertion": 0.9351790230267536,
+        "candidate_queue": 4469988.0,
+        "case_id": "validation_normal_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "normal",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.6819092516205068,
+        "baseline_insertion": 0.987389510901591,
+        "baseline_queue": 1598310.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.41555686505598116,
+        "candidate_insertion": 0.9450795521508545,
+        "candidate_queue": 4589807.0,
+        "case_id": "validation_am_peak_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "am_peak",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.6253872966692486,
+        "baseline_insertion": 0.9724051123160341,
+        "baseline_queue": 2418243.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.3416924864446166,
+        "candidate_insertion": 0.9090821068938807,
+        "candidate_queue": 6879753.0,
+        "case_id": "validation_pm_peak_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "pm_peak",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.771180787191461,
+        "baseline_insertion": 1.0,
+        "baseline_queue": 1126638.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.41214142761841227,
+        "candidate_insertion": 0.9338225483655771,
+        "candidate_queue": 5327033.0,
+        "case_id": "validation_normal_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "normal",
+        "sim_seed": 132
+      },
+      {
+        "baseline_completion": 0.665178046774004,
+        "baseline_insertion": 0.9641555999529909,
+        "baseline_queue": 1888024.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.3826536608297097,
+        "candidate_insertion": 0.9297214713832412,
+        "candidate_queue": 4997094.0,
+        "case_id": "validation_am_peak_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "am_peak",
+        "sim_seed": 132
+      },
+      {
+        "baseline_completion": 0.6153399748525002,
+        "baseline_insertion": 0.9730147983363961,
+        "baseline_queue": 2607341.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.3376535448302544,
+        "candidate_insertion": 0.9158525969629558,
+        "candidate_queue": 7059687.0,
+        "case_id": "validation_pm_peak_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "pm_peak",
+        "sim_seed": 132
+      }
+    ],
+    "score": {
+      "completion_evidence_complete": true,
+      "eligibility_policy": {
+        "comparison_unit": "matched_validation_case",
+        "maximum_completion_loss": 0.02,
+        "maximum_insertion_loss": 0.02,
+        "queue_regret_limit_per_regime": 0.0,
+        "required_regimes": [
+          "normal",
+          "am_peak",
+          "pm_peak"
+        ],
+        "schema_version": 2
+      },
+      "eligible": false,
+      "insertion_evidence_complete": true,
+      "max_completion_degradation": 0.3590393595730487,
+      "max_insertion_degradation": 0.0661774516344229,
+      "mean_regret": 2.365811784012736,
+      "normal_regret": 3.5619589294679868,
+      "scenario_regrets": {
+        "am_peak": 1.7591974067585805,
+        "normal": 3.5619589294679868,
+        "pm_peak": 1.7762790158116415
+      },
+      "training_step": 4,
+      "worst_regret": 3.5619589294679868
+    }
+  },
+  "step-8": {
+    "rows": [
+      {
+        "baseline_completion": 0.7814454944762412,
+        "baseline_insertion": 1.0,
+        "baseline_queue": 1016909.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.4992679355783309,
+        "candidate_insertion": 0.9338479968055371,
+        "candidate_queue": 4142015.0,
+        "case_id": "validation_normal_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "normal",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.6819092516205068,
+        "baseline_insertion": 0.987389510901591,
+        "baseline_queue": 1598310.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.4441956393635828,
+        "candidate_insertion": 0.9363582793164408,
+        "candidate_queue": 4051899.0,
+        "case_id": "validation_am_peak_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "am_peak",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.6253872966692486,
+        "baseline_insertion": 0.9724051123160341,
+        "baseline_queue": 2418243.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.38661890007745936,
+        "candidate_insertion": 0.9273818745158792,
+        "candidate_queue": 5928434.0,
+        "case_id": "validation_pm_peak_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "pm_peak",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.771180787191461,
+        "baseline_insertion": 1.0,
+        "baseline_queue": 1126638.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.5174116077384924,
+        "candidate_insertion": 0.9734489659773182,
+        "candidate_queue": 3857227.0,
+        "case_id": "validation_normal_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "normal",
+        "sim_seed": 132
+      },
+      {
+        "baseline_completion": 0.665178046774004,
+        "baseline_insertion": 0.9641555999529909,
+        "baseline_queue": 1888024.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.45410741567751794,
+        "candidate_insertion": 0.9431190504172053,
+        "candidate_queue": 4022964.0,
+        "case_id": "validation_am_peak_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "am_peak",
+        "sim_seed": 132
+      },
+      {
+        "baseline_completion": 0.6153399748525002,
+        "baseline_insertion": 0.9730147983363961,
+        "baseline_queue": 2607341.0,
+        "baseline_source": "precomputed_tuning",
+        "candidate_completion": 0.3426830447818938,
+        "candidate_insertion": 0.9140148950575491,
+        "candidate_queue": 6751961.0,
+        "case_id": "validation_pm_peak_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": false,
+        "fresh_candidate": true,
+        "scenario": "pm_peak",
+        "sim_seed": 132
+      }
+    ],
+    "score": {
+      "completion_evidence_complete": true,
+      "eligibility_policy": {
+        "comparison_unit": "matched_validation_case",
+        "maximum_completion_loss": 0.02,
+        "maximum_insertion_loss": 0.02,
+        "queue_regret_limit_per_regime": 0.0,
+        "required_regimes": [
+          "normal",
+          "am_peak",
+          "pm_peak"
+        ],
+        "schema_version": 2
+      },
+      "eligible": false,
+      "insertion_evidence_complete": true,
+      "max_completion_degradation": 0.28217755889791035,
+      "max_insertion_degradation": 0.0661520031944629,
+      "mean_regret": 1.8673067977085516,
+      "normal_regret": 2.7484018045825094,
+      "scenario_regrets": {
+        "am_peak": 1.3329473534936804,
+        "normal": 2.7484018045825094,
+        "pm_peak": 1.5205712350494651
+      },
+      "training_step": 8,
+      "worst_regret": 2.7484018045825094
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "artifact_sha256": {
+    "baseline-tuning-provenance.json": "cfedf42d7c6f5af725d9c6a78aa098948d37cf4fb67c3ae78f75a0488ff75ea8",
+    "baseline-tuning.json": "fec62a7421f2a7cf6512a74aff41dfb470c89eac354ea2f1e9efe793135d145e",
+    "checkpoint/contract.json": "e1e8e05c6c9ee50cbb8ccc7e3d033bb26762111a1c2a7e17290e8ce1bd84a083",
+    "checkpoint/weights.npz": "e8994ea34a0913901853467b65733870c0095d3b325901313a5d07550f7a462e",
+    "replay-coverage.json": "cc71ccbc4e673209ed48ee1abb4393f0397b9f0d2b25f8edcf017b7579d68437",
+    "resolved-config.json": "5c6600fa61e8e7cf29c87edc431b314c5decf67c5c931e4fdd83e917a8b04346",
+    "run-manifest.json": "2aeb15a99b7d10d6c69e8e895ab50fa0664ba16cabfc8373e1c7b98f58599487",
+    "selection.json": "949cf677e21e5cc346910c99e32919e7d55ba3a0f65d7357ac0a567f0397b36c",
+    "summary.json": "8561c7b6ea0f2428ecf40296cd932dc4e804a58e4aee724898ac8a143ac3c8c1",
+    "train-log.json": "9a64861d1716d130b01e28b0e1ebe2c2551013ec6ec47d41451337f50c748345",
+    "validation.json": "90f601e9fae9691ffe76da09b373a44a73aaeb241059c0092917e7e517400f97"
+  },
+  "eligible_for_test_evaluation": false,
+  "status": "ineligible"
+}

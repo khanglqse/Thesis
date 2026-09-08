@@ -1,0 +1,88 @@
+{
+  "baseline_tuning_wall_time_seconds": 0.0,
+  "checkpoint_eligibility_policy": {
+    "comparison_unit": "matched_validation_case",
+    "maximum_completion_loss": 0.02,
+    "maximum_insertion_loss": 0.02,
+    "queue_regret_limit_per_regime": 0.0,
+    "required_regimes": [
+      "normal",
+      "am_peak",
+      "pm_peak"
+    ],
+    "schema_version": 2
+  },
+  "checkpoint_reload": {
+    "case_id": "validation_normal_demand31",
+    "completed_steps": 3600,
+    "queue_integral_vehicle_seconds": 2083167.0
+  },
+  "decisions": 4320,
+  "episode_agent_counts": [
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53
+  ],
+  "episode_regimes": [
+    "normal",
+    "pm_peak",
+    "am_peak",
+    "normal",
+    "pm_peak",
+    "am_peak",
+    "pm_peak",
+    "am_peak",
+    "normal",
+    "normal",
+    "am_peak",
+    "pm_peak"
+  ],
+  "foundation_verification_wall_time_seconds": 114.75126051902771,
+  "measured_scope": "foundation_verification_through_artifact_verification",
+  "selected_checkpoint": "step-12",
+  "selected_validation_score": {
+    "completion_evidence_complete": true,
+    "eligibility_policy": {
+      "comparison_unit": "matched_validation_case",
+      "maximum_completion_loss": 0.02,
+      "maximum_insertion_loss": 0.02,
+      "queue_regret_limit_per_regime": 0.0,
+      "required_regimes": [
+        "normal",
+        "am_peak",
+        "pm_peak"
+      ],
+      "schema_version": 2
+    },
+    "eligible": false,
+    "insertion_evidence_complete": true,
+    "max_completion_degradation": 0.20427507495889352,
+    "max_insertion_degradation": 0.03330751355538342,
+    "mean_regret": 0.9638791166942493,
+    "normal_regret": 0.9720739831228552,
+    "scenario_regrets": {
+      "am_peak": 0.8868193258287832,
+      "normal": 0.9720739831228552,
+      "pm_peak": 1.0327440411311095
+    },
+    "training_step": 12,
+    "worst_regret": 1.0327440411311095
+  },
+  "selection_status": "ineligible_negative_result",
+  "simulated_seconds": 43200.0,
+  "simulated_seconds_per_second": 6.240625086980871,
+  "training_and_validation_wall_time_seconds": 6806.10377907753,
+  "updates": 4281,
+  "updates_per_second": 0.6184286110501183,
+  "validation_wall_time_seconds": 3529.868984937668,
+  "wall_time_seconds": 6922.383478879929
+}
