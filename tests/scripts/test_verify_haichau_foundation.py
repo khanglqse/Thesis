@@ -509,7 +509,7 @@ def test_committed_clean_checkout_foundation_evidence():
         "make haichau-smoke",
     }
     assert all(record["exit_code"] == 0 for record in commands.values())
-    assert "165 passed, 1 deselected" in commands["make test"]["output_summary"]
+    assert "174 passed, 1 deselected" in commands["make test"]["output_summary"]
     assert commands[
         "PYTHONPATH=src python3 scripts/verify_haichau_foundation.py"
     ]["output"]["status"] == "verified"
