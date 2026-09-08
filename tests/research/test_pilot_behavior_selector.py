@@ -241,9 +241,7 @@ def test_selects_best_hash_bound_behavior_arm_and_writes_final_config(tmp_path):
 
 @pytest.mark.parametrize("mutation, message", [
     ("nonraw", "raw_ddqn_greedy"),
-    ("normal_regression", "normal case"),
     ("bad_training_source", "training source"),
-    ("low_disagreement", "reference disagreement"),
     ("stale_commit", "provenance"),
 ])
 def test_rejects_invalid_behavior_arm_evidence(tmp_path, mutation, message):
@@ -251,20 +249,11 @@ def test_rejects_invalid_behavior_arm_evidence(tmp_path, mutation, message):
 
     root, spec = _fixture(tmp_path)
     run_dir = root / "training/pilot-bc_prior-seed11"
-    if mutation in ("nonraw", "normal_regression", "low_disagreement"):
+    if mutation == "nonraw":
         path = run_dir / "validation.json"
         validation = json.loads(path.read_text())
         for evidence in validation.values():
-            if mutation == "nonraw":
-                evidence["rows"][0]["policy_audit"]["evaluation_policy"] = "reference"
-            elif mutation == "normal_regression":
-                for row in evidence["rows"]:
-                    if row["scenario"] == "normal":
-                        row["candidate_queue"] = 101.0
-            else:
-                for row in evidence["rows"]:
-                    row["policy_audit"]["reference_disagreement_rate"] = 0.0
-                    row["policy_audit"]["reference_disagreements"] = 0
+            evidence["rows"][0]["policy_audit"]["evaluation_policy"] = "reference"
             score = score_validation(evidence["rows"])
             score["training_step"] = evidence["score"]["training_step"]
             evidence["score"] = score
@@ -288,6 +277,52 @@ def test_rejects_invalid_behavior_arm_evidence(tmp_path, mutation, message):
 
     with pytest.raises(ValueError, match=message):
         select_from_spec(root, root / "spec.yaml")
+
+
+def test_scientific_gate_failure_demotes_arm_instead_of_rejecting_evidence(tmp_path):
+    from traffic_rl.research.pilot_behavior_selector import select_from_spec
+
+    root, _ = _fixture(tmp_path)
+    run_dir = root / "training/pilot-bc_only-seed11"
+    path = run_dir / "validation.json"
+    validation = json.loads(path.read_text())
+    for evidence in validation.values():
+        for row in evidence["rows"]:
+            row["policy_audit"]["reference_disagreement_rate"] = 0.0
+            row["policy_audit"]["reference_disagreements"] = 0
+    _write(path, validation)
+    _refresh_status(run_dir)
+
+    decision = select_from_spec(root, root / "spec.yaml")
+
+    assert decision["arms"]["bc_only"]["eligible"] is False
+    assert decision["winner"]["arm"] == "bc_prior"
+
+
+def test_early_checkpoint_failure_does_not_hide_later_eligible_checkpoint(tmp_path):
+    from traffic_rl.research.pilot_behavior_selector import select_from_spec
+
+    root, _ = _fixture(tmp_path)
+    run_dir = root / "training/pilot-bc_only-seed11"
+    path = run_dir / "validation.json"
+    validation = json.loads(path.read_text())
+    for row in validation["step-4"]["rows"]:
+        if row["scenario"] == "normal":
+            row["candidate_queue"] = 101.0
+    score = score_validation(validation["step-4"]["rows"])
+    score["training_step"] = 4
+    validation["step-4"]["score"] = score
+    _write(path, validation)
+    selection = json.loads((run_dir / "selection.json").read_text())
+    selection["selected_checkpoint"] = "step-8"
+    selection["score"] = validation["step-8"]["score"]
+    _write(run_dir / "selection.json", selection)
+    _refresh_status(run_dir)
+
+    decision = select_from_spec(root, root / "spec.yaml")
+
+    assert decision["arms"]["bc_only"]["selected_checkpoint"] == "step-8"
+    assert decision["winner"]["arm"] == "bc_only"
 
 
 def test_fails_closed_when_no_arm_passes_selection(tmp_path):

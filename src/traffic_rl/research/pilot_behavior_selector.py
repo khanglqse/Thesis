@@ -295,6 +295,7 @@ def _validation_quality(rows, baseline_rows, minimum_disagreement):
         raise ValueError("validation evidence must contain exactly six registered rows")
     eligible, disagreements = 0, 0
     normal_gate = []
+    per_case_safety = []
     for row in rows:
         baseline = baseline_rows[row["case_id"]]
         expected = {
@@ -322,18 +323,21 @@ def _validation_quality(rows, baseline_rows, minimum_disagreement):
                              "candidate completion", 0.0, 1.0)
         insertion = _number(row.get("candidate_insertion"),
                             "candidate insertion", 0.0, 1.0)
-        if (float(row["baseline_completion"]) - completion > 0.02
-                or float(row["baseline_insertion"]) - insertion > 0.02):
-            raise ValueError("per-case completion or insertion gate failed")
+        safety_passed = bool(
+            float(row["baseline_completion"]) - completion <= 0.02
+            and float(row["baseline_insertion"]) - insertion <= 0.02)
+        per_case_safety.append({"case_id": row["case_id"],
+                                "passed": safety_passed})
         if row["scenario"] == "normal":
             passed = float(row["candidate_queue"]) <= float(row["baseline_queue"])
             normal_gate.append({"case_id": row["case_id"], "passed": passed})
-            if not passed:
-                raise ValueError("normal case queue exceeds its matched baseline")
     rate = float(disagreements) / eligible if eligible else 0.0
-    if rate < minimum_disagreement:
-        raise ValueError("reference disagreement rate is below the configured minimum")
-    return rate, normal_gate
+    return {
+        "reference_disagreement_rate": rate,
+        "reference_disagreement_gate": rate >= minimum_disagreement,
+        "strict_normal_case_gate": normal_gate,
+        "per_case_safety_gate": per_case_safety,
+    }
 
 
 def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
@@ -387,7 +391,7 @@ def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
         evidence = validation.get(checkpoint)
         if not isinstance(evidence, dict) or not isinstance(evidence.get("rows"), list):
             raise ValueError("%s validation evidence is malformed" % arm)
-        rate, normal_gate = _validation_quality(
+        checkpoint_quality = _validation_quality(
             evidence["rows"], baseline_rows, minimum)
         score = score_validation(evidence["rows"])
         reported = evidence.get("score")
@@ -397,10 +401,7 @@ def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
         if score != reported:
             raise ValueError("%s validation score was not recomputed from rows" % arm)
         scores[checkpoint] = score
-        quality[checkpoint] = {
-            "reference_disagreement_rate": rate,
-            "strict_normal_case_gate": normal_gate,
-        }
+        quality[checkpoint] = checkpoint_quality
     selection = _json(run_dir / "selection.json", arm + " selection")
     if selection.get("eligibility_policy") != CHECKPOINT_ELIGIBILITY_POLICY:
         raise ValueError("%s checkpoint eligibility policy drift" % arm)
@@ -423,9 +424,25 @@ def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
           or status.get("status") != "ineligible"
           or status.get("eligible_for_test_evaluation") is not False):
         raise ValueError("%s ineligible pilot status drift" % arm)
+    qualified = []
+    for checkpoint in _CHECKPOINTS:
+        checkpoint_quality = quality[checkpoint]
+        if (scores[checkpoint].get("eligible")
+                and checkpoint_quality["reference_disagreement_gate"]
+                and all(item["passed"] for item in
+                        checkpoint_quality["strict_normal_case_gate"])
+                and all(item["passed"] for item in
+                        checkpoint_quality["per_case_safety_gate"])):
+            qualified.append(checkpoint)
+    eligible = bool(qualified)
+    if eligible:
+        selected = min(
+            qualified,
+            key=lambda checkpoint: (
+                float(scores[checkpoint]["worst_regret"]),
+                float(scores[checkpoint]["mean_regret"]),
+                int(scores[checkpoint]["training_step"])))
     selected_quality = quality[selected]
-    eligible = bool(score_eligible and all(
-        item["passed"] for item in selected_quality["strict_normal_case_gate"]))
     return {
         "eligible": eligible,
         "selected_checkpoint": selected,
@@ -433,7 +450,10 @@ def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
                         scores[selected]["training_step"], arm] if eligible else None),
         "score": scores[selected],
         "reference_disagreement_rate": selected_quality["reference_disagreement_rate"],
+        "reference_disagreement_gate": selected_quality[
+            "reference_disagreement_gate"],
         "strict_normal_case_gate": selected_quality["strict_normal_case_gate"],
+        "per_case_safety_gate": selected_quality["per_case_safety_gate"],
         "run_dir": str(run_dir.relative_to(root)),
         "artifacts": dict((name, sha256_file(run_dir / name)) for name in names),
     }
