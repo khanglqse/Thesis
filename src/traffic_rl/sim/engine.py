@@ -55,7 +55,9 @@ class CityFlowEngine(object):
 
     def vehicle_ids(self):
         # type: () -> list
-        return list(self._eng.get_vehicles(True))
+        # ``include_waiting=True`` also returns demand waiting outside an entry
+        # lane.  Those vehicles have not been inserted and belong in ``pending``.
+        return list(self._eng.get_vehicles(False))
 
     def network_metric_snapshot(self, lane_to_node=None, spillback_lanes=None,
                                 phase_switches=0, intergreen_seconds=0,
