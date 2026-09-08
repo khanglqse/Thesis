@@ -164,6 +164,59 @@ until the network, split, ten learned checkpoint bundles (two controller familie
 seeds), fresh matched runs, statistics, paper, offline demo and clean-checkout record are all
 hash-valid.
 
+### Pre-final Hai Chau capacity calibration
+
+Before final learning, prepare and run the pre-registered validation-only capacity checks.
+Preparation is the CLI default and does not import or start CityFlow:
+
+```sh
+PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py \
+  --stage scale1 \
+  --output results/haichau_network_v2/diagnostics/capacity-scale1
+PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py \
+  --stage ladder \
+  --output results/haichau_network_v2/diagnostics/capacity-ladder
+```
+
+Execute those immutable inputs in the pinned research image. Repeating either command resumes
+only missing or failed runs after checking all bound hashes:
+
+```sh
+docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
+  traffic-rl-cityflow-research:v2 sh -lc \
+  'PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py --stage scale1 --output results/haichau_network_v2/diagnostics/capacity-scale1 --execute'
+docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
+  traffic-rl-cityflow-research:v2 sh -lc \
+  'PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py --stage ladder --output results/haichau_network_v2/diagnostics/capacity-ladder --execute'
+```
+
+After reviewing only the ladder's validation diagnostics, prepare stage D with one or more of
+the registered scales `0.25`, `0.30`, and `0.35`. This exact example advances `0.25` and
+`0.30`; replace both occurrences together if the recorded validation decision selects a
+different registered set:
+
+```sh
+PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py \
+  --stage stage-d --chosen-scales 0.25,0.30 \
+  --output results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030
+docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
+  traffic-rl-cityflow-research:v2 sh -lc \
+  'PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py --stage stage-d --chosen-scales 0.25,0.30 --output results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030 --execute'
+```
+
+The optional extended drain probe is a separate immutable stage directory:
+
+```sh
+docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
+  traffic-rl-cityflow-research:v2 sh -lc \
+  'PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py --stage scale1 --drain-horizon 7200 --output results/haichau_network_v2/diagnostics/capacity-scale1-drain7200 --execute'
+```
+
+Every output is marked diagnostic and ineligible for release or test evaluation. The runner
+filters the case manifest to the six validation records before opening flows; it never reads
+the test flow paths. Passing calibration authorizes a later pre-final scale decision, not a
+thesis result by itself.
+
 The verifier recomputes the numeric summary and acceptance decision from the hash-verified
 run metrics. It also requires exact frozen run identity (flow hash, simulator seed,
 checkpoint, code commit, inspected Docker image and resolved config). Each learned family
