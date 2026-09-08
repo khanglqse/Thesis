@@ -73,7 +73,8 @@ def _runner(root, bad_binding=False):
         for duration in config["baseline"]["search_green_durations"]:
             rows = [{"case_id": case["case_id"], "scenario": case["scenario"],
                      "queue_integral_vehicle_seconds": float(duration),
-                     "completion_rate": 1.0} for case in validation]
+                     "completion_rate": 1.0,
+                     "insertion_rate": 1.0} for case in validation]
             candidates.append({
                 "fixed_green_duration": duration,
                 "mean_queue_integral_vehicle_seconds": float(duration),

@@ -40,7 +40,8 @@ def _inputs(tmp_path):
               "baseline": {"controller": "validation_tuned_fixed",
                            "search_green_durations": [30]}}
     rows = [{"case_id": c["case_id"], "scenario": c["scenario"],
-             "queue_integral_vehicle_seconds": 10000., "completion_rate": 0.5}
+             "queue_integral_vehicle_seconds": 10000., "completion_rate": 0.5,
+             "insertion_rate": 1.0}
             for c in cases]
     tuning = {"schema_version": 1, "method": "validation_grid_search",
               "binding": _tuning_binding(manifest, cases, 3600, config),
