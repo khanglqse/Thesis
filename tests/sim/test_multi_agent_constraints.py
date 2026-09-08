@@ -1,0 +1,98 @@
+import json
+
+import numpy as np
+
+from traffic_rl.network.roadnet import RoadNet
+from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
+from traffic_rl.sim.phase_encoder import PhaseFeatureEncoder
+from tests.conftest import FakeEngine
+
+
+def _roadnet(tmp_path):
+    data = {
+        "intersections": [{
+            "id": "A", "virtual": False, "roads": ["rin", "rout"],
+            "roadLinks": [
+                {"startRoad": "rin", "endRoad": "rout",
+                 "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}]},
+                {"startRoad": "rin", "endRoad": "rout",
+                 "laneLinks": [{"startLaneIndex": 1, "endLaneIndex": 0}]},
+            ],
+            "trafficLight": {"lightphases": [
+                {"availableRoadLinks": [0]}, {"availableRoadLinks": []},
+                {"availableRoadLinks": [1]},
+            ]},
+        }],
+        "roads": [
+            {"id": "rin", "startIntersection": "in", "endIntersection": "A",
+             "lanes": [{}, {}]},
+            {"id": "rout", "startIntersection": "A", "endIntersection": "out",
+             "lanes": [{}]},
+        ],
+    }
+    path = tmp_path / "roadnet.json"
+    path.write_text(json.dumps(data))
+    return RoadNet.load(str(path))
+
+
+def _env(tmp_path, **kwargs):
+    roadnet = _roadnet(tmp_path)
+    engine = FakeEngine(
+        vehicle_counts={"rin_0": 3, "rin_1": 2, "rout_0": 0},
+        waiting_counts={"rin_0": 3, "rin_1": 2, "rout_0": 0})
+    defaults = {"action_interval": 10, "yellow_time": 3, "min_green": 0,
+                "maximum_red": 180, "switch_penalty": 0.05}
+    defaults.update(kwargs)
+    return MultiAgentTrafficEnv(roadnet, engine, **defaults)
+
+
+def test_hold_action_has_no_clearance_or_switch_penalty(tmp_path):
+    env = _env(tmp_path)
+    env.reset()
+    _, rewards, _, info = env.step({"A": 0})
+
+    assert rewards["A"] == -5.0
+    assert info["phase_switches"] == 0
+    assert info["intergreen_vehicle_seconds"] == 0
+
+
+def test_maximum_red_mask_forces_overdue_phase(tmp_path):
+    env = _env(tmp_path)
+    env.reset()
+    env._time_since_service["A"] = [0, 181]
+
+    assert env.action_masks()["A"].tolist() == [False, True]
+
+
+def test_minimum_green_mask_allows_only_current_phase(tmp_path):
+    env = _env(tmp_path, min_green=20)
+    env.reset()
+
+    assert env.action_masks()["A"].tolist() == [True, False]
+
+
+def test_switch_counts_clearance_once_and_updates_service_timers(tmp_path):
+    env = _env(tmp_path)
+    env.reset()
+    observations, rewards, _, info = env.step({"A": 1})
+
+    assert info["phase_switches"] == 1
+    assert info["intergreen_vehicle_seconds"] == 3.0
+    assert rewards["A"] == -5.05
+    assert env._time_since_service["A"] == [10.0, 0.0]
+    assert info["max_red_seconds"] == 10.0
+    assert info["per_agent_queue"] == {"A": 5.0}
+    assert observations["A"].ndim == 1
+
+
+def test_injected_phase_encoder_produces_phase_rows(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    encoder = PhaseFeatureEncoder(roadnet, count_norm=20.0, capacity_norm=40.0)
+    env = MultiAgentTrafficEnv(roadnet, FakeEngine(), encoder=encoder,
+                               action_interval=1, min_green=0)
+
+    observations = env.reset()
+
+    assert observations["A"].shape == (2, 12)
+    np.testing.assert_array_equal(env.action_masks()["A"], [True, True])
+

@@ -9,7 +9,7 @@
 ## Task status
 
 - [x] Task 1: phase-centric neighbor encoder
-- [ ] Task 2: signal constraints, switch cost, service timers
+- [x] Task 2: signal constraints, switch cost, service timers
 - [ ] Task 3: phase-scoring Double DQN and checkpoint contract
 - [ ] Task 4: balanced case sampler and replay
 - [ ] Task 5: validation regret and non-inferiority selection
@@ -20,6 +20,8 @@
 - Baseline: `PYTHONPATH=src pytest -q` -> 110 passed, 1 failed because Git-ignore `data/danang/roadnet_haichau.json` is absent from this worktree.
 - Task 1 RED: `PYTHONPATH=src pytest tests/sim/test_phase_encoder.py -v` -> collection failed with expected `ModuleNotFoundError: traffic_rl.sim.phase_encoder`.
 - Task 1 GREEN: `PYTHONPATH=src pytest tests/sim/test_phase_encoder.py tests/sim/test_encoder.py tests/network/test_roadnet_phases.py -v` -> 11 passed.
+- Task 2 RED: `PYTHONPATH=src pytest tests/sim/test_multi_agent_constraints.py -v` -> 5 expected failures because the constructor did not accept `maximum_red`/`encoder`.
+- Task 2 GREEN: `PYTHONPATH=src pytest tests/sim/test_multi_agent_constraints.py tests/sim/test_multi_agent_env.py tests/sim/test_intersection.py -v` -> 19 passed.
 
 ## Runtime evidence
 
