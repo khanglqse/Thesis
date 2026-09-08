@@ -39,4 +39,3 @@ test("paired replay selection requires one matched case", () => {
     entries[0], { ...entries[1], case_id: "c2" },
   ]), /matched case/);
 });
-

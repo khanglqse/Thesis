@@ -88,4 +88,3 @@ def test_artifacts_record_exact_summary_hash_and_command(tmp_path):
         (tmp_path / "paired-queue-difference.png.provenance.json").read_text())
     assert sidecar["summary_sha256"] == written["summary_sha256"]
     assert sidecar["generation_command"] == "build-test"
-

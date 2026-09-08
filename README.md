@@ -10,7 +10,23 @@ and **Random** baselines across a spectrum of demand regimes.
 > **Full write-up:** `paper/trafic_rf.tex` (Chapter 4 = experiments & results).
 > **Scenario framing & honest numbers:** `docs/scenario_regimes.md`.
 
-## Headline finding
+## Evidence namespaces
+
+The checked-in results described below are the legacy study. They remain available for
+reproduction and defense use, but they do not count as evidence for the new 53-signal
+neighbor-aware DDQN extension.
+
+The extension uses the separate `haichau_network_v2` namespace. Its demand label is always
+**synthetic network demand constrained by Da Nang evidence**. A result becomes releasable
+only when `scripts/verify_haichau_thesis.py` reports `"complete": true`; a failed acceptance
+outcome is still reported as a valid negative result once every evidence gate is complete.
+At present the final five-seed checkpoints, frozen case manifest and fresh campaign have to
+be supplied by the foundation/model pipeline before that verifier can pass.
+
+The exact campaign, thesis, offline-demo and clean-checkout procedure is in
+`docs/defense/demo-runbook.md`.
+
+## Legacy-study headline finding
 
 The learned controller's advantage tracks **network saturation**, and we report the whole
 spectrum rather than a single flattering point:
@@ -76,7 +92,7 @@ All simulator work runs inside the container through one wrapper:
 make cf-run CMD="PYTHONPATH=src python3 scripts/<script>.py <args>"
 ```
 
-## Reproduce the results
+## Reproduce the legacy results
 
 Scenarios live in `data/danang/` as `roadnet_<scen>.json` + `flow_<scen>.json`
 (`haichau_rush`, `haichau_calib`, `haichau_peak`, `haichau`). Each result is written to
@@ -113,7 +129,7 @@ make cf-run CMD="PYTHONPATH=src python3 scripts/run_robustness.py haichau_rush"
 make cf-run CMD="PYTHONPATH=src python3 scripts/run_agreement.py haichau_rush"
 ```
 
-## Live demo
+## Legacy live demo
 
 A browser demo replays recorded episodes and lets you switch (scenario × controller) live,
 with an always-on projector-legible HUD and a cumulative-waiting scoreboard.
@@ -133,6 +149,16 @@ count vs the real Đà Nẵng fleet: `docs/danang_peak_demo_scenario.md`.
 make test        # host unit tests (no CityFlow needed): pytest -m 'not docker'
 make cf-test     # engine integration tests inside the CityFlow container
 ```
+
+The fail-closed audit for the 53-signal extension is:
+
+```sh
+PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
+```
+
+It writes `results/haichau_network_v2/verification/final-report.json` and exits nonzero
+until the network, split, five checkpoints, fresh matched runs, statistics, paper, offline
+demo and clean-checkout record are all hash-valid.
 
 ## Scope: validated vs proposed
 

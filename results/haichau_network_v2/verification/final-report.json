@@ -1,0 +1,87 @@
+{
+  "complete": false,
+  "failed_gates": [
+    "network_53_signals",
+    "thirty_case_split",
+    "runtime_pinned",
+    "five_learning_seeds",
+    "fresh_matched_runs",
+    "scenario_coverage",
+    "horizon_complete",
+    "hierarchical_statistics",
+    "acceptance_reported",
+    "thesis_artifacts",
+    "offline_demo",
+    "clean_checkout"
+  ],
+  "gates": {
+    "acceptance_reported": {
+      "detail": "frozen summary.json is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "clean_checkout": {
+      "detail": "clean-checkout verification record is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "five_learning_seeds": {
+      "detail": "five validation-eligible checkpoint contracts are required",
+      "evidence": {
+        "checkpoints": [],
+        "seeds": []
+      },
+      "passed": false
+    },
+    "fresh_matched_runs": {
+      "detail": "campaign verification failed: campaign-manifest.json is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "hierarchical_statistics": {
+      "detail": "frozen summary.json is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "horizon_complete": {
+      "detail": "campaign verification failed: campaign-manifest.json is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "network_53_signals": {
+      "detail": "frozen-protocol.json is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "offline_demo": {
+      "detail": "offline demo manifest is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "runtime_pinned": {
+      "detail": "CityFlow runtime must use a full sha256 digest",
+      "evidence": {
+        "runtime_digest": ""
+      },
+      "passed": false
+    },
+    "scenario_coverage": {
+      "detail": "campaign verification failed: campaign-manifest.json is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "thesis_artifacts": {
+      "detail": "summary-derived thesis manifest/PDF is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "thirty_case_split": {
+      "detail": "frozen-protocol.json is missing",
+      "evidence": {},
+      "passed": false
+    }
+  },
+  "generated_at": "2026-09-08T05:54:08.921027+00:00",
+  "protocol_path": "results/haichau_network_v2/final/frozen-protocol.json",
+  "verification_version": 2
+}

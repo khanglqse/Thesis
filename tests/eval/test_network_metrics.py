@@ -126,6 +126,27 @@ def test_engine_snapshot_groups_lane_queues_without_advancing_simulator():
     assert engine._eng.steps == 0
 
 
+def test_engine_snapshot_accepts_environment_vehicle_accounting():
+    class NativeEngine(object):
+        def get_lane_waiting_vehicle_count(self):
+            return {}
+
+        def get_vehicle_count(self):
+            return 3
+
+        def get_finished_vehicle_count(self):
+            return 6
+
+    engine = CityFlowEngine.__new__(CityFlowEngine)
+    engine._eng = NativeEngine()
+
+    result = engine.network_metric_snapshot(departed=12, arrived=6)
+
+    assert result["departed"] == 12
+    assert result["arrived"] == 6
+    assert result["running"] == 3
+
+
 def test_runner_preserves_complete_network_metric_contract():
     final_metrics = {
         "observed_steps": 2,

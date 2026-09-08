@@ -50,8 +50,16 @@ class CityFlowEngine(object):
 
     def network_metric_snapshot(self, lane_to_node=None, spillback_lanes=None,
                                 phase_switches=0, intergreen_seconds=0,
-                                max_red_seconds=0, travel_times=None):
-        """Return plain metric inputs without advancing or mutating CityFlow."""
+                                max_red_seconds=0, travel_times=None,
+                                departed=None, arrived=None):
+        """Return plain metric inputs without advancing or mutating CityFlow.
+
+        CityFlow itself exposes current and finished vehicle counts but not the
+        environment's full scheduled/departed accounting.  The default therefore
+        reports vehicles observed in the network (running + finished).  A campaign
+        environment that tracks unreleased or otherwise censored demand must pass
+        its authoritative ``departed`` and ``arrived`` counters explicitly.
+        """
         waiting = self.lane_waiting_counts()
         per_node = {}
         for lane_id, node_id in (lane_to_node or {}).items():
@@ -59,11 +67,13 @@ class CityFlowEngine(object):
                 waiting.get(lane_id, 0))
         running = self.vehicle_count()
         get_finished = getattr(self._eng, "get_finished_vehicle_count", None)
-        arrived = int(get_finished()) if get_finished is not None else 0
+        native_arrived = int(get_finished()) if get_finished is not None else 0
+        arrived = native_arrived if arrived is None else int(arrived)
+        departed = running + arrived if departed is None else int(departed)
         return {
             "queued": float(sum(waiting.values())),
             "running": running,
-            "departed": running + arrived,
+            "departed": departed,
             "arrived": arrived,
             "travel_times": list(travel_times or []),
             "per_node_queue": per_node,
