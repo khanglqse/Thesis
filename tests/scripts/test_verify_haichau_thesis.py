@@ -920,6 +920,49 @@ def test_rehashed_demo_replay_still_must_match_verified_run(tmp_path):
     assert "verified run" in report["gates"]["offline_demo"]["detail"]
 
 
+@pytest.mark.parametrize("field, forged", [
+    ("checkpoint_path", "checkpoints/forged.npz"),
+    ("checkpoint_sha256", "f" * 64),
+    ("checkpoint_contract_sha256", "e" * 64),
+    ("pending_integral_vehicle_seconds", 999.0),
+])
+def test_rehashed_demo_provenance_must_match_frozen_run_and_metrics(
+        tmp_path, field, forged):
+    _write_bound_project(tmp_path)
+    demo = tmp_path / "results/haichau_network_v2/demo"
+    manifest_path = demo / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    entry = next(item for item in manifest["replays"]
+                 if item["controller_id"] == "neighbor_phase_ddqn")
+    replay_path = demo / entry["path"]
+    replay = json.loads(replay_path.read_text())
+    if field == "pending_integral_vehicle_seconds":
+        replay["metrics"][field] = forged
+    else:
+        replay[field] = forged
+    replay_path.write_text(json.dumps(replay))
+    manifest["files"][entry["path"]] = _digest(replay_path)
+    manifest_path.write_text(json.dumps(manifest))
+
+    report = audit_demo(tmp_path)
+
+    assert report["passed"] is False
+    assert "provenance" in report["detail"] or "metrics" in report["detail"]
+
+
+def test_demo_acceptance_status_must_match_frozen_summary(tmp_path):
+    _write_bound_project(tmp_path)
+    manifest_path = tmp_path / "results/haichau_network_v2/demo/manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["acceptance"] = {"accepted": not manifest["acceptance"]["accepted"]}
+    manifest_path.write_text(json.dumps(manifest))
+
+    report = audit_demo(tmp_path)
+
+    assert report["passed"] is False
+    assert "acceptance" in report["detail"]
+
+
 def test_tampered_thesis_artifact_fails_even_if_file_still_exists(tmp_path):
     _write_bound_project(tmp_path)
     table = tmp_path / "paper/generated/haichau_network/haichau_network_results.tex"

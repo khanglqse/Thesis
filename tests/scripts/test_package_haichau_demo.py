@@ -1,5 +1,8 @@
 import hashlib
 import json
+import os
+
+import pytest
 
 
 def _write_bundle(path):
@@ -41,6 +44,57 @@ def test_package_copies_only_the_verified_canonical_bundle_and_launcher(
                 b"<!doctype html><title>offline</title>").hexdigest(),
         },
     }
+
+
+def test_portable_launcher_rejects_changed_launcher_or_extra_payload(
+        tmp_path, monkeypatch):
+    from scripts import package_haichau_demo
+    from scripts import haichau_demo_launcher
+
+    source = tmp_path / "results/haichau_network_v2/demo"
+    _write_bundle(source)
+    monkeypatch.setattr(package_haichau_demo, "validate_demo_bundle",
+                        lambda root: {"complete": True})
+    portable = tmp_path / "portable"
+    package_haichau_demo.package_demo(tmp_path, portable)
+
+    launcher = portable / "launch_demo.py"
+    launcher.write_text(launcher.read_text() + "\n# modified\n")
+    with pytest.raises(ValueError, match="hash mismatch"):
+        haichau_demo_launcher.validate_bundle(portable)
+
+    package_haichau_demo.package_demo(tmp_path, tmp_path / "portable-extra")
+    (tmp_path / "portable-extra/unlisted.txt").write_text("surprise")
+    with pytest.raises(ValueError, match="file set"):
+        haichau_demo_launcher.validate_bundle(tmp_path / "portable-extra")
+
+
+def test_portable_launcher_rejects_every_symlink(tmp_path, monkeypatch):
+    from scripts import package_haichau_demo
+    from scripts import haichau_demo_launcher
+
+    source = tmp_path / "results/haichau_network_v2/demo"
+    _write_bundle(source)
+    monkeypatch.setattr(package_haichau_demo, "validate_demo_bundle",
+                        lambda root: {"complete": True})
+    portable = tmp_path / "portable"
+    package_haichau_demo.package_demo(tmp_path, portable)
+    os.symlink("index.html", portable / "linked-index.html")
+
+    with pytest.raises(ValueError, match="symlink"):
+        haichau_demo_launcher.validate_bundle(portable)
+
+
+def test_packager_rejects_an_output_below_canonical_source(tmp_path, monkeypatch):
+    from scripts import package_haichau_demo
+
+    source = tmp_path / "results/haichau_network_v2/demo"
+    _write_bundle(source)
+    monkeypatch.setattr(package_haichau_demo, "validate_demo_bundle",
+                        lambda root: {"complete": True})
+
+    with pytest.raises(ValueError, match="inside the canonical demo"):
+        package_haichau_demo.package_demo(tmp_path, source / "portable")
 
 
 def test_portable_launcher_falls_back_to_next_loopback_port(tmp_path, monkeypatch):

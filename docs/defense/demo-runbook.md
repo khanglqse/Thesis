@@ -13,18 +13,21 @@ The extension has no performance or acceptance claim until
 `scripts/verify_haichau_thesis.py` exits zero and its report says `"complete": true`.
 
 The foundation/model pipeline must first provide a tracked or checksum-verified canonical
-network manifest, a frozen 30-case split, CityFlow image digest and five
-validation-eligible candidate checkpoint bundles for the selected
-`neighbor_phase_ddqn` family at confirmatory seeds 12--16. Record their exact paths and hashes in
+network manifest, a frozen 30-case split, CityFlow image digest and five validation-eligible
+checkpoint bundles for the selected V3 schedule-aware `neighbor_phase_ddqn` family at
+confirmation seeds 12--16. Seed 11 is the model-selection pilot only; it is excluded from
+the five-seed confirmation and held-out evaluation. Record the final checkpoint paths and
+hashes in
 `results/haichau_network_v2/final/frozen-protocol.json`. Do not create that file from
 placeholders.
 
 The frozen protocol also records the ordered 53 agent IDs, hashes for both the executable
-CityFlow roadnet and the viewer projection, the complete resolved config for every
-controller, and checkpoint contracts for the selected learned controller at seeds 12--16. Each
+CityFlow roadnet and the viewer projection, complete resolved configs for the three
+deterministic baselines and the selected V3 learned controller, and checkpoint contracts for
+its five confirmation checkpoints. Each
 checkpoint contract contains the observation schema version, feature order, normalization,
 hidden size, action contract and compatible network hash. Its acceptance rules declare the
-same five seeds, all three regimes, at least two matched demand units per regime, bootstrap
+same five confirmation seeds, all three regimes, at least two matched demand units per regime, bootstrap
 seed `20260908`, 10,000 samples, normal point limit 0, normal CI margin 5%, strict peak CI
 upper limit 0 and maximum completion degradation 2%. Every case has a `demand_path` whose
 bytes match its `demand_sha256`.
@@ -49,16 +52,16 @@ retained container's image ID/reference, command, working directory, disabled ne
 project mount and exit state, then requires its stdout JSON to equal the hashed config,
 metrics and replay artifacts. Keep these containers until the final audit succeeds.
 
-Use the freeze CLI only after the five confirmatory training runs are complete and
+Use the freeze CLI only after the five selected V3 confirmation runs are complete and
 validation-eligible. First precompute one shared, validation-only fixed-time tuning
-artifact; the launcher hash-binds it to every final run. Pilot seed `11` is used only to
-select the preregistered schedule-rehearsal arm and is excluded from the confirmatory
-campaign. Then launch the selected `neighbor_phase_ddqn` family for seeds `12` through
-`16`, exactly 12 one-hour episodes per seed with validation at steps `4`, `8`, and `12`.
-The launcher resumes by skipping only fully verified completed jobs and refuses partial,
-ineligible, or hash-drifted outputs. The resulting index has exactly one learned controller
-ID and seeds `12` through `16`; the controller configuration contains the three
-deterministic baselines plus the selected learned family.
+artifact; the launcher hash-binds it to every final run. Then launch the selected
+schedule-aware `neighbor_phase_ddqn` family for seeds `12` through `16`, exactly 12
+one-hour episodes per seed with validation at steps `4`, `8`, and `12`. Seed `11` selects
+the preregistered schedule-rehearsal arm and must not appear as a confirmation checkpoint.
+The default concurrency is two. The launcher resumes only fully verified completed jobs and
+refuses partial, ineligible, hash-drifted, or mixed-duration outputs. The resulting index has
+exactly one learned controller ID at seeds `12` through `16`; its controller configuration
+contains the three deterministic baselines and the selected learned family.
 
 ```sh
 make haichau-precompute-final-baseline
@@ -153,7 +156,7 @@ PYTHONPATH=src python3 scripts/serve_haichau_demo.py \
 ```
 
 The launch command requires the complete project verifier to pass before binding only to
-`127.0.0.1`; it refuses an incomplete, legacy, stale or hash-drifted v2 bundle. It tries
+`127.0.0.1`; it refuses an incomplete, legacy, stale or hash-drifted V3 release bundle. It tries
 ports `8080` through `8090` and prints the exact local URL it bound. Disconnect the network,
 open that URL, and confirm **Verified bundle loaded**. Exercise play/pause, seek, all three
 regimes, and node selection. The browser console must have no warning or error.

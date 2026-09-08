@@ -855,6 +855,8 @@ def audit_demo(root, protocol=None, campaign=None, summary=None):
             return _gate(False, "offline demo summary hash mismatch")
         if _json(demo / manifest["aggregate_path"]) != summary:
             return _gate(False, "offline aggregate does not match frozen summary")
+        if manifest.get("acceptance") != summary.get("acceptance"):
+            return _gate(False, "offline demo acceptance differs from frozen summary")
         runs = dict((run["run_id"], run) for run in campaign.get("runs", []))
         replays = manifest.get("replays", [])
         if len(replays) != 6:
@@ -885,9 +887,20 @@ def audit_demo(root, protocol=None, campaign=None, summary=None):
                 validate_replay(run, metrics, exported, node_ids)
                 for field in (
                         "run_id", "case_id", "regime", "controller_id",
-                        "learning_seed", "demand_seed", "simulator_seed"):
+                        "learning_seed", "demand_seed", "simulator_seed",
+                        "checkpoint_path", "checkpoint_sha256",
+                        "checkpoint_contract_sha256"):
                     if exported.get(field) != run.get(field):
-                        return _gate(False, "offline replay payload identity differs from run")
+                        return _gate(False, "offline replay provenance differs from frozen run")
+                for field in ("checkpoint_sha256", "checkpoint_contract_sha256"):
+                    if metrics.get(field) != run.get(field):
+                        return _gate(False, "frozen replay checkpoint provenance differs from run")
+                exported_metrics = exported.get("metrics")
+                if not isinstance(exported_metrics, dict):
+                    return _gate(False, "offline replay metrics are missing")
+                for field in ("pending", "pending_integral_vehicle_seconds"):
+                    if exported_metrics.get(field) != metrics.get(field):
+                        return _gate(False, "offline replay metrics differ from frozen run")
                 if exported.get("frames") != source.get("frames"):
                     return _gate(False, "offline replay frames differ from verified run")
                 grids.append(tuple(frame["t"] for frame in exported["frames"]))

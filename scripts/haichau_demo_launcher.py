@@ -11,6 +11,9 @@ import webbrowser
 from pathlib import Path
 
 
+PORTABLE_MANIFEST = "portable-manifest.json"
+
+
 class ReusableServer(socketserver.TCPServer):
     allow_reuse_address = True
 
@@ -32,6 +35,30 @@ def _inside(directory, relative):
     return candidate
 
 
+def _regular_files(bundle):
+    files = set()
+    for path in bundle.rglob("*"):
+        if path.is_symlink():
+            raise ValueError("portable demo must not contain symlinks: %s" %
+                             path.relative_to(bundle))
+        if path.is_file():
+            files.add(str(path.relative_to(bundle)))
+    return files
+
+
+def _validate_payload(bundle, manifest):
+    files = manifest.get("files")
+    if not isinstance(files, dict) or "index.html" not in files:
+        raise ValueError("portable demo manifest does not authenticate index.html")
+    for relative, expected in files.items():
+        if not isinstance(relative, str) or not isinstance(expected, str):
+            raise ValueError("portable demo manifest has invalid file evidence")
+        asset = _inside(bundle, relative)
+        if not asset.is_file() or _sha256(asset) != expected:
+            raise ValueError("portable demo asset hash mismatch: %s" % relative)
+    return files
+
+
 def validate_bundle(bundle_dir):
     """Reject a copied bundle whose manifest cannot authenticate its assets."""
     bundle = Path(bundle_dir).resolve()
@@ -41,14 +68,27 @@ def validate_bundle(bundle_dir):
     manifest = json.loads(manifest_path.read_text())
     if manifest.get("bundle_version") != 2 or manifest.get("controlled_signals") != 53:
         raise ValueError("portable demo is not the 53-signal v2 bundle")
-    files = manifest.get("files")
-    if not isinstance(files, dict) or "index.html" not in files:
-        raise ValueError("portable demo manifest does not authenticate index.html")
-    for relative, expected in files.items():
-        if not isinstance(relative, str) or not isinstance(expected, str):
+    files = _validate_payload(bundle, manifest)
+    actual = _regular_files(bundle)
+    portable_path = bundle / PORTABLE_MANIFEST
+    if not portable_path.is_file():
+        expected = set(files) | {"manifest.json"}
+        if actual != expected:
+            raise ValueError("portable demo file set differs from its manifest")
+        return manifest
+    portable = json.loads(portable_path.read_text())
+    if (portable.get("portable_bundle_version") != 1
+            or portable.get("canonical_manifest_sha256") != _sha256(manifest_path)
+            or not isinstance(portable.get("files"), dict)):
+        raise ValueError("portable demo manifest is invalid")
+    expected = set(portable["files"]) | {PORTABLE_MANIFEST}
+    if actual != expected:
+        raise ValueError("portable demo file set differs from its manifest")
+    for relative, expected_hash in portable["files"].items():
+        if not isinstance(relative, str) or not isinstance(expected_hash, str):
             raise ValueError("portable demo manifest has invalid file evidence")
         asset = _inside(bundle, relative)
-        if not asset.is_file() or _sha256(asset) != expected:
+        if not asset.is_file() or _sha256(asset) != expected_hash:
             raise ValueError("portable demo asset hash mismatch: %s" % relative)
     return manifest
 
