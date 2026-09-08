@@ -46,8 +46,10 @@ Two robust, honestly-reported conclusions:
    — reported as a limitation, not hidden.
 
 Exact multi-seed means ± 95% CI are in `paper/chapter4_experiments_results.tex`
-(`tab:waiting`, `tab:queue`). Coordination (neighbor-aware state / graph attention) is the
-identified route to surpassing Max-Pressure and is future work.
+(`tab:waiting`, `tab:queue`). Those historical runs did not implement neighbor-aware
+coordination. The `haichau_network_v2` extension now implements a mean-pooled neighbor
+phase-scoring DDQN as a separate candidate; it does not implement learned graph attention,
+and it has no releasable performance claim until the final verifier passes.
 
 ## Repository map
 
@@ -158,14 +160,16 @@ PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
 ```
 
 It writes `results/haichau_network_v2/verification/final-report.json` and exits nonzero
-until the network, split, five checkpoints, fresh matched runs, statistics, paper, offline
-demo and clean-checkout record are all hash-valid.
+until the network, split, ten learned checkpoint bundles (two controller families × five
+seeds), fresh matched runs, statistics, paper, offline demo and clean-checkout record are all
+hash-valid.
 
 The verifier recomputes the numeric summary and acceptance decision from the hash-verified
 run metrics. It also requires exact frozen run identity (flow hash, simulator seed,
-checkpoint, code commit, inspected Docker image and resolved config). Every one of the five
-learning seeds must contain the exact tuned-fixed demand/simulator cells, with at least two
-cells in every gated regime. The current checkout must be clean, descend from the frozen
+checkpoint, code commit, inspected Docker image and resolved config). Each learned family
+must contain seeds 11--15, and every seed must contain the exact tuned-fixed
+demand/simulator cells, with at least two cells in every gated regime. The current checkout
+must be clean, descend from the frozen
 40-character commit and leave `src/`, `scripts/`, `frontend/`, `docker/` and build config
 unchanged. Paper/demo artifacts are content-hashed; `pdfinfo`/`pdftoppm`, `ffprobe` and a
 full `ffmpeg -xerror` decode must parse/render the PDFs, PNGs and MP4, and replays cover the
@@ -179,13 +183,17 @@ Release execution uses detached `docker run` plus `docker wait`: `stdout.log` an
 Apple Silicon x86-image platform warning) is hashed separately in
 `docker-cli-diagnostics.json`.
 
-## Scope: validated vs proposed
+## Scope: empirical anchor vs scale experiment
 
-The thesis specifies an ambitious **coordination-aware multi-agent RL framework**; what is
-**empirically validated here** is its core **parameter-shared DQN instance** on the Hải Châu
-network against strong baselines, with a systematic ablation over reward, state, and
-architecture. Neighbor-coordinated observations (CoLight-style attention), effective-range
-demand features, and residual/KL-regularized learning on a Max-Pressure warm-start are
-**specified as future work** and demarcated as such in the paper (see the "Limitations of the
-Empirical Study" section). This validated-vs-proposed boundary is stated explicitly so the
-results are not over-claimed.
+The empirical evidence supports a **single demand-matched SUMO junction** reconstructed from
+four camera movement lines, a published timing plan and audited geometry. Its findings are
+site- and regime-specific.
+
+The `haichau_network_v2` work is a **53-signal synthetic CityFlow scale experiment**. It
+implements both a legacy parameter-shared vector DDQN and a mean-pooled neighbor-aware
+phase-scoring DDQN, evaluated against validation-tuned fixed-time and two Max-Pressure
+baselines. It can test software scalability and coordination behavior inside the frozen task
+family. It is not empirical validation of district-wide traffic, signal timing or field
+performance, and its result section remains conditional until
+`scripts/verify_haichau_thesis.py` reports `"complete": true`. Learned graph attention,
+measured district OD demand and field-calibrated multi-signal operation remain future work.

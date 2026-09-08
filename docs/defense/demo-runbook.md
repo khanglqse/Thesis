@@ -13,8 +13,9 @@ The extension has no performance or acceptance claim until
 `scripts/verify_haichau_thesis.py` exits zero and its report says `"complete": true`.
 
 The foundation/model pipeline must first provide a tracked or checksum-verified canonical
-network manifest, a frozen 30-case split, CityFlow image digest and five validation-eligible
-candidate checkpoints for learning seeds 11--15. Record their exact paths and hashes in
+network manifest, a frozen 30-case split, CityFlow image digest and ten validation-eligible
+candidate checkpoint bundles: two learned controller families at seeds 11--15. Record their
+exact paths and hashes in
 `results/haichau_network_v2/final/frozen-protocol.json`. Do not create that file from
 placeholders.
 
@@ -114,6 +115,11 @@ figure, table or PDF change.
 Choose one matched tuned-fixed/DDQN pair for each of `normal`, `am_peak` and `pm_peak`.
 Export all six run IDs with fallbacks made from the same frozen evidence:
 
+`NORMAL_FIXED`, `NORMAL_DDQN`, `AM_FIXED`, `AM_DDQN`, `PM_FIXED`, and `PM_DDQN`
+below are deliberate placeholders. Replace them only with exact run IDs from the verified
+frozen campaign. A command containing any placeholder is preparation documentation, not a
+valid demo export and not thesis evidence.
+
 ```sh
 PYTHONPATH=src python3 scripts/export_haichau_replays.py \
   --network results/haichau_network_v2/release-inputs/viewer-network.json \
@@ -176,6 +182,45 @@ The extension is release-ready only when the final command exits zero and its re
 
 All three files must appear in the demo manifest, pass its SHA-256 check and decode with
 nonzero pages, dimensions or duration as appropriate.
+
+### Five-minute 53-signal defense script
+
+- **0:00--0:35 — Scope first.** State that the map has 53 OSM-derived controlled signals
+  in Hai Chau. The routes, flows and signal plans are synthetic and constrained by Da Nang
+  evidence; the experiment tests scalability and coordination, not measured district
+  performance.
+- **0:35--1:10 — Evidence contract.** Show **Verified bundle loaded**, the frozen protocol
+  and network hashes, the 30-case split (9 train, 6 validation, 15 held-out test), and the
+  result of every acceptance gate. If acceptance is negative, say so directly.
+- **1:10--2:10 — Network behavior.** Open the matched normal tuned-fixed and neighbor-DDQN
+  replays. Play them in sync, select one or two nodes, and explain queue integral, pending
+  demand and completion. Describe what the replay shows without turning one case into the
+  aggregate conclusion.
+- **2:10--3:25 — Peak cases.** Repeat the comparison for AM and PM. Point to the aggregate
+  queue-difference interval and completion degradation for each regime. Use the generated
+  values shown by the bundle; do not memorize or insert values before the final campaign.
+- **3:25--4:15 — Controller contribution.** Explain that the legacy shared-vector DDQN uses
+  fixed action positions, while the candidate scores valid phase rows using local movement
+  features plus mean-pooled upstream/downstream queues. Clarify that this is neighbor-aware
+  DDQN rather than learned CoLight-style graph attention.
+- **4:15--5:00 — Claim boundary and takeaway.** State whether the predeclared normal
+  non-inferiority, peak improvement and completion gates passed. Conclude only at the level
+  supported by that status. Finish with the empirical single-junction anchor as the source
+  of real camera-count evidence and identify measured district demand/signal plans as future
+  work.
+
+### 53-signal defense-day preflight
+
+1. Run `PYTHONPATH=src python3 scripts/verify_haichau_thesis.py` from the clean frozen copy
+   and confirm exit zero plus `"complete": true` in the newly written report.
+2. Check that the six displayed run IDs equal the selected IDs in the demo manifest and that
+   none of the uppercase placeholders above remains in an executed command or manifest.
+3. Disconnect the Internet, start the local server, and exercise all three regime switches,
+   synchronized playback, seeking and node selection.
+4. Open `fallbacks/demo-walkthrough.mp4`, `fallbacks/result-summary.pdf`, and
+   `fallbacks/network-overview.png` locally before the session.
+5. Rehearse both outcomes: an accepted candidate and a scientifically valid negative
+   result. The verbal conclusion must match the generated acceptance status.
 
 ### Vehicle accounting shown in the demo and thesis
 

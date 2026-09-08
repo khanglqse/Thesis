@@ -30,10 +30,10 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[R]{\thepage}
-\fancyhead[L]{Evidence-Aware RL for Da Nang Traffic Signal Control}
+\fancyhead[L]{Evidence-Aware RL for Da Nang Signal Control}
 \renewcommand{\headrulewidth}{0.3pt}
 \captionsetup{font=small,labelfont=bf}
-\hypersetup{pdftitle={Evidence-Aware Reinforcement Learning for Traffic Signal Control at a Da Nang Intersection},pdfauthor={Luong Quang Khang}}
+\hypersetup{pdftitle={Evidence-Aware Reinforcement Learning for Da Nang Traffic Signal Control: From an Empirical Intersection Anchor to a District-Scale Experiment},pdfauthor={Luong Quang Khang}}
 
 \newcommand{\qint}{\ensuremath{Q_{\mathrm{int}}}}
 \newcommand{\ddqn}{Dueling Double DQN}
@@ -46,7 +46,9 @@
 {\large FPT UNIVERSITY\par}
 \vspace{2.2cm}
 {\Large\bfseries EVIDENCE-AWARE REINFORCEMENT LEARNING\\[0.25cm]
-FOR TRAFFIC SIGNAL CONTROL\\[0.25cm]AT A DA NANG INTERSECTION\par}
+FOR DA NANG TRAFFIC SIGNAL CONTROL\\[0.25cm]
+FROM AN EMPIRICAL INTERSECTION ANCHOR\\[0.25cm]
+TO A DISTRICT-SCALE EXPERIMENT\par}
 \vspace{1.8cm}
 {\large A thesis submitted in partial fulfillment of the requirements\\
 for the degree of Master of Software Engineering\par}
@@ -66,16 +68,16 @@ Supervisors: & Dr. Nguyen Luong Vuong\\
 I declare that this thesis reports the experiment protocol and results contained in the accompanying repository. Published traffic observations and prior methods are attributed to their sources. The interpretations, implementation, experiment design, and analysis are the author's work. The repository retains machine-readable manifests, frozen model checkpoints, raw evaluation records, and the scripts used to produce the reported tables and figures.
 
 \chapter*{Acknowledgements}
-I thank my supervisors, Dr. Nguyen Luong Vuong and Dr. Bui Cao Vu, for their guidance. I also acknowledge the authors who made the Da Nang intersection observations public and the developers of SUMO and OpenStreetMap, whose open tools and data made this reproducible study possible.
+I thank my supervisors, Dr. Nguyen Luong Vuong and Dr. Bui Cao Vu, for their guidance. I also acknowledge the authors who made the Da Nang intersection observations public and the developers of SUMO, CityFlow, and OpenStreetMap, whose open tools and data made this reproducible study possible.
 
 \chapter*{Abstract}
-This thesis studies adaptive traffic signal control at the Nguyen Thanh Nghi--Cach Mang Thang 8--2/9 intersection in Da Nang, Vietnam. It addresses a recurring weakness in traffic reinforcement learning research: strong claims built on incompletely described demand, simulator, and evaluation assumptions. The study reconstructs a demand-matched SUMO model from a published 103-second signal plan, an audited OpenStreetMap snapshot, twelve published turning movements, and four hourly camera movement lines digitized for 1 April 2025. The directly supported scenarios contain 1,395 vehicles in the normal hour at 13:00, 2,330 in the morning peak at 08:00, and 2,400 in the evening peak at 17:00. Because public observations cover one date and only part of the intersection, the model is described as demand-matched and geometry-audited rather than fully behavior-calibrated.
+This thesis studies adaptive traffic signal control in Da Nang, Vietnam, through two deliberately separated evidence tiers. The empirical anchor reconstructs the Nguyen Thanh Nghi--Cach Mang Thang 8--2/9 intersection in SUMO from a published 103-second signal plan, an audited OpenStreetMap snapshot, a twelve-movement traffic table reported from 2022 data, and four hourly camera movement lines collected on 1 April 2025. Only the camera lines are treated as direct vehicle counts: 1,395 vehicles in the normal hour at 13:00, 2,330 in the morning peak at 08:00, and 2,400 in the evening peak at 17:00. The second tier implements a 53-signal OpenStreetMap-derived Hai Chau topology in CityFlow. Its routes, flows, and signal plans are synthetic; only the temporal demand shape is constrained by published Da Nang evidence. It tests scalability and coordination rather than district-wide empirical performance.
 
-A \ddqn{} controller is trained for thirty one-hour episodes with five independent training seeds. A base DQN architecture is retained as an ablation. Published fixed-time, raw Max-Pressure, and hysteretic Max-Pressure controllers provide non-learning baselines. Checkpoint selection uses a separate validation demand realization; testing uses fifteen held-out cases across three traffic regimes. The primary metric is the integral of stopped vehicles inside the model plus vehicles waiting to enter it. Uncertainty for the learning controller is calculated over training seeds, not over crossed simulator runs.
+At the empirical anchor, a \ddqn{} controller is trained for thirty one-hour episodes with five independent training seeds. A base DQN architecture is retained as an ablation. Published fixed-time, raw Max-Pressure, and hysteretic Max-Pressure controllers provide non-learning baselines. Checkpoint selection uses a separate validation demand realization; testing uses fifteen held-out cases across three traffic regimes. The primary metric is the integral of stopped vehicles inside the model plus vehicles waiting to enter it. Uncertainty for the learning controller is calculated over training seeds, not over crossed simulator runs.
 
-The result is regime dependent. Relative to the published fixed plan, \ddqn{} changes the queue integral by $+320.7\%$ in normal demand, $-1.0\%$ in the morning peak, and $-34.5\%$ in the evening peak. The 95\% bootstrap intervals for the absolute paired changes are $[7.60,56.14]$, $[-9.47,8.49]$, and $[-69.55,-35.34]$ vehicle-hours, respectively. A synthetic demand sensitivity test confirms the pattern: learning is harmful at $0.75\times$ observed AM demand but beneficial at $1.25\times$ and $1.50\times$. All 105 primary held-out runs complete without collision; four emergency-braking events occur in 120 sensitivity runs. These results support adaptive deployment only when demand is sufficiently high and monitored. They do not support a city-wide performance claim. The thesis contributes a traceable reconstruction, a collision regression that changed the motorcycle headway from 1.0 to 1.2 seconds and triggered a complete rerun, a seed-aware evaluation protocol, and an offline replay package for defense and inspection.
+The empirical-anchor result is regime dependent. Relative to the published fixed plan, \ddqn{} changes the queue integral by $+320.7\%$ in normal demand, $-1.0\%$ in the morning peak, and $-34.5\%$ in the evening peak. The 95\% bootstrap intervals for the absolute paired changes are $[7.60,56.14]$, $[-9.47,8.49]$, and $[-69.55,-35.34]$ vehicle-hours, respectively. These findings support a demand-gated controller with monitored fixed-time fallback at this modelled junction; they do not establish field safety or a city-wide benefit. The 53-signal experiment compares tuned fixed-time, two Max-Pressure variants, a shared DDQN ablation, and neighbor-aware phase-scoring DDQN under a frozen 30-case split and five learning seeds per learned family. No network performance claim enters the thesis until its generated evidence and offline demo pass the fail-closed verifier.
 
-\noindent\textbf{Keywords:} traffic signal control; reinforcement learning; Dueling Double DQN; SUMO; Da Nang; reproducibility; mixed traffic.
+\noindent\textbf{Keywords:} traffic signal control; reinforcement learning; Dueling Double DQN; SUMO; CityFlow; Da Nang; reproducibility; mixed traffic.
 
 \tableofcontents
 \listoffigures
@@ -88,25 +90,26 @@ The result is regime dependent. Relative to the published fixed plan, \ddqn{} ch
 \section{Motivation}
 Traffic signal control is a sequential decision problem under uncertain demand. A fixed plan is predictable and inexpensive, but it cannot directly react when queues shift between approaches. Reinforcement learning (RL) offers a way to learn a feedback policy from repeated interaction with a traffic model. Its flexibility also introduces risks: a controller can exploit modelling artifacts, results can depend strongly on random seed, and an apparent improvement can disappear outside the trained demand regime.
 
-Da Nang is a particularly relevant setting because traffic is heterogeneous and motorcycle dominated. The most useful public evidence found for this study is the detailed case study by Phan, Le, and Nguyen~\cite{phan2025danang}. It identifies the target signal, reports its geometry and 103-second timing plan, gives twelve peak turning movements, and publishes hourly camera profiles. The present work reconstructs a smaller, auditable experiment from that evidence instead of making unsupported claims about an entire district.
+Da Nang is a particularly relevant setting because traffic is heterogeneous and motorcycle dominated. The most useful public evidence found for this study is the detailed case study by Phan, Le, and Nguyen~\cite{phan2025danang}. It identifies the target signal, reports its geometry and 103-second timing plan, gives a twelve-movement table based on 2022 traffic-volume data, and publishes four camera movement profiles collected on 1 April 2025. That evidence can anchor one junction, but it cannot calibrate every signal in a district. The research design therefore keeps empirical fidelity and spatial scale as two distinct questions: a demand-matched isolated-junction study supports site-specific findings, while a synthetic 53-signal Hai Chau experiment tests whether the software, controller representation, and evaluation protocol scale.
 
 \section{Research question}
 The central question is:
 \begin{quote}
-Under which observed and stress-tested demand regimes does a seed-evaluated \ddqn{} controller reduce total queue accumulation relative to the published fixed-time plan at the selected Da Nang intersection?
+How can adaptive signal control be evaluated with empirical fidelity at an evidence-supported Da Nang intersection and with reproducible scalability on a 53-signal district topology, without presenting synthetic network demand as observed traffic?
 \end{quote}
-Three supporting questions guide the work:
+Four supporting questions guide the work:
 \begin{enumerate}[label=RQ\arabic*.]
 \item Can the public intersection evidence be converted into a reproducible SUMO scenario without presenting inferred demand as observation?
-\item Does the learning architecture improve on the base DQN under the same training budget, and how variable are the learned policies across training seeds?
-\item Do safety and benefit persist across normal, peak, and scaled-demand scenarios?
+\item Under which observed and stress-tested demand regimes does the single-junction \ddqn{} controller reduce queue accumulation relative to the published fixed-time plan?
+\item Can a phase-aligned, neighbor-aware DDQN operate across 53 heterogeneous signals and improve on a shared-vector DDQN ablation under matched normal and peak cases?
+\item Do the network comparisons satisfy predeclared queue non-inferiority, peak improvement, completion, independence, provenance, and reproducibility gates?
 \end{enumerate}
 
 \section{Contributions}
-The thesis makes four practical contributions. First, it defines an evidence hierarchy separating directly digitized camera counts, published aggregate PCU movements, geometric map evidence, and modelling assumptions. Second, it provides a reproducible experiment with disjoint training, validation, and held-out departure realizations. Third, it reports negative results and simulator failures, including poor Max-Pressure behavior and a motorcycle-headway defect that required a full rerun. Fourth, it supplies a defense-ready offline replay rather than relying on live training.
+The thesis makes five practical contributions. First, it defines an evidence hierarchy separating directly digitized camera counts, published aggregate PCU movements, geometric map evidence, and modelling assumptions. Second, it provides an empirical single-junction anchor with disjoint training, validation, and held-out departure realizations, including negative results and a motorcycle-headway defect that required a complete rerun. Third, it contributes an executable 53-signal Hai Chau topology and a disjoint synthetic route-family protocol for testing scalability without claiming district-wide calibration. Fourth, it implements a matched comparison protocol for two parameter-shared learned controller families---a legacy vector DDQN and a neighbor-aware phase-scoring DDQN---and three fresh non-learning baselines with seed-level hierarchical inference. Fifth, it supplies hash-bound artifacts, fail-closed release gates, and an offline replay path so claims shown during defense remain tied to the evaluated inputs.
 
 \section{Scope}
-The empirical claim concerns one isolated signalized junction, one observed date, and four camera movement lines. The twelve-movement, full-intersection PCU table is useful as contextual evidence and for estimated stress construction, but it is not treated as a direct vehicle count. Neighboring junctions are excluded from the primary causal comparison because their demand and signal plans could not be validated. This scope is narrower than the legacy project claim and is deliberately aligned with the available evidence.
+The empirical claim concerns one isolated signalized junction and four camera movement lines from one observed date. The twelve-movement, full-intersection PCU table is useful as contextual evidence and for estimated stress construction, but it is not treated as a direct vehicle count. The network-scale claim has a different scope: 53 OpenStreetMap-derived signal nodes in Hai Chau, CityFlow-compatible synthetic routes, and demand intensity shaped by the published camera profiles. It can support conclusions about performance inside this frozen simulation protocol, controller scalability, and coordination behavior. It cannot support claims that traffic across Hai Chau was measured, that the 53 signal programs match field operation, or that the learned controller is ready for deployment. Keeping these scopes separate prevents the larger topology from overstating the smaller empirical evidence base.
 
 \chapter{Background and Related Work}
 
@@ -166,7 +169,7 @@ The target is the Nguyen Thanh Nghi--Cach Mang Thang 8--2/9 junction described b
 An initial full OSM conversion was tested for an hour. It produced confounding queues at nearby nodes, short edge fragments, and 14--21 collisions depending on case. Without validated neighboring signal programs and demand, those failures could not be attributed to the target controller. The full graph remains an audit artifact; the isolated network is the primary experiment.
 
 \section{Observed demand}
-Two published camera views yield four digitized movement series, divided into motorcycles, cars, trucks, and buses. Counts are read from Figures 17--18 of the source paper with an explicit per-series digitization uncertainty of 15 or 30 vehicles per hour. The selected hours are shown in Table~\ref{tab:demand} and Figure~\ref{fig:profile}.
+Two published camera views yield four digitized movement series, divided into motorcycles, cars, trucks, and buses. The source paper states that these camera records were collected from 06:00 to 18:00 on 1 April 2025~\cite{phan2025danang}. Counts are read from its Figures 17--18 with an explicit per-series digitization uncertainty of 15 or 30 vehicles per hour. The separate twelve-movement table is reported from 2022 traffic-volume data and includes directions not covered by the camera plots. The selected camera-supported hours are shown in Table~\ref{tab:demand} and Figure~\ref{fig:profile}.
 
 \begin{table}[H]
 \centering
@@ -193,6 +196,13 @@ PM peak & 17:00 & Held-out test & Four digitized camera movements & 2,400 \\
 
 The twelve published peak movements sum to 6,171 PCU/h. Applying observed class mix to all twelve would schedule 5,793, 9,676, and 9,967 vehicles for the three regimes. Those figures are model estimates and are never labeled observed. They are excluded from the primary comparison because their class composition and hourly scaling cannot be independently verified.
 
+\section{District topology and synthetic network demand}
+The scale experiment begins from a pinned OpenStreetMap extract and produces a CityFlow road network with 53 controlled signals. The executable roadnet, ordered agent IDs, legal green phases, lane movements, and a separate viewer projection are recorded with SHA-256 hashes. OpenStreetMap supplies topology and coordinates; it does not establish that every mapped node is an operational signal, nor does it supply field timing plans.
+
+Synthetic route families connect boundary entry and exit roads through shortest valid paths that cross at least two controlled signals. The canonical families are partitioned once into disjoint training, validation, and test pools with weights 50/25/25 before seeded sampling. Each case samples 500 route streams from its assigned pool. Three consecutive twenty-minute bins use the relative shape of published normal, AM-peak, or PM-peak camera profiles to set departure intervals, with a 90\% motorcycle share as an explicit modelling assumption. This transfers temporal demand evidence into a reproducible stress generator; it does not turn four observed movement lines into district OD observations.
+
+The immutable experiment manifest contains 30 cases: nine training cases from three demand seeds across all three regimes, six validation cases from two disjoint seeds across the same regimes, and fifteen held-out test cases from five demand/simulator seed pairs across the three regimes. Case files record scheduled vehicle counts, flow hashes, route-family hashes, simulator seeds, and the evidence label. Training and validation may inspect only their assigned partitions; final controller comparison opens the fifteen test cases only after checkpoint selection and acceptance rules are frozen.
+
 \section{Vehicle and signal assumptions}
 Vehicle classes preserve the published categories. Passenger-car-equivalent weighting is used only to interpret the aggregate movement table; the simulator represents explicit vehicles. The published fixed program contains three green phases and three seven-second clearances, totaling 103 seconds. The adaptive agent acts every ten seconds, must retain green for at least twenty seconds, and automatically traverses the seven-second safe transition when a phase changes.
 
@@ -200,7 +210,7 @@ The study initially used a 1.0-second motorcycle time headway. A held-out AM rea
 
 \chapter{Methodology}
 
-\section{Markov decision process}
+\section{Single-junction Markov decision process}
 At decision time $t$, the state includes per-approach stopped queue counts, vehicles waiting to enter the network, and the active phase representation. Counts are normalized by 20. The action $a_t\in\{0,1,2\}$ selects one of the three admissible green phases. Signal safety logic may delay an action through the clearance interval and minimum-green rule.
 
 The one-step reward is the negative total queue:
@@ -214,7 +224,7 @@ Including pending vehicles prevents a controller from appearing successful by bl
 \end{equation}
 reported in vehicle-hours.
 
-\section{Learning algorithm}
+\section{Single-junction learning algorithm}
 The replay tuple is $(s_t,a_t,R_t^{(3)},s_{t+3},d_t)$. The three-step return is
 \begin{equation}
 R_t^{(3)}=r_t+\gamma r_{t+1}+\gamma^2r_{t+2}, \qquad \gamma=0.99.
@@ -223,10 +233,10 @@ The Double DQN target uses the online network to choose the action and the targe
 
 The network has a shared 64-unit hidden representation and dueling value/advantage heads. Each training run contains thirty full one-hour episodes. Every fifth episode, a greedy full-hour validation is executed on a distinct departure realization. The checkpoint with the smallest validation mean queue is frozen.
 
-\section{Baselines and ablation}
+\section{Single-junction baselines and ablation}
 The published fixed-time plan is the principal baseline because it is the deployed plan documented for the site. Raw Max-Pressure chooses the largest estimated approach pressure at every admissible decision. Hysteretic Max-Pressure changes phase only when the alternative exceeds the current phase by a margin. A base Double DQN without dueling heads and using one-step returns is trained at seed 11 under the same budget. This architecture ablation tests the combined dueling/three-step change; it is not a full factorial attribution.
 
-\section{Protocol and independence}
+\section{Single-junction protocol and independence}
 Table~\ref{tab:split} defines the split before held-out evaluation. Departure generation preserves the exact class and movement counts while changing within-hour timing. Hashes in the experiment manifest prove that the realizations differ.
 
 \begin{table}[H]
@@ -247,17 +257,48 @@ Sensitivity & AM scaled 0.75--1.50 & 101--105 & frozen policies only \\
 The five DDQN policies are independent learning replicates. Each is crossed with the same fifteen held-out demand cases. Therefore, the analysis first averages cases within each training seed; it never treats 75 correlated DDQN evaluations as 75 independent policies. Fixed-time confidence intervals use five demand realizations per scenario. Paired DDQN-minus-fixed effects match on demand realization, average within training seed, and bootstrap those five seed-level effects with 20,000 resamples.
 
 \section{Hai Chau network extension protocol}
-The network extension uses a 53-signal OpenStreetMap-derived Hai Chau topology with synthetic network demand constrained by Da Nang evidence. The JICA port-corridor study and the DaCRISS integrated-development study provide planning context only; neither calibrates signal timing, routes, or flows for these 53 signals~\cite{jica2014tiensa,dacriss2010danang}. It is a scalability and coordination study, not a claim that district-wide flows were observed or behavior-calibrated. Candidate phases are represented by served movements and adjacent-signal context. The frozen test compares fresh matched runs of tuned fixed-time, Max-Pressure, hysteretic Max-Pressure, the legacy shared DDQN ablation, and neighbor-aware phase-scoring DDQN.
+The network extension uses the 53-signal topology and 30-case manifest described above. The JICA port-corridor study and the DaCRISS integrated-development study provide planning context only; neither calibrates signal timing, routes, or flows for these signals~\cite{jica2014tiensa,dacriss2010danang}. Every controller receives the same network hash, flow bytes, simulator seed, 3,600-second horizon, and signal-safety contract for a matched case. Decisions occur every 10 seconds. The environment enforces a 3-second yellow transition, 20-second minimum green, and 180-second maximum-red bound outside the learned model.
 
-The primary network metric is queue integral sampled at every simulator step. Completed-vehicle travel-time statistics are always reported with departed, arrived, running, pending, and completion counts. Learned-policy effects first average matched demand and simulator cases inside each learning seed; bootstrap inference then uses at least five learning seeds. The predeclared gates require normal point non-inferiority, a normal upper confidence bound within five percent of tuned fixed-time, a wholly negative confidence interval in at least one peak regime, and no matched completion degradation above two percentage points.
+\subsection{Phase-aligned observation and action contract}
+Hai Chau intersections do not all expose the same number or meaning of green phases. The network candidate therefore encodes each admissible green as one row of twelve movement-aligned features: incoming queue mean and maximum, approaching vehicles, outgoing queue and remaining capacity, pressure, current-phase status, elapsed green, time since service, movement count, and mean-pooled queues at upstream and downstream neighboring signals. Counts and capacities are normalized by constants stored in the checkpoint contract. A Boolean mask excludes padded rows and illegal phases. The learned action selects a valid green row; the environment remains responsible for yellow, minimum-green, and maximum-red enforcement.
+
+The neighbor-aware phase-scoring DDQN applies the same two-hidden-layer NumPy network to every candidate row and returns one scalar action value per phase. Double-DQN targets, three-step returns, Huber loss, gradient clipping, replay, and a target network stabilize learning. Mean-pooled adjacent queues add fixed graph context, but the model has no learned attention and is not presented as CoLight. The comparison learned family, \texttt{shared\_ddqn\_legacy}, uses a parameter-shared fixed-vector observation and dueling action outputs. It is retained as an architecture ablation because positional action outputs can carry different phase meanings across heterogeneous intersections.
+
+The step reward combines a negative queue term with a downstream-blocking penalty and a small switch cost; its fixed weights are 1.0, 0.2, and 0.05. Reward is a training signal rather than the reported outcome. The primary evaluation metric is the network queue integral accumulated at every CityFlow step, stored in vehicle-seconds and convertible to vehicle-hours for presentation. Secondary outcomes include per-node maximum queue, spillback duration, switches, lost time, completed-vehicle travel time, and full vehicle accounting. Travel time over completed vehicles is never interpreted without scheduled, due, inserted, arrived, running, removed, pending, and completion measures.
+
+\subsection{Controllers, training, and checkpoint selection}
+The frozen campaign contains five controllers: validation-tuned fixed-time, Max-Pressure, hysteretic Max-Pressure, \texttt{shared\_ddqn\_legacy}, and \texttt{neighbor\_phase\_ddqn}. Fixed-time green durations are selected once by a declared grid search using only the six validation cases; the resulting artifact is hash-bound into every final run. Both Max-Pressure controllers and the tuned fixed-time baseline are rerun from fresh simulator state for each held-out case.
+
+Each learned family is trained independently with learning seeds 11--15, producing ten final checkpoint bundles. A final run contains 80 full one-hour episodes. A balanced sampler rotates across normal, AM-peak, and PM-peak training cases, and replay records regime coverage across experience from all 53 agents. Greedy validation runs occur after episodes 20, 40, 60, and 80 on all six validation cases. Selection first requires normal-demand non-inferiority and no completion degradation beyond two percentage points, then minimizes worst-regime normalized regret relative to validation-tuned fixed-time, using mean regret and earlier training step as deterministic tie-breakers. The stored contract binds controller family, feature order, normalization, hidden size, action semantics, network hash, phase-contract hash, objective schema, and baseline-tuning hash; incompatible checkpoints are rejected rather than adapted at evaluation time.
+
+\subsection{Held-out comparison and hierarchical statistics}
+Only the fifteen held-out cases---five matched demand/simulator pairs for each of normal, AM peak, and PM peak---enter the final performance comparison. Deterministic controllers contribute one fresh result per case. Each learned checkpoint is crossed with the same cases, but these crossed runs are not treated as independent policies. Within each regime, matched case effects are first averaged inside learning seed; the five seed-level effects are then the independent units for a paired bootstrap with seed 20260908 and 10,000 resamples. Results report raw values, mean, median, sample standard deviation, 95\% interval, and the difference relative to tuned fixed-time.
+
+The predeclared network acceptance gates require the neighbor-aware candidate to have a normal-demand point estimate no worse than tuned fixed-time, a normal upper confidence bound no more than five percent of the baseline mean, a wholly negative queue-difference interval in at least one peak regime, and no matched completion degradation above two percentage points. All five learning seeds and at least two matched demand units per regime are mandatory. Failing any gate remains a reportable result and cannot be hidden by selecting a favorable controller, seed, or replay.
 
 \chapter{Implementation and Verification}
 
 \section{Software architecture}
-The implementation uses Python, NumPy, and SUMO controlled through TraCI. Scenario generation builds explicit vehicle departure files and records SHA-256 hashes. The environment exposes queue state, applies safe transitions, records collisions and emergency braking, and checks accounting identities among scheduled, inserted, running, arrived, and pending vehicles. Training, evaluation, summarization, and figure generation are separate commands so final evaluation cannot silently retrain a model.
+The two evidence tiers use separate simulator stacks and configuration namespaces, summarized in Table~\ref{tab:software-stacks}. They share Python orchestration, NumPy learning code, immutable manifests, and the rule that training, evaluation, summarization, figure generation, and demo export are separate commands.
+
+\begin{table}[H]
+\centering
+\caption{Software and configuration boundaries for the two experiments.}\label{tab:software-stacks}
+\small
+\begin{tabularx}{\textwidth}{p{2.7cm}p{4.0cm}>{\raggedright\arraybackslash}X}
+\toprule
+Experiment tier & Runtime & Bound inputs and outputs \\
+\midrule
+Empirical anchor & SUMO controlled through TraCI; Python/NumPy learner & Isolated network and route XML, published signal program, explicit vehicle parameters, departure hashes, collision/emergency-braking records, \texttt{danang\_protocol\_v1} results \\
+District scale & Digest-pinned CityFlow Python-3.6 container; Python/NumPy shared learners & 53-signal roadnet and phase-contract hashes, 30 flow files, resolved controller and reward configuration, checkpoint contracts, per-run manifests, \texttt{haichau\_network\_v2} results \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The SUMO environment exposes queue state, applies the published seven-second safe transition, records collisions and emergency braking, and checks accounting identities among scheduled, inserted, running, arrived, and pending vehicles. The CityFlow path represents every controlled node through one ordered 53-agent manifest. Its release runner materializes and hashes the complete resolved run configuration before inspecting or invoking Docker, records the project mount and working directory, disables container networking, and retains canonical logs and runtime identity for audit. Final evaluation consumes frozen checkpoints and case bytes; it has no training path.
 
 \section{Verification gates}
-Automated tests cover the published 103-second program, four-approach network, observed counts, demand realization hashes, vehicle classes, full-hour rear-end regression, split separation, exact queue integral, controller safety constraints, checkpoint loading, and seed-aware statistics. The JavaScript replay tests verify local manifest loading and synchronized A/B playback. A final test command and artifact manifest are included in Appendix~\ref{app:repro}.
+For the empirical anchor, automated tests cover the published 103-second program, four-approach network, observed counts, demand realization hashes, vehicle classes, full-hour rear-end regression, split separation, exact queue integral, controller safety constraints, checkpoint loading, and seed-aware statistics. For the district-scale experiment, gates additionally verify exactly 53 ordered agents, disjoint route families, all 30 case hashes, a digest-pinned CityFlow runtime, ten eligible learned checkpoint bundles, fresh matched runs for all five controllers, complete horizons and vehicle identities, hierarchical statistics, generated paper artifacts, six offline replays, decoded fallback media, and a clean-checkout attestation. The network result is releasable only when every gate passes in one final report.
 
 \section{Accounting and safety}
 At every run end, the evaluator records scheduled, inserted, arrived, running, pending, collision, and emergency-braking totals. Pending demand is included in the queue integral. All primary held-out runs use the final 1.2-second motorcycle headway. The simulation uses collision output as a required metric instead of relying on console warnings.
@@ -338,19 +379,19 @@ The learned controller has evidence of benefit at the PM peak and at synthetic d
 At low demand, the published plan clears the small queues efficiently and predictably. A learned policy has little congestion to recover but can still pay clearance costs or starve a minor movement. At high demand, queues persist across cycles, so responding to imbalance can recover more time than switching costs consume. The PM profile and scaled stress tests expose this advantage. Seed variability shows that architecture alone does not guarantee a good policy.
 
 \section{Implications for deployment}
-A practical controller should observe a demand or queue threshold and activate DDQN only in the regime where validation supports it. It should retain the published plan as a fallback, enforce the same minimum-green and clearance rules outside the neural network, monitor out-of-distribution state ranges, and log pending demand as well as visible queues. Before field use, it would require shadow-mode evaluation with live detectors and a traffic-engineer safety review.
+The single-junction simulation motivates a candidate demand or queue threshold for deciding when to use DDQN and when to retain the published plan. Such a rule is a hypothesis for later field validation, not a deployment recommendation from the present evidence. Any operational study would have to enforce minimum-green and clearance rules outside the neural network, monitor out-of-distribution state ranges, log pending demand as well as visible queues, and begin with shadow-mode evaluation using live detectors and independent traffic-engineering review.
 
 \section{Threats to validity}
-\textbf{Construct validity.} The primary metric measures queue accumulation, not emissions, pedestrian delay, equity, or real travel time. Four camera lines do not observe the entire junction. Digitization introduces reading error.
+\textbf{Construct validity.} The primary metric measures queue accumulation, not emissions, pedestrian delay, equity, or field travel time. Four camera lines do not observe the entire anchor junction, and digitization introduces reading error. At network scale, synthetic departure intensity inherits only the relative temporal shape of those lines; it is not a measurement of OD demand across Hai Chau. Completed-vehicle travel time is subject to survivorship bias when completion differs, so it is always accompanied by pending and unfinished counts.
 
-\textbf{Internal validity.} The isolated network removes neighboring confounding but also removes spillback. Driver parameters are engineering assumptions. A single headway change removed a reproduced collision, but no trajectory data support full car-following calibration.
+\textbf{Internal validity.} The isolated network removes neighboring confounding but also removes spillback. Driver parameters are engineering assumptions. A single headway change removed a reproduced collision, but no trajectory data support full car-following calibration. In CityFlow, inferred green-phase roles, synthetic fixed-time plans, route sampling, vehicle templates, downstream-capacity proxies, and the chosen reward weights can change controller rankings. Hashes make those choices reproducible; they do not validate them against the street.
 
-\textbf{External validity.} Observations cover one date. Departure seeds vary timing, not independent survey days. Results do not generalize automatically to another hour, weather condition, incident, intersection, or all of Da Nang.
+\textbf{External validity.} Camera observations cover one date, while the separate movement table is based on 2022 data. Departure seeds vary routes and timing inside the generator, not independent survey days. OpenStreetMap topology does not confirm the current field inventory or timing of all 53 signals. Neither the single-junction findings nor a passing synthetic-network result generalizes automatically to another hour, weather condition, incident, district, or all of Da Nang.
 
-\textbf{Statistical conclusion validity.} Five training seeds give only moderate precision. Bootstrap intervals expose uncertainty but cannot repair limited independent data. Architecture ablation uses one seed and combines two changes, so it supports selection within this project rather than a general claim about dueling or $n$-step learning.
+\textbf{Statistical conclusion validity.} Five training seeds give only moderate precision. Bootstrap intervals expose algorithmic uncertainty but cannot repair limited independent traffic data. The single-junction architecture ablation uses one seed and combines two changes, so it supports selection within that experiment rather than a general claim about dueling or $n$-step learning. The network analysis avoids treating agents, time steps, or crossed simulator runs as independent, but five seed-level units still limit power; passing a predeclared gate supports only the frozen task family.
 
 \section{What was rejected}
-The legacy project described a 53-intersection Hai Chau network and 50,500 real trips. The repository did not contain evidence sufficient to support the real-trip claim, so those historical rows remain immutable legacy evidence. The new extension uses a versioned namespace, a 53-signal OpenStreetMap-derived topology, fresh matched controller runs, and synthetic network demand constrained by Da Nang evidence. Until its frozen five-seed verifier reports \texttt{"complete": true}, it supplies no result claim and cannot replace the isolated-junction empirical evidence.
+The legacy project described a 53-intersection Hai Chau network and 50,500 real trips. The repository did not contain evidence sufficient to support the real-trip claim, so those historical rows remain immutable legacy evidence. The new extension uses a versioned namespace, a 53-signal OpenStreetMap-derived topology, fresh matched controller runs, and synthetic network demand constrained by Da Nang evidence. Until its frozen two-family, five-seed verifier reports \texttt{"complete": true}, it supplies no result claim and cannot replace the isolated-junction empirical evidence.
 
 \section{Hai Chau network result status}
 \IfFileExists{generated/haichau_network/haichau_network_results.tex}{%
@@ -366,23 +407,25 @@ manifest is bound to the verified campaign summary and the final verifier report
 \chapter{Reproducibility and Defense Demonstration}
 
 \section{Artifact structure}
-The repository stores source observations under \texttt{datasets/danang\_published}, network and calibration evidence under \texttt{results/research\_pilot}, and the frozen protocol under \texttt{results/danang\_protocol\_v1}. Every reported aggregate is generated from JSON evaluation records. The final thesis does not depend on values copied from an interactive notebook.
+The repository stores source observations under \texttt{datasets/danang\_published}, single-junction network and calibration evidence under \texttt{results/research\_pilot}, and its frozen protocol under \texttt{results/danang\_protocol\_v1}. The district-scale dataset and case manifest use \texttt{datasets/haichau\_network\_v2} and \texttt{results/haichau\_network\_v2}; generated results remain in that namespace. Every reported aggregate is generated from JSON evaluation records. The final thesis does not depend on values copied from an interactive notebook.
 
 \section{Presentation-safe demo}
-Live training is unsuitable for a defense because run time and exploration are stochastic. The demonstration therefore uses pre-exported, synchronized fixed-time and DDQN replays on the same PM held-out demand. It displays scenario provenance, simulation time, active phase, queue counts, cumulative queue integral, arrivals, pending vehicles, and safety events. It loads local files and requires no network connection. A launcher starts a local static server and opens the viewer. A recorded video, screenshots, and the result PDF form the fallback chain.
+Live training is unsuitable for a defense because run time and exploration are stochastic. The primary network demonstration therefore uses six pre-exported replays: matched tuned-fixed and neighbor-aware DDQN runs for normal, AM-peak, and PM-peak demand. It displays the 53-node topology, scenario and artifact provenance, synchronized simulation time, node selection, queue accumulation, arrivals, pending vehicles, completion, and the acceptance-gate status. The export command keeps run-ID placeholders until the frozen campaign identifies the exact matched cases; no placeholder bundle can pass verification. The viewer loads local files without Internet access, while a recorded walkthrough, result-summary PDF, and network-overview image form the fallback chain.
 
-The replay is an inspection aid, not an additional experiment. The representative policy is chosen by median validation performance before the replay case is viewed; the displayed test case is identified explicitly. Aggregate conclusions remain those in Table~\ref{tab:primary}.
+The network replay is an inspection aid, not an additional experiment. Displayed runs are selected from the frozen campaign and remain bound to its network, case, checkpoint, metrics, and summary hashes. Aggregate conclusions come from the hierarchical campaign summary rather than the visual case. The existing single-junction PM/normal replay remains a separate empirical-anchor demonstration and is never relabeled as a 53-signal result.
 
 \section{Reproduction sequence}
 Scenario preparation, training, held-out evaluation, statistical summarization, thesis compilation, and demo export are separate stages. The generated artifact manifest records checksums and tool versions. Appendix~\ref{app:repro} lists the commands.
 
 \chapter{Conclusion and Future Work}
 
-This thesis reconstructed and evaluated an adaptive controller at a published Da Nang signal under explicit evidence limits. \ddqn{} reduced queue accumulation at the PM peak and high synthetic demand, matched the fixed plan at the observed AM profile within uncertainty, and performed worse in normal traffic. The central engineering result is conditional: a learned controller should be enabled only where its demand regime is supported, with the published plan retained as a safe operational fallback.
+This thesis separates two questions that available public data cannot answer with one model. The empirical anchor reconstructs and evaluates an adaptive controller at a published Da Nang signal under explicit evidence limits. In that simulation, \ddqn{} reduced queue accumulation at the PM peak and high synthetic demand, matched the fixed plan at the observed AM profile within uncertainty, and performed worse in normal traffic. The result motivates a demand-gated research hypothesis with fixed-time fallback; it does not establish readiness for field operation.
 
-The work also demonstrates the value of protocol discipline. A held-out collision forced a headway correction and complete rerun. Seed-level uncertainty changed the result from a single headline percentage into three regime-specific conclusions. Pending-demand accounting prevented boundary blocking from looking efficient. These practices are transferable to other traffic RL studies.
+The district-scale tier contributes a reproducible 53-signal CityFlow task, phase-aligned neighbor-aware controller, matched five-controller protocol, and fail-closed evidence path. Its performance conclusion remains conditional on generated campaign artifacts and a verifier report with every gate complete. Regardless of the eventual acceptance outcome, the design demonstrates how topology scale can be studied without calling synthetic routes observed traffic.
 
-Future work should collect multi-day, full-movement counts, queues, headways, travel times, pedestrian demand, and signal logs. Those data would permit behavioral calibration and day-level testing. The next spatial step should add the nearby Nui Thanh and Thang Long signals only after their timing and demand are observed, allowing spillback and coordination to be studied. Algorithmically, uncertainty-aware policy ensembles, demand gating, constrained switching, and offline pretraining from signal logs deserve evaluation. Field deployment should begin in shadow mode and advance only after independent safety and traffic-engineering review.
+Across both tiers, a held-out collision forced a headway correction and complete rerun, seed-level uncertainty replaced a single headline percentage with regime-specific conclusions, and pending-demand accounting prevented boundary blocking from looking efficient. These protocol practices are transferable to other traffic RL studies.
+
+Future work should collect multi-day, full-movement counts, queues, headways, travel times, pedestrian demand, signal logs, and district OD or detector records. Those data would permit behavioral calibration, independent-day testing, and replacement of synthetic network timings and routes with measured inputs. A field-calibrated spatial study can begin with the nearby Nui Thanh and Thang Long signals before expanding through Hai Chau, so spillback and coordination claims grow with the evidence base. Algorithmically, learned graph attention, uncertainty-aware policy ensembles, demand gating, constrained switching, and offline pretraining from signal logs deserve evaluation. Field deployment should begin in shadow mode and advance only after independent safety and traffic-engineering review.
 
 \appendix
 \chapter{Reproduction Commands}\label{app:repro}
@@ -401,12 +444,9 @@ python3 scripts/evaluate_danang_sensitivity.py --controller published_fixed
 # evaluate each frozen dueling checkpoint
 python3 scripts/summarize_danang_sensitivity.py
 python3 scripts/build_thesis_figures.py
-# 53-signal extension: OSM-derived topology, synthetic network demand.
-# Train both learned controller families for every required seed.
-for seed in 11 12 13 14 15; do
-  make haichau-train-final LEARNING_SEED=$seed
-  make haichau-train-legacy-final LEARNING_SEED=$seed
-done
+# 53-signal extension: OSM topology and synthetic network demand.
+make haichau-precompute-final-baseline
+make haichau-train-final-campaign
 python3 scripts/prepare_haichau_release_inputs.py
 python3 scripts/prepare_haichau_viewer_network.py
 PYTHONPATH=src python3 scripts/freeze_haichau_protocol.py \
@@ -415,21 +455,29 @@ PYTHONPATH=src python3 scripts/freeze_haichau_protocol.py \
   --controller-configs results/haichau_network_v2/release-inputs/final-controller-configs.json \
   --training-index results/haichau_network_v2/release-inputs/training-index.json \
   --runtime-image registry.example/traffic-rl@sha256:IMMUTABLE_IMAGE_DIGEST
-python3 scripts/run_haichau_campaign.py --verify-only
-python3 scripts/summarize_haichau_campaign.py
-python3 scripts/build_haichau_thesis_artifacts.py
-python3 scripts/verify_haichau_thesis.py
-cd paper && tectonic thesis_danang.tex
+PYTHONPATH=src python3 scripts/run_haichau_campaign.py \
+  --protocol results/haichau_network_v2/final/frozen-protocol.json \
+  --manifest results/haichau_network_v2/final/case-manifest.json \
+  --prepare-only
+PYTHONPATH=src python3 scripts/run_haichau_campaign.py
+PYTHONPATH=src python3 scripts/run_haichau_campaign.py --verify-only
+PYTHONPATH=src python3 scripts/summarize_haichau_campaign.py
+PYTHONPATH=src python3 scripts/build_haichau_thesis_artifacts.py
+tectonic paper/thesis_danang.tex
+PYTHONPATH=src python3 scripts/build_haichau_thesis_artifacts.py \
+  --record-release-only
+PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
 \end{lstlisting}
 
 \chapter{Parameter Ledger}
-\begin{longtable}{p{4cm}p{3cm}p{6cm}}
-\caption{Final experiment parameters.}\\
+\section{Empirical single-junction SUMO experiment}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{6cm}}
+\caption{Final parameters for the empirical-anchor SUMO experiment.}\\
 \toprule Parameter & Value & Rationale \\
 \midrule\endfirsthead
 \toprule Parameter & Value & Rationale \\
 \midrule\endhead
-Simulation horizon & 3,600 s & Complete observed hour \\
+Simulation horizon & 3,600 s & One-hour camera-supported scenario \\
 Decision interval & 10 s & Responsive control with bounded action rate \\
 Minimum green & 20 s & Avoid rapid oscillation \\
 Yellow/clearance & 7 s & Published site plan \\
@@ -445,6 +493,37 @@ $n$-step return & 3 & Selected with dueling architecture ablation \\
 Hidden width & 64 & Compact deployable network \\
 Validation frequency & 5 episodes & Six full-hour selection checkpoints \\
 Bootstrap replicates & 20,000 & Stable interval computation \\
+\bottomrule
+\end{longtable}
+
+\section{District-scale CityFlow experiment}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{6cm}}
+\caption{Frozen design parameters for the 53-signal CityFlow experiment.}\\
+\toprule Parameter & Value & Rationale \\
+\midrule\endfirsthead
+\toprule Parameter & Value & Rationale \\
+\midrule\endhead
+Controlled signals & 53 & Ordered OSM-derived Hai Chau agent set \\
+Simulation horizon & 3,600 s & Common full-hour evaluation horizon \\
+Manifest cases & 9/6/15 & Train/validation/test cases; 30 total \\
+Route streams per case & 500 & Seeded sampling from split route families \\
+Minimum signals per route & 2 & Exposes coordination across controlled nodes \\
+Motorcycle share & 0.90 & Explicit synthetic mixed-traffic assumption \\
+Action interval & 10 s & Common bounded decision rate \\
+Yellow transition & 3 s & Frozen network action contract \\
+Minimum green/max red & 20/180 s & Minimum hold and starvation bound \\
+Training episodes & 80 & Final budget for each family and seed \\
+Validation checkpoints & 20/40/60/80 & Full validation across all three regimes \\
+Learned families & 2 & Shared-vector and neighbor phase-scoring DDQN \\
+Learning seeds & 11--15 & Five independent policies per learned family \\
+Hidden width & 128 & Frozen NumPy model configuration \\
+Replay capacity/start & 200,000/2,000 & Frozen replay and warm-up contract \\
+Batch size & 128 & Frozen optimization batch \\
+Learning rate & 0.0003 & Shared final learning rate \\
+Target sync & 500 updates & Frozen target-network interval \\
+$n$-step return & 3 & Common learned-controller return horizon \\
+Reward weights & 1.0/0.2/0.05 & Queue/downstream block/switch terms \\
+Bootstrap replicates & 10,000 & Seed-level paired interval computation \\
 \bottomrule
 \end{longtable}
 
