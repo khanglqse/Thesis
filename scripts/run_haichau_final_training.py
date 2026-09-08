@@ -14,6 +14,8 @@ import subprocess
 from collections import namedtuple
 from pathlib import Path
 
+import yaml
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONTROLLERS = ("neighbor_phase_ddqn", "shared_ddqn_legacy")
@@ -49,6 +51,16 @@ def _read_json(path, label):
         return json.loads(Path(path).read_text())
     except (OSError, ValueError) as exc:
         raise ValueError("%s is invalid: %s" % (label, exc))
+
+
+def _read_yaml(path, label):
+    try:
+        value = yaml.safe_load(Path(path).read_text())
+    except (OSError, yaml.YAMLError) as exc:
+        raise ValueError("%s is invalid: %s" % (label, exc))
+    if not isinstance(value, dict):
+        raise ValueError("%s must be a mapping" % label)
+    return value
 
 
 def _write_json(path, value):
@@ -108,7 +120,7 @@ def _verified_artifacts(run_dir, status):
             raise ValueError("training artifact hash mismatch: %s" % relative)
 
 
-def inspect_existing_job(job, baseline_artifact):
+def inspect_existing_job(job, baseline_artifact, training_config):
     """Return pending or skipped; reject every non-verified existing output."""
     run_dir = Path(job.output)
     if not run_dir.exists():
@@ -127,6 +139,9 @@ def inspect_existing_job(job, baseline_artifact):
     if (resolved.get("mode") != "final"
             or resolved.get("learning_seed") != job.seed):
         raise ValueError("completed output has the wrong final-run identity")
+    selected = _read_yaml(training_config, "selected training config")
+    if any(resolved.get(key) != value for key, value in selected.items()):
+        raise ValueError("completed output differs from the selected training config")
     run_manifest = _read_json(run_dir / "run-manifest.json", "training run manifest")
     if (run_manifest.get("controller_id") != job.controller
             or run_manifest.get("learning_seed") != job.seed):
@@ -141,13 +156,16 @@ def inspect_existing_job(job, baseline_artifact):
     return "skipped"
 
 
-def build_jobs(root, manifest_path, baseline_artifact, training_dir):
+def build_jobs(root, manifest_path, baseline_artifact, training_dir,
+               training_config):
     root = Path(root).resolve()
     manifest_path = _inside(root, manifest_path, "manifest")
     baseline_artifact = _inside(root, baseline_artifact, "baseline artifact")
     training_dir = _inside(root, training_dir, "training directory")
+    training_config = _inside(root, training_config, "selected training config")
     if not baseline_artifact.is_file():
         raise ValueError("shared precomputed baseline artifact is required")
+    _read_yaml(training_config, "selected training config")
     manifest = _read_json(manifest_path, "experiment manifest")
     runtime = manifest.get("runtime") if isinstance(manifest, dict) else None
     if not isinstance(runtime, dict):
@@ -166,6 +184,8 @@ def build_jobs(root, manifest_path, baseline_artifact, training_dir):
                 "python3", "scripts/train_haichau_network.py", "--mode", "final",
                 "--learning-seed", str(seed), "--controller-family", controller,
                 "--manifest", _container_path(root, manifest_path, "manifest"),
+                "--config", _container_path(
+                    root, training_config, "selected training config"),
                 "--output", _container_path(root, output, "training output"),
                 "--baseline-tuning-artifact", _container_path(
                     root, baseline_artifact, "baseline artifact"),
@@ -188,7 +208,7 @@ def _job_record(root, job, state):
     }
 
 
-def _execute_job(root, job, record, baseline_artifact, runner):
+def _execute_job(root, job, record, baseline_artifact, training_config, runner):
     stdout = Path(root) / record["stdout_log"]
     stderr = Path(root) / record["stderr_log"]
     stdout.parent.mkdir(parents=True, exist_ok=True)
@@ -200,7 +220,7 @@ def _execute_job(root, job, record, baseline_artifact, runner):
     if result.returncode:
         return int(result.returncode), "training command exited %d" % result.returncode
     try:
-        if inspect_existing_job(job, baseline_artifact) != "skipped":
+        if inspect_existing_job(job, baseline_artifact, training_config) != "skipped":
             raise ValueError("training output is not a fully verified completed run")
     except ValueError as exc:
         return 1, str(exc)
@@ -208,16 +228,19 @@ def _execute_job(root, job, record, baseline_artifact, runner):
 
 
 def run_campaign(root, manifest_path, baseline_artifact, training_dir,
-                 status_path, max_concurrency=2, runner=subprocess.run):
+                 status_path, training_config, max_concurrency=2,
+                 runner=subprocess.run):
     if max_concurrency < 1:
         raise ValueError("max concurrency must be at least one")
     root = Path(root).resolve()
     baseline_artifact = _inside(root, baseline_artifact, "baseline artifact")
-    jobs = build_jobs(root, manifest_path, baseline_artifact, training_dir)
+    training_config = _inside(root, training_config, "selected training config")
+    jobs = build_jobs(
+        root, manifest_path, baseline_artifact, training_dir, training_config)
     records = []
     pending = []
     for job in jobs:
-        state = inspect_existing_job(job, baseline_artifact)
+        state = inspect_existing_job(job, baseline_artifact, training_config)
         record = _job_record(root, job, state)
         records.append(record)
         if state == "pending":
@@ -229,6 +252,8 @@ def run_campaign(root, manifest_path, baseline_artifact, training_dir,
         "max_concurrency": max_concurrency,
         "baseline_artifact": str(baseline_artifact.relative_to(root)),
         "baseline_artifact_sha256": _sha256(baseline_artifact),
+        "training_config": str(training_config.relative_to(root)),
+        "training_config_sha256": _sha256(training_config),
         "jobs": records,
     }
     _write_json(status_path, campaign)
@@ -243,7 +268,8 @@ def run_campaign(root, manifest_path, baseline_artifact, training_dir,
                 break
             record["state"] = "running"
             active[executor.submit(
-                _execute_job, root, job, record, baseline_artifact, runner)] = record
+                _execute_job, root, job, record, baseline_artifact,
+                training_config, runner)] = record
         while active:
             done, _ = wait(active, return_when=FIRST_COMPLETED)
             for future in done:
@@ -263,7 +289,8 @@ def run_campaign(root, manifest_path, baseline_artifact, training_dir,
                     break
                 record["state"] = "running"
                 active[executor.submit(
-                    _execute_job, root, job, record, baseline_artifact, runner)] = record
+                    _execute_job, root, job, record, baseline_artifact,
+                    training_config, runner)] = record
     campaign["status"] = "failed" if failure else "complete"
     _write_json(status_path, campaign)
     return campaign
@@ -272,6 +299,9 @@ def run_campaign(root, manifest_path, baseline_artifact, training_dir,
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline-tuning-artifact", required=True)
+    parser.add_argument(
+        "--config", default="configs/haichau_training_v2_final_selected.yaml",
+        help="immutable final config emitted by the preregistered pilot selector")
     parser.add_argument("--manifest", default="results/haichau_network_v2/experiment-manifest.json")
     parser.add_argument("--training-dir", default="results/haichau_network_v2/training")
     parser.add_argument("--status", default="results/haichau_network_v2/training/final-campaign-status.json")
@@ -282,6 +312,7 @@ def main(argv=None):
             PROJECT_ROOT, PROJECT_ROOT / args.manifest,
             PROJECT_ROOT / args.baseline_tuning_artifact,
             PROJECT_ROOT / args.training_dir, PROJECT_ROOT / args.status,
+            PROJECT_ROOT / args.config,
             max_concurrency=args.max_concurrency)
     except ValueError as exc:
         parser.error(str(exc))
