@@ -14,7 +14,7 @@ cf-run:
 
 # Run pure-python unit tests locally (cityflow NOT required).
 test:
-	SUMO_HOME=$(SUMO_HOME) python3 -m pytest -m 'not docker' -v
+	SUMO_HOME=$(SUMO_HOME) python3 -m pytest -m 'not docker and not docker_host' -v
 
 # Run engine integration tests inside the CityFlow container.
 cf-test:

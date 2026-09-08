@@ -84,7 +84,11 @@ def run_episode(env, controller, max_decisions=None):
                   "network_queue", "collisions", "emergency_braking",
                   "phase_switches"):
         result[field] = info.get(field)
-    scheduled = info.get("scheduled")
-    result["completion_rate"] = (float(info.get("arrived", 0)) / scheduled
-                                 if scheduled else None)
+    network_metrics = info.get("network_metrics")
+    if network_metrics:
+        result.update(network_metrics)
+    else:
+        scheduled = info.get("scheduled")
+        result["completion_rate"] = (float(info.get("arrived", 0)) / scheduled
+                                     if scheduled else None)
     return result

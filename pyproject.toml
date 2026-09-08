@@ -19,5 +19,6 @@ where = ["src"]
 pythonpath = ["src", "."]
 markers = [
     "docker: integration tests that require the CityFlow Docker image",
+    "docker_host: integration tests that require the host Docker daemon",
 ]
-addopts = ["-m", "not docker"]
+addopts = ["-m", "not docker and not docker_host"]

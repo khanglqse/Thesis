@@ -10,7 +10,23 @@ and **Random** baselines across a spectrum of demand regimes.
 > **Full write-up:** `paper/trafic_rf.tex` (Chapter 4 = experiments & results).
 > **Scenario framing & honest numbers:** `docs/scenario_regimes.md`.
 
-## Headline finding
+## Evidence namespaces
+
+The checked-in results described below are the legacy study. They remain available for
+reproduction and defense use, but they do not count as evidence for the new 53-signal
+neighbor-aware DDQN extension.
+
+The extension uses the separate `haichau_network_v2` namespace. Its demand label is always
+**synthetic network demand constrained by Da Nang evidence**. A result becomes releasable
+only when `scripts/verify_haichau_thesis.py` reports `"complete": true`; a failed acceptance
+outcome is still reported as a valid negative result once every evidence gate is complete.
+At present the final five-seed checkpoints, frozen case manifest and fresh campaign have to
+be supplied by the foundation/model pipeline before that verifier can pass.
+
+The exact campaign, thesis, offline-demo and clean-checkout procedure is in
+`docs/defense/demo-runbook.md`.
+
+## Legacy-study headline finding
 
 The learned controller's advantage tracks **network saturation**, and we report the whole
 spectrum rather than a single flattering point:
@@ -76,7 +92,7 @@ All simulator work runs inside the container through one wrapper:
 make cf-run CMD="PYTHONPATH=src python3 scripts/<script>.py <args>"
 ```
 
-## Reproduce the results
+## Reproduce the legacy results
 
 Scenarios live in `data/danang/` as `roadnet_<scen>.json` + `flow_<scen>.json`
 (`haichau_rush`, `haichau_calib`, `haichau_peak`, `haichau`). Each result is written to
@@ -113,7 +129,7 @@ make cf-run CMD="PYTHONPATH=src python3 scripts/run_robustness.py haichau_rush"
 make cf-run CMD="PYTHONPATH=src python3 scripts/run_agreement.py haichau_rush"
 ```
 
-## Live demo
+## Legacy live demo
 
 A browser demo replays recorded episodes and lets you switch (scenario × controller) live,
 with an always-on projector-legible HUD and a cumulative-waiting scoreboard.
@@ -133,6 +149,34 @@ count vs the real Đà Nẵng fleet: `docs/danang_peak_demo_scenario.md`.
 make test        # host unit tests (no CityFlow needed): pytest -m 'not docker'
 make cf-test     # engine integration tests inside the CityFlow container
 ```
+
+The fail-closed audit for the 53-signal extension is:
+
+```sh
+PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
+```
+
+It writes `results/haichau_network_v2/verification/final-report.json` and exits nonzero
+until the network, split, five checkpoints, fresh matched runs, statistics, paper, offline
+demo and clean-checkout record are all hash-valid.
+
+The verifier recomputes the numeric summary and acceptance decision from the hash-verified
+run metrics. It also requires exact frozen run identity (flow hash, simulator seed,
+checkpoint, code commit, inspected Docker image and resolved config). Every one of the five
+learning seeds must contain the exact tuned-fixed demand/simulator cells, with at least two
+cells in every gated regime. The current checkout must be clean, descend from the frozen
+40-character commit and leave `src/`, `scripts/`, `frontend/`, `docker/` and build config
+unchanged. Paper/demo artifacts are content-hashed; `pdfinfo`/`pdftoppm`, `ffprobe` and a
+full `ffmpeg -xerror` decode must parse/render the PDFs, PNGs and MP4, and replays cover the
+full horizon. `scripts/attest_haichau_release.py` generates the clean-checkout evidence with
+exact command results, tool versions and hashed stdout/stderr logs; the final verifier
+rejects hand-written summary records, reads artifacts from the attested Git commit and
+directly re-runs the release command contract. Campaign release verification also requires
+the stopped Docker containers so it can inspect their real image/config/exit state and logs.
+Release execution uses detached `docker run` plus `docker wait`: `stdout.log` and
+`stderr.log` come only from `docker logs`, while Docker CLI/daemon stderr (such as the
+Apple Silicon x86-image platform warning) is hashed separately in
+`docker-cli-diagnostics.json`.
 
 ## Scope: validated vs proposed
 
