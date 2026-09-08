@@ -1,0 +1,262 @@
+{
+  "application": {
+    "application_code_commit": "79f07f38530a555df930d68f027b324975abd59a",
+    "generated_artifacts": [
+      {
+        "path": "results/haichau_network_v2/demands/test_am_peak_demand101.json",
+        "sha256": "c18fb0dbffe6c7e8661be379aad2d93cc4c8f66bbb767a9355eaed0607aa3764"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_am_peak_demand102.json",
+        "sha256": "33c5ee9824ba0208411d84d857f099902d4c446217dc6389e4e91671ac9b2b8b"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_am_peak_demand103.json",
+        "sha256": "9273ef8c1378a0b464dea57e01ce24c2535ba907e8b9a513737022868457f202"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_am_peak_demand104.json",
+        "sha256": "2bfaa9634590a07b99a687fb42dea464a80000a376bc0407bbe216d62b360c90"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_am_peak_demand105.json",
+        "sha256": "3739d5b0ee90cf2b37b26fb1d6e43d2e5686587fb3203f40e515f44e06394eef"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_normal_demand101.json",
+        "sha256": "336863a49a643334d4c304287b0c898e6d2bb3b60ee2491909cf08adfec094d6"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_normal_demand102.json",
+        "sha256": "00b0089c2da050a6840f2c1871e55f7a417dc485bb326309b21cbc3b9aa2e364"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_normal_demand103.json",
+        "sha256": "614685b8837a8db0dbf65c68351233571220a69c43888c22d8e3e658571474f9"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_normal_demand104.json",
+        "sha256": "0946ba40933081b4ff2404c79ddf58bddfdcc0703bc383bc64570fbfac694acd"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_normal_demand105.json",
+        "sha256": "8b57a60a05d12fdc274d7bb186a35af90c55e1f2b5b2b937d49e146f9e84347d"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_pm_peak_demand101.json",
+        "sha256": "2983180d161dd505baf1ff86826da846022879d3b6203c963ee3d2c9ace99a06"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_pm_peak_demand102.json",
+        "sha256": "0a865cbe05c13c69435d7b92ee6628939196a15cf8adf3debcfc5949b870df34"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_pm_peak_demand103.json",
+        "sha256": "d7d0cdad49ce35d7d095b982583892af871976678385f4ef97fd03f9f1ced6e0"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_pm_peak_demand104.json",
+        "sha256": "e9f59ec21e0f6787ef11ffd9efb5ae57470d5ee187f6a7f41e68a018555b48d2"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/test_pm_peak_demand105.json",
+        "sha256": "8a90c6b51f8c68512f6df3fc0747b6c3007cfd57a5a482e860e2c0857ec128d9"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_am_peak_demand11.json",
+        "sha256": "9ad0f3e2fba89c2c9e7000b99b8ead02618addec82d773e490e5caaf760506f1"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_am_peak_demand12.json",
+        "sha256": "b54c12791d4531b5a00ed07dc7f522cdf6d5ac19f6e28f2790b3a2384c5a98eb"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_am_peak_demand13.json",
+        "sha256": "2697e2561fbdc004944e2c40aad6fab47548906511fce602301cc35dde6e2dd8"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_normal_demand11.json",
+        "sha256": "4600e46c9e537f52b8ecaf88948cbc763f454b042c2e849fdc2ca4ea6197dfbf"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_normal_demand12.json",
+        "sha256": "56bce2d30d1ed27f5b6d01e0a2a24763086e2027afd28a94872ca929682522d9"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_normal_demand13.json",
+        "sha256": "b3aedc4f7029497a21d70e464f1a27ad127901c35cc9ae8e6e3d0ba0f48db090"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_pm_peak_demand11.json",
+        "sha256": "a81138ce21137ed70fd4c8d98796cefa9375e0f22a802cb3016ecda7946f38d9"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_pm_peak_demand12.json",
+        "sha256": "122bccaf2c059779aa6e83fd471fa7e816710dc37e325b4e613ed4d326cc6dce"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/train_pm_peak_demand13.json",
+        "sha256": "8221c330c2c13510f08de8b328a801840d89959ed27a63ec72b4e73fd3444561"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/validation_am_peak_demand31.json",
+        "sha256": "367cbf6e93b3643459e856a00a25d10762b9f029eae5e128f6a9e9cca76ff8ec"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/validation_am_peak_demand32.json",
+        "sha256": "31dc30feb950c80eb8e76412a1f28d79104d87d38926cf5f669062cf44cca103"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/validation_normal_demand31.json",
+        "sha256": "f69b0e960e61f7eb4f064d229a0e7cafcd2333642b483d6d3bb78d2ba7b4d363"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/validation_normal_demand32.json",
+        "sha256": "110a2f6e7bbdd3d3036f550314c3cb518bf2df0d710b42f4cba0e66fed2b44bc"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/validation_pm_peak_demand31.json",
+        "sha256": "713f05afb6d8f6836e1e52cfeb939f553ddf4ebc83f53c68c86399ccd069ed0d"
+      },
+      {
+        "path": "results/haichau_network_v2/demands/validation_pm_peak_demand32.json",
+        "sha256": "63c83913fd0be0933e937d810043bc64f88cc25aa8c23c048c8c24d6832e1975"
+      },
+      {
+        "path": "results/haichau_network_v2/experiment-manifest.json",
+        "sha256": "64fbf55f7129a8a55cac04ec8bd74447b32b0bfe6e7d4d66fff0b75779a70f6b"
+      },
+      {
+        "path": "results/haichau_network_v2/route-families.json",
+        "sha256": "ff03cc04c4347f7383d60d382c9df805f8efa3b92a20d06c38b8fd36c0e52b99"
+      }
+    ],
+    "generated_manifest_path": "results/haichau_network_v2/experiment-manifest.json",
+    "generated_manifest_sha256": "64fbf55f7129a8a55cac04ec8bd74447b32b0bfe6e7d4d66fff0b75779a70f6b",
+    "generator_config_sha256": "55eb359b6afaca87a901ce53731e5d455d8c5845c2a1f374cdcf582ed1863987",
+    "new_version": true,
+    "preparer_path": "scripts/prepare_haichau_network_v2.py",
+    "preparer_sha256": "b089db8ef72c2ac811d16190970323164698822058ba1a4cb1b55f19b9e4b2f5"
+  },
+  "decision_identity_sha256": "a9614b2f03a9542782fbbc3ff09772884a305ccc5287bd8ede25ec092de41997",
+  "decision_type": "haichau_capacity_scale_promotion",
+  "evidence": {
+    "campaign_identity_sha256": "e0e200a8b92de3b7fa58bfd0b71c78252d8dc6d87da6ac13bf7713f31fd7f86b",
+    "campaign_sha256": "69d1325f854785d10e7ba6173c6d32afc3ef5b5bbc7046dc4478064adde07847",
+    "results": [
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_am_peak_demand31__fixed_time_30__s0p30__h3600/result.json",
+        "result_sha256": "ea4e5f7e5c2cb27d7408e5cd25f1db449ff5982218869dc2367a7f59b59c813b",
+        "run_id": "stage-d__validation_am_peak_demand31__fixed_time_30__s0p30__h3600",
+        "run_manifest_sha256": "70969aa0c8801c2c70f16101cae9dab9705112cf64154fff3c11297b228540c8"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_am_peak_demand31__max_pressure_masked_v2__s0p30__h3600/result.json",
+        "result_sha256": "23e78952dd8285c3c4cc026a5e56dc2e52f604a66304c7f9c44a517235a2eff3",
+        "run_id": "stage-d__validation_am_peak_demand31__max_pressure_masked_v2__s0p30__h3600",
+        "run_manifest_sha256": "a7ac1b898c0711f8d9a4f5e5328f472db488ab6aad1e90bc2eb3d92cdc2818d8"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_am_peak_demand32__fixed_time_30__s0p30__h3600/result.json",
+        "result_sha256": "e0403769d197872c7d149d168644ef5618316799b45df33af5030822897e5e50",
+        "run_id": "stage-d__validation_am_peak_demand32__fixed_time_30__s0p30__h3600",
+        "run_manifest_sha256": "b8ca03b05734fd967fa56e0df656d99b8707c9c8b62c56553da356c19c7d7682"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_am_peak_demand32__max_pressure_masked_v2__s0p30__h3600/result.json",
+        "result_sha256": "73ec240c6f8a80da6d58071cbca8b43c8194d8e87f87211b15cd6ea71fca25d7",
+        "run_id": "stage-d__validation_am_peak_demand32__max_pressure_masked_v2__s0p30__h3600",
+        "run_manifest_sha256": "33c5165805a728edfecbd892aea90746eeecfe253c8b9c2c6bcbe18863edf28a"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_normal_demand31__fixed_time_30__s0p30__h3600/result.json",
+        "result_sha256": "6e2d4d5eb1ffc6e271c81326b9b2fac58b9c90b9d3e98611b38dbec1c8e6bfbe",
+        "run_id": "stage-d__validation_normal_demand31__fixed_time_30__s0p30__h3600",
+        "run_manifest_sha256": "c71648a42bfce55e08effccf991884ca0c05407bccbb052c7b69073a90f11760"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_normal_demand31__max_pressure_masked_v2__s0p30__h3600/result.json",
+        "result_sha256": "438b9e08c62ecd61ea2e862138c4061738b5a9b855eca68ca56bdcba662c32da",
+        "run_id": "stage-d__validation_normal_demand31__max_pressure_masked_v2__s0p30__h3600",
+        "run_manifest_sha256": "8bc90e66cf70fb9e0a1ce01225324e6b3c979b6a2ecf124c24632dc51734aab0"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_normal_demand32__fixed_time_30__s0p30__h3600/result.json",
+        "result_sha256": "c33f50b414953f0876ba38a1bd839fe6809b1eb8a027a461ba4f22ccc4293267",
+        "run_id": "stage-d__validation_normal_demand32__fixed_time_30__s0p30__h3600",
+        "run_manifest_sha256": "7feee13753f786583944a75e8edb217016f3b3041689e2c0bbcee275c9e7df29"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_normal_demand32__max_pressure_masked_v2__s0p30__h3600/result.json",
+        "result_sha256": "10dee7e5c668df83377cb6bb4f9a39457c3edbe511a0c5002ad1ec27e37930bb",
+        "run_id": "stage-d__validation_normal_demand32__max_pressure_masked_v2__s0p30__h3600",
+        "run_manifest_sha256": "05a179665f657c721771872d7faefb89155bc36b997fc68de514f08c9150d77a"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_pm_peak_demand31__fixed_time_30__s0p30__h3600/result.json",
+        "result_sha256": "62c574179ddad9d3066effa2930e79403088ac9eea5b7abb95e3bb866e49a5f0",
+        "run_id": "stage-d__validation_pm_peak_demand31__fixed_time_30__s0p30__h3600",
+        "run_manifest_sha256": "787a4501b0d18e8d4342748f54e1bbf3a582aab0d6de9b75e53a02dbd03f8ebf"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_pm_peak_demand31__max_pressure_masked_v2__s0p30__h3600/result.json",
+        "result_sha256": "823ac8a73faf00ec5cb57231a606ed7b205a01a553e707c54724b61afe6979fc",
+        "run_id": "stage-d__validation_pm_peak_demand31__max_pressure_masked_v2__s0p30__h3600",
+        "run_manifest_sha256": "636cace9fe919d304694ce710a3de841e075042998ca1f766c80708c3612ba99"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_pm_peak_demand32__fixed_time_30__s0p30__h3600/result.json",
+        "result_sha256": "176fd92b469e01ceadd11cb5d6d0f2dfe51fb25c7c0ea0c2bb3433b88aecc2e9",
+        "run_id": "stage-d__validation_pm_peak_demand32__fixed_time_30__s0p30__h3600",
+        "run_manifest_sha256": "350e34f5b6060a913e815cafdb8af2c547498290b1bba9db91286752672beacf"
+      },
+      {
+        "result_path": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030/runs/stage-d__validation_pm_peak_demand32__max_pressure_masked_v2__s0p30__h3600/result.json",
+        "result_sha256": "ae504e8673c3f0a81bcf974c154bd2d24d288c5e897580612856a5edf4926dbe",
+        "run_id": "stage-d__validation_pm_peak_demand32__max_pressure_masked_v2__s0p30__h3600",
+        "run_manifest_sha256": "5a6037320883174585e4363da0736c7deb31da506c0bfd76a52ad83183aa74c0"
+      }
+    ],
+    "stage_d_directory": "results/haichau_network_v2/diagnostics/capacity-v3-stage-d-s030",
+    "summary_sha256": "d07c2a5063f3e535c0ab2ef18dec9f1fd63c5abed3819708eacdccec476806ee"
+  },
+  "reference_interval": {
+    "base_seconds": "72",
+    "exact_fraction": "240/1",
+    "formula": "72 / selected_scale",
+    "selected_scale": "0.30",
+    "yaml_decimal": "240"
+  },
+  "registered_stage_d_candidates": [
+    "0.30"
+  ],
+  "schema_version": 1,
+  "selected_scale": "0.30",
+  "selection_rule": "highest passing scale among registered Stage-D candidates",
+  "source": {
+    "binding_sha256": "d94217d20062d192109dd40564b9e7c0c4af0b80678500c2ea9c24de1115282a",
+    "bound_inputs": {
+      "code_sha256": {
+        "scripts/calibrate_haichau_capacity.py": "2d6a1363a1b8573b3caeb51c21cecb39316dcaa7bf6ee4059b08c875cea1a866",
+        "src/traffic_rl/eval/capacity_calibration.py": "c5f1858baa93f6927def1d146f8b08888ad77f7263d96e9a08be7469b0221e11"
+      },
+      "generator_config_sha256": "727f1499988e1b063436f4421fc5565df838be598041ded5ef4c21db9aedc704",
+      "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+      "phase_contract_sha256": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae",
+      "runtime": {
+        "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+        "derived_image_tag": "traffic-rl-cityflow-research:v2",
+        "dockerfile": {
+          "path": "docker/cityflow-research/Dockerfile",
+          "sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf"
+        },
+        "platform": "linux/amd64"
+      },
+      "source_manifest_sha256": "3b1959cba8317a5ccaa56fd85e4d3a35de92a53df1db460215eec468b2506ee5",
+      "training_config_sha256": "25d69765a5fc44e6d60a28037bf6f8429e931502275a6d65bb697c10eb470e3d"
+    },
+    "calibration_code_commit": "f36d7201a605318fd6ab9bd3987c13186ed38c61",
+    "generator_config_path": "configs/haichau_network_v2.yaml",
+    "generator_config_sha256": "727f1499988e1b063436f4421fc5565df838be598041ded5ef4c21db9aedc704"
+  }
+}

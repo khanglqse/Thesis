@@ -12,7 +12,7 @@ route_count: 500
 min_controlled_signals_per_route: 2
 horizon_seconds: 3600
 motorcycle_ratio: 0.90
-reference_interval_seconds: 72.0
+reference_interval_seconds: 240
 route_family_split: {train: 0.50, validation: 0.25, test: 0.25}
 route_coverage:
   required_controlled_signals: all

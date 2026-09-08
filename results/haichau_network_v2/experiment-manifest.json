@@ -61,7 +61,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 11,
       "flow_path": "results/haichau_network_v2/demands/train_normal_demand11.json",
-      "flow_sha256": "f94b9d89b8fdc3cfc995f4496ad69862125595746189b4891ca6245bdf2d0492",
+      "flow_sha256": "4600e46c9e537f52b8ecaf88948cbc763f454b042c2e849fdc2ca4ea6197dfbf",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -1094,8 +1094,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9933,
+          "interval_seconds": 201.465969,
+          "scheduled": 2971,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -1103,8 +1103,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7247,
+          "interval_seconds": 275.842294,
+          "scheduled": 2173,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -1112,8 +1112,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7824,
+          "interval_seconds": 255.681063,
+          "scheduled": 2353,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -1121,30 +1121,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2995,
-        "motorbike": 22009
+        "car": 888,
+        "motorbike": 6609
       },
-      "scheduled_vehicles": 25004,
+      "scheduled_vehicles": 7497,
       "sim_seed": 111,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -1213,7 +1213,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 11,
       "flow_path": "results/haichau_network_v2/demands/train_am_peak_demand11.json",
-      "flow_sha256": "1f5975492149a33d1317d2c7a71c21fb2c75a3d404aca633d3bcf7a222c6f8cb",
+      "flow_sha256": "9ad0f3e2fba89c2c9e7000b99b8ead02618addec82d773e490e5caaf760506f1",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -2246,8 +2246,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6522,
+          "interval_seconds": 306.613546,
+          "scheduled": 1954,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -2255,8 +2255,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12091,
+          "interval_seconds": 165.150215,
+          "scheduled": 3611,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -2264,8 +2264,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9707,
+          "interval_seconds": 205.775401,
+          "scheduled": 2903,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -2273,30 +2273,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3409,
-        "motorbike": 24911
+        "car": 1014,
+        "motorbike": 7454
       },
-      "scheduled_vehicles": 28320,
+      "scheduled_vehicles": 8468,
       "sim_seed": 111,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -2365,7 +2365,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 11,
       "flow_path": "results/haichau_network_v2/demands/train_pm_peak_demand11.json",
-      "flow_sha256": "181255c41118f667b47dc1941abc9780eb8bfac2f72281947001ab333615fb3c",
+      "flow_sha256": "a81138ce21137ed70fd4c8d98796cefa9375e0f22a802cb3016ecda7946f38d9",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -3398,8 +3398,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9123,
+          "interval_seconds": 219.259259,
+          "scheduled": 2731,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -3407,8 +3407,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12474,
+          "interval_seconds": 160.333333,
+          "scheduled": 3736,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -3416,8 +3416,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12942,
+          "interval_seconds": 154.538153,
+          "scheduled": 3886,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -3425,30 +3425,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 4138,
-        "motorbike": 30401
+        "car": 1245,
+        "motorbike": 9108
       },
-      "scheduled_vehicles": 34539,
+      "scheduled_vehicles": 10353,
       "sim_seed": 111,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -3517,7 +3517,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 12,
       "flow_path": "results/haichau_network_v2/demands/train_normal_demand12.json",
-      "flow_sha256": "41055c6b6c7277f08f716de1f5c29f7949d446da4840ecc26f27344d400243a5",
+      "flow_sha256": "56bce2d30d1ed27f5b6d01e0a2a24763086e2027afd28a94872ca929682522d9",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -4550,8 +4550,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9934,
+          "interval_seconds": 201.465969,
+          "scheduled": 2981,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -4559,8 +4559,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7240,
+          "interval_seconds": 275.842294,
+          "scheduled": 2174,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -4568,8 +4568,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7830,
+          "interval_seconds": 255.681063,
+          "scheduled": 2343,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -4577,30 +4577,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2402,
-        "motorbike": 22602
+        "car": 712,
+        "motorbike": 6786
       },
-      "scheduled_vehicles": 25004,
+      "scheduled_vehicles": 7498,
       "sim_seed": 112,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -4669,7 +4669,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 12,
       "flow_path": "results/haichau_network_v2/demands/train_am_peak_demand12.json",
-      "flow_sha256": "53b0cdead64873f51b2c3a691fc5cb947c45c501127ef1d179c177470d42bb1d",
+      "flow_sha256": "b54c12791d4531b5a00ed07dc7f522cdf6d5ac19f6e28f2790b3a2384c5a98eb",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -5702,8 +5702,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6520,
+          "interval_seconds": 306.613546,
+          "scheduled": 1964,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -5711,8 +5711,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12099,
+          "interval_seconds": 165.150215,
+          "scheduled": 3624,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -5720,8 +5720,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9716,
+          "interval_seconds": 205.775401,
+          "scheduled": 2933,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -5729,30 +5729,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2714,
-        "motorbike": 25621
+        "car": 817,
+        "motorbike": 7704
       },
-      "scheduled_vehicles": 28335,
+      "scheduled_vehicles": 8521,
       "sim_seed": 112,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -5821,7 +5821,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 12,
       "flow_path": "results/haichau_network_v2/demands/train_pm_peak_demand12.json",
-      "flow_sha256": "70062dd37806d0574bbea98fd455113d7a69238e3bf3d038b70079ff1f40b67e",
+      "flow_sha256": "122bccaf2c059779aa6e83fd471fa7e816710dc37e325b4e613ed4d326cc6dce",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -6854,8 +6854,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9114,
+          "interval_seconds": 219.259259,
+          "scheduled": 2733,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -6863,8 +6863,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12476,
+          "interval_seconds": 160.333333,
+          "scheduled": 3746,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -6872,8 +6872,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12933,
+          "interval_seconds": 154.538153,
+          "scheduled": 3891,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -6881,30 +6881,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3314,
-        "motorbike": 31209
+        "car": 993,
+        "motorbike": 9377
       },
-      "scheduled_vehicles": 34523,
+      "scheduled_vehicles": 10370,
       "sim_seed": 112,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -6973,7 +6973,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 13,
       "flow_path": "results/haichau_network_v2/demands/train_normal_demand13.json",
-      "flow_sha256": "f3de47aa99e7b1e69aa5e26d7929e7d267eb0b2fc58583d30096bbab4b661a54",
+      "flow_sha256": "b3aedc4f7029497a21d70e464f1a27ad127901c35cc9ae8e6e3d0ba0f48db090",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -8006,8 +8006,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9928,
+          "interval_seconds": 201.465969,
+          "scheduled": 2979,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -8015,8 +8015,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7257,
+          "interval_seconds": 275.842294,
+          "scheduled": 2176,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -8024,8 +8024,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7825,
+          "interval_seconds": 255.681063,
+          "scheduled": 2352,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -8033,30 +8033,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2801,
-        "motorbike": 22209
+        "car": 842,
+        "motorbike": 6665
       },
-      "scheduled_vehicles": 25010,
+      "scheduled_vehicles": 7507,
       "sim_seed": 113,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -8125,7 +8125,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 13,
       "flow_path": "results/haichau_network_v2/demands/train_am_peak_demand13.json",
-      "flow_sha256": "9c643de25c3bd778be50c4bb73cfacbb44bb17639204dc97266d21205f21f7fb",
+      "flow_sha256": "2697e2561fbdc004944e2c40aad6fab47548906511fce602301cc35dde6e2dd8",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -9158,8 +9158,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6522,
+          "interval_seconds": 306.613546,
+          "scheduled": 1947,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -9167,8 +9167,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12090,
+          "interval_seconds": 165.150215,
+          "scheduled": 3607,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -9176,8 +9176,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9712,
+          "interval_seconds": 205.775401,
+          "scheduled": 2900,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -9185,30 +9185,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3179,
-        "motorbike": 25145
+        "car": 945,
+        "motorbike": 7509
       },
-      "scheduled_vehicles": 28324,
+      "scheduled_vehicles": 8454,
       "sim_seed": 113,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -9277,7 +9277,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 13,
       "flow_path": "results/haichau_network_v2/demands/train_pm_peak_demand13.json",
-      "flow_sha256": "efdebd8c782325b77f01141f1207c6b1ddb5050c9bb1e7597ec69d4769429c06",
+      "flow_sha256": "8221c330c2c13510f08de8b328a801840d89959ed27a63ec72b4e73fd3444561",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -10310,8 +10310,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9107,
+          "interval_seconds": 219.259259,
+          "scheduled": 2719,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -10319,8 +10319,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12466,
+          "interval_seconds": 160.333333,
+          "scheduled": 3746,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -10328,8 +10328,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12927,
+          "interval_seconds": 154.538153,
+          "scheduled": 3880,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -10337,30 +10337,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3862,
-        "motorbike": 30638
+        "car": 1161,
+        "motorbike": 9184
       },
-      "scheduled_vehicles": 34500,
+      "scheduled_vehicles": 10345,
       "sim_seed": 113,
       "split": "train",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -10429,7 +10429,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 31,
       "flow_path": "results/haichau_network_v2/demands/validation_normal_demand31.json",
-      "flow_sha256": "a50399da5cc35dc95c40c68bd1c2e70f1bd81aa39bbc8bbf566da37cee6ce90c",
+      "flow_sha256": "f69b0e960e61f7eb4f064d229a0e7cafcd2333642b483d6d3bb78d2ba7b4d363",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -11107,8 +11107,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9920,
+          "interval_seconds": 201.465969,
+          "scheduled": 2987,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -11116,8 +11116,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7236,
+          "interval_seconds": 275.842294,
+          "scheduled": 2181,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -11125,8 +11125,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7833,
+          "interval_seconds": 255.681063,
+          "scheduled": 2345,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -11134,30 +11134,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2297,
-        "motorbike": 22692
+        "car": 688,
+        "motorbike": 6825
       },
-      "scheduled_vehicles": 24989,
+      "scheduled_vehicles": 7513,
       "sim_seed": 131,
       "split": "validation",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -11226,7 +11226,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 31,
       "flow_path": "results/haichau_network_v2/demands/validation_am_peak_demand31.json",
-      "flow_sha256": "f3690411a5ff36f6fc283bd40a4d60297acfe0fa315895c856a3a3fbf6e3f382",
+      "flow_sha256": "367cbf6e93b3643459e856a00a25d10762b9f029eae5e128f6a9e9cca76ff8ec",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -11904,8 +11904,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6533,
+          "interval_seconds": 306.613546,
+          "scheduled": 1947,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -11913,8 +11913,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12088,
+          "interval_seconds": 165.150215,
+          "scheduled": 3619,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -11922,8 +11922,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9737,
+          "interval_seconds": 205.775401,
+          "scheduled": 2919,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -11931,30 +11931,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2611,
-        "motorbike": 25747
+        "car": 776,
+        "motorbike": 7709
       },
-      "scheduled_vehicles": 28358,
+      "scheduled_vehicles": 8485,
       "sim_seed": 131,
       "split": "validation",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -12023,7 +12023,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 31,
       "flow_path": "results/haichau_network_v2/demands/validation_pm_peak_demand31.json",
-      "flow_sha256": "77a02840f3baad44b78c9e50dcf0d79b64c7be7955a545563f62ba28245bfc13",
+      "flow_sha256": "713f05afb6d8f6836e1e52cfeb939f553ddf4ebc83f53c68c86399ccd069ed0d",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -12701,8 +12701,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9120,
+          "interval_seconds": 219.259259,
+          "scheduled": 2723,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -12710,8 +12710,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12465,
+          "interval_seconds": 160.333333,
+          "scheduled": 3739,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -12719,8 +12719,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12939,
+          "interval_seconds": 154.538153,
+          "scheduled": 3866,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -12728,30 +12728,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3175,
-        "motorbike": 31349
+        "car": 949,
+        "motorbike": 9379
       },
-      "scheduled_vehicles": 34524,
+      "scheduled_vehicles": 10328,
       "sim_seed": 131,
       "split": "validation",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -12820,7 +12820,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 32,
       "flow_path": "results/haichau_network_v2/demands/validation_normal_demand32.json",
-      "flow_sha256": "00076c6d8a5804eb636981d9b5be03856bebfe86558d7553a3de21ab887534d8",
+      "flow_sha256": "110a2f6e7bbdd3d3036f550314c3cb518bf2df0d710b42f4cba0e66fed2b44bc",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -13498,8 +13498,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9931,
+          "interval_seconds": 201.465969,
+          "scheduled": 2975,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -13507,8 +13507,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7242,
+          "interval_seconds": 275.842294,
+          "scheduled": 2175,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -13516,8 +13516,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7834,
+          "interval_seconds": 255.681063,
+          "scheduled": 2345,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -13525,30 +13525,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2698,
-        "motorbike": 22309
+        "car": 804,
+        "motorbike": 6691
       },
-      "scheduled_vehicles": 25007,
+      "scheduled_vehicles": 7495,
       "sim_seed": 132,
       "split": "validation",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -13617,7 +13617,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 32,
       "flow_path": "results/haichau_network_v2/demands/validation_am_peak_demand32.json",
-      "flow_sha256": "0b90f255e3c64874080c8b0ee3e12d19bdd4bc1c25468acbf40ac5b4c8fc751e",
+      "flow_sha256": "31dc30feb950c80eb8e76412a1f28d79104d87d38926cf5f669062cf44cca103",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -14295,8 +14295,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6523,
+          "interval_seconds": 306.613546,
+          "scheduled": 1966,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -14304,8 +14304,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12109,
+          "interval_seconds": 165.150215,
+          "scheduled": 3639,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -14313,8 +14313,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9714,
+          "interval_seconds": 205.775401,
+          "scheduled": 2904,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -14322,30 +14322,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3059,
-        "motorbike": 25287
+        "car": 917,
+        "motorbike": 7592
       },
-      "scheduled_vehicles": 28346,
+      "scheduled_vehicles": 8509,
       "sim_seed": 132,
       "split": "validation",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -14414,7 +14414,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 32,
       "flow_path": "results/haichau_network_v2/demands/validation_pm_peak_demand32.json",
-      "flow_sha256": "a9d37642efe0585c8fb08150ad9d8c1e1ff3187bd3f33cc82be309356d9d99d6",
+      "flow_sha256": "63c83913fd0be0933e937d810043bc64f88cc25aa8c23c048c8c24d6832e1975",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -15092,8 +15092,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9130,
+          "interval_seconds": 219.259259,
+          "scheduled": 2728,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -15101,8 +15101,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12468,
+          "interval_seconds": 160.333333,
+          "scheduled": 3727,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -15110,8 +15110,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12949,
+          "interval_seconds": 154.538153,
+          "scheduled": 3884,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -15119,30 +15119,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3727,
-        "motorbike": 30820
+        "car": 1120,
+        "motorbike": 9219
       },
-      "scheduled_vehicles": 34547,
+      "scheduled_vehicles": 10339,
       "sim_seed": 132,
       "split": "validation",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -15211,7 +15211,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 101,
       "flow_path": "results/haichau_network_v2/demands/test_normal_demand101.json",
-      "flow_sha256": "25095fe7139479e3ee412eb06e8bbfbee079995f78bab3188821bcdbedc98aff",
+      "flow_sha256": "336863a49a643334d4c304287b0c898e6d2bb3b60ee2491909cf08adfec094d6",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -15889,8 +15889,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9931,
+          "interval_seconds": 201.465969,
+          "scheduled": 2966,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -15898,8 +15898,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7259,
+          "interval_seconds": 275.842294,
+          "scheduled": 2185,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -15907,8 +15907,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7823,
+          "interval_seconds": 255.681063,
+          "scheduled": 2348,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -15916,30 +15916,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2548,
-        "motorbike": 22465
+        "car": 766,
+        "motorbike": 6733
       },
-      "scheduled_vehicles": 25013,
+      "scheduled_vehicles": 7499,
       "sim_seed": 201,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -16008,7 +16008,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 101,
       "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand101.json",
-      "flow_sha256": "ac6f06a2a52d83b52ccc39583d731587d2b413a62a36d8703138a3e2d2acbc72",
+      "flow_sha256": "c18fb0dbffe6c7e8661be379aad2d93cc4c8f66bbb767a9355eaed0607aa3764",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -16686,8 +16686,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6521,
+          "interval_seconds": 306.613546,
+          "scheduled": 1954,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -16695,8 +16695,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12098,
+          "interval_seconds": 165.150215,
+          "scheduled": 3626,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -16704,8 +16704,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9709,
+          "interval_seconds": 205.775401,
+          "scheduled": 2916,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -16713,30 +16713,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2887,
-        "motorbike": 25441
+        "car": 858,
+        "motorbike": 7638
       },
-      "scheduled_vehicles": 28328,
+      "scheduled_vehicles": 8496,
       "sim_seed": 201,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -16805,7 +16805,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 101,
       "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand101.json",
-      "flow_sha256": "5364811f0fa8525fc7d0fd69c56b0900501642db303057560070d031e9275ecf",
+      "flow_sha256": "2983180d161dd505baf1ff86826da846022879d3b6203c963ee3d2c9ace99a06",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -17483,8 +17483,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9111,
+          "interval_seconds": 219.259259,
+          "scheduled": 2745,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -17492,8 +17492,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12473,
+          "interval_seconds": 160.333333,
+          "scheduled": 3722,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -17501,8 +17501,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12948,
+          "interval_seconds": 154.538153,
+          "scheduled": 3881,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -17510,30 +17510,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3518,
-        "motorbike": 31014
+        "car": 1058,
+        "motorbike": 9290
       },
-      "scheduled_vehicles": 34532,
+      "scheduled_vehicles": 10348,
       "sim_seed": 201,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -17602,7 +17602,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 102,
       "flow_path": "results/haichau_network_v2/demands/test_normal_demand102.json",
-      "flow_sha256": "28f1fc0b4e4b2834643a70369d51780b2c0aa1d58a601794f7e9fd0089f7335a",
+      "flow_sha256": "00b0089c2da050a6840f2c1871e55f7a417dc485bb326309b21cbc3b9aa2e364",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -18280,8 +18280,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9926,
+          "interval_seconds": 201.465969,
+          "scheduled": 2977,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -18289,8 +18289,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7271,
+          "interval_seconds": 275.842294,
+          "scheduled": 2184,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -18298,8 +18298,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7826,
+          "interval_seconds": 255.681063,
+          "scheduled": 2358,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -18307,30 +18307,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2200,
-        "motorbike": 22823
+        "car": 665,
+        "motorbike": 6854
       },
-      "scheduled_vehicles": 25023,
+      "scheduled_vehicles": 7519,
       "sim_seed": 202,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -18399,7 +18399,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 102,
       "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand102.json",
-      "flow_sha256": "a1a95c4440e7d1319530ea637d381c2c376ee98a4c4840a03d45d922e845eb5b",
+      "flow_sha256": "33c5ee9824ba0208411d84d857f099902d4c446217dc6389e4e91671ac9b2b8b",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -19077,8 +19077,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6528,
+          "interval_seconds": 306.613546,
+          "scheduled": 1951,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -19086,8 +19086,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12097,
+          "interval_seconds": 165.150215,
+          "scheduled": 3618,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -19095,8 +19095,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9723,
+          "interval_seconds": 205.775401,
+          "scheduled": 2905,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -19104,30 +19104,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2504,
-        "motorbike": 25844
+        "car": 742,
+        "motorbike": 7732
       },
-      "scheduled_vehicles": 28348,
+      "scheduled_vehicles": 8474,
       "sim_seed": 202,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -19196,7 +19196,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 102,
       "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand102.json",
-      "flow_sha256": "0b040e07071abedfda612e9675c85306dae6e3df8258c9ffaa47aba72e16f61a",
+      "flow_sha256": "0a865cbe05c13c69435d7b92ee6628939196a15cf8adf3debcfc5949b870df34",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -19874,8 +19874,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9113,
+          "interval_seconds": 219.259259,
+          "scheduled": 2733,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -19883,8 +19883,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12473,
+          "interval_seconds": 160.333333,
+          "scheduled": 3744,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -19892,8 +19892,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12934,
+          "interval_seconds": 154.538153,
+          "scheduled": 3875,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -19901,30 +19901,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3029,
-        "motorbike": 31491
+        "car": 910,
+        "motorbike": 9442
       },
-      "scheduled_vehicles": 34520,
+      "scheduled_vehicles": 10352,
       "sim_seed": 202,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -19993,7 +19993,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 103,
       "flow_path": "results/haichau_network_v2/demands/test_normal_demand103.json",
-      "flow_sha256": "9b0eda502ffe6773e1e1bad0ca0829c37fca10ffe41029a01279fd59fbbf1064",
+      "flow_sha256": "614685b8837a8db0dbf65c68351233571220a69c43888c22d8e3e658571474f9",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -20671,8 +20671,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9920,
+          "interval_seconds": 201.465969,
+          "scheduled": 2978,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -20680,8 +20680,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7261,
+          "interval_seconds": 275.842294,
+          "scheduled": 2187,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -20689,8 +20689,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7809,
+          "interval_seconds": 255.681063,
+          "scheduled": 2351,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -20698,30 +20698,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2608,
-        "motorbike": 22382
+        "car": 785,
+        "motorbike": 6731
       },
-      "scheduled_vehicles": 24990,
+      "scheduled_vehicles": 7516,
       "sim_seed": 203,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -20790,7 +20790,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 103,
       "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand103.json",
-      "flow_sha256": "5a14182dc652947da03636ab2768130e93d64ebbd0210ed7f67caab51296801c",
+      "flow_sha256": "9273ef8c1378a0b464dea57e01ce24c2535ba907e8b9a513737022868457f202",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -21468,8 +21468,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6516,
+          "interval_seconds": 306.613546,
+          "scheduled": 1955,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -21477,8 +21477,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12089,
+          "interval_seconds": 165.150215,
+          "scheduled": 3617,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -21486,8 +21486,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9717,
+          "interval_seconds": 205.775401,
+          "scheduled": 2919,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -21495,30 +21495,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2937,
-        "motorbike": 25385
+        "car": 874,
+        "motorbike": 7617
       },
-      "scheduled_vehicles": 28322,
+      "scheduled_vehicles": 8491,
       "sim_seed": 203,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -21587,7 +21587,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 103,
       "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand103.json",
-      "flow_sha256": "6e1215cf5cded71f77e8901fd1a763f04bdda6e5e7001f76e9b8f86692ceca54",
+      "flow_sha256": "d7d0cdad49ce35d7d095b982583892af871976678385f4ef97fd03f9f1ced6e0",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -22265,8 +22265,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9123,
+          "interval_seconds": 219.259259,
+          "scheduled": 2751,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -22274,8 +22274,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12472,
+          "interval_seconds": 160.333333,
+          "scheduled": 3750,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -22283,8 +22283,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12939,
+          "interval_seconds": 154.538153,
+          "scheduled": 3887,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -22292,30 +22292,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3597,
-        "motorbike": 30937
+        "car": 1078,
+        "motorbike": 9310
       },
-      "scheduled_vehicles": 34534,
+      "scheduled_vehicles": 10388,
       "sim_seed": 203,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -22384,7 +22384,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 104,
       "flow_path": "results/haichau_network_v2/demands/test_normal_demand104.json",
-      "flow_sha256": "cf5a322edd41cc241de26ae7a632e99c78b59d1417f98fed2758260d9cb719af",
+      "flow_sha256": "0946ba40933081b4ff2404c79ddf58bddfdcc0703bc383bc64570fbfac694acd",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -23062,8 +23062,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9928,
+          "interval_seconds": 201.465969,
+          "scheduled": 2978,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -23071,8 +23071,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7261,
+          "interval_seconds": 275.842294,
+          "scheduled": 2163,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -23080,8 +23080,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7827,
+          "interval_seconds": 255.681063,
+          "scheduled": 2363,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -23089,30 +23089,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2653,
-        "motorbike": 22363
+        "car": 793,
+        "motorbike": 6711
       },
-      "scheduled_vehicles": 25016,
+      "scheduled_vehicles": 7504,
       "sim_seed": 204,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -23181,7 +23181,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 104,
       "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand104.json",
-      "flow_sha256": "8e8071c2f995d0ddbd3fadb228bf1964cdb7b183d0a93344441d7f3c9aa48e06",
+      "flow_sha256": "2bfaa9634590a07b99a687fb42dea464a80000a376bc0407bbe216d62b360c90",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -23859,8 +23859,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6517,
+          "interval_seconds": 306.613546,
+          "scheduled": 1952,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -23868,8 +23868,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12095,
+          "interval_seconds": 165.150215,
+          "scheduled": 3624,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -23877,8 +23877,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9715,
+          "interval_seconds": 205.775401,
+          "scheduled": 2919,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -23886,30 +23886,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2993,
-        "motorbike": 25334
+        "car": 900,
+        "motorbike": 7595
       },
-      "scheduled_vehicles": 28327,
+      "scheduled_vehicles": 8495,
       "sim_seed": 204,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -23978,7 +23978,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 104,
       "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand104.json",
-      "flow_sha256": "55dfa8ba28a14e41a226f41e4b99ce7773626f8e997b88fc0d396141ccfb059c",
+      "flow_sha256": "e9f59ec21e0f6787ef11ffd9efb5ae57470d5ee187f6a7f41e68a018555b48d2",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -24656,8 +24656,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9103,
+          "interval_seconds": 219.259259,
+          "scheduled": 2732,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -24665,8 +24665,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12474,
+          "interval_seconds": 160.333333,
+          "scheduled": 3745,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -24674,8 +24674,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12941,
+          "interval_seconds": 154.538153,
+          "scheduled": 3879,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -24683,30 +24683,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3654,
-        "motorbike": 30864
+        "car": 1100,
+        "motorbike": 9256
       },
-      "scheduled_vehicles": 34518,
+      "scheduled_vehicles": 10356,
       "sim_seed": 204,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -24775,7 +24775,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 105,
       "flow_path": "results/haichau_network_v2/demands/test_normal_demand105.json",
-      "flow_sha256": "d30c34fa2bc31c77687c5cb269dafe9eb3841c32f33109dceb34422b7449455f",
+      "flow_sha256": "8b57a60a05d12fdc274d7bb186a35af90c55e1f2b5b2b937d49e146f9e84347d",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -25453,8 +25453,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
-          "scheduled": 9935,
+          "interval_seconds": 201.465969,
+          "scheduled": 2974,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0,
@@ -25462,8 +25462,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
-          "scheduled": 7260,
+          "interval_seconds": 275.842294,
+          "scheduled": 2180,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200,
@@ -25471,8 +25471,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
-          "scheduled": 7815,
+          "interval_seconds": 255.681063,
+          "scheduled": 2352,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400,
@@ -25480,30 +25480,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2303,
-        "motorbike": 22707
+        "car": 697,
+        "motorbike": 6809
       },
-      "scheduled_vehicles": 25010,
+      "scheduled_vehicles": 7506,
       "sim_seed": 205,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 60.439791,
+          "interval_seconds": 201.465969,
           "source_hour": "12:00",
           "source_vehicle_count": 1910,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 82.752688,
+          "interval_seconds": 275.842294,
           "source_hour": "13:00",
           "source_vehicle_count": 1395,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 76.704319,
+          "interval_seconds": 255.681063,
           "source_hour": "14:00",
           "source_vehicle_count": 1505,
           "start": 2400
@@ -25572,7 +25572,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 105,
       "flow_path": "results/haichau_network_v2/demands/test_am_peak_demand105.json",
-      "flow_sha256": "c2ec00916169eb74053de88626717459e730b8677aae57ad69119599c72683c0",
+      "flow_sha256": "3739d5b0ee90cf2b37b26fb1d6e43d2e5686587fb3203f40e515f44e06394eef",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -26250,8 +26250,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
-          "scheduled": 6521,
+          "interval_seconds": 306.613546,
+          "scheduled": 1955,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0,
@@ -26259,8 +26259,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
-          "scheduled": 12091,
+          "interval_seconds": 165.150215,
+          "scheduled": 3621,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200,
@@ -26268,8 +26268,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
-          "scheduled": 9740,
+          "interval_seconds": 205.775401,
+          "scheduled": 2930,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400,
@@ -26277,30 +26277,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 2603,
-        "motorbike": 25749
+        "car": 780,
+        "motorbike": 7726
       },
-      "scheduled_vehicles": 28352,
+      "scheduled_vehicles": 8506,
       "sim_seed": 205,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 91.984064,
+          "interval_seconds": 306.613546,
           "source_hour": "07:00",
           "source_vehicle_count": 1255,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 49.545064,
+          "interval_seconds": 165.150215,
           "source_hour": "08:00",
           "source_vehicle_count": 2330,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 61.73262,
+          "interval_seconds": 205.775401,
           "source_hour": "09:00",
           "source_vehicle_count": 1870,
           "start": 2400
@@ -26369,7 +26369,7 @@
       "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
       "demand_seed": 105,
       "flow_path": "results/haichau_network_v2/demands/test_pm_peak_demand105.json",
-      "flow_sha256": "0d90dc154eb6c84ad4cc66f7e5466cd3bcafc1d03c3ce900568950f94f6be21f",
+      "flow_sha256": "8a90c6b51f8c68512f6df3fc0747b6c3007cfd57a5a482e860e2c0857ec128d9",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
       "route_family_hashes": [
@@ -27047,8 +27047,8 @@
       "scheduled_departures_by_bin": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
-          "scheduled": 9113,
+          "interval_seconds": 219.259259,
+          "scheduled": 2747,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0,
@@ -27056,8 +27056,8 @@
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
-          "scheduled": 12473,
+          "interval_seconds": 160.333333,
+          "scheduled": 3749,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200,
@@ -27065,8 +27065,8 @@
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
-          "scheduled": 12941,
+          "interval_seconds": 154.538153,
+          "scheduled": 3881,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400,
@@ -27074,30 +27074,30 @@
         }
       ],
       "scheduled_vehicle_counts": {
-        "car": 3174,
-        "motorbike": 31353
+        "car": 947,
+        "motorbike": 9430
       },
-      "scheduled_vehicles": 34527,
+      "scheduled_vehicles": 10377,
       "sim_seed": 205,
       "split": "test",
       "temporal_profile": [
         {
           "end": 1200,
-          "interval_seconds": 65.777778,
+          "interval_seconds": 219.259259,
           "source_hour": "16:00",
           "source_vehicle_count": 1755,
           "start": 0
         },
         {
           "end": 2400,
-          "interval_seconds": 48.1,
+          "interval_seconds": 160.333333,
           "source_hour": "17:00",
           "source_vehicle_count": 2400,
           "start": 1200
         },
         {
           "end": 3600,
-          "interval_seconds": 46.361446,
+          "interval_seconds": 154.538153,
           "source_hour": "18:00",
           "source_vehicle_count": 2490,
           "start": 2400
@@ -27109,7 +27109,7 @@
   "data_source_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
   "dataset_id": "haichau_network_v2",
   "generator_config_path": "configs/haichau_network_v2.yaml",
-  "generator_config_sha256": "727f1499988e1b063436f4421fc5565df838be598041ded5ef4c21db9aedc704",
+  "generator_config_sha256": "55eb359b6afaca87a901ce53731e5d455d8c5845c2a1f374cdcf582ed1863987",
   "network": {
     "agent_ids": [
       "1333258672",
