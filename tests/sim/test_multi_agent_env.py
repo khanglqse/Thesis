@@ -136,6 +136,7 @@ def test_network_observer_is_sampled_after_every_engine_step(tmp_path):
     assert metrics["completed_travel_time_count"] == 2
     assert metrics["travel_time_completed_mean"] == 2
     assert final["completion_rate"] == 1.0
+    assert final["insertion_rate"] == 1.0
     assert final["scheduled"] == 2
 
 

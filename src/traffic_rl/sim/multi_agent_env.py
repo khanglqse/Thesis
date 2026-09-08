@@ -482,6 +482,6 @@ class MultiAgentTrafficEnv:
             info["network_metrics"] = network_metrics
             for field in ("scheduled", "due", "unreleased", "inserted",
                           "departed", "arrived", "running", "pending",
-                          "removed", "completion_rate"):
+                          "removed", "completion_rate", "insertion_rate"):
                 info[field] = network_metrics[field]
         return self._observations(), rewards, done, info
