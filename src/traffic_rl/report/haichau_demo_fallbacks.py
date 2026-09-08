@@ -3,6 +3,7 @@
 import hashlib
 import json
 import shutil
+import statistics
 import subprocess
 import tempfile
 from pathlib import Path
@@ -66,7 +67,7 @@ def _release_pdf(root, evidence):
 
 
 def _representative_pairs(evidence):
-    """Choose a deterministic fixed/DDQN replay pair from each final regime."""
+    """Choose a predeclared, outcome-independent pair from each final regime."""
     by_regime = {}
     for run in evidence["campaign"]["runs"]:
         if run.get("controller_id") not in ("tuned_fixed", "neighbor_phase_ddqn"):
@@ -76,17 +77,59 @@ def _representative_pairs(evidence):
             continue
         by_regime.setdefault(regime, {}).setdefault(
             run["controller_id"], []).append(run)
+    learned_seeds = sorted(set(
+        run.get("learning_seed") for run in evidence["campaign"]["runs"]
+        if run.get("controller_id") == "neighbor_phase_ddqn"
+        and isinstance(run.get("learning_seed"), int)
+        and not isinstance(run.get("learning_seed"), bool)))
+    if not learned_seeds:
+        raise ValueError("final campaign has no DDQN learning seed")
+    first_learning_seed = learned_seeds[0]
     selected = []
     for regime in ("normal", "am_peak", "pm_peak"):
         pair = by_regime.get(regime, {})
         fixed = sorted(pair.get("tuned_fixed", []), key=lambda item: item["run_id"])
-        learned = sorted(pair.get("neighbor_phase_ddqn", []), key=lambda item: item["run_id"])
+        learned = sorted(
+            (run for run in pair.get("neighbor_phase_ddqn", [])
+             if run.get("learning_seed") == first_learning_seed),
+            key=lambda item: item["run_id"])
+        demand_by_case = {}
+        for run in fixed + learned:
+            demand = run.get("scheduled_vehicles")
+            if isinstance(demand, bool) or not isinstance(demand, int) or demand <= 0:
+                raise ValueError("representative run lacks positive scheduled demand")
+            case_id = run.get("case_id")
+            if case_id in demand_by_case and demand_by_case[case_id] != demand:
+                raise ValueError("matched runs disagree on scheduled demand")
+            demand_by_case[case_id] = demand
+        common_cases = sorted(set(run.get("case_id") for run in fixed)
+                              & set(run.get("case_id") for run in learned))
+        if not common_cases:
+            raise ValueError("final campaign lacks a matched fixed/DDQN replay pair: %s" % regime)
+        median_demand = statistics.median(demand_by_case[case] for case in common_cases)
+        chosen_case = min(
+            common_cases,
+            key=lambda case: (abs(demand_by_case[case] - median_demand), case))
         matches = [(left, right) for left in fixed for right in learned
-                   if left.get("case_id") == right.get("case_id")]
+                   if left.get("case_id") == chosen_case
+                   and right.get("case_id") == chosen_case]
         if not matches:
             raise ValueError("final campaign lacks a matched fixed/DDQN replay pair: %s" % regime)
         selected.append(matches[0])
     return selected
+
+
+def _queue_color_scale(frame_records):
+    """Return one common queue scale for every displayed A/B panel."""
+    maximum = 0.0
+    for frame_index, fixed_replay, learned_replay in frame_records:
+        for replay in (fixed_replay, learned_replay):
+            nodes = replay["frames"][frame_index].get("nodes", {})
+            if not nodes:
+                raise ValueError("walkthrough replay frame has no node metrics")
+            maximum = max(maximum, max(float(row.get("queue", 0))
+                                       for row in nodes.values()))
+    return max(1.0, maximum)
 
 
 def _replay_path(evidence, run):
@@ -135,40 +178,47 @@ def _render_walkthrough(network, pairs, output):
     nodes = network["nodes"]
     positions = dict((node["id"], (float(node["x"]), float(node["y"])))
                      for node in nodes)
+    render_frames = []
+    for regime, (fixed_run, fixed_replay), (learned_run, learned_replay) in pairs:
+        count = min(len(fixed_replay["frames"]), len(learned_replay["frames"]))
+        indexes = sorted(set((0, max(0, count // 2), max(0, count - 1))))
+        render_frames.extend((regime, fixed_run, fixed_replay, learned_run,
+                              learned_replay, index) for index in indexes)
+    queue_vmax = _queue_color_scale(
+        [(index, fixed_replay, learned_replay)
+         for _, _, fixed_replay, _, learned_replay, index in render_frames])
     with tempfile.TemporaryDirectory(prefix="haichau-demo-frames-") as temporary:
         frame_dir = Path(temporary)
         image_index = 0
-        for regime, (fixed_run, fixed_replay), (learned_run, learned_replay) in pairs:
-            count = min(len(fixed_replay["frames"]), len(learned_replay["frames"]))
-            indexes = sorted(set((0, max(0, count // 2), max(0, count - 1))))
-            for frame_index in indexes:
-                figure, axes = plt.subplots(
-                    1, 2, figsize=(12, 5), dpi=130, constrained_layout=True)
-                for axis, title, replay in (
-                        (axes[0], "Tuned fixed", fixed_replay),
-                        (axes[1], "Neighbor phase DDQN", learned_replay)):
-                    frame = replay["frames"][frame_index]
-                    for link in network.get("links", []):
-                        if link.get("source") in positions and link.get("target") in positions:
-                            start, end = positions[link["source"]], positions[link["target"]]
-                            axis.plot((start[0], end[0]), (start[1], end[1]),
-                                      color="#b7c4c7", linewidth=.45, zorder=1)
-                    queues = [float(frame["nodes"].get(node["id"], {}).get("queue", 0))
-                              for node in nodes]
-                    points = axis.scatter(
-                        [positions[node["id"]][0] for node in nodes],
-                        [positions[node["id"]][1] for node in nodes], c=queues,
-                        cmap="YlOrRd", vmin=0, vmax=max(1, max(queues)), s=30,
-                        edgecolor="#243238", linewidth=.25, zorder=2)
-                    axis.set_title("%s · %s · t=%ss" % (regime.replace("_", " "), title,
-                                                         frame.get("t", 0)))
-                    axis.set_aspect("equal", adjustable="datalim")
-                    axis.set_axis_off()
-                figure.colorbar(points, ax=axes.ravel().tolist(), label="queued vehicles")
-                figure.suptitle("Hải Châu final, hash-bound matched replay", fontsize=14)
-                figure.savefig(str(frame_dir / ("frame-%03d.png" % image_index)))
-                plt.close(figure)
-                image_index += 1
+        for (regime, fixed_run, fixed_replay, learned_run, learned_replay,
+             frame_index) in render_frames:
+            figure, axes = plt.subplots(
+                1, 2, figsize=(12, 5), dpi=130, constrained_layout=True)
+            for axis, title, replay in (
+                    (axes[0], "Tuned fixed", fixed_replay),
+                    (axes[1], "Neighbor phase DDQN", learned_replay)):
+                frame = replay["frames"][frame_index]
+                for link in network.get("links", []):
+                    if link.get("source") in positions and link.get("target") in positions:
+                        start, end = positions[link["source"]], positions[link["target"]]
+                        axis.plot((start[0], end[0]), (start[1], end[1]),
+                                  color="#b7c4c7", linewidth=.45, zorder=1)
+                queues = [float(frame["nodes"].get(node["id"], {}).get("queue", 0))
+                          for node in nodes]
+                points = axis.scatter(
+                    [positions[node["id"]][0] for node in nodes],
+                    [positions[node["id"]][1] for node in nodes], c=queues,
+                    cmap="YlOrRd", vmin=0, vmax=queue_vmax, s=30,
+                    edgecolor="#243238", linewidth=.25, zorder=2)
+                axis.set_title("%s · %s · t=%ss" % (regime.replace("_", " "), title,
+                                                     frame.get("t", 0)))
+                axis.set_aspect("equal", adjustable="datalim")
+                axis.set_axis_off()
+            figure.colorbar(points, ax=axes.ravel().tolist(), label="queued vehicles")
+            figure.suptitle("Hải Châu final, hash-bound matched replay", fontsize=14)
+            figure.savefig(str(frame_dir / ("frame-%03d.png" % image_index)))
+            plt.close(figure)
+            image_index += 1
         if not image_index:
             raise ValueError("no final replay frames are available for fallback video")
         command = [
@@ -180,6 +230,14 @@ def _render_walkthrough(network, pairs, output):
             subprocess.check_call(command)
         except (OSError, subprocess.CalledProcessError) as exc:
             raise ValueError("unable to encode fallback walkthrough: %s" % exc)
+    return {
+        "queue_color_vmin": 0.0,
+        "queue_color_vmax": queue_vmax,
+        "frame_count": len(render_frames),
+        "selection_rule": "median_scheduled_demand_then_case_id_first_learning_seed",
+        "runs": [run["run_id"] for _, fixed, learned in pairs
+                 for run in (fixed[0], learned[0])],
+    }
 
 
 def build_fallbacks(project_root, output_dir, campaign_dir=None):
@@ -210,7 +268,7 @@ def build_fallbacks(project_root, output_dir, campaign_dir=None):
         source_replays[learned["run_id"]] = _sha256(learned_path)
         pairs.append((fixed["regime"], (fixed, fixed_replay), (learned, learned_replay)))
     mp4 = output / "demo-walkthrough.mp4"
-    _render_walkthrough(network, pairs, mp4)
+    walkthrough_render = _render_walkthrough(network, pairs, mp4)
     result_pdf = output / "result-summary.pdf"
     shutil.copyfile(str(pdf), str(result_pdf))
     fallbacks = {
@@ -226,6 +284,7 @@ def build_fallbacks(project_root, output_dir, campaign_dir=None):
         "viewer_network_sha256": _sha256(evidence["viewer_path"]),
         "thesis_pdf_sha256": _sha256(pdf),
         "source_replay_sha256": source_replays,
+        "walkthrough_render": walkthrough_render,
         "fallbacks": fallbacks,
     }
     _write_json(output / "fallback-provenance.json", provenance)

@@ -57,7 +57,10 @@ def _final_root(root, source_run_dir="results/haichau_network_v2/final/runs/a"):
                    "evidence_namespace": "haichau_network_v2",
                    "source_run_dir": source_run_dir,
                    "case_id": "test-" + regime, "regime": regime,
-                   "controller_id": controller}
+                   "controller_id": controller,
+                   "scheduled_vehicles": 1000,
+                   "learning_seed": (11 if controller == "neighbor_phase_ddqn"
+                                     else None)}
             runs.append(run)
             _write(final / "runs" / run_id / "replay.json", {
                 "sample_seconds": 5,
@@ -123,3 +126,34 @@ def test_demo_server_refuses_a_legacy_bundle_path(tmp_path):
 
     with pytest.raises(ValueError, match="results/haichau_network_v2/demo"):
         validate_demo_bundle(tmp_path, tmp_path / "results/haichau/demo")
+
+
+def test_representative_pairs_use_median_demand_and_first_learning_seed():
+    from traffic_rl.report.haichau_demo_fallbacks import _representative_pairs
+
+    runs = []
+    for regime in ("normal", "am_peak", "pm_peak"):
+        for case_id, demand in (("case-low", 100), ("case-mid", 200),
+                                ("case-high", 900)):
+            runs.append({"run_id": "%s-fixed" % case_id, "regime": regime,
+                         "case_id": case_id, "controller_id": "tuned_fixed",
+                         "scheduled_vehicles": demand, "learning_seed": None})
+            for seed in (13, 11):
+                runs.append({"run_id": "%s-ddqn-%d" % (case_id, seed),
+                             "regime": regime, "case_id": case_id,
+                             "controller_id": "neighbor_phase_ddqn",
+                             "scheduled_vehicles": demand, "learning_seed": seed})
+
+    selected = _representative_pairs({"campaign": {"runs": runs}})
+
+    assert [(left["case_id"], right["learning_seed"])
+            for left, right in selected] == [("case-mid", 11)] * 3
+
+
+def test_shared_queue_color_scale_covers_both_controller_panels():
+    from traffic_rl.report.haichau_demo_fallbacks import _queue_color_scale
+
+    fixed = {"frames": [{"nodes": {"a": {"queue": 2}, "b": {"queue": 8}}}]}
+    learned = {"frames": [{"nodes": {"a": {"queue": 50}, "b": {"queue": 1}}}]}
+
+    assert _queue_color_scale([(0, fixed, learned)]) == 50.0
