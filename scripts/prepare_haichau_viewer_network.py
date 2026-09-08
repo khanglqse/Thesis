@@ -6,12 +6,20 @@ import hashlib
 import json
 from pathlib import Path
 
+from traffic_rl.network.roadnet import RoadNet
+
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
 def _sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _canonical_sha256(value):
+    payload = json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def build_viewer(project_root, manifest_path, output_path):
@@ -23,21 +31,33 @@ def build_viewer(project_root, manifest_path, output_path):
     if _sha256(roadnet_path) != network_record.get("sha256"):
         raise ValueError("network hash drift")
     roadnet = json.loads(roadnet_path.read_text())
+    parsed_roadnet = RoadNet.load(str(roadnet_path))
     agent_ids = list(network_record.get("agent_ids", ()))
     if len(agent_ids) != 53 or len(set(agent_ids)) != 53:
         raise ValueError("manifest must identify exactly 53 signals")
     intersections = dict((item["id"], item)
                          for item in roadnet.get("intersections", ()))
     known = set(agent_ids)
+    adjacency = network_record.get("signal_adjacency")
+    if adjacency != parsed_roadnet.signal_adjacency():
+        raise ValueError("manifest signal adjacency drift")
+    if set(adjacency.get("upstream", {})) != known \
+            or set(adjacency.get("downstream", {})) != known:
+        raise ValueError("signal adjacency node coverage differs from manifest")
     neighbor_sets = dict((node_id, set()) for node_id in agent_ids)
     links = set()
-    for road in roadnet.get("roads", ()):
-        source = road.get("startIntersection")
-        target = road.get("endIntersection")
-        if source in known and target in known and source != target:
-            links.add((source, target))
-            neighbor_sets[source].add(target)
-            neighbor_sets[target].add(source)
+    for edge in adjacency.get("directed_edges", ()):
+        if (not isinstance(edge, list) or len(edge) != 2
+                or edge[0] not in known or edge[1] not in known
+                or edge[0] == edge[1]):
+            raise ValueError("signal adjacency contains invalid edge")
+        source, target = edge
+        links.add((source, target))
+        neighbor_sets[source].add(target)
+        neighbor_sets[target].add(source)
+    adjacency_sha256 = _canonical_sha256(adjacency)
+    if network_record.get("signal_adjacency_sha256") != adjacency_sha256:
+        raise ValueError("manifest signal adjacency hash drift")
     nodes = []
     for node_id in agent_ids:
         point = intersections.get(node_id, {}).get("point", {})
@@ -53,6 +73,9 @@ def build_viewer(project_root, manifest_path, output_path):
         "schema_version": 1,
         "controlled_signals": 53,
         "coordinate_units": "CityFlow roadnet coordinates",
+        "signal_adjacency_sha256": adjacency_sha256,
+        "signal_adjacency_policy": adjacency["policy"],
+        "signal_adjacency_stats": adjacency["stats"],
         "nodes": nodes,
         "links": [{"source": source, "target": target}
                   for source, target in sorted(links)],
@@ -69,7 +92,8 @@ def build_viewer(project_root, manifest_path, output_path):
     if not target.exists():
         target.write_text(encoded)
     return {"path": str(target.relative_to(root)), "sha256": _sha256(target),
-            "controlled_signals": 53, "links": len(links)}
+            "controlled_signals": 53, "links": len(links),
+            "signal_adjacency_sha256": adjacency_sha256}
 
 
 def main(argv=None):

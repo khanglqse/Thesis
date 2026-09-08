@@ -336,6 +336,8 @@ def _verify_network(root, manifest, config):
         "agent_ids",
         "directed_signal_edges",
         "weak_components",
+        "signal_adjacency",
+        "signal_adjacency_sha256",
         "phase_errors",
     ):
         if network.get(field) != actual[field]:

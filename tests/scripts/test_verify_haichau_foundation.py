@@ -206,6 +206,18 @@ def test_foundation_verifier_accepts_semantically_bound_family(valid_foundation)
     assert report["controlled_signals"] == 53
     assert report["cases"] == 30
     assert report["selectable_green_phases"] == 106
+    adjacency = manifest["network"]["signal_adjacency"]
+    assert manifest["network"]["signal_adjacency_sha256"] == canonical_sha256(adjacency)
+    assert adjacency["stats"]["controlled_signals"] == 53
+    assert adjacency["stats"]["isolated_signals"] == 0
+
+
+def test_foundation_verifier_rejects_manifest_signal_adjacency_drift(valid_foundation):
+    root, manifest = valid_foundation
+    manifest["network"]["signal_adjacency"]["stats"]["directed_edges"] += 1
+
+    with pytest.raises(ValueError, match="network audit field mismatch: signal_adjacency"):
+        _verify(root, manifest)
 
 
 def test_foundation_verifier_rejects_short_phase_promoted_to_action(valid_foundation):

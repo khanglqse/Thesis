@@ -447,14 +447,8 @@ def audit_network(path, phase_contract=None, min_green_seconds=20,
         except (AttributeError, KeyError, TypeError, ValueError) as error:
             errors.append("phase contract: %s" % error)
 
-    edges = sorted(
-        {
-            (road["startIntersection"], road["endIntersection"])
-            for road in roadnet.roads
-            if road.get("startIntersection") in agent_set
-            and road.get("endIntersection") in agent_set
-        }
-    )
+    signal_adjacency = roadnet.signal_adjacency()
+    edges = [tuple(edge) for edge in signal_adjacency["directed_edges"]]
     return {
         "roads": len(roadnet.roads),
         "lanes": sum(len(road.get("lanes", [])) for road in roadnet.roads),
@@ -465,7 +459,9 @@ def audit_network(path, phase_contract=None, min_green_seconds=20,
         "agent_selectable_phase_counts": selectable_phase_counts,
         "agent_ids": agents,
         "directed_signal_edges": [list(edge) for edge in edges],
-        "weak_components": _weak_component_count(agents, edges),
+        "weak_components": signal_adjacency["stats"]["weak_components"],
+        "signal_adjacency": signal_adjacency,
+        "signal_adjacency_sha256": canonical_sha256(signal_adjacency),
         "phase_errors": sorted(set(errors)),
     }
 

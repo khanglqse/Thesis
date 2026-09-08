@@ -4,7 +4,7 @@ from xml.etree import ElementTree
 
 import pytest
 
-from traffic_rl.research.artifacts import sha256_file
+from traffic_rl.research.artifacts import canonical_sha256, sha256_file
 
 
 def _write_roadnet(tmp_path, data, name="roadnet.json"):
@@ -89,6 +89,11 @@ def test_audit_network_counts_only_multi_phase_signals(tmp_path):
         },
     )
     report = audit_network(_write_roadnet(tmp_path, data))
+    adjacency = report.pop("signal_adjacency")
+    adjacency_sha256 = report.pop("signal_adjacency_sha256")
+    assert adjacency_sha256 == canonical_sha256(adjacency)
+    assert adjacency["stats"]["controlled_signals"] == 1
+    assert adjacency["stats"]["isolated_signals"] == 1
     assert report == {
         "roads": 2,
         "lanes": 2,
@@ -109,28 +114,36 @@ def test_audit_network_builds_sorted_signal_adjacency(tmp_path):
 
     data = {
         "intersections": [
-            {
+            {"id": "V", "virtual": True, "roads": ["va"],
+             "roadLinks": [], "trafficLight": {"lightphases": []}},
+        ] + [{
                 "id": signal,
                 "virtual": False,
-                "roads": [],
-                "roadLinks": [],
+                "roads": (["va", "ab"] if signal == "A" else ["ab"]
+                          if signal == "B" else []),
+                "roadLinks": ([{
+                    "startRoad": "va", "endRoad": "ab",
+                    "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}],
+                }] if signal == "A" else []),
                 "trafficLight": {
                     "lightphases": [
-                        {"availableRoadLinks": []},
-                        {"availableRoadLinks": []},
+                        {"time": 40, "availableRoadLinks": ([0] if signal == "A" else [])},
+                        {"time": 40, "availableRoadLinks": ([0] if signal == "A" else [])},
                     ]
                 },
-            }
-            for signal in ("B", "A", "C")
-        ],
+            } for signal in ("B", "A", "C")],
         "roads": [
-            {"id": "ab", "startIntersection": "A", "endIntersection": "B", "lanes": [{}]},
+            {"id": "va", "startIntersection": "V", "endIntersection": "A",
+             "points": [{"x": 0, "y": 0}, {"x": 1, "y": 0}], "lanes": [{}]},
+            {"id": "ab", "startIntersection": "A", "endIntersection": "B",
+             "points": [{"x": 1, "y": 0}, {"x": 2, "y": 0}], "lanes": [{}]},
         ],
     }
     report = audit_network(_write_roadnet(tmp_path, data))
     assert report["agent_ids"] == ["A", "B", "C"]
     assert report["directed_signal_edges"] == [["A", "B"]]
     assert report["weak_components"] == 2
+    assert report["signal_adjacency"]["directed_edges"] == [["A", "B"]]
 
 
 def test_audit_network_reports_missing_roads_and_invalid_lane_indices(tmp_path):

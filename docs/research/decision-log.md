@@ -277,3 +277,42 @@ decimal. Application requires an explicit `--new-version` and a clean checkout;
 the network preparer runs in a temporary tree before the generator config,
 regenerated cases, manifest, and immutable decision are installed together. The
 bridge may verify its bound validation flows but may not open a test flow.
+
+## 2026-09-08 — Define controlled-signal adjacency by permitted local corridors
+
+Decision: derive the neighbor-DDQN graph from directed CityFlow movements. For
+each permitted outgoing road at a controlled signal, traverse only `roadLinks`
+with non-empty `laneLinks` through non-signalized intersections. Stop at the
+first controlled signal or virtual boundary and retain the shortest reachable
+controlled corridor, breaking ties by road count and road identifiers. A
+controlled junction is always a boundary, so traversal never connects through
+an intermediate signal. Collapse duplicate source--target corridors to one
+directed model edge while retaining the exact selected road path, intermediate
+intersections, polyline distance, road-hop count, policy, and distribution
+statistics in the experiment manifest.
+
+There is no fixed distance or road-hop cutoff. OSM segmentation makes road-hop
+counts spatially inconsistent, and a distance cutoff would isolate the sparse
+southern two-signal subnetwork. Locality is instead enforced by retaining at
+most one nearest controlled destination per physical outgoing road. Exhaustive
+enumeration was rejected: it produced 673 edges with median distance 2.72 km,
+median 12 road segments, and maximum distance 15.38 km. The selected graph has
+154 directed edges, median distance 526 m, 95th-percentile distance 1.37 km,
+maximum distance 2.66 km, median two road segments, and 95th-percentile six
+segments. It covers all 53 signals with no isolate and has two weak components
+(51 signals and the sparse two-signal area). Joining those components would
+require an approximately 4.2 km model edge, which is not treated as local
+neighbor context.
+
+Reason: the previous direct-road test omitted controlled neighbors separated by
+ordinary OSM junction records, leaving 19 of 53 agents isolated in 28 weak
+components. Enumerating every reachable first-signal path fixes coverage but
+turns remote alternatives into one-hop policy context. The per-outlet nearest
+corridor preserves vehicle direction and permitted turns while keeping the
+observation graph local and auditable.
+
+Consequence: the phase encoder and defense viewer use the same `RoadNet`
+derivation. The foundation verifier rejects any manifest adjacency or canonical
+adjacency hash that differs from the roadnet. Existing network learning results
+and checkpoints predate this graph and must not be reused as evidence for the
+corrected neighbor-DDQN implementation.

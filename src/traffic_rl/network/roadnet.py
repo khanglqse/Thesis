@@ -6,6 +6,8 @@ in the container (see Makefile cf-test / the run_fixed_time invocation).
 """
 import json
 import hashlib
+import heapq
+import math
 from dataclasses import dataclass
 from typing import Dict, List
 
@@ -18,6 +20,7 @@ class RoadNet:
     _road_by_id: Dict[str, dict]
     _next: Dict[str, List[str]]
     _phase_contract_data: object = None
+    _signal_adjacency_data: object = None
 
     @classmethod
     def load(cls, path: str, phase_contract_path=None,
@@ -469,6 +472,214 @@ class RoadNet:
         virtual = {i["id"] for i in self.intersections if i.get("virtual")}
         return [r["id"] for r in self.roads if r["startIntersection"] in virtual]
 
+    @staticmethod
+    def _distribution(values):
+        """Stable nearest-rank summary for manifest graph provenance."""
+        ordered = sorted(values)
+        if not ordered:
+            return {key: None for key in ("min", "p50", "p75", "p90", "p95", "max")}
+
+        def percentile(fraction):
+            index = max(0, int(math.ceil(fraction * len(ordered))) - 1)
+            return ordered[index]
+
+        return {
+            "min": ordered[0],
+            "p50": percentile(0.50),
+            "p75": percentile(0.75),
+            "p90": percentile(0.90),
+            "p95": percentile(0.95),
+            "max": ordered[-1],
+        }
+
+    def _road_length(self, road_id):
+        points = self._road_by_id[road_id].get("points", [])
+        return sum(
+            math.hypot(float(target["x"]) - float(source["x"]),
+                       float(target["y"]) - float(source["y"]))
+            for source, target in zip(points, points[1:])
+        )
+
+    def _nearest_controlled_corridor(self, source, outgoing_road,
+                                     controlled, virtual, permitted_next):
+        """Shortest valid corridor from one signal outlet to the next signal."""
+        distance = self._road_length(outgoing_road)
+        initial = (distance, 1, (outgoing_road,))
+        pending = [initial]
+        best = {outgoing_road: initial}
+        selected = None
+        while pending:
+            candidate = heapq.heappop(pending)
+            corridor_distance, road_hops, road_path = candidate
+            road_id = road_path[-1]
+            if candidate != best.get(road_id):
+                continue
+            if selected is not None and corridor_distance > selected[0]:
+                break
+            boundary = self._road_by_id[road_id]["endIntersection"]
+            if boundary in controlled:
+                # A loop back to the source still reaches a controlled boundary;
+                # it is not allowed to pass through and search beyond it.
+                if boundary != source:
+                    resolved = (corridor_distance, road_hops, road_path, boundary)
+                    if selected is None or resolved < selected:
+                        selected = resolved
+                continue
+            if boundary in virtual:
+                continue
+            for next_road in permitted_next.get(road_id, []):
+                if next_road in road_path:
+                    continue
+                next_candidate = (
+                    corridor_distance + self._road_length(next_road),
+                    road_hops + 1,
+                    road_path + (next_road,),
+                )
+                if next_candidate < best.get(
+                        next_road, (float("inf"), float("inf"), ())):
+                    best[next_road] = next_candidate
+                    heapq.heappush(pending, next_candidate)
+        if selected is None:
+            return None
+        corridor_distance, road_hops, road_path, target = selected
+        return {
+            "source": source,
+            "target": target,
+            "outgoing_road": outgoing_road,
+            "road_path": list(road_path),
+            "intermediate_intersections": [
+                self._road_by_id[road_id]["endIntersection"]
+                for road_id in road_path[:-1]
+            ],
+            "road_hops": road_hops,
+            "distance_coordinate_units": round(corridor_distance, 6),
+        }
+
+    def signal_adjacency(self):
+        """Directed nearest-signal graph following permitted vehicle movements.
+
+        Each permitted outgoing road at a controlled signal contributes at most
+        one shortest corridor. Traversal may cross non-signalized junctions, but
+        stops at the first controlled signal or virtual boundary. This avoids an
+        arbitrary road-hop cutoff (OSM segmentation is non-uniform) and excludes
+        longer alternative detours from the policy's one-hop receptive field.
+        """
+        if self._signal_adjacency_data is not None:
+            return self._signal_adjacency_data
+        controlled_ids = sorted(self.signalized_ids())
+        controlled = set(controlled_ids)
+        virtual = {item["id"] for item in self.intersections if item.get("virtual")}
+        permitted_next = {road_id: [] for road_id in self._road_by_id}
+        for intersection in self.intersections:
+            for road_link in intersection.get("roadLinks", []):
+                start = road_link.get("startRoad")
+                end = road_link.get("endRoad")
+                if (start in self._road_by_id and end in self._road_by_id
+                        and road_link.get("laneLinks")
+                        and end not in permitted_next[start]):
+                    permitted_next[start].append(end)
+        for road_id in permitted_next:
+            permitted_next[road_id].sort()
+
+        corridors = []
+        for source in controlled_ids:
+            outgoing = sorted({
+                road_link.get("endRoad")
+                for road_link in self._by_id[source].get("roadLinks", [])
+                if road_link.get("laneLinks")
+                and road_link.get("endRoad") in self._road_by_id
+                and self._road_by_id[road_link["endRoad"]].get(
+                    "startIntersection") == source
+            })
+            for outgoing_road in outgoing:
+                corridor = self._nearest_controlled_corridor(
+                    source, outgoing_road, controlled, virtual, permitted_next)
+                if corridor is not None:
+                    corridors.append(corridor)
+        corridors.sort(key=lambda item: (
+            item["source"], item["target"], item["distance_coordinate_units"],
+            item["road_hops"], item["outgoing_road"], item["road_path"]))
+
+        # Multiple physical outlet roads can reach the same next signal. The
+        # policy graph keeps one directed edge and records every outlet corridor.
+        edge_by_pair = {}
+        for corridor in corridors:
+            pair = (corridor["source"], corridor["target"])
+            rank = (corridor["distance_coordinate_units"],
+                    corridor["road_hops"], corridor["outgoing_road"],
+                    corridor["road_path"])
+            current = edge_by_pair.get(pair)
+            if current is None or rank < current[0]:
+                edge_by_pair[pair] = (rank, corridor)
+        edges = [dict(edge_by_pair[pair][1]) for pair in sorted(edge_by_pair)]
+        directed_edges = [[item["source"], item["target"]] for item in edges]
+        upstream = {node_id: [] for node_id in controlled_ids}
+        downstream = {node_id: [] for node_id in controlled_ids}
+        for source, target in directed_edges:
+            downstream[source].append(target)
+            upstream[target].append(source)
+        for mapping in (upstream, downstream):
+            for node_id in mapping:
+                mapping[node_id].sort()
+        covered = {node_id for node_id in controlled_ids
+                   if upstream[node_id] or downstream[node_id]}
+
+        # Weak components describe coverage without erasing edge direction.
+        undirected = {node_id: set() for node_id in controlled_ids}
+        for source, target in directed_edges:
+            undirected[source].add(target)
+            undirected[target].add(source)
+        remaining = set(controlled_ids)
+        components = 0
+        while remaining:
+            components += 1
+            pending = [min(remaining)]
+            remaining.remove(pending[0])
+            while pending:
+                node_id = pending.pop()
+                unseen = undirected[node_id] & remaining
+                remaining.difference_update(unseen)
+                pending.extend(sorted(unseen, reverse=True))
+
+        self._signal_adjacency_data = {
+            "schema_version": 1,
+            "policy": {
+                "directed": True,
+                "selection": (
+                    "shortest_permitted_path_to_first_controlled_signal_"
+                    "per_outgoing_road"),
+                "traversal": "roadLinks_with_nonempty_laneLinks",
+                "stop_boundaries": ["controlled_signal", "virtual_intersection"],
+                "distance_metric": "sum_road_polyline_euclidean_coordinate_units",
+                "maximum_distance_coordinate_units": None,
+                "maximum_road_hops": None,
+                "cycle_policy": "simple_road_paths_only",
+                "tie_break": "distance_then_hops_then_road_ids_then_target_id",
+                "rationale": (
+                    "Select one nearest reachable controlled signal per physical "
+                    "outlet; do not enumerate longer detours. No fixed hop cutoff "
+                    "is used because OSM road segmentation is non-uniform."),
+            },
+            "directed_edges": directed_edges,
+            "edges": edges,
+            "corridors": corridors,
+            "upstream": upstream,
+            "downstream": downstream,
+            "stats": {
+                "controlled_signals": len(controlled_ids),
+                "covered_signals": len(covered),
+                "isolated_signals": len(controlled_ids) - len(covered),
+                "directed_edges": len(edges),
+                "outgoing_corridors": len(corridors),
+                "weak_components": components,
+                "distance_coordinate_units": self._distribution([
+                    item["distance_coordinate_units"] for item in edges]),
+                "road_hops": self._distribution([
+                    item["road_hops"] for item in edges]),
+            },
+        }
+        return self._signal_adjacency_data
+
     def upstream_neighbors(self, inter_id: str) -> List[str]:
         """Signalized intersections that feed traffic INTO inter_id.
 
@@ -477,24 +688,8 @@ class RoadNet:
         upstream neighbour. Used by the neighbour-coordinated ("CoLight-lite") state
         so an agent can anticipate approaching demand — the signal Max-Pressure lacks.
         """
-        sig = set(self.signalized_ids())
-        out: List[str] = []
-        for road_id in self._by_id[inter_id]["roads"]:
-            road = self._road_by_id[road_id]
-            if road["endIntersection"] == inter_id:
-                up = road["startIntersection"]
-                if up != inter_id and up in sig and up not in out:
-                    out.append(up)
-        return out
+        return list(self.signal_adjacency()["upstream"][inter_id])
 
     def downstream_neighbors(self, inter_id: str) -> List[str]:
         """Signalized intersections reached directly from ``inter_id``."""
-        sig = set(self.signalized_ids())
-        out: List[str] = []
-        for road_id in self._by_id[inter_id]["roads"]:
-            road = self._road_by_id[road_id]
-            if road["startIntersection"] == inter_id:
-                downstream = road["endIntersection"]
-                if downstream != inter_id and downstream in sig and downstream not in out:
-                    out.append(downstream)
-        return out
+        return list(self.signal_adjacency()["downstream"][inter_id])
