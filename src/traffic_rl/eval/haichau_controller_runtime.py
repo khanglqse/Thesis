@@ -243,7 +243,8 @@ def build_controller_runtime(project_root, run, runtime_dir,
         downstream_block_weight=float(reward["downstream_block_weight"]),
         switch_penalty=float(reward["switch_penalty"]),
         network_metric_observer=metric_observer,
-        network_replay_observer=replay_observer)
+        network_replay_observer=replay_observer,
+        scheduled_vehicles=scheduled)
 
     if controller_id == "tuned_fixed":
         controller = FixedTimeController(

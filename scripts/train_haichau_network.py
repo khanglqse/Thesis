@@ -69,7 +69,8 @@ def _make_env_factory(manifest, resolved, output_dir, controller_family):
             state_mode="basic",
             queue_weight=float(reward["queue_weight"]),
             downstream_block_weight=float(reward["downstream_block_weight"]),
-            switch_penalty=float(reward["switch_penalty"]))
+            switch_penalty=float(reward["switch_penalty"]),
+            scheduled_vehicles=int(case["scheduled_vehicles"]))
 
     return factory
 

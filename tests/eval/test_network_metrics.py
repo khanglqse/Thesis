@@ -37,6 +37,8 @@ def test_queue_integral_uses_every_simulation_step():
 
     result = metrics.finalize()
 
+    assert result["network_queue_integral_vehicle_seconds"] == 4
+    assert result["pending_integral_vehicle_seconds"] == 0
     assert result["queue_integral_vehicle_seconds"] == 4
     assert result["queue_integral_vehicle_hours"] == pytest.approx(4 / 3600)
     assert result["observed_steps"] == 3
@@ -62,6 +64,8 @@ def test_travel_time_is_reported_with_completion_and_pending_accounts():
     assert result["travel_time_completed_mean"] == 40
     assert result["travel_time_completed_median"] == 40
     assert result["travel_time_completed_p95"] == pytest.approx(58)
+    assert result["queue_integral_vehicle_seconds"] == 2
+    assert result["network_queue_integral_vehicle_seconds"] == 0
 
 
 def test_per_node_and_signal_metrics_cover_the_full_horizon():
@@ -303,7 +307,9 @@ def test_observer_accounts_vehicles_and_samples_ground_truth_every_step():
     result = observer.finalize()
 
     assert result["observed_steps"] == 2
-    assert result["queue_integral_vehicle_seconds"] == 4
+    assert result["network_queue_integral_vehicle_seconds"] == 4
+    assert result["pending_integral_vehicle_seconds"] == 2
+    assert result["queue_integral_vehicle_seconds"] == 6
     assert result["per_node_queue_integral_vehicle_seconds"] == {"A": 3.0}
     assert result["spillback_lane_seconds"] == {"in_0": 1.0}
     assert result["scheduled"] == 3

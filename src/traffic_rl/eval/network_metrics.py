@@ -101,8 +101,11 @@ class NetworkMetricAccumulator(object):
         result = {
             "observed_steps": self._steps,
             "observed_seconds": self._steps * self.step_seconds,
-            "queue_integral_vehicle_seconds": self._queue_integral,
-            "queue_integral_vehicle_hours": self._queue_integral / 3600.0,
+            "network_queue_integral_vehicle_seconds": self._queue_integral,
+            "queue_integral_vehicle_seconds": (
+                self._queue_integral + self._pending_integral),
+            "queue_integral_vehicle_hours": (
+                self._queue_integral + self._pending_integral) / 3600.0,
             "pending_integral_vehicle_seconds": self._pending_integral,
             "per_node_queue_integral_vehicle_seconds": dict(
                 sorted(self._per_node_integral.items())),

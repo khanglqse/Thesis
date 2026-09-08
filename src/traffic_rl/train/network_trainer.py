@@ -505,7 +505,7 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                 "total_queue": info.get("total_queue"),
                 "arrived": info.get("arrived"),
                 "active_vehicles": info.get("active_vehicles"),
-                "pending": info.get("active_vehicles"),
+                "pending": info.get("pending"),
                 "completion_rate": info.get("completion_rate"),
                 "average_travel_time": info.get("average_travel_time"),
                 "arrived_throughput_vehicles_per_hour": (
