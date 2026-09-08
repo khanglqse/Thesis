@@ -147,3 +147,36 @@ no eligibility is inferred from a successful smoke test. Negative runs retain
 their reporting checkpoint. These point-estimate requirements do not establish
 statistical non-inferiority; the held-out confidence-interval rules remain
 unchanged.
+
+## 2026-09-08 — Isolate a faster epsilon-decay pilot diagnostic
+
+Decision: add
+`configs/haichau_training_v2_pilot_epsilon2160.yaml` as a diagnostic-only copy
+of `configs/haichau_training_v2.yaml`, changing only
+`exploration.epsilon_decay_decisions` from 10,000 to 2,160. Do not change the
+canonical config or use a diagnostic checkpoint in the final release.
+
+Controlled comparison: compare `neighbor_phase_ddqn` at learning seed 11 in
+the 12-episode `pilot` tier under the canonical config against the diagnostic
+config. Both runs must use the same
+`results/haichau_network_v2/experiment-manifest.json`, pinned runtime, and
+`results/haichau_network_v2/training/final-baseline-tuning.json`. The cached
+baseline hash and its six validation-case hashes must match in both run
+manifests. Output directories must remain distinct; the diagnostic run should
+use `results/haichau_network_v2/training/pilot-epsilon2160-seed11` and must not
+overwrite the canonical `pilot-seed11` evidence.
+
+Reason: a full 12-episode pilot contains 4,320 ten-second decisions. With the
+canonical 10,000-decision schedule, epsilon remains above its floor throughout
+the pilot. A 2,160-decision schedule reaches the same 0.05 floor halfway
+through the pilot, permitting a controlled check of whether extended greedy
+experience improves the episode-4/8/12 validation trajectory. Compare the
+three validation records, scenario-level normalized regret, completion,
+replay coverage, optimizer updates, and wall time; do not inspect held-out test
+cases.
+
+Consequence: this comparison is pre-final diagnostic evidence only. It cannot
+be mixed with the ten canonical final runs, frozen protocol, paper result, or
+defense replay. Any decision to change the canonical final epsilon schedule
+requires a separate logged decision made from pilot/validation evidence before
+final training starts; otherwise the final schedule remains 10,000 decisions.
