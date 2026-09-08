@@ -27,6 +27,44 @@ def test_checkpoint_that_loses_normal_is_ineligible():
     assert score_validation(rows)["eligible"] is False
 
 
+@pytest.mark.parametrize("regressing_scenario", ["am_peak", "pm_peak"])
+def test_peak_regression_is_ineligible_despite_normal_improvement(regressing_scenario):
+    rows = [_row(scenario, 101 if scenario == regressing_scenario else 80, 100)
+            for scenario in ("normal", "am_peak", "pm_peak")]
+
+    assert score_validation(rows)["eligible"] is False
+
+
+@pytest.mark.parametrize("missing_scenario", ["normal", "am_peak", "pm_peak"])
+def test_incomplete_regime_coverage_is_ineligible(missing_scenario):
+    rows = [_row(scenario, 90, 100)
+            for scenario in ("normal", "am_peak", "pm_peak")
+            if scenario != missing_scenario]
+
+    assert score_validation(rows)["eligible"] is False
+
+
+def test_unexpected_regime_is_ineligible():
+    rows = [_row(scenario, 90, 100)
+            for scenario in ("normal", "am_peak", "pm_peak", "extra")]
+
+    assert score_validation(rows)["eligible"] is False
+
+
+def test_all_regimes_can_equal_baseline_with_complete_completion_evidence():
+    rows = [_row(scenario, 100, 100, 0.99, 1.0)
+            for scenario in ("normal", "am_peak", "pm_peak")]
+
+    assert score_validation(rows)["eligible"] is True
+
+
+def test_peak_gate_uses_regime_mean_rather_than_each_case():
+    rows = [_row("normal", 100, 100), _row("am_peak", 105, 100),
+            _row("am_peak", 90, 100), _row("pm_peak", 100, 100)]
+
+    assert score_validation(rows)["eligible"] is True
+
+
 def test_completion_degradation_over_two_points_is_ineligible():
     rows = [_row("normal", 95, 100, 0.97, 1.0),
             _row("am_peak", 80, 100), _row("pm_peak", 70, 100)]

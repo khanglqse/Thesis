@@ -32,6 +32,9 @@ def score_validation(rows):
     normal_regret = scenario_regrets.get("normal", float("inf"))
     max_completion_degradation = max(completion_degradations or [0.0])
     completion_evidence_complete = len(completion_degradations) == len(rows)
+    required_scenarios = set(("normal", "am_peak", "pm_peak"))
+    all_regimes_non_inferior = (set(scenario_regrets) == required_scenarios
+                               and all(regret <= 0.0 for regret in regrets))
     return {
         "worst_regret": max(regrets),
         "mean_regret": sum(regrets) / len(regrets),
@@ -39,7 +42,7 @@ def score_validation(rows):
         "max_completion_degradation": max_completion_degradation,
         "completion_evidence_complete": completion_evidence_complete,
         "scenario_regrets": scenario_regrets,
-        "eligible": bool(completion_evidence_complete and normal_regret <= 0.0
+        "eligible": bool(completion_evidence_complete and all_regimes_non_inferior
                          and max_completion_degradation <= 0.02),
     }
 

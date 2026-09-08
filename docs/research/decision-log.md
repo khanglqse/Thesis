@@ -128,3 +128,22 @@ it is not assigned to an arbitrary individual signal as a local reward.
 Consequence: old pilot checkpoints are incompatible with the final training
 objective. Checkpoint contracts now record the reward weights and temporal
 aggregation, and all final policies must be trained from scratch.
+
+## 2026-09-08 — Require validation non-inferiority in every demand regime
+
+Decision: checkpoint eligibility now requires validation coverage of exactly
+normal, AM peak, and PM peak, with mean normalized queue regret <= 0 in each
+regime. Preserve complete completion evidence and the existing maximum
+two-percentage-point completion loss per case. Rank eligible checkpoints by
+worst regime regret, mean regret, then earlier checkpoint.
+
+Reason: the previous normal-only gate could admit a policy that regressed in
+either peak regime, contrary to the requested performance across all three
+traffic conditions. This change is recorded before final training or held-out
+testing and does not use test outcomes.
+
+Consequence: existing validation rows can be re-scored without simulator runs;
+no eligibility is inferred from a successful smoke test. Negative runs retain
+their reporting checkpoint. These point-estimate requirements do not establish
+statistical non-inferiority; the held-out confidence-interval rules remain
+unchanged.

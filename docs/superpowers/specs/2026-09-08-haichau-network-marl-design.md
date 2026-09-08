@@ -132,7 +132,7 @@ Mỗi episode lấy một case từ train manifest bằng sampler cân bằng no
 - loss, reward, queue, throughput/completion, switches và wall time;
 - checkpoint evaluations trên từng validation regime.
 
-Checkpoint selection tối thiểu hóa worst-case normalized regret so với tuned Fixed-Time trên validation, sau đó dùng mean regret làm tie-breaker. Candidate không đạt normal non-inferiority validation gate không được đưa vào final test.
+Checkpoint selection tối thiểu hóa worst-case normalized regret so với tuned Fixed-Time trên validation, sau đó dùng mean regret làm tie-breaker. Validation phải bao phủ đúng ba regime normal/AM/PM; mean regret của từng regime phải <= 0 và completion degradation của mọi case phải <= 0.02 với đầy đủ completion evidence. Candidate không đạt gate này không được đưa vào final test. Đây là điều kiện chọn checkpoint bằng point estimate; statistical acceptance trên held-out test vẫn được đánh giá riêng.
 
 Chiến dịch theo tầng:
 
