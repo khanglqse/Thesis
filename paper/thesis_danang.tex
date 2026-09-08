@@ -353,10 +353,15 @@ A practical controller should observe a demand or queue threshold and activate D
 The legacy project described a 53-intersection Hai Chau network and 50,500 real trips. The repository did not contain evidence sufficient to support the real-trip claim, so those historical rows remain immutable legacy evidence. The new extension uses a versioned namespace, a 53-signal OpenStreetMap-derived topology, fresh matched controller runs, and synthetic network demand constrained by Da Nang evidence. Until its frozen five-seed verifier reports \texttt{"complete": true}, it supplies no result claim and cannot replace the isolated-junction empirical evidence.
 
 \section{Hai Chau network result status}
-No network acceptance or performance claim is made in this build. A generated table may be
-included only after the final release verifier reports \texttt{"complete": true} for the
-OpenStreetMap-derived topology, synthetic network demand, all five learning seeds, matched
-fresh baselines, summary provenance, and offline-demo hashes.
+\IfFileExists{generated/haichau_network/haichau_network_results.tex}{%
+\input{generated/haichau_network/haichau_network_results.tex}
+\input{generated/haichau_network/haichau_controller_comparison.tex}
+}{%
+The frozen 53-signal campaign artifacts are absent from this build. No network acceptance
+or performance claim is made here. Generated results enter the release only when their
+manifest is bound to the verified campaign summary and the final verifier reports
+\texttt{"complete": true} for all evidence and demo gates.
+}
 
 \chapter{Reproducibility and Defense Demonstration}
 
