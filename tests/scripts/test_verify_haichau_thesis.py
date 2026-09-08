@@ -13,6 +13,7 @@ from scripts.verify_haichau_thesis import (
     _checkpoint_contract_valid, audit_demo, verify_project)
 from traffic_rl.eval.network_campaign import bind_frozen_manifest, expand_runs, run_pending
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
+from traffic_rl.report.haichau_demo_fallbacks import build_fallbacks, validate_fallbacks
 from traffic_rl.report.haichau_network import write_artifacts, write_release_manifest
 from traffic_rl.sim.phase_encoder import FEATURES
 
@@ -437,6 +438,7 @@ def _write_bound_project(root):
     }
     protocol = {
         "network_manifest_path": str(network_manifest_path.relative_to(root)),
+        "evidence_namespace": "haichau_network_v2",
         "network_manifest_sha256": _digest(network_manifest_path),
         "case_manifest_path": str(case_manifest_path.relative_to(root)),
         "case_manifest_sha256": _digest(case_manifest_path),
@@ -597,16 +599,7 @@ def _write_bound_project(root):
         summary, artifact_dir, thesis_path, pdf_path, "fixture-release")
 
     fallbacks_dir = root / "release/fallbacks"
-    fallbacks_dir.mkdir(parents=True, exist_ok=True)
-    subprocess.check_call([
-        "ffmpeg", "-v", "error", "-f", "lavfi", "-i",
-        "color=c=black:s=32x24:d=0.2", "-an", "-c:v", "libx264",
-        "-pix_fmt", "yuv420p", str(fallbacks_dir / "demo-walkthrough.mp4"),
-    ])
-    shutil.copyfile(pdf_path, fallbacks_dir / "result-summary.pdf")
-    shutil.copyfile(
-        artifact_dir / "completion-rate.png",
-        fallbacks_dir / "network-overview.png")
+    build_fallbacks(root, fallbacks_dir)
     selected = []
     for regime in ("normal", "am_peak", "pm_peak"):
         selected.append(next(run["run_id"] for run in runs if (
@@ -617,11 +610,7 @@ def _write_bound_project(root):
             and run["learning_seed"] == 11)))
     export_bundle(
         final, root / "results/haichau_network_v2/demo", viewer_path, selected,
-        {
-            "demo-walkthrough.mp4": fallbacks_dir / "demo-walkthrough.mp4",
-            "result-summary.pdf": fallbacks_dir / "result-summary.pdf",
-            "network-overview.png": fallbacks_dir / "network-overview.png",
-        },
+        fallback_dir=fallbacks_dir, project_root=root,
     )
 
     release_files = (
@@ -676,6 +665,93 @@ def test_injected_campaign_and_handwritten_clean_record_cannot_complete_release(
     assert report["gates"]["acceptance_reported"]["passed"] is True
     assert report["gates"]["acceptance_reported"]["evidence"]["accepted"] is False
     assert summary["acceptance"]["accepted"] is False
+
+
+def test_fallback_builder_rejects_an_incomplete_campaign(tmp_path):
+    """Fallback media must not be generated from a campaign that cannot verify."""
+    _write_bound_project(tmp_path)
+    final = tmp_path / "results/haichau_network_v2/final"
+    campaign = json.loads((final / "campaign-manifest.json").read_text())
+    run_id = next(run["run_id"] for run in campaign["runs"]
+                  if run["controller_id"] == "tuned_fixed")
+    status_path = final / "runs" / run_id / "status.json"
+    status = json.loads(status_path.read_text())
+    status["status"] = "running"
+    status_path.write_text(json.dumps(status))
+
+    with pytest.raises(ValueError, match="final campaign verification failed"):
+        build_fallbacks(tmp_path, tmp_path / "new-fallbacks")
+
+
+def test_fallback_validation_rejects_tampered_verified_source_replay(tmp_path):
+    _write_bound_project(tmp_path)
+    final = tmp_path / "results/haichau_network_v2/final"
+    fallback_dir = tmp_path / "release/fallbacks"
+    provenance = json.loads(
+        (fallback_dir / "fallback-provenance.json").read_text())
+    run_id = provenance["walkthrough_render"]["runs"][0]
+    replay_path = final / "runs" / run_id / "replay.json"
+    replay = json.loads(replay_path.read_text())
+    replay["frames"][0]["nodes"]["N00"]["queue"] = 99.0
+    replay_path.write_text(json.dumps(replay))
+    status_path = final / "runs" / run_id / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["replay.json"] = _digest(replay_path)
+    status_path.write_text(json.dumps(status))
+
+    with pytest.raises(ValueError, match="source replay hash mismatch"):
+        validate_fallbacks(tmp_path, fallback_dir)
+
+
+def test_fallback_validation_rejects_walkthrough_runs_outside_predeclaration(tmp_path):
+    _write_bound_project(tmp_path)
+    sidecar = tmp_path / "release/fallbacks/fallback-provenance.json"
+    provenance = json.loads(sidecar.read_text())
+    provenance["walkthrough_render"]["runs"][-1] = "forged-run"
+    sidecar.write_text(json.dumps(provenance))
+
+    with pytest.raises(ValueError, match="walkthrough run IDs"):
+        validate_fallbacks(tmp_path, sidecar.parent)
+
+
+def test_demo_audit_rejects_a_rehashed_fallback_provenance_sidecar(tmp_path):
+    _write_bound_project(tmp_path)
+    demo = tmp_path / "results/haichau_network_v2/demo"
+    manifest_path = demo / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    sidecar = demo / "fallbacks/fallback-provenance.json"
+    provenance = json.loads(sidecar.read_text())
+    provenance["walkthrough_render"]["runs"][-1] = "forged-run"
+    sidecar.write_text(json.dumps(provenance))
+    relative = "fallbacks/fallback-provenance.json"
+    manifest["files"][relative] = _digest(sidecar)
+    manifest["fallback_provenance_sha256"] = _digest(sidecar)
+    manifest_path.write_text(json.dumps(manifest))
+
+    report = audit_demo(tmp_path)
+
+    assert report["passed"] is False
+    assert "fallback provenance" in report["detail"]
+
+
+def test_export_rejects_matched_runs_that_are_not_the_predeclared_walkthrough(tmp_path):
+    _write_bound_project(tmp_path)
+    final = tmp_path / "results/haichau_network_v2/final"
+    campaign = json.loads((final / "campaign-manifest.json").read_text())
+    selected = []
+    for regime in ("normal", "am_peak", "pm_peak"):
+        selected.extend(next(run["run_id"] for run in campaign["runs"] if (
+            run["regime"] == regime
+            and run["case_id"].endswith("-1")
+            and run["controller_id"] == controller
+            and (controller == "tuned_fixed" or run["learning_seed"] == 11)))
+                        for controller in ("tuned_fixed", "neighbor_phase_ddqn"))
+
+    with pytest.raises(ValueError, match="exactly equal predeclared walkthrough"):
+        export_bundle(
+            final, tmp_path / "alternate-demo", tmp_path / "release/viewer-network.json",
+            selected, fallback_dir=tmp_path / "release/fallbacks",
+            project_root=tmp_path)
 
 
 def test_source_gate_checks_actual_ancestor_cleanliness_and_frozen_code(tmp_path):

@@ -22,11 +22,12 @@ def validate_demo_bundle(project_root, bundle_dir=None):
         raise ValueError("demo bundle must be results/haichau_network_v2/demo")
     if not bundle.is_dir():
         raise ValueError("final Hai Chau v2 demo bundle is missing")
-    from scripts.verify_haichau_thesis import audit_demo
-    report = audit_demo(root)
-    if not report.get("passed"):
-        raise ValueError("refusing to serve unverified final demo bundle: %s" %
-                         report.get("detail", "unknown verification failure"))
+    from scripts.verify_haichau_thesis import verify_project
+    report = verify_project(root)
+    if not report.get("complete"):
+        raise ValueError(
+            "refusing to serve without complete project verification: %s" %
+            ", ".join(report.get("failed_gates", ())))
     return report
 
 
@@ -44,8 +45,8 @@ def main(argv=None):
     class ReusableServer(socketserver.TCPServer):
         allow_reuse_address = True
 
-    with ReusableServer(("", args.port), handler) as server:
-        url = "http://localhost:%d/index.html" % args.port
+    with ReusableServer(("127.0.0.1", args.port), handler) as server:
+        url = "http://127.0.0.1:%d/index.html" % args.port
         print("Verified Hai Chau v2 demo: %s" % url)
         if not args.no_browser:
             webbrowser.open(url)

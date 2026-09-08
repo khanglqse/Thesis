@@ -108,19 +108,6 @@ def test_final_evidence_refuses_a_legacy_sumo_run_even_under_v2_directory(tmp_pa
         validate_final_evidence(tmp_path, final)
 
 
-def test_builds_decodable_fallbacks_with_final_hash_binding(tmp_path):
-    from traffic_rl.report.haichau_demo_fallbacks import (
-        build_fallbacks, validate_fallbacks)
-
-    _final_root(tmp_path)
-    media = build_fallbacks(tmp_path, tmp_path / "staged-fallbacks")
-
-    assert set(media["fallbacks"]) == {
-        "demo-walkthrough.mp4", "result-summary.pdf", "network-overview.png"}
-    assert validate_fallbacks(tmp_path, tmp_path / "staged-fallbacks")[
-        "summary_sha256"] == media["summary_sha256"]
-
-
 def test_demo_server_refuses_a_legacy_bundle_path(tmp_path):
     from scripts.serve_haichau_demo import validate_demo_bundle
 

@@ -123,7 +123,9 @@ PYTHONPATH=src python3 scripts/build_haichau_demo_fallbacks.py \
   --output results/haichau_network_v2/demo-fallbacks
 ```
 
-Export all six run IDs with these fallbacks made from the same frozen evidence:
+Export all six run IDs with the complete validated fallback directory. The exporter reads
+`fallback-provenance.json`, copies it with the three media files, and rejects any six IDs that
+do not exactly match its predeclared walkthrough order. Do not pass fallback files one by one.
 
 `NORMAL_FIXED`, `NORMAL_DDQN`, `AM_FIXED`, `AM_DDQN`, `PM_FIXED`, and `PM_DDQN`
 below are deliberate placeholders. Replace them only with exact run IDs from the verified
@@ -136,14 +138,12 @@ PYTHONPATH=src python3 scripts/export_haichau_replays.py \
   --run-id NORMAL_FIXED --run-id NORMAL_DDQN \
   --run-id AM_FIXED --run-id AM_DDQN \
   --run-id PM_FIXED --run-id PM_DDQN \
-  --fallback-mp4 results/haichau_network_v2/demo-fallbacks/demo-walkthrough.mp4 \
-  --fallback-pdf results/haichau_network_v2/demo-fallbacks/result-summary.pdf \
-  --fallback-png results/haichau_network_v2/demo-fallbacks/network-overview.png
+  --fallback-dir results/haichau_network_v2/demo-fallbacks
 PYTHONPATH=src python3 scripts/serve_haichau_demo.py
 ```
 
-The launch command re-runs the offline-demo audit before binding localhost; it refuses an
-incomplete, legacy, stale or hash-drifted v2 bundle. Open `http://127.0.0.1:8080/index.html`
+The launch command requires the complete project verifier to pass before binding only to
+`127.0.0.1`; it refuses an incomplete, legacy, stale or hash-drifted v2 bundle. Open `http://127.0.0.1:8080/index.html`
 with the network disabled. Confirm **Verified bundle loaded**, then exercise play/pause, seek,
 all three regimes and node selection. The browser console must have no warning or error.
 

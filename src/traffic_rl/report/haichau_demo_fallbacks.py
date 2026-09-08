@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from traffic_rl.eval.network_campaign import verify_campaign
+from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
 
 
@@ -309,6 +311,23 @@ def validate_fallbacks(project_root, fallback_dir, campaign_dir=None):
     }
     if any(provenance.get(key) != value for key, value in expected.items()):
         raise ValueError("fallback provenance does not match final Hai Chau evidence")
+    expected_runs = [run["run_id"] for fixed, learned in _representative_pairs(evidence)
+                     for run in (fixed, learned)]
+    walkthrough = provenance.get("walkthrough_render")
+    if not isinstance(walkthrough, dict) \
+            or walkthrough.get("runs") != expected_runs:
+        raise ValueError(
+            "fallback provenance walkthrough run IDs differ from predeclared pairs")
+    expected_replay_hashes = {}
+    for run_id in expected_runs:
+        run = next((item for item in evidence["campaign"]["runs"]
+                    if item.get("run_id") == run_id), None)
+        if run is None:
+            raise ValueError("predeclared walkthrough run is absent from final campaign")
+        replay_path, _ = _replay_path(evidence, run)
+        expected_replay_hashes[run_id] = _sha256(replay_path)
+    if provenance.get("source_replay_sha256") != expected_replay_hashes:
+        raise ValueError("fallback source replay hash mismatch")
     probes = {}
     for name, probe in (("demo-walkthrough.mp4", probe_video),
                         ("result-summary.pdf", probe_pdf),
@@ -373,6 +392,43 @@ def validate_final_evidence(project_root, campaign_dir=None):
         if run.get("evidence_namespace") != "haichau_network_v2" \
                 or run.get("controlled_signals") != 53:
             raise ValueError("final campaign run is not a 53-signal Hai Chau v2 run")
+    try:
+        verified = verify_campaign(candidate)
+        rows = []
+        for run in runs:
+            metrics = _json(candidate / "runs" / run["run_id"] / "metrics.json",
+                            "final run metrics")
+            row = dict(run)
+            row.update(metrics)
+            rows.append(row)
+        rules = protocol.get("acceptance_rules", {})
+        aggregate = aggregate_campaign(
+            rows,
+            required_learning_seeds=rules.get("required_learning_seeds"),
+            required_regimes=rules.get(
+                "required_regimes", ("normal", "am_peak", "pm_peak")),
+            minimum_learning_seeds=rules.get("minimum_learning_seeds", 5),
+            minimum_demand_units=rules.get("minimum_demand_units", 1),
+            normal_point_limit=rules.get("normal_point_limit", 0.0),
+            normal_ci_margin_fraction=rules.get("normal_ci_margin_fraction", 0.05),
+            peak_ci_upper_limit=rules.get("peak_ci_upper_limit", 0.0),
+            completion_degradation_limit=rules.get(
+                "completion_degradation_limit", 0.02),
+        )
+        expected_summary = {
+            "study_scope": {
+                "controlled_signals": 53,
+                "demand_label": DEMAND_LABEL,
+                "evidence_namespace": "haichau_network_v2",
+            },
+            "summary": aggregate,
+            "acceptance": evaluate_acceptance(aggregate),
+        }
+        if summary != expected_summary:
+            raise ValueError(
+                "final campaign summary does not exactly recompute from verified runs")
+    except ValueError as exc:
+        raise ValueError("final campaign verification failed: %s" % exc)
     return {
         "campaign_dir": candidate,
         "protocol": protocol,
@@ -381,4 +437,5 @@ def validate_final_evidence(project_root, campaign_dir=None):
         "network_path": network_path,
         "viewer_path": viewer_path,
         "summary_path": candidate / "summary.json",
+        "verified_runs": verified["complete"],
     }

@@ -13,6 +13,7 @@ from traffic_rl.eval.network_replay import (
     validate_network as _validate_network,
     validate_replay,
 )
+from traffic_rl.report.haichau_demo_fallbacks import validate_fallbacks
 
 
 DEMAND_LABEL = "synthetic network demand constrained by Da Nang evidence"
@@ -34,7 +35,11 @@ def _canonical_hash(value):
 
 
 def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
-                  fallback_paths=None, require_release_provenance=False):
+                  fallback_dir=None, require_release_provenance=False,
+                  fallback_paths=None, project_root=None):
+    if fallback_paths is not None:
+        raise ValueError(
+            "export requires one validated fallback directory, not individually supplied fallback files")
     campaign_dir = Path(campaign_dir)
     output_dir = Path(output_dir)
     network_path = Path(network_path)
@@ -126,14 +131,24 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
         shutil.copyfile(source_path, output_dir / destination)
 
     fallbacks = {}
-    for name, source in (fallback_paths or {}).items():
-        source = Path(source)
-        if not source.is_file():
-            raise ValueError("fallback is missing: %s" % source)
-        target = output_dir / "fallbacks" / name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source, target)
-        fallbacks[name] = str(target.relative_to(output_dir))
+    fallback_provenance = None
+    if fallback_dir is not None:
+        project_root = Path(project_root or Path(__file__).resolve().parent.parent)
+        fallback_provenance = validate_fallbacks(
+            project_root, fallback_dir, campaign_dir)
+        expected_run_ids = fallback_provenance["walkthrough_render"]["runs"]
+        if list(selected_run_ids) != expected_run_ids:
+            raise ValueError(
+                "selected replay run IDs must exactly equal predeclared walkthrough runs")
+        source_dir = Path(fallback_dir).resolve()
+        for name in ("demo-walkthrough.mp4", "result-summary.pdf",
+                     "network-overview.png", "fallback-provenance.json"):
+            source = source_dir / name
+            target = output_dir / "fallbacks" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+            if name != "fallback-provenance.json":
+                fallbacks[name] = str(target.relative_to(output_dir))
 
     files = {}
     for path in sorted(output_dir.rglob("*")):
@@ -151,6 +166,14 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
         "aggregate_path": "aggregate-summary.json",
         "replays": replay_entries,
         "fallbacks": fallbacks,
+        "fallback_provenance_path": (
+            "fallbacks/fallback-provenance.json" if fallback_provenance else None),
+        "fallback_provenance_sha256": (
+            _sha256(output_dir / "fallbacks/fallback-provenance.json")
+            if fallback_provenance else None),
+        "walkthrough_run_ids": (
+            fallback_provenance["walkthrough_render"]["runs"]
+            if fallback_provenance else None),
         "files": files,
     }
     _write_json(output_dir / "manifest.json", manifest)
@@ -163,18 +186,12 @@ def main(argv=None):
     parser.add_argument("--output", default="results/haichau_network_v2/demo")
     parser.add_argument("--network", required=True)
     parser.add_argument("--run-id", action="append", dest="run_ids", required=True)
-    parser.add_argument("--fallback-mp4")
-    parser.add_argument("--fallback-pdf")
-    parser.add_argument("--fallback-png")
+    parser.add_argument("--fallback-dir", required=True,
+                        help="directory built by build_haichau_demo_fallbacks.py")
     args = parser.parse_args(argv)
-    fallbacks = {}
-    for name, value in (("demo-walkthrough.mp4", args.fallback_mp4),
-                        ("result-summary.pdf", args.fallback_pdf),
-                        ("network-overview.png", args.fallback_png)):
-        if value:
-            fallbacks[name] = value
     manifest = export_bundle(
-        args.campaign_dir, args.output, args.network, args.run_ids, fallbacks,
+        args.campaign_dir, args.output, args.network, args.run_ids,
+        args.fallback_dir,
         require_release_provenance=True)
     print(json.dumps(manifest, sort_keys=True))
     return 0

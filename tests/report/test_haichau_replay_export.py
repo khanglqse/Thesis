@@ -243,6 +243,22 @@ def test_export_rejects_replay_that_does_not_cover_full_horizon(tmp_path):
         )
 
 
+def test_export_rejects_individually_supplied_fallback_files(tmp_path):
+    """The bundle must copy the validated fallback directory and its sidecar together."""
+    network_path = tmp_path / "network.json"
+    network_path.write_text(json.dumps(_network()))
+    campaign_dir, runs = _campaign(tmp_path, _digest(network_path))
+    unbound = tmp_path / "unbound.mp4"
+    unbound.write_bytes(b"not a validated fallback")
+
+    with pytest.raises(ValueError, match="validated fallback directory"):
+        export_bundle(
+            campaign_dir, tmp_path / "demo", network_path,
+            selected_run_ids=[run["run_id"] for run in runs],
+            fallback_paths={"demo-walkthrough.mp4": unbound},
+        )
+
+
 @pytest.mark.parametrize("mutation, message", [
     (lambda network: network["nodes"][0].pop("x"), "finite x/y"),
     (lambda network: network["nodes"][0].update({"x": float("nan")}),

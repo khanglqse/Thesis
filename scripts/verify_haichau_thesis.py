@@ -21,6 +21,7 @@ from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
 from traffic_rl.eval.release_attestation import validate_attestation
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import validate_claims
+from traffic_rl.report.haichau_demo_fallbacks import validate_fallbacks
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
 from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
@@ -765,6 +766,15 @@ def audit_demo(root, protocol=None, campaign=None, summary=None):
                 return _gate(False, "offline demo fallback is invalid: %s" % name)
             fallback_probes[name] = _probe_fallback(name, path)
         final = root / "results/haichau_network_v2/final"
+        provenance_relative = manifest.get("fallback_provenance_path")
+        provenance_path = _inside(demo, provenance_relative)
+        if (provenance_relative != "fallbacks/fallback-provenance.json"
+                or not provenance_path or provenance_relative not in files
+                or manifest.get("fallback_provenance_sha256")
+                != _sha256(provenance_path)):
+            return _gate(False, "offline demo fallback provenance sidecar is invalid")
+        fallback_provenance = validate_fallbacks(
+            root, provenance_path.parent, final)
         if campaign is None:
             campaign = _json(final / "campaign-manifest.json")
         if summary is None:
@@ -780,6 +790,13 @@ def audit_demo(root, protocol=None, campaign=None, summary=None):
         replays = manifest.get("replays", [])
         if len(replays) != 6:
             return _gate(False, "offline demo requires exactly three matched replay pairs")
+        walkthrough_run_ids = fallback_provenance["walkthrough_render"]["runs"]
+        if (manifest.get("walkthrough_run_ids") != walkthrough_run_ids
+                or [entry.get("run_id") for entry in replays]
+                != walkthrough_run_ids):
+            return _gate(
+                False,
+                "offline demo replay run IDs differ from fallback provenance")
         for regime in REQUIRED_REGIMES:
             entries = [entry for entry in replays if entry.get("regime") == regime]
             if len(entries) != 2 or set(entry.get("controller_id") for entry in entries) != {
