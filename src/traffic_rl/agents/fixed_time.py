@@ -1,11 +1,9 @@
-"""Fixed-time baseline: each intersection cycles its green phases round-robin,
-holding every phase for a fixed green duration before advancing.
+"""Deterministic nominal-duration fixed-time schedule, shared by all runners.
 
-A realistic fixed-time plan keeps a phase green for ~25-50s, not just one
-decision interval. Holding longer cuts the per-switch lost time (the yellow /
-all-red transition the env inserts on every phase change) and lets each green
-discharge more of its queue -- making this a stronger, fairer baseline than a
-plan that switches every action_interval.
+Phase requests follow elapsed decision time. A duration not divisible by the
+policy interval is sampled on that interval without rounding the cycle length.
+Signal constraints (minimum green, transitions, maximum red) may override a
+request through the supplied action mask; the nominal clock keeps advancing.
 
 3.6-safe.
 """
@@ -16,26 +14,29 @@ class FixedTimeController(Controller):
     name = "FixedTime"
 
     def __init__(self, num_actions, green_duration=30, action_interval=10):
-        # num_actions: {agent_id: #green phases}. green_duration: seconds of green
-        # per phase. hold = how many decisions to keep a phase before advancing
-        # (>=1); green_duration=action_interval reproduces the old switch-every-
-        # interval behaviour.
         self.num_actions = num_actions
         self.green_duration = green_duration
         self.action_interval = action_interval
-        self._hold = max(1, int(round(float(green_duration) / max(1, action_interval))))
-        self._phase = {a: 0 for a in num_actions}
-        self._ticks = {a: 0 for a in num_actions}
+        # Preserve at least one decision per phase for callers requesting a
+        # shorter duration than the policy can express.
+        self._duration = max(float(green_duration), float(action_interval), 1.0)
+        self._decisions = 0
 
     def act(self, context):
-        actions = {a: self._phase[a] for a in self.num_actions}
-        for a, n in self.num_actions.items():
-            self._ticks[a] += 1
-            if self._ticks[a] >= self._hold:
-                self._phase[a] = (self._phase[a] + 1) % n
-                self._ticks[a] = 0
+        phase_slot = int(self._decisions * self.action_interval / self._duration)
+        masks = context.get("action_masks", {})
+        actions = {}
+        for agent_id, phase_count in self.num_actions.items():
+            requested = phase_slot % phase_count
+            mask = masks.get(agent_id)
+            if mask is not None and not mask[requested]:
+                valid = [index for index in range(phase_count) if mask[index]]
+                if not valid:
+                    raise ValueError("fixed-time action mask has no valid phase")
+                requested = valid[0]
+            actions[agent_id] = requested
+        self._decisions += 1
         return actions
 
     def reset(self):
-        self._phase = {a: 0 for a in self.num_actions}
-        self._ticks = {a: 0 for a in self.num_actions}
+        self._decisions = 0

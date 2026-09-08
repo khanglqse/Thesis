@@ -1,3 +1,4 @@
+import pytest
 import json
 import hashlib
 
@@ -398,3 +399,18 @@ def test_maximum_red_schedules_compound_only_movement(tmp_path):
     assert ("set", "A", 4) in engine.calls
     true_current = max(env._movement_time_since_service["A"].values())
     assert info["current_max_red_seconds"] == true_current
+
+
+@pytest.mark.parametrize("duration", [25, 30, 35])
+def test_fixed_validation_and_evaluation_have_identical_signal_trace(tmp_path, duration):
+    from traffic_rl.agents.fixed_time import FixedTimeController
+    from traffic_rl.eval.runner import run_episode
+    from traffic_rl.train.network_trainer import _rollout
+
+    validation = _env(tmp_path, min_green=20, max_steps=600)
+    evaluation = _env(tmp_path, min_green=20, max_steps=600)
+    _rollout(validation, None, fixed_green_duration=duration, action_interval=10)
+    controller = FixedTimeController(evaluation.num_actions, duration, 10)
+    run_episode(evaluation, controller)
+
+    assert evaluation.engine.calls == validation.engine.calls

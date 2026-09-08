@@ -10,6 +10,7 @@ import time
 import numpy as np
 
 from traffic_rl.agents.dqn import NStepAccumulator, SharedDQN
+from traffic_rl.agents.fixed_time import FixedTimeController
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.eval.checkpoint_selection import (
     choose_checkpoint, choose_reporting_checkpoint, score_validation)
@@ -120,7 +121,10 @@ def _rollout(env, net, fixed_green_duration=None, action_interval=10):
     observations = env.reset()
     done = False
     info = {}
-    decision = 0
+    fixed_controller = (None if fixed_green_duration is None else
+                        FixedTimeController(env.num_actions,
+                                            fixed_green_duration,
+                                            action_interval))
     while not done:
         masks = env.action_masks()
         actions = {}
@@ -133,15 +137,8 @@ def _rollout(env, net, fixed_green_duration=None, action_interval=10):
             actions = {agent_id: int(greedy[index])
                        for index, agent_id in enumerate(env.agent_ids)}
         else:
-            for agent_id in env.agent_ids:
-                phase_count = env.num_actions[agent_id]
-                requested = int(decision * action_interval
-                                / float(fixed_green_duration)) % phase_count
-                if not masks[agent_id][requested]:
-                    requested = int(np.flatnonzero(masks[agent_id])[0])
-                actions[agent_id] = requested
+            actions = fixed_controller.act({"action_masks": masks})
         observations, _, done, info = env.step(actions)
-        decision += 1
     return info
 
 

@@ -1,3 +1,5 @@
+import pytest
+
 from traffic_rl.agents.fixed_time import FixedTimeController
 
 CTX = {"observations": {}, "waiting_counts": {}, "action_masks": {}}
@@ -20,11 +22,27 @@ def test_holds_each_phase_for_green_duration():
     assert [c.act(CTX)["A"] for _ in range(7)] == [0, 0, 0, 1, 1, 1, 0]
 
 
-def test_hold_count_rounds_and_is_at_least_one():
-    assert FixedTimeController({"A": 2}, green_duration=50, action_interval=10)._hold == 5
-    assert FixedTimeController({"A": 2}, green_duration=25, action_interval=10)._hold == 2
-    # never below 1 even if green_duration < interval
-    assert FixedTimeController({"A": 2}, green_duration=3, action_interval=10)._hold == 1
+@pytest.mark.parametrize("duration,expected", [
+    (25, [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0]),
+    (35, [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]),
+])
+def test_nonmultiple_duration_keeps_nominal_cycle(duration, expected):
+    controller = FixedTimeController({"A": 2}, duration, action_interval=10)
+    assert [controller.act(CTX)["A"] for _ in expected] == expected
+
+
+def test_masked_requests_use_valid_phase_without_resetting_schedule():
+    controller = FixedTimeController({"A": 3}, 10, action_interval=10)
+    masked = {"action_masks": {"A": [False, False, True, False]}}
+    assert controller.act(masked) == {"A": 2}
+    assert controller.act(masked) == {"A": 2}
+    assert controller.act(CTX) == {"A": 2}
+    assert controller.act(CTX) == {"A": 0}
+
+
+def test_short_duration_keeps_at_least_one_decision_per_phase():
+    controller = FixedTimeController({"A": 3}, 3, action_interval=10)
+    assert [controller.act(CTX)["A"] for _ in range(4)] == [0, 1, 2, 0]
 
 
 def test_reset_restarts_cycle():
