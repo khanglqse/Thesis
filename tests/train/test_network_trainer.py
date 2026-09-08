@@ -113,6 +113,59 @@ def _config():
     }
 
 
+def _bc_config():
+    config = _config()
+    config["behavior_prior"] = {
+        "type": "fixed_time_behavior_cloning",
+        "bc_epochs": 1,
+        "reference_probability_start": 0.75,
+        "reference_probability_end": 0.10,
+        "random_probability_start": 0.10,
+        "random_probability_end": 0.02,
+        "minimum_validation_reference_disagreement_rate": 0.01,
+    }
+    return config
+
+
+def test_behavior_prior_uses_only_train_cases_and_audits_raw_validation(tmp_path):
+    created = []
+
+    def factory(case, horizon_seconds):
+        created.append(case["case_id"])
+        return FakeNetworkEnv(case, horizon_seconds)
+
+    output = tmp_path / "run"
+    manifest = _manifest()
+    config = _bc_config()
+    tuning = _precomputed_tuning(manifest, config)
+    tuning_path = tmp_path / "baseline.json"
+    tuning_path.write_text(json.dumps(tuning))
+
+    summary = train_network(
+        factory, manifest, config, str(output), foundation_root=str(tmp_path),
+        foundation_verifier=_verified,
+        baseline_tuning_artifact=str(tuning_path))
+
+    prior = json.loads((output / "behavior-prior.json").read_text())
+    assert prior["teacher"] == "validation_tuned_fixed"
+    assert prior["fixed_green_duration"] == 10
+    assert prior["updates"] > 0
+    assert {row["case_id"] for row in prior["train_cases"]} == {
+        "train-normal", "train-am_peak", "train-pm_peak"}
+    assert all(not case_id.startswith("validation-")
+               for case_id in prior["source_case_ids"])
+    assert summary["training_policy_audit"]["eligible_decisions"] > 0
+    validation = json.loads((output / "validation.json").read_text())
+    rows = validation["step-3"]["rows"]
+    assert all(row["policy_audit"]["evaluation_policy"] == "raw_ddqn_greedy"
+               for row in rows)
+    assert all(row["policy_audit"]["eligible_decisions"] > 0 for row in rows)
+    contract = json.loads((output / "checkpoint/contract.json").read_text())
+    assert contract["behavior_prior"]["type"] == "fixed_time_behavior_cloning"
+    status = json.loads((output / "status.json").read_text())
+    assert "behavior-prior.json" in status["artifact_sha256"]
+
+
 def _verified(root, manifest):
     return {
         "status": "verified",

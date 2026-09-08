@@ -1,0 +1,20 @@
+# Validation-only ablation: identical behavior cloning, but no fixed-time
+# reference actions during online RL. Evaluation remains raw greedy DDQN.
+schema_version: 2
+model: {feature_dim: 12, hidden: 128, lr: 0.0003, gamma: 0.99, n_step: 3}
+optimizer: {batch_size: 128, buffer_capacity: 200000, train_start: 2000, target_sync: 500, grad_clip: 10.0, huber_delta: 1.0}
+exploration: {epsilon_start: 0.10, epsilon_end: 0.02, epsilon_decay_decisions: 4320}
+behavior_prior:
+  type: fixed_time_behavior_cloning
+  bc_epochs: 1
+  reference_probability_start: 0.0
+  reference_probability_end: 0.0
+  random_probability_start: 0.10
+  random_probability_end: 0.02
+  minimum_validation_reference_disagreement_rate: 0.01
+reward: {queue_weight: 1.0, downstream_block_weight: 0.2, switch_penalty: 0.05}
+baseline: {controller: validation_tuned_fixed, search_green_durations: [20, 25, 30, 35, 40, 45, 50, 60]}
+tiers:
+  smoke: {episodes: 3, horizon_seconds: 120, eval_every: 3, train_start: 512, require_optimizer_updates: true}
+  pilot: {episodes: 12, horizon_seconds: 3600, eval_every: 4}
+  final: {episodes: 80, horizon_seconds: 3600, eval_every: 20}

@@ -105,6 +105,92 @@ def _epsilon(decisions, exploration):
     return start + fraction * (end - start)
 
 
+def _linear_probability(decisions, total_decisions, start, end):
+    fraction = min(1.0, float(decisions) / max(1, int(total_decisions)))
+    return float(start) + fraction * (float(end) - float(start))
+
+
+def _validated_behavior_prior(config):
+    prior = config.get("behavior_prior")
+    if prior is None:
+        return None
+    if prior.get("type") != "fixed_time_behavior_cloning":
+        raise ValueError("behavior prior type must be fixed_time_behavior_cloning")
+    if int(prior.get("bc_epochs", 0)) <= 0:
+        raise ValueError("behavior prior bc_epochs must be positive")
+    fields = ("reference_probability_start", "reference_probability_end",
+              "random_probability_start", "random_probability_end")
+    for field in fields:
+        value = float(prior.get(field, -1.0))
+        if not 0.0 <= value <= 1.0:
+            raise ValueError("behavior prior probabilities must be within [0, 1]")
+    if (float(prior["reference_probability_start"])
+            + float(prior["random_probability_start"]) > 1.0
+            or float(prior["reference_probability_end"])
+            + float(prior["random_probability_end"]) > 1.0):
+        raise ValueError("behavior prior reference and random probabilities exceed one")
+    minimum = float(prior.get(
+        "minimum_validation_reference_disagreement_rate", -1.0))
+    if not 0.0 <= minimum <= 1.0:
+        raise ValueError(
+            "behavior prior reference disagreement rate must be within [0, 1]")
+    return prior
+
+
+def _behavior_clone_pretrain(env_factory, train_cases, horizon_seconds, network,
+                             fixed_duration, action_interval, prior):
+    losses = []
+    case_rows = []
+    for case in train_cases:
+        case_rows.append({
+            "case_id": case["case_id"], "scenario": case["scenario"],
+            "flow_sha256": case.get("flow_sha256"), "decisions": 0,
+            "labels": 0,
+        })
+    by_case = dict((row["case_id"], row) for row in case_rows)
+    for _ in range(int(prior["bc_epochs"])):
+        for case in train_cases:
+            env = env_factory(case, horizon_seconds)
+            try:
+                observations = env.reset()
+                teacher = FixedTimeController(
+                    env.num_actions, fixed_duration, action_interval)
+                done = False
+                info = {}
+                while not done:
+                    masks = env.action_masks()
+                    reference = teacher.act({"action_masks": masks})
+                    features = np.asarray(
+                        [observations[agent_id] for agent_id in env.agent_ids])
+                    mask_batch = np.asarray(
+                        [masks[agent_id] for agent_id in env.agent_ids])
+                    labels = np.asarray(
+                        [reference[agent_id] for agent_id in env.agent_ids],
+                        dtype=np.int64)
+                    losses.append(float(network.behavior_clone_step(
+                        features, labels, mask_batch)))
+                    observations, _, done, info = env.step(reference)
+                    by_case[case["case_id"]]["decisions"] += 1
+                    by_case[case["case_id"]]["labels"] += len(env.agent_ids)
+                _assert_rollout_complete(
+                    info, horizon_seconds,
+                    "behavior cloning %s" % case["case_id"])
+            finally:
+                _close(env)
+    return {
+        "schema_version": 1,
+        "teacher": "validation_tuned_fixed",
+        "fixed_green_duration": int(fixed_duration),
+        "bc_epochs": int(prior["bc_epochs"]),
+        "updates": len(losses),
+        "labels": sum(row["labels"] for row in case_rows),
+        "mean_loss": float(np.mean(losses)) if losses else None,
+        "source_split": "train",
+        "source_case_ids": [row["case_id"] for row in case_rows],
+        "train_cases": case_rows,
+    }
+
+
 def _close(env):
     if hasattr(env, "close"):
         env.close()
@@ -118,7 +204,8 @@ def _assert_rollout_complete(info, horizon_seconds, label):
         raise ValueError("%s has invalid queue integral" % label)
 
 
-def _rollout(env, net, fixed_green_duration=None, action_interval=10):
+def _rollout(env, net, fixed_green_duration=None, action_interval=10,
+             audit_fixed_green_duration=None):
     observations = env.reset()
     done = False
     info = {}
@@ -126,6 +213,12 @@ def _rollout(env, net, fixed_green_duration=None, action_interval=10):
                         FixedTimeController(env.num_actions,
                                             fixed_green_duration,
                                             action_interval))
+    audit_controller = (None if audit_fixed_green_duration is None else
+                        FixedTimeController(env.num_actions,
+                                            audit_fixed_green_duration,
+                                            action_interval))
+    audit_total = 0
+    audit_disagreements = 0
     while not done:
         masks = env.action_masks()
         actions = {}
@@ -137,9 +230,26 @@ def _rollout(env, net, fixed_green_duration=None, action_interval=10):
             greedy = np.argmax(net.q_values(feature_batch, mask_batch), axis=1)
             actions = {agent_id: int(greedy[index])
                        for index, agent_id in enumerate(env.agent_ids)}
+            if audit_controller is not None:
+                reference = audit_controller.act({"action_masks": masks})
+                audit_total += len(env.agent_ids)
+                audit_disagreements += sum(
+                    actions[agent_id] != reference[agent_id]
+                    for agent_id in env.agent_ids)
         else:
             actions = fixed_controller.act({"action_masks": masks})
         observations, _, done, info = env.step(actions)
+    if audit_controller is not None:
+        info = dict(info)
+        info["policy_audit"] = {
+            "evaluation_policy": "raw_ddqn_greedy",
+            "reference": "validation_tuned_fixed",
+            "eligible_decisions": audit_total,
+            "reference_disagreements": audit_disagreements,
+            "reference_disagreement_rate": (
+                float(audit_disagreements) / audit_total
+                if audit_total else 0.0),
+        }
     return info
 
 
@@ -340,8 +450,10 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
     for case in cases:
         candidate_env = env_factory(case, horizon_seconds)
         try:
-            candidate = _rollout(candidate_env, net,
-                                 action_interval=action_interval)
+            candidate = _rollout(
+                candidate_env, net, action_interval=action_interval,
+                audit_fixed_green_duration=(
+                    fixed_duration if config.get("behavior_prior") else None))
         finally:
             _close(candidate_env)
         _assert_rollout_complete(
@@ -389,6 +501,8 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
                 and baseline_insertion is not None:
             row["candidate_insertion"] = float(candidate["insertion_rate"])
             row["baseline_insertion"] = float(baseline_insertion)
+        if config.get("behavior_prior"):
+            row["policy_audit"] = candidate["policy_audit"]
         rows.append(row)
     return rows
 
@@ -452,6 +566,9 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
             "temporal_aggregation": "mean_over_simulator_steps_in_action_interval",
         },
     }
+    if config.get("behavior_prior") is not None:
+        contract["behavior_prior"] = json.loads(json.dumps(
+            config["behavior_prior"]))
     if baseline_tuning_provenance is not None:
         contract["baseline_tuning_provenance_sha256"] = (
             baseline_tuning_provenance["provenance_sha256"])
@@ -581,6 +698,21 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     episode_log = []
     validation_log = {}
     validation_seconds = 0.0
+    behavior_prior = _validated_behavior_prior(config)
+    behavior_pretraining = None
+    training_policy_audit = {
+        "eligible_decisions": 0,
+        "reference_actions_executed": 0,
+        "random_actions_executed": 0,
+        "learned_actions_executed": 0,
+        "learned_reference_disagreements": 0,
+        "executed_interventions": 0,
+    }
+    action_interval = int(config.get("simulation", {}).get(
+        "action_interval", 10))
+    total_online_decisions = (int(run["episodes"])
+                              * int(math.ceil(float(horizon_seconds)
+                                              / action_interval)))
     training_start_time = time.time()
 
     for episode in range(int(run["episodes"])):
@@ -634,6 +766,17 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                     controller_family=controller_family,
                     feature_order=feature_order,
                     baseline_tuning_provenance=precomputed_provenance)
+                if behavior_prior is not None:
+                    if controller_family != "neighbor_phase_ddqn":
+                        raise ValueError(
+                            "behavior prior requires neighbor_phase_ddqn")
+                    behavior_pretraining = _behavior_clone_pretrain(
+                        env_factory, train_cases, horizon_seconds, network,
+                        fixed_duration, action_interval, behavior_prior)
+                    network.sync_target()
+                    _write_json(os.path.join(
+                        output_dir, "behavior-prior.json"),
+                        behavior_pretraining)
             elif observations[first_agent].shape != (
                     ((contract["max_green"], contract["feature_dim"])
                      if controller_family == "neighbor_phase_ddqn"
@@ -647,6 +790,10 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                 agent_id: NStepAccumulator(int(model_config.get("n_step", 1)),
                                            float(model_config["gamma"]))
                 for agent_id in env.agent_ids}
+            reference_controller = (None if behavior_prior is None else
+                                    FixedTimeController(
+                                        env.num_actions, fixed_duration,
+                                        action_interval))
             done = False
             losses = []
             rewards_log = []
@@ -654,7 +801,6 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
             info = {}
             while not done:
                 masks = env.action_masks()
-                epsilon = _epsilon(decisions, config["exploration"])
                 actions = {}
                 feature_batch = np.asarray(
                     [observations[agent_id] for agent_id in env.agent_ids])
@@ -664,12 +810,45 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                 greedy = np.argmax(
                     network.q_values(feature_batch, mask_batch), axis=1)
                 inference_seconds += time.time() - inference_start
-                for agent_index, agent_id in enumerate(env.agent_ids):
-                    valid = np.flatnonzero(masks[agent_id])
-                    if rng.rand() < epsilon:
-                        actions[agent_id] = int(rng.choice(valid))
-                    else:
-                        actions[agent_id] = int(greedy[agent_index])
+                if behavior_prior is None:
+                    epsilon = _epsilon(decisions, config["exploration"])
+                    for agent_index, agent_id in enumerate(env.agent_ids):
+                        valid = np.flatnonzero(masks[agent_id])
+                        if rng.rand() < epsilon:
+                            actions[agent_id] = int(rng.choice(valid))
+                        else:
+                            actions[agent_id] = int(greedy[agent_index])
+                else:
+                    reference = reference_controller.act(
+                        {"action_masks": masks})
+                    p_reference = _linear_probability(
+                        decisions, total_online_decisions,
+                        behavior_prior["reference_probability_start"],
+                        behavior_prior["reference_probability_end"])
+                    p_random = _linear_probability(
+                        decisions, total_online_decisions,
+                        behavior_prior["random_probability_start"],
+                        behavior_prior["random_probability_end"])
+                    for agent_index, agent_id in enumerate(env.agent_ids):
+                        valid = np.flatnonzero(masks[agent_id])
+                        draw = rng.rand()
+                        if draw < p_random:
+                            action = int(rng.choice(valid))
+                            training_policy_audit["random_actions_executed"] += 1
+                        elif draw < p_random + p_reference:
+                            action = int(reference[agent_id])
+                            training_policy_audit[
+                                "reference_actions_executed"] += 1
+                        else:
+                            action = int(greedy[agent_index])
+                            training_policy_audit["learned_actions_executed"] += 1
+                        actions[agent_id] = action
+                        training_policy_audit["eligible_decisions"] += 1
+                        training_policy_audit[
+                            "learned_reference_disagreements"] += int(
+                                int(greedy[agent_index]) != reference[agent_id])
+                        training_policy_audit["executed_interventions"] += int(
+                            action != reference[agent_id])
                 next_observations, rewards, done, info = env.step(actions)
                 next_masks = env.action_masks()
                 for agent_id in env.agent_ids:
@@ -820,6 +999,13 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
             CHECKPOINT_ELIGIBILITY_POLICY),
         "checkpoint_reload": reload_verification,
     }
+    if behavior_prior is not None:
+        eligible = training_policy_audit["eligible_decisions"]
+        training_policy_audit["executed_intervention_rate"] = (
+            float(training_policy_audit["executed_interventions"]) / eligible
+            if eligible else 0.0)
+        summary["training_policy_audit"] = training_policy_audit
+        summary["behavior_pretraining"] = behavior_pretraining
     if run.get("require_optimizer_updates") and updates <= 0:
         raise ValueError("run requires at least one optimizer update")
     _write_json(os.path.join(output_dir, "train-log.json"), episode_log)
@@ -839,6 +1025,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "selection.json", "summary.json", "checkpoint/contract.json",
         "checkpoint/weights.npz",
     ]
+    if behavior_prior is not None:
+        artifact_paths.append("behavior-prior.json")
     if precomputed_provenance is not None:
         artifact_paths.append("baseline-tuning-provenance.json")
     artifact_hashes = {}
