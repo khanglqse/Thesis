@@ -5,7 +5,8 @@ import traffic_rl.train.network_trainer as network_trainer
 
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.train.network_trainer import (
-    canonical_json_sha256, resolve_training_config, train_network)
+    _default_foundation_verifier, canonical_json_sha256,
+    resolve_training_config, train_network)
 
 
 class FakeNetworkEnv(object):
@@ -104,6 +105,21 @@ def _verified(root, manifest):
         "generator_config_sha256": manifest["generator_config_sha256"],
         "runtime_digest": manifest["runtime"]["base_image_digest"],
     }
+
+
+def test_default_foundation_verifier_loads_from_requested_root(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "verify_haichau_foundation.py").write_text(
+        "def verify_foundation(root, manifest):\n"
+        "    return {'status': 'verified', 'root': str(root), "
+        "'marker': manifest['marker']}\n")
+
+    evidence = _default_foundation_verifier(
+        str(tmp_path), {"marker": "root-bound"})
+
+    assert evidence == {
+        "status": "verified", "root": str(tmp_path), "marker": "root-bound"}
 
 
 def test_training_visits_all_regimes_and_saves_resolved_contract(tmp_path):

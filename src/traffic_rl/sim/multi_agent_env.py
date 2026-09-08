@@ -368,7 +368,8 @@ class MultiAgentTrafficEnv:
             "phase_switches": self._phase_switches,
             "intergreen_vehicle_seconds": self._intergreen_vehicle_seconds,
             "current_max_red_seconds": max(
-                [max(values) for values in self._time_since_service.values()] or [0.0]),
+                [max(values.values()) for values in
+                 self._movement_time_since_service.values() if values] or [0.0]),
             "max_red_seconds": self._episode_max_red_seconds,
             "maximum_red_trigger_seconds": dict(self._maximum_red_trigger),
             "per_agent_queue": per_agent_queue,

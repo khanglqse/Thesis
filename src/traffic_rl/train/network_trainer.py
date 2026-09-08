@@ -1,6 +1,7 @@
 """Balanced multi-case training for the neighbor-aware phase DDQN."""
 import json
 import hashlib
+import importlib.util
 import os
 import subprocess
 import time
@@ -51,9 +52,17 @@ def _git_sha(root):
 
 
 def _default_foundation_verifier(root, manifest):
+    verifier_path = os.path.join(
+        os.path.abspath(root), "scripts", "verify_haichau_foundation.py")
     try:
-        from scripts.verify_haichau_foundation import verify_foundation
-    except ImportError as exc:
+        spec = importlib.util.spec_from_file_location(
+            "_traffic_rl_haichau_foundation_verifier", verifier_path)
+        if spec is None or spec.loader is None:
+            raise ImportError("cannot create module spec for %s" % verifier_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        verify_foundation = module.verify_foundation
+    except (AttributeError, ImportError, IOError) as exc:
         raise ValueError("foundation verifier is unavailable: %s" % exc)
     return verify_foundation(root, manifest)
 

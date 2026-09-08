@@ -215,6 +215,17 @@ def test_compound_service_resets_movements_but_only_clearance_is_lost_time(tmp_p
     assert env._time_since_service["A"] == [7.0, 0.0]
 
 
+def test_current_max_red_includes_movement_outside_selectable_projection(tmp_path):
+    env = _env(tmp_path, maximum_red=None)
+    env.reset()
+    compound_only = ("compound_in_0", "compound_out_0")
+    env._movement_time_since_service["A"][compound_only] = 108.0
+
+    _, _, _, info = env.step({"A": 0})
+
+    assert info["current_max_red_seconds"] == 118.0
+
+
 def test_explicit_yellow_with_movements_is_clearance_not_service(tmp_path):
     _roadnet(tmp_path)
     roadnet_path = tmp_path / "roadnet.json"
@@ -367,11 +378,11 @@ def test_maximum_red_schedules_compound_only_movement(tmp_path):
         {"time": 6, "availableRoadLinks": [2]},
         {"time": 6, "availableRoadLinks": []},
     ]
+    compound_pair = ("rin_2", "rout_0")
     engine = FakeEngine()
     env = MultiAgentTrafficEnv(roadnet, engine, action_interval=10,
                                min_green=20, maximum_red=180, max_steps=400)
     env.reset()
-    compound_pair = ("rin_2", "rout_0")
     info = None
     while True:
         mask = env.action_masks()["A"]
@@ -385,3 +396,5 @@ def test_maximum_red_schedules_compound_only_movement(tmp_path):
 
     assert info["max_red_seconds"] <= 180
     assert ("set", "A", 4) in engine.calls
+    true_current = max(env._movement_time_since_service["A"].values())
+    assert info["current_max_red_seconds"] == true_current

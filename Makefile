@@ -40,4 +40,10 @@ haichau-train-pilot: haichau-foundation-verify
 		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
 		--mode pilot --learning-seed $(LEARNING_SEED)
 
-.PHONY: cf-run test cf-test cf-smoke haichau-foundation-verify haichau-train-smoke haichau-train-pilot
+haichau-train-final: haichau-foundation-verify
+	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
+		--mode final --learning-seed $(LEARNING_SEED)
+
+.PHONY: cf-run test cf-test cf-smoke haichau-foundation-verify haichau-train-smoke haichau-train-pilot haichau-train-final
