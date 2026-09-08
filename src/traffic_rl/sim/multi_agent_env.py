@@ -104,11 +104,15 @@ class MultiAgentTrafficEnv:
             a: [set(roadnet.phase_movement_pairs(a, phase))
                 for phase in self._green_phases[a]]
             for a in self.agent_ids}
-        self._service_movements = {
-            a: {movement
+        self._service_pairs_by_phase = {
+            a: {phase_index: set(roadnet.phase_service_movement_pairs(
+                    a, phase_index))
                 for phase_index, role in self._phase_roles[a].items()
-                if role in ("selectable_green", "compound_service")
-                for movement in roadnet.phase_movement_pairs(a, phase_index)}
+                if role in ("selectable_green", "compound_service")}
+            for a in self.agent_ids}
+        self._service_movements = {
+            a: {movement for movements in self._service_pairs_by_phase[a].values()
+                for movement in movements}
             for a in self.agent_ids}
         self._movement_time_since_service = {
             a: {movement: 0.0 for movement in self._service_movements[a]}
@@ -234,8 +238,7 @@ class MultiAgentTrafficEnv:
                 phase_index = self._active_lightphase[a]
                 role = self._phase_roles[a][phase_index]
                 if role in ("selectable_green", "compound_service"):
-                    for movement in self.roadnet.phase_movement_pairs(
-                            a, phase_index):
+                    for movement in self._service_pairs_by_phase[a][phase_index]:
                         if movement in movement_timers:
                             movement_timers[movement] = 0.0
                 if a in clearing:

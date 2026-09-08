@@ -93,7 +93,7 @@ def test_audit_exposes_selectable_phases_transitions_and_errors(tmp_path):
 
 
 def test_explicit_contract_is_hash_bound_and_controls_roles(tmp_path):
-    _roadnet(tmp_path, [
+    fixture = _roadnet(tmp_path, [
         {"time": 40, "availableRoadLinks": [0]},
         {"time": 10, "availableRoadLinks": [0]},
         {"time": 40, "availableRoadLinks": [1]},
@@ -111,13 +111,17 @@ def test_explicit_contract_is_hash_bound_and_controls_roles(tmp_path):
             "compound_phases": [1],
             "phase_semantics": [
                 {"phase_index": 0, "duration_seconds": 40,
-                 "source_state": "G", "role": "selectable_green"},
+                 "source_state": "G", "role": "selectable_green",
+                 "movements": fixture.phase_movement_records("A", 0)},
                 {"phase_index": 1, "duration_seconds": 10,
-                 "source_state": "g", "role": "compound_service"},
+                 "source_state": "g", "role": "compound_service",
+                 "movements": fixture.phase_movement_records("A", 1)},
                 {"phase_index": 2, "duration_seconds": 40,
-                 "source_state": "G", "role": "selectable_green"},
+                 "source_state": "G", "role": "selectable_green",
+                 "movements": fixture.phase_movement_records("A", 2)},
                 {"phase_index": 3, "duration_seconds": 5,
-                 "source_state": "r", "role": "all_red"},
+                 "source_state": "r", "role": "all_red",
+                 "movements": fixture.phase_movement_records("A", 3)},
             ],
             "transitions": {
                 "0": {"2": [[1, 10]]},

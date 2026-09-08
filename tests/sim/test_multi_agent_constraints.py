@@ -222,6 +222,7 @@ def test_explicit_yellow_with_movements_is_clearance_not_service(tmp_path):
     value["intersections"][0]["trafficLight"]["lightphases"][1] = {
         "time": 3, "availableRoadLinks": [0]}
     roadnet_path.write_text(json.dumps(value))
+    fixture = RoadNet.load(str(roadnet_path))
     roles = ("selectable_green", "clearance_yellow",
              "selectable_green", "all_red")
     contract = {
@@ -236,7 +237,8 @@ def test_explicit_yellow_with_movements_is_clearance_not_service(tmp_path):
             "phase_semantics": [
                 {"phase_index": index, "duration_seconds": duration,
                  "source_state": "y" if role == "clearance_yellow" else "x",
-                 "role": role}
+                 "role": role,
+                 "movements": fixture.phase_movement_records("A", index)}
                 for index, (duration, role) in enumerate(
                     zip((40, 3, 40, 3), roles))],
             "transitions": {

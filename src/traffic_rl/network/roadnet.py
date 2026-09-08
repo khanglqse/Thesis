@@ -145,14 +145,30 @@ class RoadNet:
                     pairs.append(pair)
         return pairs
 
+    def phase_movement_records(self, inter_id, phase_idx):
+        """Canonical road-link movement records used by phase provenance."""
+        inter = self._by_id[inter_id]
+        phase = self._lightphases(inter_id)[phase_idx]
+        records = []
+        for road_link_index in phase.get("availableRoadLinks", []):
+            road_link = inter["roadLinks"][road_link_index]
+            records.append({
+                "road_link_index": road_link_index,
+                "start_road": road_link["startRoad"],
+                "end_road": road_link["endRoad"],
+                "lane_links": [[lane_link["startLaneIndex"],
+                                lane_link["endLaneIndex"]]
+                               for lane_link in road_link.get("laneLinks", [])],
+            })
+        return records
+
     def phase_contract(self, inter_id: str, transition_max_seconds=6.0):
         """Classify selectable greens and the transition after each green.
 
-        Converter-generated yellow phases may retain a short subset (or duplicate)
-        of the preceding/next green's movements. Empty phases are transitions too.
-        A non-empty short phase is classified as a transition only when its
-        movements are a subset of an adjacent long green, so a short but distinct
-        traffic movement is never silently re-labelled.
+        This deterministic fallback exists for unit fixtures without SUMO source
+        states. It treats a short non-empty subset stage as compound service and
+        an empty stage as all-red. Production callers load the hash-bound explicit
+        contract, which distinguishes compound service, yellow, and all-red.
         """
         if self._phase_contract_data is not None:
             return self._explicit_phase_contract(inter_id)
@@ -215,6 +231,12 @@ class RoadNet:
                     else "compound_service" if movements[index]
                     else "all_red")
             for index in range(len(phases))}
+        phase_semantics = {
+            index: {"phase_index": index,
+                    "duration_seconds": phases[index].get("time"),
+                    "role": phase_roles[index],
+                    "movements": self.phase_movement_records(inter_id, index)}
+            for index in range(len(phases))}
         return {
             "schema_version": 1,
             "selectable_phases": selectable,
@@ -222,6 +244,7 @@ class RoadNet:
             "transitions_after": transitions_after,
             "transitions": directed,
             "phase_roles": phase_roles,
+            "phase_semantics": phase_semantics,
             "errors": sorted(set(errors)),
         }
 
@@ -275,6 +298,7 @@ class RoadNet:
                              "clearance_yellow", "all_red"))
         semantics = record.get("phase_semantics", [])
         phase_roles = {}
+        phase_semantics = {}
         if len(semantics) != phase_count:
             errors.append("intersection {} phase_semantics length mismatch".format(
                 inter_id))
@@ -293,9 +317,14 @@ class RoadNet:
                 errors.append("intersection {} phase semantic is duplicated".format(
                     inter_id))
             phase_roles[phase_index] = role
+            phase_semantics[phase_index] = semantic
             duration = semantic.get("duration_seconds")
             if duration != self._lightphases(inter_id)[phase_index].get("time"):
                 errors.append("intersection {} phase {} duration mismatch".format(
+                    inter_id, phase_index))
+            if semantic.get("movements") != self.phase_movement_records(
+                    inter_id, phase_index):
+                errors.append("intersection {} phase {} movements mismatch".format(
                     inter_id, phase_index))
         semantic_selectable = sorted(
             index for index, role in phase_roles.items()
@@ -355,6 +384,7 @@ class RoadNet:
             "compound_phases": list(compound),
             "transitions": normalized,
             "phase_roles": phase_roles,
+            "phase_semantics": phase_semantics,
             "errors": sorted(set(errors)),
         }
 
@@ -364,6 +394,21 @@ class RoadNet:
         if contract["errors"]:
             raise ValueError("; ".join(contract["errors"]))
         return contract["phase_roles"][phase_index]
+
+    def phase_service_movement_pairs(self, inter_id, phase_index):
+        """Lane pairs served according to the hash-bound phase semantics."""
+        contract = self.phase_contract(inter_id)
+        if contract["errors"]:
+            raise ValueError("; ".join(contract["errors"]))
+        semantic = contract["phase_semantics"][phase_index]
+        pairs = []
+        for movement in semantic["movements"]:
+            for start_lane, end_lane in movement["lane_links"]:
+                pair = ("{}_{}".format(movement["start_road"], start_lane),
+                        "{}_{}".format(movement["end_road"], end_lane))
+                if pair not in pairs:
+                    pairs.append(pair)
+        return pairs
 
     def transition_sequence(self, inter_id, from_phase, to_phase):
         contract = self.phase_contract(inter_id)
