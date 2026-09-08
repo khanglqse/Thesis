@@ -32,7 +32,7 @@
   "license": "OpenStreetMap ODbL; derived topology",
   "limitations": {
     "historical_conversion_reproducibility": "unknown_not_recorded",
-    "phase_plan_observation": "unknown_not_recorded",
+    "phase_plan_source": "tracked_sumo_tllogic_states_with_explicit_synthetic_normalization_at_5896811072",
     "study_scope": "The topology and demand are synthetic research inputs; the normalized phase plan is not an observed Hai Chau controller plan."
   },
   "osm_source": {

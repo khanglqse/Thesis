@@ -46,6 +46,21 @@ def prepare(config_path, root=None, new_version=False):
         raise ValueError("Hai Chau generator config schema_version must be 2")
 
     roadnet_path = root / config["roadnet"]
+    provenance_record = config.get("provenance", {})
+    provenance_path = verify_artifact(root, provenance_record)
+    provenance = json.loads(provenance_path.read_text())
+    sumo_records = [
+        record for record in provenance.get("source_artifacts", [])
+        if record.get("role") == "sumo_network"
+    ]
+    if len(sumo_records) != 1:
+        raise ValueError("provenance must identify exactly one SUMO network")
+    sumo_artifact = sumo_records[0]
+    sumo_path = verify_artifact(root, sumo_artifact)
+    sumo_contract_record = {
+        "path": sumo_artifact["path"],
+        "sha256": sumo_artifact["sha256"],
+    }
     phase_contract_record = config.get("phase_contract", {})
     phase_contract_path = verify_artifact(root, phase_contract_record)
     phase_contract = json.loads(phase_contract_path.read_text())
@@ -53,6 +68,9 @@ def prepare(config_path, root=None, new_version=False):
         roadnet_path,
         phase_contract,
         int(config["simulation"]["min_green"]),
+        sumo_path,
+        sumo_contract_record,
+        provenance.get("repairs", []),
     )
     if network_audit["phase_errors"]:
         raise ValueError("network audit has phase errors")
@@ -90,8 +108,6 @@ def prepare(config_path, root=None, new_version=False):
     network = dict(network_audit)
     network["path"] = _under_root(root, roadnet_path)
     network["sha256"] = network_hash
-    provenance_record = config.get("provenance", {})
-    verify_artifact(root, provenance_record)
     network["provenance"] = dict(provenance_record)
 
     dockerfile_path = root / "docker" / "cityflow-research" / "Dockerfile"

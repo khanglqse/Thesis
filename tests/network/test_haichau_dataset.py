@@ -1,11 +1,28 @@
 import json
+from collections import Counter
+from xml.etree import ElementTree
 
 import pytest
+
+from traffic_rl.research.artifacts import sha256_file
 
 
 def _write_roadnet(tmp_path, data, name="roadnet.json"):
     path = tmp_path / name
     path.write_text(json.dumps(data))
+    return path
+
+
+def _write_sumo(tmp_path, phases=None):
+    phases = phases or [(30, "G"), (5, "y"), (30, "G"), (5, "r")]
+    root = ElementTree.Element("net")
+    logic = ElementTree.SubElement(root, "tlLogic", id="signal")
+    for duration, state in phases:
+        ElementTree.SubElement(
+            logic, "phase", duration=str(duration), state=state
+        )
+    path = tmp_path / "source.net.xml"
+    ElementTree.ElementTree(root).write(str(path))
     return path
 
 
@@ -157,7 +174,11 @@ def test_phase_contract_excludes_short_movement_phase_and_maps_every_switch(tmp_
     from traffic_rl.network.roadnet import RoadNet
 
     roadnet = RoadNet.load(str(_write_roadnet(tmp_path, _mini_data())))
-    contract = build_phase_contract(roadnet, "mini", "a" * 64, 20)
+    sumo_path = _write_sumo(tmp_path)
+    contract = build_phase_contract(
+        roadnet, "mini", "a" * 64, 20, sumo_path,
+        {"path": "source.net.xml", "sha256": sha256_file(sumo_path)}, []
+    )
     signal = contract["agents"]["signal"]
     assert signal["selectable_phases"] == [0, 2]
     assert signal["transition_phases"] == [1, 3]
@@ -165,6 +186,11 @@ def test_phase_contract_excludes_short_movement_phase_and_maps_every_switch(tmp_
         "0": {"2": [[1, 5]]},
         "2": {"0": [[3, 5]]},
     }
+    assert signal["compound_phases"] == []
+    assert [item["role"] for item in signal["phase_semantics"]] == [
+        "selectable_green", "clearance_yellow", "selectable_green", "all_red"
+    ]
+    assert signal["source_tl_logic_id"] == "signal"
 
 
 def test_phase_contract_rejects_adjacent_selectable_phases_without_transition(tmp_path):
@@ -175,8 +201,12 @@ def test_phase_contract_rejects_adjacent_selectable_phases_without_transition(tm
     phases = data["intersections"][1]["trafficLight"]["lightphases"]
     data["intersections"][1]["trafficLight"]["lightphases"] = [phases[0], phases[2]]
     roadnet = RoadNet.load(str(_write_roadnet(tmp_path, data)))
+    sumo_path = _write_sumo(tmp_path, [(30, "G"), (30, "G")])
     with pytest.raises(ValueError, match="transition"):
-        build_phase_contract(roadnet, "mini", "a" * 64, 20)
+        build_phase_contract(
+            roadnet, "mini", "a" * 64, 20, sumo_path,
+            {"path": "source.net.xml", "sha256": sha256_file(sumo_path)}, []
+        )
 
 
 def test_canonical_network_has_53_agents_with_two_movement_phases():
@@ -189,14 +219,32 @@ def test_canonical_network_has_53_agents_with_two_movement_phases():
     network_path = root / "datasets/haichau_network_v2/roadnet.json"
     contract_path = root / "datasets/haichau_network_v2/phase-contract.json"
     contract = json.loads(contract_path.read_text())
+    provenance = json.loads(
+        (root / "datasets/haichau_network_v2/provenance.json").read_text()
+    )
+    sumo_record = next(
+        record for record in provenance["source_artifacts"]
+        if record["role"] == "sumo_network"
+    )
+    sumo_path = root / sumo_record["path"]
     roadnet = RoadNet.load(str(network_path))
     assert contract == build_phase_contract(
         roadnet,
         "haichau_network_v2",
         "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
         20,
+        sumo_path,
+        {"path": sumo_record["path"], "sha256": sumo_record["sha256"]},
+        provenance["repairs"],
     )
-    report = audit_network(network_path, contract)
+    report = audit_network(
+        network_path,
+        contract,
+        20,
+        sumo_path,
+        {"path": sumo_record["path"], "sha256": sumo_record["sha256"]},
+        provenance["repairs"],
+    )
     assert report["controlled_signals"] == 53
     assert report["selectable_green_phases"] == 107
     assert report["transition_phases"] == 127
@@ -209,3 +257,51 @@ def test_canonical_network_has_53_agents_with_two_movement_phases():
             }
             assert all(agent["transitions"][str(source)].values())
     assert report["phase_errors"] == []
+
+
+def test_canonical_phase_contract_aligns_all_53_sumo_tllogics():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    contract = json.loads(
+        (root / "datasets/haichau_network_v2/phase-contract.json").read_text()
+    )
+    sumo_root = ElementTree.parse(
+        str(root / contract["source_sumo_network"]["path"])
+    ).getroot()
+    tl_logics = {item.attrib["id"]: item for item in sumo_root.findall("tlLogic")}
+
+    assert len(contract["agents"]) == 53
+    compound_count = 0
+    for agent_id, agent in contract["agents"].items():
+        source = tl_logics[agent["source_tl_logic_id"]]
+        source_phases = source.findall("phase")
+        if agent_id == "5896811072":
+            assert agent["source_alignment"] == "synthetic_engineering_normalization"
+            assert [item["source_phase_index"] for item in agent["phase_semantics"]] == [0, 1, 0, 2]
+        else:
+            assert agent["source_alignment"] == "exact_phase_order_duration_and_state"
+            assert len(source_phases) == len(agent["phase_semantics"])
+            for index, semantic in enumerate(agent["phase_semantics"]):
+                assert semantic["source_phase_index"] == index
+                assert semantic["source_state"] == source_phases[index].attrib["state"]
+                assert semantic["duration_seconds"] == int(float(source_phases[index].attrib["duration"]))
+        for phase_index in agent["compound_phases"]:
+            semantic = agent["phase_semantics"][phase_index]
+            assert semantic["role"] == "compound_service"
+            assert "g" in semantic["source_state"].lower()
+            assert "y" not in semantic["source_state"].lower()
+            assert semantic["duration_seconds"] < 20
+            assert semantic["movements"]
+            compound_count += 1
+    assert compound_count == 10
+    assert Counter(
+        item["role"]
+        for agent in contract["agents"].values()
+        for item in agent["phase_semantics"]
+    ) == {
+        "selectable_green": 107,
+        "compound_service": 10,
+        "clearance_yellow": 116,
+        "all_red": 1,
+    }

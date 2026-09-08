@@ -2,6 +2,7 @@
 
 from collections import Counter, deque
 import random
+from xml.etree import ElementTree
 
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.research.artifacts import (
@@ -60,10 +61,120 @@ def _weak_component_count(nodes, edges):
     return components
 
 
-def build_phase_contract(roadnet, dataset_id, roadnet_sha256, min_green_seconds):
-    """Derive explicit action and transition roles from each cyclic phase plan."""
+def _sumo_signal_logics(path):
+    """Return the phase records for every tracked SUMO traffic-light logic."""
+    logics = {}
+    for logic in ElementTree.parse(str(path)).getroot().findall("tlLogic"):
+        logic_id = logic.get("id")
+        if not logic_id or logic_id in logics:
+            raise ValueError("SUMO signal logic identifiers must be unique")
+        phases = []
+        for phase in logic.findall("phase"):
+            try:
+                duration = float(phase.get("duration"))
+            except (TypeError, ValueError):
+                raise ValueError("SUMO phase duration is invalid for %s" % logic_id)
+            if duration <= 0 or duration != int(duration) or not phase.get("state"):
+                raise ValueError("SUMO phase semantics are invalid for %s" % logic_id)
+            phases.append({"duration": int(duration), "state": phase.get("state")})
+        if not phases:
+            raise ValueError("SUMO signal logic %s has no phases" % logic_id)
+        logics[logic_id] = phases
+    return logics
+
+
+def _source_logic_id(agent_id, logics):
+    candidates = [candidate for candidate in (agent_id, "GS_" + agent_id)
+                  if candidate in logics]
+    if len(candidates) != 1:
+        raise ValueError(
+            "agent %s must map to exactly one SUMO tlLogic by exact/GS_ identifier"
+            % agent_id
+        )
+    return candidates[0]
+
+
+def _phase_movements(roadnet, agent_id, phase):
+    road_links = roadnet._by_id[agent_id].get("roadLinks", [])
+    movements = []
+    for road_link_index in phase.get("availableRoadLinks", []):
+        if (not isinstance(road_link_index, int) or road_link_index < 0
+                or road_link_index >= len(road_links)):
+            raise ValueError("phase movement references invalid roadLink")
+        road_link = road_links[road_link_index]
+        lane_links = [
+            [lane_link.get("startLaneIndex"), lane_link.get("endLaneIndex")]
+            for lane_link in road_link.get("laneLinks", [])
+        ]
+        if not lane_links:
+            raise ValueError("phase movement has no laneLinks")
+        movements.append({
+            "road_link_index": road_link_index,
+            "start_road": road_link.get("startRoad"),
+            "end_road": road_link.get("endRoad"),
+            "lane_links": lane_links,
+        })
+    return movements
+
+
+def _source_role(state, movements, duration, min_green_seconds):
+    lower = state.lower()
+    if "y" in lower:
+        return "clearance_yellow"
+    if "g" in lower:
+        if not movements:
+            raise ValueError("SUMO green phase has no CityFlow movement")
+        if duration >= min_green_seconds:
+            return "selectable_green"
+        return "compound_service"
+    if set(lower) == {"r"} and not movements:
+        return "all_red"
+    raise ValueError("SUMO state cannot be assigned a fail-closed phase role")
+
+
+def _synthetic_source_indices(agent_id, phases, source_phases, repair):
+    """Validate and map the one documented split-green normalization."""
+    if (repair.get("type") != "split_single_action_by_road_link"
+            or repair.get("intersection_id") != agent_id
+            or repair.get("modeling_status") != "synthetic_engineering_normalization"
+            or repair.get("source_evidence") != "unknown_not_recorded"):
+        raise ValueError("unsupported phase repair for %s" % agent_id)
+    before = repair.get("before")
+    after = repair.get("after")
+    if after != phases or not isinstance(before, list) or len(before) != 3:
+        raise ValueError("synthetic phase repair does not match canonical plan")
+    if ([item.get("time") for item in before]
+            != [item["duration"] for item in source_phases]):
+        raise ValueError("synthetic phase repair does not match SUMO durations")
+    if (len(after) != 4 or after[1] != before[1] or after[3] != before[2]
+            or before[0].get("time") != after[0].get("time") + after[2].get("time")
+            or set(before[0].get("availableRoadLinks", []))
+            != set(after[0].get("availableRoadLinks", []))
+            | set(after[2].get("availableRoadLinks", []))
+            or set(after[0].get("availableRoadLinks", []))
+            & set(after[2].get("availableRoadLinks", []))):
+        raise ValueError("synthetic split-green transformation is invalid")
+    return [0, 1, 0, 2]
+
+
+def build_phase_contract(roadnet, dataset_id, roadnet_sha256, min_green_seconds,
+                         sumo_network_path, sumo_network_record, repairs):
+    """Derive policy and transition roles from hash-bound SUMO state strings."""
     if not dataset_id or len(roadnet_sha256) != 64 or min_green_seconds <= 0:
         raise ValueError("phase contract identity and min green are required")
+    if (not isinstance(sumo_network_record, dict)
+            or set(sumo_network_record) != {"path", "sha256"}
+            or sha256_file(sumo_network_path) != sumo_network_record["sha256"]):
+        raise ValueError("phase contract SUMO source identity mismatch")
+    if not isinstance(repairs, list):
+        raise ValueError("phase contract repairs must be a list")
+    repair_by_agent = {}
+    for repair in repairs:
+        agent_id = repair.get("intersection_id") if isinstance(repair, dict) else None
+        if not agent_id or agent_id in repair_by_agent:
+            raise ValueError("phase contract repair identities must be unique")
+        repair_by_agent[agent_id] = repair
+    logics = _sumo_signal_logics(sumo_network_path)
     agents = {}
     for agent_id in sorted(roadnet.signalized_ids()):
         phases = roadnet._lightphases(agent_id)
@@ -75,11 +186,41 @@ def build_phase_contract(roadnet, dataset_id, roadnet_sha256, min_green_seconds)
                 raise ValueError(
                     "phase %s:%d has invalid duration" % (agent_id, phase_index)
                 )
-        selectable = [
-            index for index, phase in enumerate(phases)
-            if phase.get("availableRoadLinks")
-            and phase["time"] >= min_green_seconds
-        ]
+        source_tl_logic_id = _source_logic_id(agent_id, logics)
+        source_phases = logics[source_tl_logic_id]
+        repair = repair_by_agent.pop(agent_id, None)
+        if repair is None:
+            if len(source_phases) != len(phases):
+                raise ValueError("agent %s phase count differs from SUMO source" % agent_id)
+            source_indices = list(range(len(phases)))
+            source_alignment = "exact_phase_order_duration_and_state"
+        else:
+            source_indices = _synthetic_source_indices(
+                agent_id, phases, source_phases, repair
+            )
+            source_alignment = "synthetic_engineering_normalization"
+
+        semantics = []
+        for phase_index, phase in enumerate(phases):
+            source_index = source_indices[phase_index]
+            source_phase = source_phases[source_index]
+            duration = phase["time"]
+            if repair is None and duration != source_phase["duration"]:
+                raise ValueError("agent %s phase duration differs from SUMO source" % agent_id)
+            movements = _phase_movements(roadnet, agent_id, phase)
+            role = _source_role(
+                source_phase["state"], movements, duration, min_green_seconds
+            )
+            semantics.append({
+                "phase_index": phase_index,
+                "duration_seconds": duration,
+                "source_phase_index": source_index,
+                "source_state": source_phase["state"],
+                "role": role,
+                "movements": movements,
+            })
+        selectable = [item["phase_index"] for item in semantics
+                      if item["role"] == "selectable_green"]
         if len(selectable) < 2:
             raise ValueError(
                 "intersection %s has fewer than two selectable green phases"
@@ -88,6 +229,8 @@ def build_phase_contract(roadnet, dataset_id, roadnet_sha256, min_green_seconds)
         selectable_set = set(selectable)
         transition = [index for index in range(len(phases))
                       if index not in selectable_set]
+        compounds = [item["phase_index"] for item in semantics
+                     if item["role"] == "compound_service"]
         transitions = {}
         for source in selectable:
             phase_index = (source + 1) % len(phases)
@@ -105,37 +248,59 @@ def build_phase_contract(roadnet, dataset_id, roadnet_sha256, min_green_seconds)
                 for target in selectable if target != source
             }
         agents[agent_id] = {
+            "source_tl_logic_id": source_tl_logic_id,
+            "source_alignment": source_alignment,
             "selectable_phases": selectable,
+            "compound_phases": compounds,
             "transition_phases": transition,
+            "phase_semantics": semantics,
             "transitions": transitions,
         }
+    if repair_by_agent:
+        raise ValueError("phase repairs reference non-agent intersections")
     return {
         "schema_version": 1,
         "dataset_id": dataset_id,
         "roadnet_sha256": roadnet_sha256,
+        "source_sumo_network": dict(sumo_network_record),
+        "id_mapping_rule": "exact CityFlow intersection id, otherwise GS_ prefix",
+        "role_vocabulary": {
+            "selectable_green": "movement-serving policy action compatible with min_green",
+            "compound_service": "movement-serving source stage shorter than min_green; transition-only",
+            "clearance_yellow": "source state contains yellow; transition-only lost time",
+            "all_red": "source state is all red; transition-only lost time",
+        },
         "derivation": {
-            "algorithm": "cityflow_cyclic_phase_roles_v1",
+            "algorithm": "sumo_tllogic_phase_roles_v2",
             "min_green_seconds": min_green_seconds,
             "selectable_rule": (
-                "phase serves at least one roadLink movement and its declared "
-                "duration is min-green compatible"
+                "SUMO state has green and no yellow, CityFlow phase serves movement, "
+                "and declared duration is min-green compatible"
+            ),
+            "compound_rule": (
+                "SUMO state has green and no yellow and serves movement, but declared "
+                "duration is shorter than min-green; preserve only inside transitions"
+            ),
+            "clearance_rule": (
+                "any SUMO state containing yellow is clearance_yellow even when its "
+                "CityFlow conversion retains permitted movements"
+            ),
+            "all_red_rule": (
+                "SUMO state contains only red and CityFlow permits no movement"
             ),
             "transition_rule": (
                 "preserve every non-selectable phase after a selectable source "
                 "in cyclic plan order until the next selectable phase; use that "
                 "source-exit sequence for every directed switch"
             ),
-            "signal_state_semantics": (
-                "CityFlow conversion retains permitted roadLinks but not SUMO "
-                "color letters; short permissive phases and empty clearances are "
-                "therefore transition-only and never controller actions"
-            ),
         },
         "limitations": {
-            "original_signal_color_states": "unknown_not_recorded",
-            "transition_interpretation": (
-                "synthetic engineering contract derived from preserved cyclic "
-                "phase order, movement permissions, and durations"
+            "source_signal_states": (
+                "tracked SUMO tlLogic state strings, bound by source_sumo_network hash"
+            ),
+            "synthetic_normalization": (
+                "intersection 5896811072 splits one source action into two policy "
+                "actions exactly as declared by the provenance repair"
             ),
         },
         "agents": agents,
@@ -143,17 +308,20 @@ def build_phase_contract(roadnet, dataset_id, roadnet_sha256, min_green_seconds)
 
 
 def validate_phase_contract(roadnet, contract, dataset_id, roadnet_sha256,
-                            min_green_seconds):
+                            min_green_seconds, sumo_network_path,
+                            sumo_network_record, repairs):
     """Reject any phase contract that differs from deterministic derivation."""
     expected = build_phase_contract(
-        roadnet, dataset_id, roadnet_sha256, min_green_seconds
+        roadnet, dataset_id, roadnet_sha256, min_green_seconds,
+        sumo_network_path, sumo_network_record, repairs
     )
     if contract != expected:
         raise ValueError("phase contract differs from deterministic phase plan roles")
     return expected
 
 
-def audit_network(path, phase_contract=None, min_green_seconds=20):
+def audit_network(path, phase_contract=None, min_green_seconds=20,
+                  sumo_network_path=None, sumo_network_record=None, repairs=None):
     """Return deterministic graph counts and all detected phase-reference errors."""
     roadnet = RoadNet.load(str(path))
     road_by_id = roadnet._road_by_id
@@ -258,13 +426,24 @@ def audit_network(path, phase_contract=None, min_green_seconds=20):
 
     if phase_contract is not None:
         try:
-            validate_phase_contract(
+            validated_contract = validate_phase_contract(
                 roadnet,
                 phase_contract,
                 phase_contract.get("dataset_id"),
                 sha256_file(path),
                 min_green_seconds,
+                sumo_network_path,
+                sumo_network_record,
+                repairs,
             )
+            selectable_phase_counts = {
+                agent_id: len(validated_contract["agents"][agent_id]["selectable_phases"])
+                for agent_id in agents
+            }
+            transition_phase_counts = {
+                agent_id: len(validated_contract["agents"][agent_id]["transition_phases"])
+                for agent_id in agents
+            }
         except (AttributeError, KeyError, TypeError, ValueError) as error:
             errors.append("phase contract: %s" % error)
 

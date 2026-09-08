@@ -56,6 +56,9 @@ EXPECTED_HAICHAU_SOURCE_HASHES = {
     "sumo_network": "0b4e0750134697de1a9d5c7d19fb71bc6cbade58506a7fd816410a487ee3faba",
     "source_cityflow_roadnet": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
 }
+EXPECTED_HAICHAU_PROVENANCE_SEMANTIC_SHA256 = (
+    "de9cc6003a4b39ca478cdae13c8ebb68937e27adcd4172df515cc724311b28d1"
+)
 
 
 def _require_exact_keys(value, keys, label):
@@ -65,6 +68,14 @@ def _require_exact_keys(value, keys, label):
 
 def _is_sha256(value):
     return isinstance(value, str) and re.match(r"^[0-9a-f]{64}$", value) is not None
+
+
+def _verify_canonical_provenance_anchor(provenance, dataset_id):
+    """Pin every canonical provenance assertion outside its mutable hash graph."""
+    if (dataset_id == "haichau_network_v2"
+            and canonical_sha256(provenance)
+            != EXPECTED_HAICHAU_PROVENANCE_SEMANTIC_SHA256):
+        raise ValueError("canonical provenance semantic hash mismatch")
 
 
 def _load_verified_config(root, manifest):
@@ -96,6 +107,7 @@ def _verify_provenance(root, record, network, config, network_path):
         raise ValueError("provenance record differs from generator config")
     path = verify_artifact(root, record)
     provenance = json.loads(path.read_text())
+    _verify_canonical_provenance_anchor(provenance, config["dataset_id"])
     required = {
         "schema_version", "dataset_id", "data_source_label", "bbox_wgs84",
         "license", "osm_source", "source_artifacts", "conversion", "repairs",
@@ -197,10 +209,11 @@ def _verify_provenance(root, record, network, config, network_path):
 
     limitations = provenance["limitations"]
     _require_exact_keys(limitations, {
-        "historical_conversion_reproducibility", "phase_plan_observation", "study_scope",
+        "historical_conversion_reproducibility", "phase_plan_source", "study_scope",
     }, "limitations")
     if (limitations["historical_conversion_reproducibility"] != UNKNOWN
-            or limitations["phase_plan_observation"] != UNKNOWN
+            or not isinstance(limitations["phase_plan_source"], str)
+            or not limitations["phase_plan_source"].strip()
             or not limitations["study_scope"]):
         raise ValueError("provenance limitations are invalid")
 
@@ -235,19 +248,34 @@ def _verify_provenance(root, record, network, config, network_path):
     return provenance
 
 
-def _verify_phase_contract(root, manifest, config, network_path):
+def _verify_phase_contract(root, manifest, config, network_path, provenance):
     record = manifest.get("phase_contract", {})
     if record != config.get("phase_contract"):
         raise ValueError("phase contract record differs from generator config")
     path = verify_artifact(root, record)
     contract = json.loads(path.read_text())
     roadnet = RoadNet.load(str(network_path))
+    sumo_records = [
+        item for item in provenance["source_artifacts"]
+        if item["role"] == "sumo_network"
+    ]
+    if len(sumo_records) != 1:
+        raise ValueError("phase contract requires exactly one SUMO source")
+    sumo_artifact = sumo_records[0]
+    sumo_path = verify_artifact(root, sumo_artifact)
+    sumo_record = {
+        "path": sumo_artifact["path"],
+        "sha256": sumo_artifact["sha256"],
+    }
     return validate_phase_contract(
         roadnet,
         contract,
         config["dataset_id"],
         manifest["network"]["sha256"],
         int(config["simulation"]["min_green"]),
+        sumo_path,
+        sumo_record,
+        provenance["repairs"],
     )
 
 
@@ -278,13 +306,22 @@ def _verify_network(root, manifest, config):
     if network.get("path") != config.get("roadnet"):
         raise ValueError("network path differs from generator config")
 
-    phase_contract = _verify_phase_contract(root, manifest, config, network_path)
     if not network.get("provenance"):
         raise ValueError("network provenance record is required")
-    _verify_provenance(root, network["provenance"], network, config, network_path)
+    provenance = _verify_provenance(
+        root, network["provenance"], network, config, network_path
+    )
+    phase_contract = _verify_phase_contract(
+        root, manifest, config, network_path, provenance
+    )
 
     actual = audit_network(
-        network_path, phase_contract, int(config["simulation"]["min_green"])
+        network_path,
+        phase_contract,
+        int(config["simulation"]["min_green"]),
+        root / phase_contract["source_sumo_network"]["path"],
+        phase_contract["source_sumo_network"],
+        provenance["repairs"],
     )
     if actual["controlled_signals"] != EXPECTED_CONTROLLED_SIGNALS:
         raise ValueError("controlled signal count audit mismatch")

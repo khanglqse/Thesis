@@ -49,13 +49,34 @@ def _write_inputs(root):
     roadnet_path.write_text(json.dumps(roadnet))
     from traffic_rl.network.haichau_dataset import build_phase_contract
     from traffic_rl.network.roadnet import RoadNet
+    source_dir = dataset / "source"
+    source_dir.mkdir()
+    sumo_path = source_dir / "network.net.xml"
+    sumo_path.write_text("<net>%s</net>" % "".join(
+        '<tlLogic id="%s"><phase duration="40" state="G"/>'
+        '<phase duration="5" state="y"/><phase duration="40" state="G"/>'
+        '<phase duration="5" state="r"/></tlLogic>' % intersection["id"]
+        for intersection in intersections
+        if not intersection.get("virtual")
+    ))
+    sumo_record = {
+        "role": "sumo_network",
+        "path": "datasets/mini/source/network.net.xml",
+        "path_at_conversion": "source/network.net.xml",
+        "sha256": sha256_file(sumo_path),
+        "availability": "tracked",
+    }
     phase_contract_path = dataset / "phase-contract.json"
     phase_contract_path.write_text(json.dumps(build_phase_contract(
-        RoadNet.load(str(roadnet_path)), "mini", sha256_file(roadnet_path), 20
+        RoadNet.load(str(roadnet_path)), "mini", sha256_file(roadnet_path), 20,
+        sumo_path,
+        {"path": sumo_record["path"], "sha256": sumo_record["sha256"]},
+        [],
     ), sort_keys=True, separators=(",", ":")) + "\n")
     provenance_path = dataset / "provenance.json"
     provenance_path.write_text(
-        json.dumps({"dataset_id": "mini", "expected_controlled_signals": 6})
+        json.dumps({"dataset_id": "mini", "expected_controlled_signals": 6,
+                    "source_artifacts": [sumo_record], "repairs": []})
     )
     config = {
         "schema_version": 2,

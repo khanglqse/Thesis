@@ -77,3 +77,14 @@ Entries below record the command and observed reason for RED before production c
 - Re-review runtime smoke GREEN: `make haichau-smoke` rebuilt/inspected image `sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517` and completed the real 60-step CityFlow episode.
 - Evidence-hardening RED: the enhanced evidence contract failed because the old `foundation.json` did not record artifact blob hashes.
 - Evidence-hardening GREEN: clean detached worktree at `23151a9fde5a5ae68280a33aa9976d026611609e` passed 165 host tests, the canonical verifier and Docker smoke. Refreshed `foundation.json` records 10 verified artifact/blob hashes including the phase contract and four provenance sources; the test now proves the commit exists, is an ancestor, and every recorded hash matches `git show <verified_commit>:<path>`.
+
+## Final re-review: canonical trust anchor and SUMO phase semantics
+
+- SUMO phase-role RED: `PYTHONPATH=src pytest -q tests/network/test_haichau_dataset.py -k 'phase_contract or canonical_network'` — 4 failures because the builder accepted no SUMO source inputs and the old contract lacked `source_sumo_network` and per-stage source semantics.
+- Canonical provenance RED: `PYTHONPATH=src pytest -q tests/scripts/test_verify_haichau_foundation.py -k 'canonical_provenance_semantic_anchor'` — 5 failures because no external semantic trust anchor existed.
+- SUMO phase-role GREEN: all 53 CityFlow signal IDs map uniquely to tracked SUMO `tlLogic` entries by exact ID or `GS_` prefix. The regenerated hash-bound contract preserves source state strings and classifies 107 `selectable_green`, 10 short `compound_service`, 116 `clearance_yellow`, and 1 `all_red` stages. The documented synthetic split at `5896811072` is validated separately and maps canonical source indices `[0, 1, 0, 2]`.
+- Canonical provenance GREEN: the verifier pins canonical JSON semantics to SHA-256 `de9cc6003a4b39ca478cdae13c8ebb68937e27adcd4172df515cc724311b28d1`. Mutations to bounding box, license, historical paths, demand basis, or study scope are rejected after computing a new self-consistent hash.
+- Mutation suite GREEN: rehashed phase-contract changes to source state, role, or movement records are rejected by deterministic regeneration from the tracked SUMO network and repaired CityFlow network.
+- Final re-review focused GREEN: `PYTHONPATH=src pytest -q tests/network/test_haichau_dataset.py tests/scripts/test_prepare_haichau_network.py tests/scripts/test_verify_haichau_foundation.py` — 50 passed.
+- Final re-review host GREEN before evidence refresh: `make test` — 174 passed, 1 Docker-marked test deselected in 10.44 seconds.
+- Final re-review verifier GREEN before evidence refresh: 53 signals, 107 selectable phases, 127 transition phases, 30 cases, 1,418 route families, split counts 9/6/15.

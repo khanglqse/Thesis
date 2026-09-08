@@ -3,10 +3,10 @@ dataset_id: haichau_network_v2
 roadnet: datasets/haichau_network_v2/roadnet.json
 phase_contract:
   path: datasets/haichau_network_v2/phase-contract.json
-  sha256: 22097052d592cdb22c6c8ac60127cc99c01507ba81e16462fc9c238eea6f4df3
+  sha256: 41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae
 provenance:
   path: datasets/haichau_network_v2/provenance.json
-  sha256: 3f2e3a27716fa92a4877821a1f90767183a4a731b9afc789b0292791605321a3
+  sha256: a922a79f032eaab96c204b7696703022424ade809bf9fe8aa1452fc9fc6db409
 demand_label: synthetic_osm_haichau_constrained_by_danang_profiles
 route_count: 500
 min_controlled_signals_per_route: 2

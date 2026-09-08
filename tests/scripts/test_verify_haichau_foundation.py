@@ -9,7 +9,7 @@ import subprocess
 import pytest
 import yaml
 
-from traffic_rl.research.artifacts import sha256_file
+from traffic_rl.research.artifacts import canonical_sha256, sha256_file
 
 
 BASE_DIGEST = "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32"
@@ -74,14 +74,23 @@ def valid_foundation(tmp_path):
     dataset.mkdir(parents=True)
     docker_dir.mkdir(parents=True)
     roadnet_path = dataset / "roadnet.json"
-    roadnet_path.write_text(json.dumps(_network()))
+    network = _network()
+    roadnet_path.write_text(json.dumps(network))
     source_dir = dataset / "source"
     source_dir.mkdir()
+    sumo_payload = "<net>%s</net>" % "".join(
+        '<tlLogic id="%s"><phase duration="40" state="G"/>'
+        '<phase duration="5" state="y"/><phase duration="40" state="G"/>'
+        '<phase duration="5" state="r"/></tlLogic>' % intersection["id"]
+        for intersection in network["intersections"]
+        if (not intersection.get("virtual")
+            and len(intersection.get("trafficLight", {}).get("lightphases", [])) > 1)
+    )
     source_records = []
     for role, name, payload in (
         ("clipped_osm_pbf", "clipped.osm.pbf", b"fixture-pbf"),
         ("clipped_osm_xml", "clipped.osm", b"fixture-osm"),
-        ("sumo_network", "network.net.xml", b"fixture-sumo"),
+        ("sumo_network", "network.net.xml", sumo_payload.encode("utf-8")),
         ("source_cityflow_roadnet", "source-roadnet.json", roadnet_path.read_bytes()),
     ):
         source_path = source_dir / name
@@ -94,8 +103,13 @@ def valid_foundation(tmp_path):
             "availability": "tracked",
         })
     phase_contract_path = dataset / "phase-contract.json"
+    sumo_record = next(record for record in source_records
+                       if record["role"] == "sumo_network")
     phase_contract_path.write_text(json.dumps(build_phase_contract(
-        RoadNet.load(str(roadnet_path)), "fixture", sha256_file(roadnet_path), 20
+        RoadNet.load(str(roadnet_path)), "fixture", sha256_file(roadnet_path), 20,
+        tmp_path / sumo_record["path"],
+        {"path": sumo_record["path"], "sha256": sumo_record["sha256"]},
+        [],
     ), sort_keys=True, separators=(",", ":")) + "\n")
     profile_path, counts = _write_profile_source(tmp_path)
     dockerfile = docker_dir / "Dockerfile"
@@ -121,7 +135,7 @@ def valid_foundation(tmp_path):
                               "vehicle_mix_scope": "synthetic fixture"},
         "limitations": {
             "historical_conversion_reproducibility": "unknown_not_recorded",
-            "phase_plan_observation": "unknown_not_recorded",
+            "phase_plan_source": "fixture SUMO states",
             "study_scope": "synthetic fixture",
         },
     }
@@ -217,6 +231,26 @@ def test_foundation_verifier_rejects_missing_directed_transition(valid_foundatio
     source = str(agent["selectable_phases"][0])
     target = str(agent["selectable_phases"][1])
     del agent["transitions"][source][target]
+    path.write_text(json.dumps(contract, sort_keys=True, separators=(",", ":")) + "\n")
+    record["sha256"] = sha256_file(path)
+    _rebind_config_artifact(root, manifest, "phase_contract", record)
+    with pytest.raises(ValueError, match="phase contract"):
+        _verify(root, manifest)
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda semantic: semantic.update(source_state="fabricated"),
+    lambda semantic: semantic.update(role="selectable_green"),
+    lambda semantic: semantic.update(movements=[]),
+])
+def test_foundation_verifier_rejects_rehashed_phase_semantic_drift(
+        valid_foundation, mutation):
+    root, manifest = valid_foundation
+    record = manifest["phase_contract"]
+    path = root / record["path"]
+    contract = json.loads(path.read_text())
+    semantic = contract["agents"][sorted(contract["agents"])[0]]["phase_semantics"][1]
+    mutation(semantic)
     path.write_text(json.dumps(contract, sort_keys=True, separators=(",", ":")) + "\n")
     record["sha256"] = sha256_file(path)
     _rebind_config_artifact(root, manifest, "phase_contract", record)
@@ -353,7 +387,52 @@ def test_canonical_provenance_labels_signal_repair_as_synthetic_assumption():
     assert repair["intersection_id"] == "5896811072"
     assert repair["modeling_status"] == "synthetic_engineering_normalization"
     assert repair["source_evidence"] == "unknown_not_recorded"
-    assert provenance["limitations"]["phase_plan_observation"] == "unknown_not_recorded"
+    assert provenance["limitations"]["phase_plan_source"] == (
+        "tracked_sumo_tllogic_states_with_explicit_synthetic_normalization_at_5896811072"
+    )
+
+
+def _mutate_bbox(provenance):
+    provenance["bbox_wgs84"] = [1, 2, 3, 4]
+
+
+def _mutate_license(provenance):
+    provenance["license"] = "fabricated license"
+
+
+def _mutate_historical_path(provenance):
+    provenance["source_artifacts"][0]["path_at_conversion"] = "fabricated/input.pbf"
+
+
+def _mutate_demand_basis(provenance):
+    provenance["demand_provenance"]["vehicle_mix_basis"] = "fabricated basis"
+
+
+def _mutate_study_scope(provenance):
+    provenance["limitations"]["study_scope"] = "fabricated scope"
+
+
+@pytest.mark.parametrize("mutation", [
+    _mutate_bbox,
+    _mutate_license,
+    _mutate_historical_path,
+    _mutate_demand_basis,
+    _mutate_study_scope,
+])
+def test_canonical_provenance_semantic_anchor_rejects_self_consistent_rehash(mutation):
+    from scripts.verify_haichau_foundation import _verify_canonical_provenance_anchor
+
+    root = Path(__file__).resolve().parents[2]
+    provenance = json.loads(
+        (root / "datasets/haichau_network_v2/provenance.json").read_text()
+    )
+    _verify_canonical_provenance_anchor(provenance, "haichau_network_v2")
+    original_hash = canonical_sha256(provenance)
+    mutation(provenance)
+    rebound_hash = canonical_sha256(provenance)
+    assert rebound_hash != original_hash
+    with pytest.raises(ValueError, match="canonical provenance semantic hash"):
+        _verify_canonical_provenance_anchor(provenance, "haichau_network_v2")
 
 
 def test_foundation_verifier_rejects_profile_count_not_supported_by_source(valid_foundation):
