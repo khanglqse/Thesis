@@ -1,8 +1,10 @@
 import copy
 import csv
+import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 
 import pytest
 import yaml
@@ -408,6 +410,15 @@ def test_committed_clean_checkout_foundation_evidence():
     assert evidence["schema_version"] == 1
     assert evidence["dataset_id"] == "haichau_network_v2"
     assert re.match(r"^[0-9a-f]{40}$", evidence["verified_commit"])
+    subprocess.run(
+        ["git", "-C", str(root), "cat-file", "-e", evidence["verified_commit"] + "^{commit}"],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(root), "merge-base", "--is-ancestor",
+         evidence["verified_commit"], "HEAD"],
+        check=True,
+    )
     assert evidence["checkout"]["status_before"] == "clean"
     assert evidence["checkout"]["ignored_source_present"] is False
     assert evidence["wall_time_seconds"] > 0
@@ -419,7 +430,7 @@ def test_committed_clean_checkout_foundation_evidence():
         "make haichau-smoke",
     }
     assert all(record["exit_code"] == 0 for record in commands.values())
-    assert "153 passed, 1 deselected" in commands["make test"]["output_summary"]
+    assert "165 passed, 1 deselected" in commands["make test"]["output_summary"]
     assert commands[
         "PYTHONPATH=src python3 scripts/verify_haichau_foundation.py"
     ]["output"]["status"] == "verified"
@@ -429,3 +440,26 @@ def test_committed_clean_checkout_foundation_evidence():
     assert re.match(r"^sha256:[0-9a-f]{64}$", runtime["derived_image_id"])
     assert runtime["base_image_digest"] == BASE_DIGEST
     assert runtime["platform"] == "linux/amd64"
+    smoke_output = commands["make haichau-smoke"]["output"]
+    for field in ("derived_image_id", "base_image_digest", "dockerfile_sha256", "platform"):
+        assert runtime[field] == smoke_output[field]
+
+    expected_paths = {
+        "configs/haichau_network_v2.yaml",
+        "datasets/haichau_network_v2/phase-contract.json",
+        "datasets/haichau_network_v2/provenance.json",
+        "datasets/haichau_network_v2/roadnet.json",
+        "datasets/haichau_network_v2/source/danang_haichau.net.xml",
+        "datasets/haichau_network_v2/source/danang_haichau.osm",
+        "datasets/haichau_network_v2/source/danang_haichau.osm.pbf",
+        "datasets/haichau_network_v2/source/roadnet_haichau_rush.json",
+        "docker/cityflow-research/Dockerfile",
+        "results/haichau_network_v2/experiment-manifest.json",
+    }
+    artifacts = evidence["verified_artifacts"]
+    assert set(artifacts) == expected_paths
+    for path, expected_hash in artifacts.items():
+        blob = subprocess.check_output(
+            ["git", "-C", str(root), "show", "%s:%s" % (evidence["verified_commit"], path)]
+        )
+        assert hashlib.sha256(blob).hexdigest() == expected_hash

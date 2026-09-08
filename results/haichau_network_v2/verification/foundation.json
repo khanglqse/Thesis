@@ -2,13 +2,16 @@
   "schema_version": 1,
   "dataset_id": "haichau_network_v2",
   "verification_scope": "clean_checkout",
-  "verified_commit": "e110437364f19072fcaba7d8b7065ffd0e87626e",
-  "started_at_utc": "2026-09-08T06:03:50Z",
-  "finished_at_utc": "2026-09-08T06:05:45Z",
-  "wall_time_seconds": 115,
+  "verified_commit": "23151a9fde5a5ae68280a33aa9976d026611609e",
+  "started_at_utc": "2026-09-08T06:37:14Z",
+  "finished_at_utc": "2026-09-08T06:39:19Z",
+  "wall_time_seconds": 125,
   "checkout": {
-    "command": "git worktree add --detach /Users/khanglq1/workplace/Thesis/traffic-rl-clean-e110437 e110437",
+    "command": "git worktree add --detach /Users/khanglq1/workplace/Thesis/traffic-rl-clean-23151a9 23151a9",
     "method": "detached_git_worktree",
+    "started_at_utc": "2026-09-08T06:37:06Z",
+    "finished_at_utc": "2026-09-08T06:37:07Z",
+    "wall_time_seconds": 1,
     "status_before": "clean",
     "status_after": "clean",
     "ignored_source_present": false
@@ -16,39 +19,41 @@
   "commands": [
     {
       "command": "make test",
-      "started_at_utc": "2026-09-08T06:03:50Z",
-      "finished_at_utc": "2026-09-08T06:04:00Z",
-      "wall_time_seconds": 10,
+      "started_at_utc": "2026-09-08T06:37:14Z",
+      "finished_at_utc": "2026-09-08T06:37:25Z",
+      "wall_time_seconds": 11,
       "exit_code": 0,
-      "output_summary": "153 passed, 1 deselected in 9.13s"
+      "output_summary": "165 passed, 1 deselected in 10.41s"
     },
     {
       "command": "PYTHONPATH=src python3 scripts/verify_haichau_foundation.py",
-      "started_at_utc": "2026-09-08T06:04:06Z",
-      "finished_at_utc": "2026-09-08T06:04:12Z",
+      "started_at_utc": "2026-09-08T06:37:33Z",
+      "finished_at_utc": "2026-09-08T06:37:39Z",
       "wall_time_seconds": 6,
       "exit_code": 0,
       "output": {
         "cases": 30,
         "controlled_signals": 53,
-        "generator_config_sha256": "44b51a1ed89d4f05140b3d620a26307cdfcd13a77b0d3b034054e50fe593905f",
+        "generator_config_sha256": "a99e69bc4d93990083d5df0854bc3402e8bda82a693177adab2098358e81a15a",
         "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
         "protocol_version": 2,
         "route_families": 1418,
         "runtime_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+        "selectable_green_phases": 107,
         "split_counts": {
           "test": 15,
           "train": 9,
           "validation": 6
         },
-        "status": "verified"
+        "status": "verified",
+        "transition_phases": 127
       }
     },
     {
       "command": "make haichau-smoke",
-      "started_at_utc": "2026-09-08T06:04:17Z",
-      "finished_at_utc": "2026-09-08T06:05:45Z",
-      "wall_time_seconds": 88,
+      "started_at_utc": "2026-09-08T06:37:45Z",
+      "finished_at_utc": "2026-09-08T06:39:19Z",
+      "wall_time_seconds": 94,
       "exit_code": 0,
       "build_output_summary": "Successfully built 8a946185be9d and tagged traffic-rl-cityflow-research:v2",
       "output": {
@@ -67,6 +72,18 @@
       }
     }
   ],
+  "verified_artifacts": {
+    "configs/haichau_network_v2.yaml": "a99e69bc4d93990083d5df0854bc3402e8bda82a693177adab2098358e81a15a",
+    "datasets/haichau_network_v2/phase-contract.json": "22097052d592cdb22c6c8ac60127cc99c01507ba81e16462fc9c238eea6f4df3",
+    "datasets/haichau_network_v2/provenance.json": "3f2e3a27716fa92a4877821a1f90767183a4a731b9afc789b0292791605321a3",
+    "datasets/haichau_network_v2/roadnet.json": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+    "datasets/haichau_network_v2/source/danang_haichau.net.xml": "0b4e0750134697de1a9d5c7d19fb71bc6cbade58506a7fd816410a487ee3faba",
+    "datasets/haichau_network_v2/source/danang_haichau.osm": "0e71b672e12fb9c6601750be554abd560737a62e8557df3c5cf7f116403d26f1",
+    "datasets/haichau_network_v2/source/danang_haichau.osm.pbf": "cc091baf523d0fa7a8be0b32a62d5e4bccc4d6452e51b38c1b1a88ffc518a331",
+    "datasets/haichau_network_v2/source/roadnet_haichau_rush.json": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
+    "docker/cityflow-research/Dockerfile": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf",
+    "results/haichau_network_v2/experiment-manifest.json": "6c4cd535ea2994bc29076e805e8da96a44c5325bd72a086a7ebfd5479103137e"
+  },
   "runtime_identity": {
     "base_image": "cityflowproject/cityflow",
     "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",

@@ -75,4 +75,5 @@ Entries below record the command and observed reason for RED before production c
 - Re-review full-suite GREEN before evidence refresh: `make test` — 165 passed, 1 Docker-marked test deselected, zero failures.
 - Re-review host verifier GREEN: 53 agents, 107 selectable phases, 127 transition phases, 30 cases and 1,418 route families.
 - Re-review runtime smoke GREEN: `make haichau-smoke` rebuilt/inspected image `sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517` and completed the real 60-step CityFlow episode.
-- [ ] Refresh clean-checkout `foundation.json` after committing the re-review implementation candidate.
+- Evidence-hardening RED: the enhanced evidence contract failed because the old `foundation.json` did not record artifact blob hashes.
+- Evidence-hardening GREEN: clean detached worktree at `23151a9fde5a5ae68280a33aa9976d026611609e` passed 165 host tests, the canonical verifier and Docker smoke. Refreshed `foundation.json` records 10 verified artifact/blob hashes including the phase contract and four provenance sources; the test now proves the commit exists, is an ancestor, and every recorded hash matches `git show <verified_commit>:<path>`.
