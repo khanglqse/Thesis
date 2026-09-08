@@ -170,7 +170,9 @@ unchanged. Paper/demo artifacts are content-hashed; `pdfinfo`/`pdftoppm`, `ffpro
 full `ffmpeg -xerror` decode must parse/render the PDFs, PNGs and MP4, and replays cover the
 full horizon. `scripts/attest_haichau_release.py` generates the clean-checkout evidence with
 exact command results, tool versions and hashed stdout/stderr logs; the final verifier
-rejects hand-written summary records.
+rejects hand-written summary records, reads artifacts from the attested Git commit and
+directly re-runs the release command contract. Campaign release verification also requires
+the stopped Docker containers so it can inspect their real image/config/exit state and logs.
 
 ## Scope: validated vs proposed
 

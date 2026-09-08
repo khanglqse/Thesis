@@ -1,8 +1,5 @@
 import hashlib
 import json
-from pathlib import Path
-from types import SimpleNamespace
-from pathlib import Path
 
 import pytest
 
@@ -231,61 +228,44 @@ def test_release_verification_rejects_injected_executor_even_if_it_claims_docker
         verify_campaign(tmp_path, require_release_provenance=True)
 
 
-def test_library_owned_docker_executor_records_verifiable_command_evidence(
+def test_hand_edited_docker_status_requires_a_real_retained_container(
         tmp_path, monkeypatch):
-    runs = expand_runs(_manifest(), [11], ["tuned_fixed"])
-    for run in runs:
-        run["command"] = ["python3", "evaluate.py", "--run-id", run["run_id"]]
-    _write_campaign(tmp_path, runs)
-    git_calls = []
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    run["command"] = ["python3", "evaluate.py", "--run-id", run["run_id"]]
+    _write_campaign(tmp_path, [run])
+    result = _executor(run, tmp_path)
+    assert run_pending(tmp_path, lambda unused_run, unused_dir: result)["completed"] == 1
+    run_dir = tmp_path / "runs" / run["run_id"]
+    stdout = json.dumps({
+        "resolved_config": result["resolved_config"],
+        "metrics": result["metrics"],
+    }) + "\n"
+    (run_dir / "stdout.log").write_text(stdout)
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["stdout.log"] = hashlib.sha256(
+        stdout.encode()).hexdigest()
+    status["execution_provenance"] = {
+        "provenance_version": 2,
+        "mode": "retained_docker_container",
+        "docker_argv": network_campaign._docker_argv(run, tmp_path, run_dir),
+        "container_id": "c" * 64,
+        "exit_code": 0,
+        "code_commit": run["code_commit"],
+        "execution_head_commit": run["code_commit"],
+        "runtime_image": run["runtime_image"],
+        "runtime_image_id": run["runtime_image_id"],
+        "runtime_digest": run["runtime_digest"],
+        "stdout_sha256": hashlib.sha256(stdout.encode()).hexdigest(),
+        "stderr_sha256": hashlib.sha256(b"").hexdigest(),
+    }
+    monkeypatch.setattr(
+        network_campaign.subprocess, "run",
+        lambda *args, **kwargs: pytest.fail("verifier used injected subprocess.run"))
 
-    def verify_git(root, commit, **kwargs):
-        git_calls.append((root, commit, kwargs))
-        return {"code_commit": commit, "head_commit": commit, "dirty": False}
-
-    monkeypatch.setattr(network_campaign, "verify_git_checkout", verify_git)
-    monkeypatch.setattr(network_campaign, "verify_runtime", lambda root, spec: {
-        "runtime_image": spec["runtime_image"],
-        "runtime_image_id": spec["runtime_image_id"],
-        "runtime_digest": spec["runtime_digest"],
-    })
-    def execute(argv, **kwargs):
-        run_id = argv[-1]
-        run = next(item for item in runs if item["run_id"] == run_id)
-        result = _executor(run, tmp_path)
-        stdout = "controller log\n" + json.dumps(result) + "\n"
-        cidfile = argv[argv.index("--cidfile") + 1]
-        Path(cidfile).write_text("c" * 64 + "\n")
-        return SimpleNamespace(returncode=0, stdout=stdout, stderr="")
-
-    monkeypatch.setattr(network_campaign.subprocess, "run", execute)
-
-    assert run_pending(tmp_path, project_root=tmp_path)["completed"] == 2
-    assert len(git_calls) == 1
-    assert verify_campaign(
-        tmp_path, require_release_provenance=True,
-        project_root=tmp_path)["complete"] == 2
-    assert len(git_calls) == 2
-    run = runs[0]
-    status = json.loads(
-        (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
-    provenance = status["execution_provenance"]
-    assert provenance["mode"] == "network_campaign_docker"
-    assert provenance["container_id"] == "c" * 64
-    assert provenance["docker_argv"][-len(run["command"]):] == run["command"]
-
-    metrics_path = tmp_path / "runs" / run["run_id"] / "metrics.json"
-    metrics = json.loads(metrics_path.read_text())
-    metrics["phase_switches"] += 1
-    metrics_path.write_text(json.dumps(metrics))
-    status["artifact_sha256"]["metrics.json"] = hashlib.sha256(
-        metrics_path.read_bytes()).hexdigest()
-    (tmp_path / "runs" / run["run_id"] / "status.json").write_text(
-        json.dumps(status))
-    with pytest.raises(ValueError, match="stdout metrics differs"):
-        verify_campaign(
-            tmp_path, require_release_provenance=True,
-            project_root=tmp_path)
+    with pytest.raises(ValueError, match="Docker"):
+        network_campaign._verify_execution_provenance(
+            run_dir, status, run, tmp_path, run["code_commit"])
 
 
 def test_incomplete_network_metric_schema_is_never_marked_complete(tmp_path):

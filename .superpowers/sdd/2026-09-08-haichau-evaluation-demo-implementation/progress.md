@@ -151,3 +151,37 @@ All Critical and Important findings in `/tmp/review-haichau-evaluation-demo.md` 
   checkpoints, real campaign, derived thesis/demo artifacts or clean attestation exists on
   this branch. The generator was tested only in temporary fixtures; no release evidence was
   fabricated.
+
+## Final R2 authenticated-execution remediation
+
+- [x] Retained Docker proof: release runs no longer use `--rm`. The final verifier invokes
+  a captured direct subprocess implementation for `docker container inspect` and
+  `docker logs`, then matches the retained container's real ID, image ID/reference, frozen
+  command, workdir, disabled network, project mount, stopped/zero-exit state and log hashes.
+  A regex-valid hand-edited container ID is rejected when Docker cannot inspect it.
+- [x] Non-injectable production attestation: `create_attestation` exposes only root,
+  protocol and output path. The explicit test capture hook always writes
+  `attestation_mode: synthetic_test` and `passed: false`; final validation accepts only
+  `direct_subprocess` evidence created with the fixed command/tool contracts.
+- [x] Final verifier execution: after validating the historical logs, it directly re-runs
+  all five required release commands. It also reads the generator, seven release artifacts
+  and every campaign run artifact from the attested Git commit and compares those blob
+  hashes with both the current files and record.
+
+### Final R2 adversarial RED to GREEN
+
+- RED: a forged `network_campaign_docker` status with a fake 64-hex container ID reached no
+  Docker inspection; the production attestation API exposed runner/command injection and a
+  fake-success runner could mint `passed: true` evidence.
+- GREEN: the fake retained-container record is rejected through a real Docker CLI even when
+  `subprocess.run` is monkeypatched; the public production generator has no injection
+  parameters; fake runners can create only synthetic/ineligible records. A Git-blob test
+  proves committed evidence is read independently of a forged working-tree file.
+- Focused final trust/media/verifier tests: 54 passed, including the Git-blob regression;
+  broad eval/report/script suite: 120 passed. Pinned Python 3.6.5 suite: 39 passed with one config
+  warning.
+- Post-commit `make cf-test`: 1 passed, 1 skipped, 169 deselected. Full `make test`:
+  203 passed, 1 failed, 1 deselected; the sole failure is still the absent ignored
+  `data/danang/roadnet_haichau.json` baseline input.
+- Frozen campaign and production attestation remain blocked on upstream release inputs; no
+  stopped release container, release record or result artifact was fabricated.

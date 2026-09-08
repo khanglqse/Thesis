@@ -30,10 +30,13 @@ clean descendant checkout with no changes to code paths since `code_commit`; cam
 execution re-inspects the image and runs every controller command inside it with networking
 disabled. A digest-shaped string that is absent from `docker image inspect` is rejected.
 The release runner owns this Docker invocation; an injected Python executor is marked as
-test-only and cannot pass the final audit. Each completed status records the exact Docker
-argv, container ID, execution Git head, inspected image identity, exit code and hashes of
-the container stdout/stderr logs. The verifier parses the final stdout JSON and requires
-its config, metrics and replay to equal the hashed run artifacts.
+test-only and cannot pass the final audit. Release containers remain stopped after their
+command exits. Each completed status records the exact Docker argv, container ID, execution
+Git head, inspected image identity, exit code and hashes of the container stdout/stderr
+logs. The verifier calls `docker container inspect` and `docker logs` itself, verifies the
+retained container's image ID/reference, command, working directory, disabled network,
+project mount and exit state, then requires its stdout JSON to equal the hashed config,
+metrics and replay artifacts. Keep these containers until the final audit succeeds.
 
 Prepare the immutable run set from the frozen case manifest, then execute it. Every
 controller command in the case manifest must run a fresh evaluation and print its result
@@ -109,11 +112,13 @@ PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
 The generator writes `verification_version: 3` and binds the pre-attestation commit, actual
 Docker image ID, generator hash, exact command contract, logs, every campaign run-file hash
 and release hashes. Commit
-only the generated verification record and logs after it exits zero. The final verifier
-requires that commit to descend from the recorded checkout, rejects later changes outside
-the verification directory, re-inspects Git and Docker, and re-hashes every log and release
-artifact. The pre-attestation audit uses `--skip-clean-checkout --no-write` internally to
-avoid a circular record dependency.
+only the generated verification record and logs after it exits zero. The production
+generator has no injectable runner or command contract; its separate test capture path is
+always labeled synthetic and ineligible. The final verifier requires that commit to descend
+from the recorded checkout, rejects later changes outside the verification directory,
+re-inspects Git and Docker, reads each release/run artifact from the attested Git commit,
+and then directly re-runs all five release commands. The pre-attestation audit uses
+`--skip-clean-checkout --no-write` internally to avoid a circular record dependency.
 
 The extension is release-ready only when the final command exits zero and its report has
 `"complete": true` with no failed gates.

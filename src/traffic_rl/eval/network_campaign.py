@@ -11,6 +11,8 @@ from pathlib import Path
 from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
 
 
+_DIRECT_SUBPROCESS_RUN = subprocess.run
+
 CONTROLLERS = (
     "tuned_fixed", "max_pressure", "hysteretic_mp",
     "shared_ddqn_legacy", "neighbor_phase_ddqn",
@@ -73,6 +75,10 @@ def _sha256(path):
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _sha256_bytes(value):
+    return hashlib.sha256(value).hexdigest()
 
 
 def _utc_now():
@@ -202,11 +208,76 @@ def _docker_argv(run, project_root, run_dir):
     if not isinstance(command, list) or not command:
         raise ValueError("run has no command; integrate the controller before execution")
     return [
-        "docker", "run", "--rm", "--network", "none",
+        "docker", "run", "--network", "none",
         "--cidfile", str(Path(run_dir).resolve() / ".docker-container-id"),
         "-v", "%s:/work" % Path(project_root).resolve(), "-w", "/work",
         run["runtime_image"],
     ] + [str(token) for token in command]
+
+
+def _direct_command(argv, cwd):
+    try:
+        completed = _DIRECT_SUBPROCESS_RUN(
+            list(argv), cwd=str(cwd), stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, universal_newlines=True)
+    except OSError as exc:
+        raise ValueError("direct Docker verification is unavailable: %s" % exc)
+    return completed
+
+
+def _retained_container_receipt(run, run_dir, project_root, container_id):
+    completed = _direct_command(
+        ("docker", "container", "inspect", container_id), project_root)
+    if completed.returncode:
+        raise ValueError("retained Docker container is unavailable: %s" %
+                         completed.stderr.strip())
+    try:
+        record = json.loads(completed.stdout)[0]
+        config = record["Config"]
+        host = record["HostConfig"]
+        state = record["State"]
+    except (IndexError, KeyError, TypeError, ValueError):
+        raise ValueError("retained Docker container inspection is invalid")
+    mount = [item for item in record.get("Mounts", [])
+             if item.get("Destination") == "/work"]
+    expected_source = str(Path(project_root).resolve())
+    if record.get("Id") != container_id \
+            or record.get("Image") != run.get("runtime_image_id") \
+            or config.get("Image") != run.get("runtime_image") \
+            or config.get("Cmd") != [str(value) for value in run.get("command", [])] \
+            or config.get("WorkingDir") != "/work" \
+            or host.get("NetworkMode") != "none" \
+            or state.get("Status") != "exited" \
+            or state.get("ExitCode") != 0 \
+            or len(mount) != 1 \
+            or str(Path(mount[0].get("Source", "")).resolve()) != expected_source \
+            or mount[0].get("RW") is not True:
+        raise ValueError("retained Docker container identity/config/status differs")
+    logs = _direct_command(("docker", "logs", container_id), project_root)
+    if logs.returncode:
+        raise ValueError("retained Docker container logs are unavailable")
+    stdout_path = Path(run_dir) / "stdout.log"
+    stderr_path = Path(run_dir) / "stderr.log"
+    if stdout_path.is_file() and _sha256_bytes(logs.stdout.encode("utf-8")) \
+            != _sha256(stdout_path):
+        raise ValueError("retained Docker stdout differs from run artifact")
+    if stderr_path.is_file() and _sha256_bytes(logs.stderr.encode("utf-8")) \
+            != _sha256(stderr_path):
+        raise ValueError("retained Docker stderr differs from run artifact")
+    return {
+        "container_id": record["Id"],
+        "image_id": record["Image"],
+        "image_reference": config["Image"],
+        "command": config["Cmd"],
+        "working_directory": config["WorkingDir"],
+        "network_mode": host["NetworkMode"],
+        "exit_code": state["ExitCode"],
+        "status": state["Status"],
+        "mount_source": mount[0]["Source"],
+        "mount_destination": mount[0]["Destination"],
+        "stdout_sha256": _sha256_bytes(logs.stdout.encode("utf-8")),
+        "stderr_sha256": _sha256_bytes(logs.stderr.encode("utf-8")),
+    }
 
 
 def _trusted_docker_executor(run, run_dir, project_root, source, runtime):
@@ -222,7 +293,7 @@ def _trusted_docker_executor(run, run_dir, project_root, source, runtime):
         cidfile.unlink()
     argv = _docker_argv(run, project_root, run_dir)
     try:
-        completed = subprocess.run(
+        completed = _DIRECT_SUBPROCESS_RUN(
             argv, cwd=str(project_root), universal_newlines=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         container_id = cidfile.read_text().strip() if cidfile.is_file() else ""
@@ -238,9 +309,11 @@ def _trusted_docker_executor(run, run_dir, project_root, source, runtime):
     result = json.loads(lines[-1])
     result["stdout"] = completed.stdout
     result["stderr"] = completed.stderr
+    receipt = _retained_container_receipt(
+        run, run_dir, project_root, container_id)
     provenance = {
-        "provenance_version": 1,
-        "mode": "network_campaign_docker",
+        "provenance_version": 2,
+        "mode": "retained_docker_container",
         "docker_argv": argv,
         "container_id": container_id,
         "exit_code": completed.returncode,
@@ -253,6 +326,7 @@ def _trusted_docker_executor(run, run_dir, project_root, source, runtime):
             completed.stdout.encode("utf-8")).hexdigest(),
         "stderr_sha256": hashlib.sha256(
             completed.stderr.encode("utf-8")).hexdigest(),
+        "container_receipt_sha256": canonical_sha256(receipt),
     }
     return result, provenance
 
@@ -262,7 +336,7 @@ def _assert_git_ancestor(project_root, older, newer):
         return
     for argv in (("git", "cat-file", "-e", older + "^{commit}"),
                  ("git", "merge-base", "--is-ancestor", older, newer)):
-        completed = subprocess.run(
+        completed = _DIRECT_SUBPROCESS_RUN(
             list(argv), cwd=str(project_root), stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, universal_newlines=True)
         if completed.returncode:
@@ -272,8 +346,8 @@ def _assert_git_ancestor(project_root, older, newer):
 def _verify_execution_provenance(run_dir, status, expected_run, project_root,
                                  current_head=None):
     provenance = status.get("execution_provenance", {})
-    if provenance.get("mode") != "network_campaign_docker" \
-            or provenance.get("provenance_version") != 1:
+    if provenance.get("mode") != "retained_docker_container" \
+            or provenance.get("provenance_version") != 2:
         raise ValueError("release run requires the trusted Docker executor")
     expected_argv = _docker_argv(expected_run, project_root, run_dir)
     if provenance.get("docker_argv") != expected_argv:
@@ -290,6 +364,10 @@ def _verify_execution_provenance(run_dir, status, expected_run, project_root,
         raise ValueError("trusted Docker executor did not exit successfully")
     if not re.fullmatch(r"[0-9a-f]{64}", str(provenance.get("container_id", ""))):
         raise ValueError("trusted Docker executor requires the Docker container ID")
+    receipt = _retained_container_receipt(
+        expected_run, run_dir, project_root, provenance["container_id"])
+    if provenance.get("container_receipt_sha256") != canonical_sha256(receipt):
+        raise ValueError("retained Docker container receipt differs from status")
     for name in ("stdout", "stderr"):
         if provenance.get(name + "_sha256") != _sha256(run_dir / (name + ".log")):
             raise ValueError("trusted Docker executor %s hash mismatch" % name)
@@ -485,7 +563,7 @@ def verify_campaign(campaign_dir, require_release_provenance=False, project_root
             status_path = campaign_dir / "runs" / _safe_id(run["run_id"]) / "status.json"
             if not status_path.is_file() or json.loads(status_path.read_text()).get(
                     "execution_provenance", {}).get("mode") \
-                    != "network_campaign_docker":
+                    != "retained_docker_container":
                 raise ValueError("release run requires the trusted Docker executor")
         project_root = Path(project_root or campaign_dir).resolve()
         try:

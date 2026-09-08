@@ -12,6 +12,9 @@ from pathlib import Path
 from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
 
 
+_DIRECT_SUBPROCESS_RUN = subprocess.run
+_DIRECT_CHECK_OUTPUT = subprocess.check_output
+
 RELEASE_ARTIFACTS = (
     "results/haichau_network_v2/final/frozen-protocol.json",
     "results/haichau_network_v2/final/campaign-manifest.json",
@@ -26,7 +29,10 @@ REQUIRED_COMMANDS = (
     ("host_tests", ("make", "test"), {}),
     ("cityflow_tests", ("make", "cf-test"), {}),
     ("replay_tests", ("npm", "run", "test:replay"), {}),
-    ("paper_build", ("tectonic", "paper/thesis_danang.tex"), {}),
+    ("paper_build", (
+        "tectonic", "--outdir", "paper/rendered/haichau-attestation",
+        "paper/thesis_danang.tex",
+    ), {}),
     ("release_audit", (
         "python3", "scripts/verify_haichau_thesis.py",
         "--skip-clean-checkout", "--no-write",
@@ -78,6 +84,11 @@ def _utc_now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
+def _prepare_direct_commands(root):
+    (Path(root) / "paper/rendered/haichau-attestation").mkdir(
+        parents=True, exist_ok=True)
+
+
 def _run_capture(root, argv, environment, runner):
     merged = os.environ.copy()
     merged.update(environment)
@@ -115,27 +126,29 @@ def _record_capture(root, log_dir, prefix, identifier, argv, environment, runner
     }
 
 
-def create_attestation(root, protocol, record_path=None, runner=subprocess.run,
-                       command_specs=REQUIRED_COMMANDS,
-                       tool_specs=TOOL_VERSION_COMMANDS):
-    """Execute the canonical release checks and write their complete evidence."""
+def _create_direct_attestation(root, protocol, record_path):
     root = Path(root).resolve()
     record_path = Path(record_path or (
         root / "results/haichau_network_v2/verification/clean-checkout.json"))
     if record_path.exists():
         raise ValueError("refusing to overwrite an existing clean-checkout attestation")
-    source = verify_git_checkout(root, protocol.get("code_commit"), runner=runner)
+    source = verify_git_checkout(
+        root, protocol.get("code_commit"), runner=_DIRECT_SUBPROCESS_RUN)
     runtime = verify_runtime(root, protocol)
+    _prepare_direct_commands(root)
     started_at = _utc_now()
     started = time.monotonic()
     log_dir = Path("results/haichau_network_v2/verification/attestation-logs")
     tools = [
-        _record_capture(root, log_dir, "tool", identifier, argv, {}, runner)
-        for identifier, argv in tool_specs
+        _record_capture(
+            root, log_dir, "tool", identifier, argv, {}, _DIRECT_SUBPROCESS_RUN)
+        for identifier, argv in TOOL_VERSION_COMMANDS
     ]
     commands = [
-        _record_capture(root, log_dir, "command", identifier, argv, environment, runner)
-        for identifier, argv, environment in command_specs
+        _record_capture(
+            root, log_dir, "command", identifier, argv, environment,
+            _DIRECT_SUBPROCESS_RUN)
+        for identifier, argv, environment in REQUIRED_COMMANDS
     ]
     artifacts = {}
     for relative in RELEASE_ARTIFACTS:
@@ -146,6 +159,7 @@ def create_attestation(root, protocol, record_path=None, runner=subprocess.run,
     record = {
         "verification_version": 3,
         "attestation_type": "traffic_rl.clean_checkout.v1",
+        "attestation_mode": "direct_subprocess",
         "generator_path": "scripts/attest_haichau_release.py",
         "generator_sha256": _sha256(generator) if generator.is_file() else None,
         "verified_commit": source["head_commit"],
@@ -156,7 +170,7 @@ def create_attestation(root, protocol, record_path=None, runner=subprocess.run,
         "wall_time_seconds": max(0.0, time.monotonic() - started),
         "command_contract_sha256": _canonical_hash([
             [identifier, list(argv), environment]
-            for identifier, argv, environment in command_specs
+            for identifier, argv, environment in REQUIRED_COMMANDS
         ]),
         "commands": commands,
         "tool_versions": tools,
@@ -182,6 +196,36 @@ def create_attestation(root, protocol, record_path=None, runner=subprocess.run,
     return record
 
 
+def create_attestation(root, protocol, record_path=None):
+    """Execute the fixed release contract without an injectable command runner."""
+    return _create_direct_attestation(root, protocol, record_path)
+
+
+def create_synthetic_attestation(root, protocol, runner, command_specs,
+                                 tool_specs, record_path=None):
+    """Exercise capture mechanics in tests while producing ineligible evidence."""
+    root = Path(root).resolve()
+    log_dir = Path("results/haichau_network_v2/verification/attestation-logs")
+    tools = [
+        _record_capture(root, log_dir, "tool", identifier, argv, {}, runner)
+        for identifier, argv in tool_specs
+    ]
+    commands = [
+        _record_capture(root, log_dir, "command", identifier, argv, environment, runner)
+        for identifier, argv, environment in command_specs
+    ]
+    return {
+        "verification_version": 3,
+        "attestation_type": "traffic_rl.clean_checkout.v1",
+        "attestation_mode": "synthetic_test",
+        "passed": False,
+        "commands": commands,
+        "tool_versions": tools,
+        "artifact_sha256": {},
+        "campaign_run_artifact_sha256": {},
+    }
+
+
 def _validate_capture(root, actual, identifier, argv, environment):
     if actual.get("id") != identifier or actual.get("argv") != list(argv) \
             or actual.get("environment") != dict(environment):
@@ -205,11 +249,41 @@ def _validate_capture(root, actual, identifier, argv, environment):
             raise ValueError("attestation %s log hash mismatch" % identifier)
 
 
-def validate_attestation(root, protocol, record,
-                         command_specs=REQUIRED_COMMANDS,
-                         tool_specs=TOOL_VERSION_COMMANDS):
+def _git_blob_sha256(root, commit, relative):
+    completed = _DIRECT_SUBPROCESS_RUN(
+        ["git", "show", "%s:%s" % (commit, relative)], cwd=str(root),
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if completed.returncode:
+        raise ValueError("attested Git blob is missing: %s" % relative)
+    return _sha256_bytes(completed.stdout)
+
+
+def _rerun_commands_direct(root):
+    _prepare_direct_commands(root)
+    results = []
+    for identifier, argv, environment in REQUIRED_COMMANDS:
+        code, stdout, stderr, elapsed = _run_capture(
+            root, argv, environment, _DIRECT_SUBPROCESS_RUN)
+        result = {
+            "id": identifier,
+            "argv": list(argv),
+            "environment": dict(environment),
+            "exit_code": code,
+            "wall_time_seconds": elapsed,
+            "stdout_sha256": _sha256_bytes(stdout.encode("utf-8")),
+            "stderr_sha256": _sha256_bytes(stderr.encode("utf-8")),
+        }
+        results.append(result)
+        if code:
+            raise ValueError("direct release command failed: %s" % identifier)
+    return results
+
+
+def validate_attestation(root, protocol, record):
     """Validate command logs and bind the attestation to current Git/runtime state."""
     root = Path(root).resolve()
+    if record.get("attestation_mode") != "direct_subprocess":
+        raise ValueError("clean-checkout attestation requires direct subprocess execution")
     if record.get("verification_version") != 3 \
             or record.get("attestation_type") != "traffic_rl.clean_checkout.v1" \
             or record.get("passed") is not True:
@@ -221,26 +295,26 @@ def validate_attestation(root, protocol, record,
         raise ValueError("clean-checkout attestation generator is not verified")
     expected_contract = _canonical_hash([
         [identifier, list(argv), environment]
-        for identifier, argv, environment in command_specs
+        for identifier, argv, environment in REQUIRED_COMMANDS
     ])
     if record.get("command_contract_sha256") != expected_contract:
         raise ValueError("clean-checkout attestation command contract is invalid")
     commands = record.get("commands")
     versions = record.get("tool_versions")
-    if not isinstance(commands, list) or len(commands) != len(command_specs):
+    if not isinstance(commands, list) or len(commands) != len(REQUIRED_COMMANDS):
         raise ValueError("clean-checkout attestation requires exact commands")
-    if not isinstance(versions, list) or len(versions) != len(tool_specs):
+    if not isinstance(versions, list) or len(versions) != len(TOOL_VERSION_COMMANDS):
         raise ValueError("clean-checkout attestation requires tool versions")
-    for actual, expected in zip(commands, command_specs):
+    for actual, expected in zip(commands, REQUIRED_COMMANDS):
         _validate_capture(root, actual, expected[0], expected[1], expected[2])
-    for actual, expected in zip(versions, tool_specs):
+    for actual, expected in zip(versions, TOOL_VERSION_COMMANDS):
         _validate_capture(root, actual, expected[0], expected[1], {})
         stdout = (root / actual["stdout_path"]).read_text().strip()
         stderr = (root / actual["stderr_path"]).read_text().strip()
         if not stdout and not stderr:
             raise ValueError("attestation tool version output is empty: %s" % expected[0])
         code, current_stdout, current_stderr, _ = _run_capture(
-            root, expected[1], {}, subprocess.run)
+            root, expected[1], {}, _DIRECT_SUBPROCESS_RUN)
         if code != 0 \
                 or _sha256_bytes(current_stdout.encode("utf-8")) \
                 != actual["stdout_sha256"] \
@@ -258,18 +332,22 @@ def validate_attestation(root, protocol, record,
             ("git", "cat-file", "-e", verified_commit + "^{commit}"),
             ("git", "merge-base", "--is-ancestor", verified_commit,
              identity["head_commit"])):
-        completed = subprocess.run(
+        completed = _DIRECT_SUBPROCESS_RUN(
             list(argv), cwd=str(root), stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, universal_newlines=True)
         if completed.returncode:
             raise ValueError("attestation commit is not an ancestor of current HEAD")
-    changed = subprocess.check_output([
+    changed = _DIRECT_CHECK_OUTPUT([
         "git", "-C", str(root), "diff", "--name-only",
         verified_commit, identity["head_commit"], "--",
     ], universal_newlines=True).splitlines()
     allowed_prefix = "results/haichau_network_v2/verification/"
     if any(not name.startswith(allowed_prefix) for name in changed):
         raise ValueError("files outside attestation evidence changed after verification")
+    if _git_blob_sha256(
+            root, verified_commit, "scripts/attest_haichau_release.py") \
+            != record["generator_sha256"]:
+        raise ValueError("attestation generator Git blob differs")
     hashes = record.get("artifact_sha256")
     if not isinstance(hashes, dict) or set(hashes) != set(RELEASE_ARTIFACTS):
         raise ValueError("clean-checkout attestation artifact hash set is incomplete")
@@ -277,14 +355,23 @@ def validate_attestation(root, protocol, record,
         path = root / relative
         if not path.is_file() or _sha256(path) != hashes[relative]:
             raise ValueError("clean-checkout artifact hash mismatch: %s" % relative)
+        if _git_blob_sha256(root, verified_commit, relative) != hashes[relative]:
+            raise ValueError("clean-checkout artifact Git blob mismatch: %s" % relative)
     run_hashes = record.get("campaign_run_artifact_sha256")
     actual_run_hashes = _campaign_run_hashes(root)
     if not isinstance(run_hashes, dict) or not run_hashes \
             or run_hashes != actual_run_hashes:
         raise ValueError("clean-checkout campaign run evidence hash set differs")
+    for relative, expected in run_hashes.items():
+        if _git_blob_sha256(root, verified_commit, relative) != expected:
+            raise ValueError("campaign run Git blob mismatch: %s" % relative)
     wall = record.get("wall_time_seconds")
     if not isinstance(wall, (int, float)) or not math.isfinite(wall) or wall <= 0:
         raise ValueError("clean-checkout attestation wall time is invalid")
+    rerun_results = _rerun_commands_direct(root)
+    for relative, expected in list(hashes.items()) + list(run_hashes.items()):
+        if not (root / relative).is_file() or _sha256(root / relative) != expected:
+            raise ValueError("direct verification changed attested artifact: %s" % relative)
     return {
         "verified_commit": verified_commit,
         "actual_head_commit": identity["head_commit"],
@@ -295,4 +382,5 @@ def validate_attestation(root, protocol, record,
         "tool_version_results": versions,
         "artifact_sha256": hashes,
         "campaign_run_artifact_count": len(run_hashes),
+        "direct_rerun_results": rerun_results,
     }
