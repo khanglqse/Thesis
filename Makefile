@@ -1,5 +1,7 @@
 SHELL := /bin/bash
 CF_IMAGE := cityflowproject/cityflow:latest
+HAICHAU_IMAGE := traffic-rl-cityflow-research:v2
+HAICHAU_PLATFORM := linux/amd64
 SUMO_HOME ?= /opt/homebrew/share/sumo
 
 # Run an arbitrary command inside the CityFlow container with the repo mounted.
@@ -21,4 +23,13 @@ cf-test:
 cf-smoke:
 	docker run --rm $(CF_IMAGE) python3 -c 'import cityflow; print("cityflow OK")'
 
-.PHONY: cf-run test cf-test cf-smoke
+# Build the digest-pinned Python 3.6 CityFlow research runtime.
+haichau-image:
+	docker build --platform $(HAICHAU_PLATFORM) -t $(HAICHAU_IMAGE) docker/cityflow-research
+
+# Verify hashes/contracts, then run a real 60-second Fixed-Time episode.
+haichau-smoke:
+	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR):/work" -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/verify_haichau_foundation.py --engine-smoke
+
+.PHONY: cf-run test cf-test cf-smoke haichau-image haichau-smoke

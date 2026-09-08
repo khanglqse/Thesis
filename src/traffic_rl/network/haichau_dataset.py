@@ -3,9 +3,36 @@
 from collections import Counter, deque
 import random
 
-from traffic_rl.network.flow_gen import VEHICLE_TEMPLATES
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.research.artifacts import validate_disjoint_splits
+
+
+# Kept local so the pinned Python 3.6 research runtime does not import the
+# legacy flow generator, whose Python 3.7 future import is host-only.
+VEHICLE_TEMPLATES = {
+    "motorbike": {
+        "length": 2.0,
+        "width": 1.0,
+        "maxPosAcc": 3.5,
+        "maxNegAcc": 5.0,
+        "usualPosAcc": 3.0,
+        "usualNegAcc": 4.5,
+        "minGap": 0.5,
+        "maxSpeed": 13.89,
+        "headwayTime": 0.8,
+    },
+    "car": {
+        "length": 5.0,
+        "width": 2.0,
+        "maxPosAcc": 2.0,
+        "maxNegAcc": 4.5,
+        "usualPosAcc": 2.0,
+        "usualNegAcc": 4.5,
+        "minGap": 2.5,
+        "maxSpeed": 11.11,
+        "headwayTime": 1.5,
+    },
+}
 
 
 def _weak_component_count(nodes, edges):
