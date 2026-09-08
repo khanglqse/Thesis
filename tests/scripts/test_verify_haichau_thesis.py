@@ -1,11 +1,45 @@
 import hashlib
 import json
+import shutil
+import subprocess
 
+import pytest
+
+import traffic_rl.eval.release_identity as release_identity
 from scripts.export_haichau_replays import export_bundle
 from scripts.verify_haichau_thesis import audit_demo, verify_project
-from traffic_rl.eval.network_campaign import expand_runs, run_pending
+from traffic_rl.eval.network_campaign import bind_frozen_manifest, expand_runs, run_pending
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import write_artifacts, write_release_manifest
+
+
+RUNTIME_DIGEST = "sha256:" + "a" * 64
+RUNTIME_IMAGE = "cityflowproject/cityflow@" + RUNTIME_DIGEST
+
+
+@pytest.fixture(autouse=True)
+def _verified_fixture_runtime(monkeypatch):
+    def inspect(image):
+        if image != RUNTIME_IMAGE:
+            raise ValueError("runtime image differs from inspected fixture image")
+        return {
+            "runtime_image": image,
+            "runtime_image_id": RUNTIME_DIGEST,
+            "repo_digests": [RUNTIME_IMAGE],
+        }
+    monkeypatch.setattr(release_identity, "inspect_runtime_image", inspect)
+
+
+def _git(root, *args):
+    return subprocess.check_output(
+        ["git", "-C", str(root)] + list(args),
+        universal_newlines=True).strip()
+
+
+def _commit(root, message):
+    _git(root, "add", ".")
+    _git(root, "commit", "-qm", message)
+    return _git(root, "rev-parse", "HEAD")
 
 
 def _write(path, content):
@@ -192,6 +226,12 @@ def _checkpoint_contract(network_sha256):
 
 
 def _write_bound_project(root):
+    runtime_dockerfile = root / "docker/haichau-evaluation.Dockerfile"
+    _write(runtime_dockerfile, "FROM %s\n" % RUNTIME_IMAGE)
+    subprocess.check_call(["git", "init", "-q", str(root)])
+    _git(root, "config", "user.email", "fixture@example.test")
+    _git(root, "config", "user.name", "Fixture")
+    code_commit = _commit(root, "frozen code")
     final = root / "results/haichau_network_v2/final"
     agent_ids = ["N%02d" % index for index in range(53)]
     roadnet_path = root / "release/roadnet.json"
@@ -199,7 +239,8 @@ def _write_bound_project(root):
     _write(roadnet_path, json.dumps({"intersections": agent_ids}))
     viewer = {
         "controlled_signals": 53,
-        "nodes": [{"id": node_id, "x": index, "y": index % 7}
+        "nodes": [{"id": node_id, "x": index, "y": index % 7,
+                   "neighbors": []}
                   for index, node_id in enumerate(agent_ids)],
         "links": [],
     }
@@ -297,27 +338,21 @@ def _write_bound_project(root):
         "case_manifest_sha256": _digest(case_manifest_path),
         "network_sha256": network_sha,
         "viewer_network_sha256": viewer_sha,
-        "runtime_digest": "sha256:" + "a" * 64,
+        "runtime_digest": RUNTIME_DIGEST,
+        "runtime_image": RUNTIME_IMAGE,
+        "runtime_image_id": RUNTIME_DIGEST,
+        "runtime_dockerfile_path": str(runtime_dockerfile.relative_to(root)),
+        "runtime_dockerfile_sha256": _digest(runtime_dockerfile),
         "agent_ids": agent_ids,
         "resolved_config": {"step_seconds": 1},
         "controller_configs": controller_configs,
         "checkpoints": checkpoints,
         "acceptance_rules": rules,
-        "code_commit": "fixture-commit",
+        "code_commit": code_commit,
     }
     _write(final / "frozen-protocol.json", json.dumps(protocol))
 
-    expansion_manifest = dict(case_manifest)
-    expansion_manifest.update({
-        "network_sha256": network_sha,
-        "viewer_network_sha256": viewer_sha,
-        "runtime_digest": protocol["runtime_digest"],
-        "controlled_signals": 53,
-        "agent_ids": agent_ids,
-        "resolved_config": protocol["resolved_config"],
-        "controller_configs": controller_configs,
-        "checkpoints": checkpoints,
-    })
+    expansion_manifest = bind_frozen_manifest(case_manifest, protocol)
     runs = expand_runs(
         expansion_manifest, rules["required_learning_seeds"],
         list(controller_configs))
@@ -350,6 +385,11 @@ def _write_bound_project(root):
             "demand_sha256": run["demand_sha256"],
             "demand_path": run["demand_path"],
             "runtime_digest": run["runtime_digest"],
+            "runtime_image": run["runtime_image"],
+            "runtime_image_id": run["runtime_image_id"],
+            "runtime_dockerfile_path": run["runtime_dockerfile_path"],
+            "runtime_dockerfile_sha256": run["runtime_dockerfile_sha256"],
+            "code_commit": run["code_commit"],
             "checkpoint_sha256": run.get("checkpoint_sha256"),
             "checkpoint_contract_sha256": run.get("checkpoint_contract_sha256"),
             "completed_steps": 10, "observed_steps": 10, "observed_seconds": 10,
@@ -420,14 +460,21 @@ def _write_bound_project(root):
     _write(thesis_path, "Frozen synthetic network demand result.")
     write_artifacts(
         summary, artifact_dir, "fixture-build", thesis_path=thesis_path)
-    _write_bytes(pdf_path, b"%PDF-1.4\n%%EOF\n")
+    shutil.copyfile(artifact_dir / "paired-queue-difference.pdf", pdf_path)
     write_release_manifest(
         summary, artifact_dir, thesis_path, pdf_path, "fixture-release")
 
     fallbacks_dir = root / "release/fallbacks"
-    _write_bytes(fallbacks_dir / "demo-walkthrough.mp4", b"\x00\x00\x00\x18ftypisom")
-    _write_bytes(fallbacks_dir / "result-summary.pdf", b"%PDF-1.4\n%%EOF\n")
-    _write_bytes(fallbacks_dir / "network-overview.png", b"\x89PNG\r\n\x1a\nfixture")
+    fallbacks_dir.mkdir(parents=True, exist_ok=True)
+    subprocess.check_call([
+        "ffmpeg", "-v", "error", "-f", "lavfi", "-i",
+        "color=c=black:s=32x24:d=0.2", "-an", "-c:v", "libx264",
+        "-pix_fmt", "yuv420p", str(fallbacks_dir / "demo-walkthrough.mp4"),
+    ])
+    shutil.copyfile(pdf_path, fallbacks_dir / "result-summary.pdf")
+    shutil.copyfile(
+        artifact_dir / "completion-rate.png",
+        fallbacks_dir / "network-overview.png")
     selected = []
     for regime in ("normal", "am_peak", "pm_peak"):
         selected.append(next(run["run_id"] for run in runs if (
@@ -454,11 +501,14 @@ def _write_bound_project(root):
         "paper/thesis_danang.pdf",
         "results/haichau_network_v2/demo/manifest.json",
     )
+    verified_commit = _commit(root, "frozen evidence")
     _write(root / "results/haichau_network_v2/verification/clean-checkout.json", json.dumps({
-        "passed": True, "commit": "fixture-commit", "commands": ["make test"],
-        "tool_versions": {"python": "fixture"}, "wall_time_seconds": 1,
+        "verification_version": 2,
+        "passed": True, "verified_commit": verified_commit,
+        "wall_time_seconds": 1,
         "artifact_sha256": dict((name, _digest(root / name)) for name in release_files),
     }))
+    _commit(root, "clean-checkout record")
     return summary
 
 
@@ -490,6 +540,36 @@ def test_hash_bound_negative_result_can_complete_every_release_gate(tmp_path):
     assert report["gates"]["acceptance_reported"]["passed"] is True
     assert report["gates"]["acceptance_reported"]["evidence"]["accepted"] is False
     assert summary["acceptance"]["accepted"] is False
+
+
+def test_source_gate_checks_actual_ancestor_cleanliness_and_frozen_code(tmp_path):
+    _write_bound_project(tmp_path)
+    source = tmp_path / "src/changed_after_freeze.py"
+    _write(source, "changed = True\n")
+    _commit(tmp_path, "change source after freeze")
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["source_revision"]["passed"] is False
+    assert "code paths changed" in report["gates"]["source_revision"]["detail"]
+
+    (tmp_path / "untracked.txt").write_text("dirty")
+    report = verify_project(tmp_path)
+    assert report["gates"]["source_revision"]["passed"] is False
+    assert "dirty" in report["gates"]["source_revision"]["detail"]
+
+
+def test_runtime_gate_rejects_self_declared_image_identity(tmp_path):
+    _write_bound_project(tmp_path)
+    path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(path.read_text())
+    protocol["runtime_image_id"] = "sha256:" + "c" * 64
+    path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["runtime_pinned"]["passed"] is False
+    assert "actual Docker image identity" in report["gates"]["runtime_pinned"]["detail"]
 
 
 def test_mutating_self_declared_summary_cannot_change_frozen_result(tmp_path):
@@ -532,6 +612,38 @@ def test_tampered_thesis_artifact_fails_even_if_file_still_exists(tmp_path):
 
     assert report["gates"]["thesis_artifacts"]["passed"] is False
     assert "hash mismatch" in report["gates"]["thesis_artifacts"]["detail"]
+
+
+def test_rehashed_pdf_signature_placeholder_is_not_a_usable_thesis(tmp_path):
+    _write_bound_project(tmp_path)
+    pdf = tmp_path / "paper/thesis_danang.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n%%EOF\n")
+    release_path = tmp_path / "paper/generated/haichau_network/thesis-release.json"
+    release = json.loads(release_path.read_text())
+    release["pdf_sha256"] = _digest(pdf)
+    release_path.write_text(json.dumps(release))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["thesis_artifacts"]["passed"] is False
+    assert "parse" in report["gates"]["thesis_artifacts"]["detail"]
+
+
+def test_rehashed_mp4_signature_placeholder_is_not_a_usable_fallback(tmp_path):
+    _write_bound_project(tmp_path)
+    demo = tmp_path / "results/haichau_network_v2/demo"
+    manifest_path = demo / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    relative = manifest["fallbacks"]["demo-walkthrough.mp4"]
+    fallback = demo / relative
+    fallback.write_bytes(b"\x00\x00\x00\x18ftypisom")
+    manifest["files"][relative] = _digest(fallback)
+    manifest_path.write_text(json.dumps(manifest))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["offline_demo"]["passed"] is False
+    assert "decode/parse" in report["gates"]["offline_demo"]["detail"]
 
 
 def test_malformed_checkpoint_contract_fails_gate_without_crashing(tmp_path):

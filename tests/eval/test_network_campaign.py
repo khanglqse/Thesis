@@ -10,7 +10,13 @@ def _manifest():
     return {
         "protocol_version": 2,
         "network_sha256": "a" * 64,
+        "viewer_network_sha256": "a" * 64,
         "runtime_digest": "sha256:" + "b" * 64,
+        "runtime_image": "cityflowproject/cityflow@sha256:" + "b" * 64,
+        "runtime_image_id": "sha256:" + "b" * 64,
+        "runtime_dockerfile_path": "docker/haichau-evaluation.Dockerfile",
+        "runtime_dockerfile_sha256": "e" * 64,
+        "code_commit": "1" * 40,
         "controlled_signals": 53,
         "agent_ids": ["N%02d" % index for index in range(53)],
         "default_horizon_steps": 3600,
@@ -68,6 +74,11 @@ def _executor(run, run_dir):
             "demand_sha256": run["demand_sha256"],
             "demand_path": run["demand_path"],
             "runtime_digest": run["runtime_digest"],
+            "runtime_image": run["runtime_image"],
+            "runtime_image_id": run["runtime_image_id"],
+            "runtime_dockerfile_path": run["runtime_dockerfile_path"],
+            "runtime_dockerfile_sha256": run["runtime_dockerfile_sha256"],
+            "code_commit": run["code_commit"],
             "checkpoint_sha256": run.get("checkpoint_sha256"),
             "checkpoint_contract_sha256": run.get("checkpoint_contract_sha256"),
             "completed_steps": run["horizon_steps"],
@@ -121,6 +132,13 @@ def test_learning_controller_crosses_test_cases_with_learning_seeds():
     assert all(run["evidence_namespace"] == "haichau_network_v2" for run in runs)
 
 
+def test_expansion_requires_frozen_code_and_runtime_identity():
+    manifest = _manifest()
+    manifest.pop("code_commit")
+    with pytest.raises(ValueError, match="code_commit"):
+        expand_runs(manifest, [11], ["tuned_fixed"])
+
+
 def test_expanded_run_freezes_resolved_config_and_checkpoint_contract():
     manifest = _manifest()
     manifest["controller_configs"] = {
@@ -140,6 +158,9 @@ def test_expanded_run_freezes_resolved_config_and_checkpoint_contract():
     assert run["resolved_config"]["simulator_seed"] == 201
     assert run["checkpoint_sha256"] == "f" * 64
     assert len(run["checkpoint_contract_sha256"]) == 64
+    assert run["code_commit"] == "1" * 40
+    assert run["resolved_config"]["code_commit"] == "1" * 40
+    assert run["runtime_image"].endswith(run["runtime_digest"])
 
 
 def test_resume_rechecks_hash_before_skipping(tmp_path):
@@ -169,6 +190,23 @@ def test_resume_and_verify_reject_relabelled_complete_run(tmp_path):
         verify_campaign(tmp_path)
 
 
+def test_completed_run_status_binds_code_and_runtime_identity(tmp_path):
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    _write_campaign(tmp_path, [run])
+    assert run_pending(tmp_path, _executor)["completed"] == 1
+
+    status_path = tmp_path / "runs" / run["run_id"] / "status.json"
+    status = json.loads(status_path.read_text())
+    assert status["code_commit"] == run["code_commit"]
+    assert status["runtime_image"] == run["runtime_image"]
+    assert status["runtime_image_id"] == run["runtime_image_id"]
+
+    status["code_commit"] = "2" * 40
+    status_path.write_text(json.dumps(status))
+    with pytest.raises(ValueError, match="status code/runtime identity"):
+        verify_campaign(tmp_path)
+
+
 def test_incomplete_network_metric_schema_is_never_marked_complete(tmp_path):
     run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
     _write_campaign(tmp_path, [run])
@@ -188,6 +226,11 @@ def test_incomplete_network_metric_schema_is_never_marked_complete(tmp_path):
                 "demand_sha256": run["demand_sha256"],
                 "demand_path": run["demand_path"],
                 "runtime_digest": run["runtime_digest"],
+                "runtime_image": run["runtime_image"],
+                "runtime_image_id": run["runtime_image_id"],
+                "runtime_dockerfile_path": run["runtime_dockerfile_path"],
+                "runtime_dockerfile_sha256": run["runtime_dockerfile_sha256"],
+                "code_commit": run["code_commit"],
                 "checkpoint_sha256": run.get("checkpoint_sha256"),
                 "checkpoint_contract_sha256": run.get(
                     "checkpoint_contract_sha256"),
@@ -223,6 +266,29 @@ def test_incomplete_run_is_rebuilt_and_only_then_marked_complete(tmp_path):
         "stdout.log", "stderr.log",
     }
     assert json.loads((stale / "metrics.json").read_text())["fresh_evaluation"] is True
+
+
+@pytest.mark.parametrize("values", [(-1.0, 1.0, 1.0), (2.0, 3.0, 2.0)])
+def test_invalid_completed_travel_aggregates_are_never_complete(tmp_path, values):
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    _write_campaign(tmp_path, [run])
+
+    def invalid_executor(run, run_dir):
+        result = _executor(run, run_dir)
+        result["metrics"].update({
+            "scheduled": 1, "inserted": 1, "departed": 1, "arrived": 1,
+            "completed_travel_time_count": 1, "completion_rate": 1.0,
+            "insertion_rate": 1.0,
+            "travel_time_completed_mean": values[0],
+            "travel_time_completed_median": values[1],
+            "travel_time_completed_p95": values[2],
+        })
+        return result
+
+    assert run_pending(tmp_path, invalid_executor)["failed"] == 1
+    status = json.loads(
+        (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
+    assert "travel-time" in status["error"]
 
 
 def test_horizon_mismatch_records_failure_without_complete_status(tmp_path):

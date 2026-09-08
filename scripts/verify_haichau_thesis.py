@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import json
 import re
+import subprocess
 from pathlib import Path
 
 from traffic_rl.eval.network_campaign import (
@@ -14,8 +15,10 @@ from traffic_rl.eval.network_campaign import (
     verify_campaign,
 )
 from traffic_rl.eval.network_replay import validate_network, validate_replay
+from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import validate_claims
+from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
 
 
 DEMAND_LABEL = "synthetic network demand constrained by Da Nang evidence"
@@ -174,12 +177,21 @@ def _case_gate(root, protocol):
         return _gate(False, str(exc))
 
 
-def _runtime_gate(protocol):
-    digest = str((protocol or {}).get("runtime_digest", ""))
-    passed = bool(re.fullmatch(r"sha256:[0-9a-f]{64}", digest))
-    return _gate(passed, "CityFlow runtime must use a full sha256 digest", {
-        "runtime_digest": digest,
-    })
+def _source_gate(root, protocol):
+    try:
+        identity = verify_git_checkout(root, (protocol or {}).get("code_commit"))
+        return _gate(True, "checkout is clean and frozen code paths are unchanged", identity)
+    except Exception as exc:
+        return _gate(False, str(exc))
+
+
+def _runtime_gate(root, protocol):
+    try:
+        identity = verify_runtime(root, protocol)
+        return _gate(
+            True, "CityFlow Docker image and Dockerfile identities are verified", identity)
+    except Exception as exc:
+        return _gate(False, str(exc))
 
 
 def _checkpoint_contract_valid(contract, protocol):
@@ -382,6 +394,7 @@ def _thesis_gate(root, summary):
             name + ".provenance.json" for name in THESIS_ARTIFACTS)
         if set(artifact_hashes) != required:
             raise ValueError("thesis generated artifact set is incomplete")
+        media_probes = {}
         for name, expected in artifact_hashes.items():
             path = _inside(artifact_path.parent, name)
             if not path or not path.is_file() or _sha256(path) != expected:
@@ -390,13 +403,16 @@ def _thesis_gate(root, summary):
                 sidecar = _json(path)
                 if sidecar.get("summary_sha256") != summary_hash:
                     raise ValueError("thesis sidecar summary hash mismatch: %s" % name)
+            elif name.endswith(".png"):
+                media_probes[name] = probe_png(path)
+            elif name.endswith(".pdf"):
+                media_probes[name] = probe_pdf(path)
         thesis_hash = _sha256(thesis_path)
         if artifacts.get("thesis_source_sha256") != thesis_hash:
             raise ValueError("thesis source changed after artifact generation")
         if validate_claims(thesis_path.read_text(), summary):
             raise ValueError("thesis contains unsupported claims")
-        if not pdf_path.read_bytes().startswith(b"%PDF-"):
-            raise ValueError("compiled thesis is not a PDF payload")
+        pdf_probe = probe_pdf(pdf_path)
         expected_release = {
             "summary_sha256": summary_hash,
             "artifact_manifest_sha256": _sha256(artifact_path),
@@ -408,19 +424,21 @@ def _thesis_gate(root, summary):
         return _gate(True, "table, figures, sidecars, source and PDF are hash-bound", {
             "summary_sha256": summary_hash,
             "pdf_sha256": expected_release["pdf_sha256"],
+            "pdf_probe": pdf_probe,
+            "generated_media_probes": media_probes,
         })
     except Exception as exc:
         return _gate(False, str(exc))
 
 
-def _fallback_kind_valid(name, data):
+def _probe_fallback(name, path):
     if name.endswith(".mp4"):
-        return len(data) >= 12 and data[4:8] == b"ftyp"
+        return probe_video(path)
     if name.endswith(".pdf"):
-        return data.startswith(b"%PDF-")
+        return probe_pdf(path)
     if name.endswith(".png"):
-        return data.startswith(b"\x89PNG\r\n\x1a\n")
-    return False
+        return probe_png(path)
+    raise ValueError("unsupported fallback media type: %s" % name)
 
 
 def audit_demo(root, protocol=None, campaign=None, summary=None):
@@ -469,11 +487,12 @@ def audit_demo(root, protocol=None, campaign=None, summary=None):
         fallbacks = manifest.get("fallbacks", {})
         if set(fallbacks) != set(REQUIRED_FALLBACKS):
             return _gate(False, "offline demo fallbacks are incomplete")
+        fallback_probes = {}
         for name, relative in fallbacks.items():
             path = _inside(demo, relative)
-            if not path or relative not in files or not _fallback_kind_valid(
-                    name, path.read_bytes()):
+            if not path or relative not in files:
                 return _gate(False, "offline demo fallback is invalid: %s" % name)
+            fallback_probes[name] = _probe_fallback(name, path)
         final = root / "results/haichau_network_v2/final"
         if campaign is None:
             campaign = _json(final / "campaign-manifest.json")
@@ -518,7 +537,7 @@ def audit_demo(root, protocol=None, campaign=None, summary=None):
             if grids[0] != grids[1]:
                 return _gate(False, "offline replay pair time grids differ")
         return _gate(True, "offline demo is bound to verified runs and frozen evidence", {
-            "replay_count": len(replays), "fallbacks": sorted(fallbacks),
+            "replay_count": len(replays), "fallbacks": fallback_probes,
         })
     except Exception as exc:
         return _gate(False, "offline demo verification failed: %s" % exc)
@@ -540,15 +559,40 @@ def _clean_checkout_gate(root, protocol):
             "results/haichau_network_v2/demo/manifest.json",
         }
         hashes = record.get("artifact_sha256", {})
-        passed = record.get("passed") is True and bool(record.get("commands")) \
-            and bool(record.get("tool_versions")) and bool(record.get("wall_time_seconds")) \
-            and record.get("commit") == (protocol or {}).get("code_commit") \
+        identity = verify_git_checkout(root, (protocol or {}).get("code_commit"))
+        verified_commit = str(record.get("verified_commit", ""))
+        if not re.fullmatch(r"[0-9a-f]{40}", verified_commit):
+            raise ValueError("clean-checkout verified_commit must be a full Git commit")
+        for argv in (
+                ("git", "cat-file", "-e", verified_commit + "^{commit}"),
+                ("git", "merge-base", "--is-ancestor", verified_commit,
+                 identity["head_commit"])):
+            completed = subprocess.run(
+                list(argv), cwd=str(root), stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, universal_newlines=True)
+            if completed.returncode:
+                raise ValueError("clean-checkout verified_commit is not an ancestor")
+        completed = subprocess.run(
+            ["git", "diff", "--quiet", verified_commit,
+             identity["head_commit"], "--"] + sorted(required_hashes),
+            cwd=str(root), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
+        if completed.returncode:
+            raise ValueError("release artifacts changed after clean-checkout verification")
+        passed = record.get("verification_version") == 2 \
+            and record.get("passed") is True \
+            and bool(record.get("wall_time_seconds")) \
             and required_hashes.issubset(hashes)
         for relative in required_hashes:
             artifact = _inside(root, relative)
             passed = passed and bool(
                 artifact and artifact.is_file() and _sha256(artifact) == hashes.get(relative))
-        return _gate(passed, "release path and output hashes must pass from a clean checkout", record)
+        evidence = dict(record)
+        evidence["actual_head_commit"] = identity["head_commit"]
+        return _gate(
+            passed,
+            "current Git state and release hashes verify a recorded clean checkout",
+            evidence)
     except Exception as exc:
         return _gate(False, "clean-checkout verification failed: %s" % exc)
 
@@ -563,9 +607,10 @@ def verify_project(root):
     if matched["passed"] and campaign_path.is_file():
         campaign = _json(campaign_path)
     gates = {
+        "source_revision": _source_gate(root, protocol),
         "network_53_signals": _network_gate(root, protocol),
         "thirty_case_split": _case_gate(root, protocol),
-        "runtime_pinned": _runtime_gate(protocol),
+        "runtime_pinned": _runtime_gate(root, protocol),
         "five_learning_seeds": _checkpoint_gate(root, protocol),
         "fresh_matched_runs": matched,
         "scenario_coverage": scenarios,
@@ -578,7 +623,7 @@ def verify_project(root):
     }
     failed = [name for name, value in gates.items() if not value["passed"]]
     return {
-        "verification_version": 3,
+        "verification_version": 4,
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "protocol_path": str(protocol_path.relative_to(root)),
         "complete": not failed,

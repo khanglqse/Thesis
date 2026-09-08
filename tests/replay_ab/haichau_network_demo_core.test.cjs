@@ -19,7 +19,8 @@ test("frame lookup is synchronized at requested time", () => {
 
 test("network transform fits coordinates and nearest node selection", () => {
   const tx = core.networkTransform([
-    { id: "A", x: 0, y: 0 }, { id: "B", x: 100, y: 50 },
+    { id: "A", x: 0, y: 0, neighbors: [] },
+    { id: "B", x: 100, y: 50, neighbors: [] },
   ], 220, 120, 10);
   assert.equal(tx.x(0), 10);
   assert.equal(tx.y(0), 110);
@@ -27,6 +28,20 @@ test("network transform fits coordinates and nearest node selection", () => {
   assert.equal(tx.y(50), 10);
   assert.equal(core.nearestNode([{ id: "A", x: 0, y: 0 }], 2, 1, 5).id, "A");
   assert.equal(core.nearestNode([{ id: "A", x: 0, y: 0 }], 20, 20, 5), null);
+});
+
+test("viewer rejects invalid geometry and unknown neighbors", () => {
+  const valid = [
+    { id: "A", x: 0, y: 0, neighbors: ["B"] },
+    { id: "B", x: 1, y: 1, neighbors: [] },
+  ];
+  assert.equal(core.validateNetwork(valid), true);
+  assert.throws(() => core.validateNetwork([
+    { id: "A", x: Number.NaN, y: 0, neighbors: [] },
+  ]), /finite coordinates/);
+  assert.throws(() => core.validateNetwork([
+    { id: "A", x: 0, y: 0, neighbors: ["missing"] },
+  ]), /unknown neighbor/);
 });
 
 test("paired replay selection requires one matched case", () => {

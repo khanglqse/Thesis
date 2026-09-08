@@ -5,6 +5,7 @@ import pytest
 
 from scripts.export_haichau_replays import export_bundle
 from traffic_rl.eval.network_campaign import expand_runs, run_pending
+from traffic_rl.eval.network_replay import validate_network
 
 
 def _digest(path):
@@ -34,7 +35,13 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
     manifest = {
         "protocol_version": 2,
         "network_sha256": network_sha256,
+        "viewer_network_sha256": network_sha256,
         "runtime_digest": "sha256:" + "b" * 64,
+        "runtime_image": "cityflowproject/cityflow@sha256:" + "b" * 64,
+        "runtime_image_id": "sha256:" + "b" * 64,
+        "runtime_dockerfile_path": "docker/haichau-evaluation.Dockerfile",
+        "runtime_dockerfile_sha256": "d" * 64,
+        "code_commit": "1" * 40,
         "controlled_signals": 53,
         "agent_ids": agent_ids,
         "default_horizon_steps": 10,
@@ -72,6 +79,11 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
                 "demand_sha256": run["demand_sha256"],
                 "demand_path": run["demand_path"],
                 "runtime_digest": run["runtime_digest"],
+                "runtime_image": run["runtime_image"],
+                "runtime_image_id": run["runtime_image_id"],
+                "runtime_dockerfile_path": run["runtime_dockerfile_path"],
+                "runtime_dockerfile_sha256": run["runtime_dockerfile_sha256"],
+                "code_commit": run["code_commit"],
                 "checkpoint_sha256": run.get("checkpoint_sha256"),
                 "checkpoint_contract_sha256": run.get(
                     "checkpoint_contract_sha256"),
@@ -194,3 +206,21 @@ def test_export_rejects_replay_that_does_not_cover_full_horizon(tmp_path):
             campaign_dir, tmp_path / "demo", network_path,
             selected_run_ids=[run["run_id"] for run in runs],
         )
+
+
+@pytest.mark.parametrize("mutation, message", [
+    (lambda network: network["nodes"][0].pop("x"), "finite x/y"),
+    (lambda network: network["nodes"][0].update({"x": float("nan")}),
+     "finite x/y"),
+    (lambda network: network["nodes"][0].pop("neighbors"), "neighbor list"),
+    (lambda network: network["nodes"][0].update({"neighbors": "N01"}),
+     "neighbor list"),
+    (lambda network: network["nodes"][0].update({"neighbors": ["missing"]}),
+     "unknown neighbor"),
+])
+def test_network_contract_rejects_unusable_viewer_topology(mutation, message):
+    network = _network()
+    mutation(network)
+
+    with pytest.raises(ValueError, match=message):
+        validate_network(network)

@@ -22,6 +22,14 @@ seed `20260908`, 10,000 samples, normal point limit 0, normal CI margin 5%, stri
 upper limit 0 and maximum completion degradation 2%. Every case has a `demand_path` whose
 bytes match its `demand_sha256`.
 
+Commit the evaluation code before freezing the protocol. Record the full 40-character
+`code_commit`, immutable `runtime_image` (`repository@sha256:...`), its inspected
+`runtime_image_id`, and the path/hash of `docker/haichau-evaluation.Dockerfile`. The
+Dockerfile `FROM` line must use that exact image. Preparation and verification require a
+clean descendant checkout with no changes to code paths since `code_commit`; campaign
+execution re-inspects the image and runs every controller command inside it with networking
+disabled. A digest-shaped string that is absent from `docker image inspect` is rejected.
+
 Prepare the immutable run set from the frozen case manifest, then execute it. Every
 controller command in the case manifest must run a fresh evaluation and print its result
 JSON on the final stdout line.
@@ -71,13 +79,20 @@ console must have no warning or error.
 
 Every selected replay contains the exact `0, 5, ..., horizon` time grid. The exporter binds
 the viewer network, campaign manifest and aggregate summary hashes; the final verifier
-parses each replay again and compares it with the immutable source run.
+parses each replay again and compares it with the immutable source run. Every viewer node
+must have finite coordinates and an explicit neighbor list containing only known node IDs.
+
+Install `ffprobe`, `pdfinfo` and `pdftoppm` on the verification host. The audit decodes the
+PNG/MP4 files, requires nonzero image dimensions and video duration, parses every PDF and
+renders its first page; a valid-looking file signature is insufficient.
 
 Repeat the documented tests, paper build, demo launch and audit from a clean checkout that
 contains only tracked files plus the checksum-verified release inputs. Record the tested
-commit, commands, tool versions and wall time in
+commit and wall time in
 `results/haichau_network_v2/verification/clean-checkout.json`; set `passed` to true only
-after those commands actually succeed. Its `artifact_sha256` map covers the frozen
+after those commands actually succeed. Use `verification_version: 2` and store the full
+evidence commit as `verified_commit`; it must be an ancestor of the current clean checkout,
+and release artifacts may not change afterward. Its `artifact_sha256` map covers the frozen
 protocol, campaign manifest, summary, generated-artifact manifest, thesis release manifest,
 compiled PDF and demo manifest. Then run:
 
@@ -97,7 +112,8 @@ The extension is release-ready only when the final command exits zero and its re
 2. If video playback fails, open `fallbacks/result-summary.pdf`.
 3. If the PDF viewer fails, open `fallbacks/network-overview.png`.
 
-All three files must appear in the demo manifest and pass its SHA-256 check.
+All three files must appear in the demo manifest, pass its SHA-256 check and decode with
+nonzero pages, dimensions or duration as appropriate.
 
 ### Vehicle accounting shown in the demo and thesis
 

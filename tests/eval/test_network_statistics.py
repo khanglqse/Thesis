@@ -169,3 +169,21 @@ def test_declared_minimum_demand_units_is_an_acceptance_gate():
 
     assert result["minimum_independent_units_met"] is False
     assert result["accepted"] is False
+
+
+def test_candidate_seed_coverage_must_equal_full_baseline_cell_set():
+    rows = _rows(
+        learning_seeds=(11, 12, 13, 14, 15),
+        regimes=("normal", "am_peak", "pm_peak"),
+        demands=(101, 102),
+    )
+    rows = [row for row in rows if not (
+        row["controller_id"] == "neighbor_phase_ddqn"
+        and row["demand_seed"] == 102
+    )]
+
+    with pytest.raises(ValueError, match="full tuned_fixed matched-case set"):
+        aggregate_campaign(
+            rows, required_learning_seeds=(11, 12, 13, 14, 15),
+            minimum_demand_units=2,
+        )

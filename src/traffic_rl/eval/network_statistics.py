@@ -143,8 +143,16 @@ def aggregate_campaign(runs, required_learning_seeds=None,
                 all_learning_seeds.update(int(row["learning_seed"]) for row in group)
             queue_values = _independent(
                 group, "queue_integral_vehicle_seconds", learning)
+            matched_keys = set(_match_key(row) for row in group)
+            baseline_keys = set(
+                key for key in baseline if key[0] == regime)
+            if controller_id != "tuned_fixed" and matched_keys != baseline_keys:
+                raise ValueError(
+                    "%s/%s must cover the full tuned_fixed matched-case set" %
+                    (controller_id, regime))
             result = {
                 "n_independent": len(queue_values),
+                "matched_demand_units": len(matched_keys),
                 "statistical_unit": (
                     "learning_seed_after_matched_case_mean" if learning
                     else "matched_demand_simulator_case"),
@@ -249,6 +257,7 @@ def evaluate_acceptance(summary):
             seeds == required_seeds
             and len(seeds) >= minimum_learning_seeds
             and result.get("n_independent", 0) >= minimum_learning_seeds
+            and result.get("matched_demand_units", 0) >= minimum_demand_units
             and baseline_n >= minimum_demand_units)
     units_met = bool(required_regimes) and all(unit_status.values())
 

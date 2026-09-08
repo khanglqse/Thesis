@@ -14,6 +14,10 @@ from traffic_rl.eval.network_campaign import (
     run_pending,
     verify_campaign,
 )
+from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _sha256(path):
@@ -38,8 +42,16 @@ def _subprocess_executor(run, run_dir):
     command = run.get("command")
     if not command:
         raise ValueError("run has no command; integrate the controller before execution")
+    runtime = verify_runtime(PROJECT_ROOT, run)
+    if runtime["runtime_image_id"] != run.get("runtime_image_id"):
+        raise ValueError("executor Docker image ID differs from frozen run")
+    docker_command = [
+        "docker", "run", "--rm", "--network", "none",
+        "-v", "%s:/work" % PROJECT_ROOT, "-w", "/work",
+        run["runtime_image"],
+    ] + list(command)
     completed = subprocess.run(
-        command, cwd=str(Path.cwd()), text=True,
+        docker_command, cwd=str(PROJECT_ROOT), universal_newlines=True,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     )
     if completed.returncode:
@@ -69,14 +81,34 @@ def main(argv=None):
     args = parser.parse_args(argv)
     campaign_dir = Path(args.campaign_dir)
 
+    protocol_path = Path(args.protocol)
+    if not protocol_path.is_absolute():
+        protocol_path = PROJECT_ROOT / protocol_path
+    if not protocol_path.is_file():
+        raise ValueError("frozen protocol is required")
+    protocol = json.loads(protocol_path.read_text())
+    verify_git_checkout(PROJECT_ROOT, protocol.get("code_commit"))
+    verify_runtime(PROJECT_ROOT, protocol)
+
     if args.verify_only:
+        manifest_path = Path(protocol.get("case_manifest_path", ""))
+        if not manifest_path.is_absolute():
+            manifest_path = PROJECT_ROOT / manifest_path
+        if not manifest_path.is_file() \
+                or _sha256(manifest_path) != protocol.get("case_manifest_sha256"):
+            raise ValueError("frozen case manifest is missing or changed")
+        manifest = bind_frozen_manifest(
+            json.loads(manifest_path.read_text()), protocol)
+        seeds = protocol.get("acceptance_rules", {}).get(
+            "required_learning_seeds", [])
+        expected = expand_runs(manifest, seeds, CONTROLLERS)
+        actual = json.loads(
+            (campaign_dir / "campaign-manifest.json").read_text()).get("runs")
+        if actual != expected:
+            raise ValueError("campaign differs from frozen protocol")
         print(json.dumps(verify_campaign(campaign_dir), sort_keys=True))
         return 0
     if args.manifest:
-        protocol_path = Path(args.protocol)
-        if not protocol_path.is_file():
-            raise ValueError("frozen protocol is required before campaign preparation")
-        protocol = json.loads(protocol_path.read_text())
         manifest_path = Path(args.manifest)
         if _sha256(manifest_path) != protocol.get("case_manifest_sha256"):
             raise ValueError("case manifest hash differs from frozen protocol")

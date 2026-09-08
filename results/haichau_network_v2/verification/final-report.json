@@ -1,6 +1,7 @@
 {
   "complete": false,
   "failed_gates": [
+    "source_revision",
     "network_53_signals",
     "thirty_case_split",
     "runtime_pinned",
@@ -58,14 +59,17 @@
       "passed": false
     },
     "runtime_pinned": {
-      "detail": "CityFlow runtime must use a full sha256 digest",
-      "evidence": {
-        "runtime_digest": ""
-      },
+      "detail": "runtime_digest must be a full sha256 digest",
+      "evidence": {},
       "passed": false
     },
     "scenario_coverage": {
       "detail": "campaign verification failed: frozen-protocol.json is missing",
+      "evidence": {},
+      "passed": false
+    },
+    "source_revision": {
+      "detail": "frozen code_commit must be a full 40-character Git commit",
       "evidence": {},
       "passed": false
     },
@@ -80,7 +84,7 @@
       "passed": false
     }
   },
-  "generated_at": "2026-09-08T06:41:34.117296+00:00",
+  "generated_at": "2026-09-08T07:17:51.696176+00:00",
   "protocol_path": "results/haichau_network_v2/final/frozen-protocol.json",
-  "verification_version": 3
+  "verification_version": 4
 }

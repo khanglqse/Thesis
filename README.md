@@ -162,9 +162,12 @@ demo and clean-checkout record are all hash-valid.
 
 The verifier recomputes the numeric summary and acceptance decision from the hash-verified
 run metrics. It also requires exact frozen run identity (flow hash, simulator seed,
-checkpoint and resolved config), at least five learning seeds and two matched demand units
-in every gated regime, content hashes for paper/demo artifacts, and full-horizon offline
-replays.
+checkpoint, code commit, inspected Docker image and resolved config). Every one of the five
+learning seeds must contain the exact tuned-fixed demand/simulator cells, with at least two
+cells in every gated regime. The current checkout must be clean, descend from the frozen
+40-character commit and leave `src/`, `scripts/`, `frontend/`, `docker/` and build config
+unchanged. Paper/demo artifacts are content-hashed; `pdfinfo`/`pdftoppm` and `ffprobe`
+must also parse/render the PDFs, PNGs and MP4, and replays cover the full horizon.
 
 ## Scope: validated vs proposed
 

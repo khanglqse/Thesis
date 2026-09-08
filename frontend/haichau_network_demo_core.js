@@ -30,8 +30,23 @@
     }
     return low;
   }
+  function validateNetwork(nodes) {
+    if (!Array.isArray(nodes) || !nodes.length) throw new Error("network has no nodes");
+    const ids = new Set(nodes.map(node => node && node.id));
+    if (ids.has(undefined) || ids.size !== nodes.length)
+      throw new Error("network node IDs must be present and unique");
+    for (const node of nodes) {
+      if (!Number.isFinite(Number(node.x)) || !Number.isFinite(Number(node.y)))
+        throw new Error("network nodes require finite coordinates");
+      const neighbors = node.neighbors;
+      if (!Array.isArray(neighbors)) throw new Error("network neighbors must be a list");
+      if (neighbors.some(id => !ids.has(id)))
+        throw new Error("network node references an unknown neighbor");
+    }
+    return true;
+  }
   function networkTransform(nodes, width, height, padding) {
-    if (!nodes || !nodes.length) throw new Error("network has no nodes");
+    validateNetwork(nodes);
     padding = Number(padding) || 0;
     const xs = nodes.map(node => Number(node.x));
     const ys = nodes.map(node => Number(node.y));
@@ -74,6 +89,7 @@
   return {
     queueColor,
     frameIndexAt,
+    validateNetwork,
     networkTransform,
     nearestNode,
     pairedReplays,

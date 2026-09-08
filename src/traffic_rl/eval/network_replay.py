@@ -14,10 +14,31 @@ def validate_network(network):
     if network.get("controlled_signals") != 53 or len(nodes) != 53:
         raise ValueError("offline network must contain exactly 53 controlled signals")
     node_ids = [node.get("id") for node in nodes]
-    if None in node_ids or len(set(node_ids)) != 53:
+    if any(not isinstance(node_id, str) or not node_id for node_id in node_ids) \
+            or len(set(node_ids)) != 53:
         raise ValueError("offline network node IDs must be present and unique")
     known = set(node_ids)
-    for link in network.get("links", []):
+    for node in nodes:
+        try:
+            coordinates_valid = all(
+                math.isfinite(float(node.get(axis))) for axis in ("x", "y"))
+        except (TypeError, ValueError):
+            coordinates_valid = False
+        if not coordinates_valid:
+            raise ValueError("offline network nodes require finite x/y coordinates")
+        neighbors = node.get("neighbors")
+        if not isinstance(neighbors, list):
+            raise ValueError("offline network node neighbors must be a neighbor list")
+        if any(neighbor not in known for neighbor in neighbors):
+            raise ValueError("offline network node references an unknown neighbor")
+        if len(neighbors) != len(set(neighbors)):
+            raise ValueError("offline network neighbor IDs must be unique")
+    links = network.get("links", [])
+    if not isinstance(links, list):
+        raise ValueError("offline network links must be a list")
+    for link in links:
+        if not isinstance(link, dict):
+            raise ValueError("offline network links must be objects")
         if link.get("source") not in known or link.get("target") not in known:
             raise ValueError("offline network link references an unknown node")
     return known

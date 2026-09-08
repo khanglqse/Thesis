@@ -179,6 +179,9 @@
       fetchJson(state.manifest.network_path, true),
       fetchJson(state.manifest.aggregate_path, true),
     ]);
+    if (state.network.controlled_signals !== 53)
+      throw new Error("Network must contain exactly 53 controlled signals");
+    core.validateNetwork(state.network.nodes);
     const regimes = [...new Set(state.manifest.replays.map(entry => entry.regime))];
     element("scenario").innerHTML = regimes.map(regime => `<option value="${regime}">${regime.replace(/_/g, " ")}</option>`).join("");
     await loadScenario(regimes[0]);

@@ -81,3 +81,32 @@ All Critical and Important findings in `/tmp/review-haichau-evaluation-demo.md` 
 - Final focused rerun: 68 Python tests passed; focused offline viewer core: 4 Node tests passed.
 - Python 3.6.5 CityFlow container focused compatibility: 52 tests passed; `make cf-test` equivalent: 1 passed, 144 deselected.
 - Final `make test`: 172 passed, 1 failed, 1 deselected. The only failure remains `test_upstream_neighbors_on_haichau`, whose Git-ignored `data/danang/roadnet_haichau.json` input is absent.
+
+## R2 independent-review remediation
+
+- [x] Code/runtime root: the frozen protocol now supplies a full Git `code_commit`, immutable Docker repo digest, inspected image ID and Dockerfile path/hash. These fields enter every run, resolved config, metric identity, completion status and canonical run digest. The runner checks a clean descendant checkout, rejects code-path drift, inspects the local Docker image and executes controller commands inside that image with networking disabled. The final verifier repeats the actual Git, Docker image and Dockerfile checks.
+- [x] Exact statistical cells: every learned seed must contain the same cells and that set must exactly equal the tuned-fixed `(regime, case, demand seed, simulator seed)` set. `matched_demand_units` is recorded and compared with the frozen minimum for every required regime.
+- [x] Completed travel aggregates: executor outputs with a negative mean/median/p95 or p95 below median fail before status can become complete.
+- [x] Usable replay topology: all 53 nodes require unique nonempty IDs, finite coordinates and explicit neighbor lists containing only known unique IDs; links must be objects with known endpoints. The browser core validates the same node contract before rendering.
+- [x] Decoder-backed release media: `ffprobe` requires decodable PNG dimensions and an MP4 video stream with positive dimensions/duration. `pdfinfo` requires a nonzero page count and `pdftoppm` must render page one to a decodable PNG. These checks cover generated thesis figures, the compiled thesis and all three demo fallbacks.
+- [x] Clean-checkout trust: verification version 2 records a full evidence commit and output hashes. The verifier checks that commit is an actual ancestor, the present tree is clean, code has not changed since the frozen commit, and release outputs have not changed since verification; arbitrary command/tool-version strings no longer satisfy the gate.
+
+### R2 adversarial RED to GREEN
+
+- Campaign RED: code was absent from expanded runs; new status provenance assertions failed, and two invalid travel aggregates reached the old trust boundary. GREEN: campaign suite passes with frozen code/runtime format requirements and immutable status bindings.
+- Statistics RED: five candidate seeds using one cell each passed when tuned fixed had two. GREEN: aggregation refuses candidate/baseline cell-set asymmetry and acceptance counts candidate matched cells.
+- Topology RED: four Python cases accepted missing/NaN coordinates, non-list neighbors and unknown neighbors; Node had no topology validator. GREEN: 9 replay/export Python tests and 5 viewer-core Node tests pass.
+- Source/runtime RED: the new identity test initially failed collection because the module did not exist. GREEN: 3 tests cover dirty/code-drift Git state, Dockerfile hashing and rejection of a digest-shaped image absent from inspected RepoDigests. A real local probe verified `cityflowproject/cityflow@sha256:b57e...e32` and `docker/haichau-evaluation.Dockerfile` against Docker.
+- Media RED: the decoder test initially failed collection because no validation module existed; the old 12-byte MP4/minimal PDF/signature-only PNG fixtures were accepted. GREEN: 4 direct media tests and verifier adversarial tests reject rehashed placeholders while accepting real generated media.
+- Verifier GREEN: 14 tests pass, including actual temporary Git history/clean state, mocked inspected runtime identity, full numeric evidence, and decoder-valid media. The complete fixture remains an explicitly synthetic test fixture with a negative acceptance result.
+- Python 3.6 RED/GREEN: the first focused container run exposed old Git rejecting `--porcelain=v1`; using portable `--porcelain` produced 66 passing focused tests. Docker marker collection then exposed optional matplotlib absence; module-level `importorskip` restored `make cf-test` to 1 passed, 1 skipped, 162 deselected.
+
+### R2 verification
+
+- Focused host Python: 90 passed.
+- Focused Python 3.6.5 CityFlow image: 66 passed.
+- Viewer core: 5 passed.
+- Full host `make test`: 194 passed, 1 failed, 1 deselected. The sole failure remains the baseline missing Git-ignored `data/danang/roadnet_haichau.json` input.
+- `make cf-test`: 1 passed, 1 skipped, 162 deselected.
+- Live offline Chrome check: the new topology validation loaded the 53-node fixture, switched normal to PM peak, preserved synchronized metrics/detail rendering, and logged zero console warnings/errors. HTTP traffic remained localhost-only.
+- Current verifier version 4 exits 1 with 13 dependency gates, including the new `source_revision` gate. No release artifact was created to clear them.

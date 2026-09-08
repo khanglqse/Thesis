@@ -44,6 +44,11 @@ def bind_frozen_manifest(case_manifest, protocol):
         "network_sha256": protocol.get("network_sha256"),
         "viewer_network_sha256": protocol.get("viewer_network_sha256"),
         "runtime_digest": protocol.get("runtime_digest"),
+        "runtime_image": protocol.get("runtime_image"),
+        "runtime_image_id": protocol.get("runtime_image_id"),
+        "runtime_dockerfile_path": protocol.get("runtime_dockerfile_path"),
+        "runtime_dockerfile_sha256": protocol.get("runtime_dockerfile_sha256"),
+        "code_commit": protocol.get("code_commit"),
         "controlled_signals": 53,
         "agent_ids": list(protocol.get("agent_ids", [])),
         "resolved_config": protocol.get("resolved_config", {}),
@@ -73,6 +78,22 @@ def _utc_now():
 
 def expand_runs(manifest, learning_seeds, controller_ids):
     """Expand only frozen test cases, preserving the correct seed unit."""
+    identity_patterns = {
+        "network_sha256": r"[0-9a-f]{64}",
+        "viewer_network_sha256": r"[0-9a-f]{64}",
+        "runtime_digest": r"sha256:[0-9a-f]{64}",
+        "runtime_image_id": r"sha256:[0-9a-f]{64}",
+        "runtime_dockerfile_sha256": r"[0-9a-f]{64}",
+        "code_commit": r"[0-9a-f]{40}",
+    }
+    for field, pattern in identity_patterns.items():
+        if not re.fullmatch(pattern, str(manifest.get(field, ""))):
+            raise ValueError("frozen manifest requires valid %s" % field)
+    image = str(manifest.get("runtime_image", ""))
+    if not image.endswith("@" + manifest["runtime_digest"]):
+        raise ValueError("frozen manifest runtime_image must contain runtime_digest")
+    if not manifest.get("runtime_dockerfile_path"):
+        raise ValueError("frozen manifest requires runtime_dockerfile_path")
     unknown = sorted(set(controller_ids) - set(CONTROLLERS))
     if unknown:
         raise ValueError("unknown controllers: %s" % ", ".join(unknown))
@@ -117,6 +138,13 @@ def expand_runs(manifest, learning_seeds, controller_ids):
                     "demand_sha256": case["demand_sha256"],
                     "demand_path": case.get("demand_path"),
                     "runtime_digest": manifest.get("runtime_digest"),
+                    "runtime_image": manifest.get("runtime_image"),
+                    "runtime_image_id": manifest.get("runtime_image_id"),
+                    "runtime_dockerfile_path": manifest.get(
+                        "runtime_dockerfile_path"),
+                    "runtime_dockerfile_sha256": manifest.get(
+                        "runtime_dockerfile_sha256"),
+                    "code_commit": manifest.get("code_commit"),
                     "evidence_namespace": "haichau_network_v2",
                     "fresh_evaluation": True,
                     "controlled_signals": manifest.get("controlled_signals", 53),
@@ -132,7 +160,9 @@ def expand_runs(manifest, learning_seeds, controller_ids):
                     "case_id", "regime", "controller_id", "learning_seed",
                     "demand_seed", "simulator_seed", "horizon_steps",
                     "network_sha256", "demand_sha256", "runtime_digest",
-                    "viewer_network_sha256",
+                    "runtime_image", "runtime_image_id",
+                    "runtime_dockerfile_path", "runtime_dockerfile_sha256",
+                    "code_commit", "viewer_network_sha256",
                     "demand_path",
                 ))
                 resolved.update(identity)
@@ -167,6 +197,10 @@ def expand_runs(manifest, learning_seeds, controller_ids):
 def _verify_complete(run_dir, status, expected_run):
     if status.get("run_spec_sha256") != canonical_sha256(expected_run):
         raise ValueError("complete run spec digest does not match campaign")
+    if any(status.get(field) != expected_run.get(field) for field in (
+            "code_commit", "runtime_image", "runtime_image_id",
+            "runtime_digest", "runtime_dockerfile_sha256")):
+        raise ValueError("complete status code/runtime identity does not match campaign")
     hashes = status.get("artifact_sha256", {})
     if not set(_ARTIFACTS).issubset(set(hashes)):
         raise ValueError("complete run has an incomplete artifact hash set")
@@ -257,8 +291,13 @@ def _validate_network_metrics(run, metrics):
         "travel_time_completed_mean", "travel_time_completed_median",
         "travel_time_completed_p95",
     )
-    if arrived and any(not _finite(metrics[field]) for field in travel_fields):
-        raise ValueError("completed travel-time statistics must be finite")
+    if arrived and any(not _finite(metrics[field]) or float(metrics[field]) < 0
+                       for field in travel_fields):
+        raise ValueError(
+            "completed travel-time statistics must be finite and non-negative")
+    if arrived and float(metrics["travel_time_completed_p95"]) < float(
+            metrics["travel_time_completed_median"]):
+        raise ValueError("completed travel-time p95 must not be below the median")
     if not arrived and any(metrics[field] is not None for field in travel_fields):
         raise ValueError("empty completed travel-time statistics must be null")
     agent_ids = set(run.get("agent_ids", []))
@@ -286,7 +325,8 @@ def _validate_result(run, result):
     for field in (
             "case_id", "regime", "controller_id", "learning_seed", "demand_seed",
             "simulator_seed", "network_sha256", "demand_sha256", "runtime_digest",
-            "viewer_network_sha256",
+            "runtime_image", "runtime_image_id", "runtime_dockerfile_path",
+            "runtime_dockerfile_sha256", "code_commit", "viewer_network_sha256",
             "demand_path",
             "checkpoint_sha256", "checkpoint_contract_sha256"):
         if metrics.get(field) != run.get(field):
@@ -368,6 +408,12 @@ def run_pending(campaign_dir, executor):
                 "status": "complete",
                 "completed_at": _utc_now(),
                 "run_spec_sha256": canonical_sha256(run),
+                "code_commit": run.get("code_commit"),
+                "runtime_image": run.get("runtime_image"),
+                "runtime_image_id": run.get("runtime_image_id"),
+                "runtime_digest": run.get("runtime_digest"),
+                "runtime_dockerfile_sha256": run.get(
+                    "runtime_dockerfile_sha256"),
                 "artifact_sha256": hashes,
             })
             counts["completed"] += 1
