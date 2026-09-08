@@ -80,9 +80,14 @@
   contract this produced a 190-second movement peak. GREEN: role-aware service
   and movement-deadline scheduling pass focused tests; the 53-signal/3600-step
   deterministic probe reached 144 seconds.
-- Final R3 fresh verification after runtime smoke: host full suite `163 passed,
-  1 deselected`; Python 3.6.5 focused suite `53 passed`; compileall and
+- Final R3 fresh verification after runtime smoke: host full suite
+  `163 passed, 1 deselected`; Python 3.6.5 focused suite `53 passed`; compileall and
   `git diff --check` exited zero.
+- Final re-review RED: the default verifier import failed under file-script Make
+  invocation, the `final` Make target was absent, and current maximum-red telemetry
+  omitted movement timers outside selectable projections. GREEN: three focused
+  regression tests pass; the full host suite passes 166 tests and the pinned
+  Python 3.6.5 focused suite passes 56 tests.
 
 ## Runtime evidence
 
@@ -91,15 +96,21 @@
   transition phases, and 10 compound-service stages. Exact roles are 107
   `selectable_green`, 10 `compound_service`, 116 `clearance_yellow`, and one
   `all_red`.
-- Real CityFlow smoke, learning seed 11: foundation verifier succeeded before
-  training; train regimes were normal/PM peak/AM peak with 53 agents each;
-  25 optimizer updates; selected reporting checkpoint `step-3`; selection status
-  `ineligible_negative_result`; true peak maximum-red 120/180 seconds.
-- Measured end-to-end wall time was 283.191 seconds, including 208.488 seconds
-  of Fixed-Time validation tuning and 54.050 seconds of validation. Scope was
-  `foundation_verification_through_artifact_verification`.
-- Smoke artifacts were written only inside the disposable Docker container and
-  were removed with it. No foundation dataset or result was copied or committed.
+- Documented production target `make haichau-train-smoke LEARNING_SEED=11`
+  completed in the pinned `traffic-rl-cityflow-research:v2` image without any
+  import-path override. Its prerequisite verifier returned `status: verified`,
+  then the trainer independently loaded the verifier from the requested root.
+- The production smoke visited normal/PM peak/AM peak with 53 agents each, made
+  25 optimizer updates, reloaded checkpoint `step-3` for 120 steps, and retained
+  `ineligible_negative_result`. Train episode maximum-red peaks were 106, 120,
+  and 106 seconds against the 180-second bound.
+- Trainer end-to-end wall time was 373.009 seconds, including 88.800 seconds of
+  internal foundation verification, 207.232 seconds of Fixed-Time tuning, and
+  53.687 seconds of validation. Scope was
+  `foundation_verification_through_artifact_verification`. The Make prerequisite
+  verifier is an additional independent gate before this measured CLI scope.
+- Smoke artifacts existed only in the disposable integration checkout and were
+  deleted with it. No foundation dataset or result was copied or committed.
 - No real pilot or final result is claimed. Runs against foundation `e7b41e3`
   remain invalidated and deleted after route-family leakage review.
 
