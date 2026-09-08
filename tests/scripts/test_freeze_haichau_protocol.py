@@ -1,0 +1,416 @@
+import hashlib
+import json
+import subprocess
+
+import pytest
+
+from scripts.freeze_haichau_protocol import freeze_protocol
+from scripts import verify_haichau_thesis
+
+
+RUNTIME_DIGEST = "sha256:" + "a" * 64
+RUNTIME_IMAGE = "registry.example/traffic-rl@" + RUNTIME_DIGEST
+RUNTIME_IMAGE_ID = "sha256:" + "b" * 64
+LEARNED = ("shared_ddqn_legacy", "neighbor_phase_ddqn")
+CONTROLLERS = (
+    "tuned_fixed", "max_pressure", "hysteretic_mp",
+    "shared_ddqn_legacy", "neighbor_phase_ddqn",
+)
+
+
+def _sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _write(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if isinstance(value, (dict, list)):
+        value = json.dumps(value, sort_keys=True)
+    path.write_text(value)
+
+
+def _git(root, *args):
+    return subprocess.check_output(
+        ["git", "-C", str(root)] + list(args), universal_newlines=True).strip()
+
+
+def _commit(root):
+    subprocess.check_call(["git", "init", "-q", str(root)])
+    _git(root, "config", "user.email", "fixture@example.test")
+    _git(root, "config", "user.name", "Fixture")
+    _git(root, "add", ".")
+    _git(root, "commit", "-qm", "fixture")
+    return _git(root, "rev-parse", "HEAD")
+
+
+def _contract(network_sha, phase_contract_sha, generator_config_sha,
+              manifest_sha, controller_family):
+    return {
+        "obs_schema_version": 2,
+        "feature_order": ["phase_pressure"],
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
+        "hidden_size": 128,
+        "action_contract": {
+            "type": "phase_rows", "version": 1,
+            "mask_type": "boolean_selectable_green_rows",
+            "padding_actions_selectable": False,
+        },
+        "network_compatibility": {
+            "network_sha256": network_sha,
+            "phase_contract_sha256": phase_contract_sha,
+            "generator_config_sha256": generator_config_sha,
+            "manifest_sha256": manifest_sha,
+        },
+        "controller_family": controller_family,
+    }
+
+
+def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
+                       generator_config_sha, manifest_sha, validation_case,
+                       include_test=False):
+    relative = "release-training/%s/final-seed%d" % (controller, seed)
+    run_dir = root / relative
+    checkpoint = run_dir / "checkpoint/weights.npz"
+    contract_path = run_dir / "checkpoint/contract.json"
+    _write(checkpoint, "%s-%d" % (controller, seed))
+    contract = _contract(
+        network_sha, phase_contract_sha, generator_config_sha, manifest_sha,
+        controller)
+    _write(contract_path, contract)
+    _write(run_dir / "checkpoints/step-80/weights.npz", "%s-%d" % (controller, seed))
+    _write(run_dir / "checkpoints/step-80/contract.json", contract)
+    validation = {
+        "step-80": {
+            "rows": [{"case_id": validation_case}],
+            "score": {"eligible": True},
+        }
+    }
+    if include_test:
+        validation["step-80"]["rows"].append({"case_id": "test_normal_demand101"})
+    _write(run_dir / "validation.json", validation)
+    _write(run_dir / "selection.json", {
+        "status": "eligible",
+        "selected_checkpoint": "step-80",
+        "eligible_for_test_evaluation": True,
+        "score": {"eligible": True},
+    })
+    _write(run_dir / "resolved-config.json", {
+        "mode": "final", "learning_seed": seed,
+        "network_sha256": network_sha,
+        "run": {"episodes": 80, "horizon_seconds": 3600},
+    })
+    _write(run_dir / "baseline-tuning.json", {
+        "selection_cases": [validation_case],
+    })
+    _write(run_dir / "run-manifest.json", {
+        "controller_id": controller,
+        "learning_seed": seed,
+    })
+    artifacts = {}
+    for name in (
+            "checkpoint/weights.npz", "checkpoint/contract.json",
+            "validation.json", "selection.json", "resolved-config.json",
+            "baseline-tuning.json", "run-manifest.json"):
+        artifacts[name] = _sha256(run_dir / name)
+    _write(run_dir / "status.json", {
+        "status": "complete", "eligible_for_test_evaluation": True,
+        "artifact_sha256": artifacts,
+    })
+    return relative
+
+
+def _fixture(root):
+    agent_ids = ["N%02d" % number for number in range(53)]
+    roadnet = root / "release/roadnet.json"
+    viewer = root / "release/viewer.json"
+    _write(roadnet, {"intersections": agent_ids})
+    _write(viewer, {"nodes": agent_ids})
+    network_sha = _sha256(roadnet)
+    phase_contract = root / "release/phase-contract.json"
+    generator_config = root / "release/generator-config.json"
+    _write(phase_contract, {"phase_contract": 1})
+    _write(generator_config, {"generator_config": 1})
+    cases = []
+    for split, count in (("train", 9), ("validation", 6), ("test", 15)):
+        for number in range(count):
+            scenario = ("normal", "am_peak", "pm_peak")[number % 3]
+            flow = root / ("release/%s-%02d.json" % (split, number))
+            _write(flow, "%s-%02d" % (split, number))
+            cases.append({
+                "case_id": "%s_%s_%02d" % (split, scenario, number),
+                "split": split,
+                "scenario": scenario,
+                "demand_seed": 100 + number,
+                "sim_seed": 200 + number,
+                "flow_path": str(flow.relative_to(root)),
+                "flow_sha256": _sha256(flow),
+            })
+    manifest = {
+        "protocol_version": 2,
+        "network": {
+            "controlled_signals": 53, "agent_ids": agent_ids,
+            "path": str(roadnet.relative_to(root)), "sha256": network_sha,
+        },
+        "phase_contract": {
+            "path": str(phase_contract.relative_to(root)),
+            "sha256": _sha256(phase_contract),
+        },
+        "generator_config_path": str(generator_config.relative_to(root)),
+        "generator_config_sha256": _sha256(generator_config),
+        "cases": cases,
+    }
+    manifest_path = root / "release/experiment-manifest.json"
+    _write(manifest_path, manifest)
+    manifest_sha = hashlib.sha256(json.dumps(
+        manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    validation_case = next(case["case_id"] for case in cases
+                           if case["split"] == "validation")
+    dockerfile = root / "docker/haichau-evaluation.Dockerfile"
+    _write(dockerfile, "FROM %s\n" % RUNTIME_IMAGE)
+    config = {
+        "resolved_config": {"step_seconds": 1},
+        "controller_configs": dict(
+            (controller, {"controller_version": 2}) for controller in CONTROLLERS),
+        "controller_commands": dict(
+            (controller, ["python3", "scripts/evaluate.py", "{case_id}"])
+            for controller in CONTROLLERS),
+    }
+    config_path = root / "release/controller-configs.json"
+    _write(config_path, config)
+    index = dict((controller, {}) for controller in LEARNED)
+    for controller in LEARNED:
+        for seed in range(11, 16):
+            index[controller][str(seed)] = _training_artifact(
+                root, controller, seed, network_sha,
+                manifest["phase_contract"]["sha256"],
+                manifest["generator_config_sha256"], manifest_sha,
+                validation_case)
+    index_path = root / "release/training-index.json"
+    _write(index_path, index)
+    commit = _commit(root)
+    return {
+        "agent_ids": agent_ids,
+        "commit": commit,
+        "config": config_path,
+        "dockerfile": dockerfile,
+        "index": index_path,
+        "manifest": manifest_path,
+        "network_sha": network_sha,
+        "phase_contract_sha": manifest["phase_contract"]["sha256"],
+        "generator_config_sha": manifest["generator_config_sha256"],
+        "manifest_sha": manifest_sha,
+        "roadnet": roadnet,
+        "viewer": viewer,
+    }
+
+
+def _runtime(image):
+    assert image == RUNTIME_IMAGE
+    return {
+        "runtime_image": RUNTIME_IMAGE,
+        "runtime_image_id": RUNTIME_IMAGE_ID,
+        "repo_digests": [RUNTIME_IMAGE],
+    }
+
+
+def test_freeze_writes_hash_bound_protocol_from_all_final_eligible_cells(tmp_path):
+    fixture = _fixture(tmp_path)
+
+    protocol = freeze_protocol(
+        tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+        fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+        runtime_inspector=_runtime)
+
+    output = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    assert json.loads(output.read_text()) == protocol
+    assert protocol["code_commit"] == fixture["commit"]
+    assert protocol["agent_ids"] == fixture["agent_ids"]
+    assert protocol["network_sha256"] == fixture["network_sha"]
+    assert protocol["phase_contract_sha256"] == fixture["phase_contract_sha"]
+    assert protocol["generator_config_sha256"] == fixture["generator_config_sha"]
+    assert protocol["experiment_manifest_sha256"] == fixture["manifest_sha"]
+    assert protocol["runtime_image_id"] == RUNTIME_IMAGE_ID
+    assert set(protocol["controller_configs"]) == set(CONTROLLERS)
+    assert len(protocol["checkpoints"]) == 10
+    assert all(entry["validation_eligible"] for entry in protocol["checkpoints"])
+    assert all("validation.json" in entry["source_artifacts"]
+               for entry in protocol["checkpoints"])
+    assert all(entry["contract_path"].endswith("checkpoint/contract.json")
+               for entry in protocol["checkpoints"])
+    assert all(entry["contract_file_sha256"] == _sha256(
+        tmp_path / entry["contract_path"])
+               for entry in protocol["checkpoints"])
+    assert protocol["acceptance_rules"]["required_learning_seeds"] == [11, 12, 13, 14, 15]
+    assert protocol["case_manifest_sha256"] == _sha256(
+        tmp_path / protocol["case_manifest_path"])
+    assert protocol["network_manifest_sha256"] == _sha256(
+        tmp_path / protocol["network_manifest_path"])
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "freeze protocol")
+    assert verify_haichau_thesis._network_gate(tmp_path, protocol)["passed"] is True
+    assert verify_haichau_thesis._case_gate(tmp_path, protocol)["passed"] is True
+    assert verify_haichau_thesis._checkpoint_gate(tmp_path, protocol)["passed"] is True
+    assert verify_haichau_thesis._acceptance_rules(protocol)["bootstrap_samples"] == 10000
+
+
+def test_freeze_refuses_overwrite_or_any_test_case_in_selection_evidence(tmp_path):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    relative = index["neighbor_phase_ddqn"]["11"]
+    validation = tmp_path / relative / "validation.json"
+    document = json.loads(validation.read_text())
+    document["step-80"]["rows"].append({"case_id": "test_normal_demand00"})
+    _write(validation, document)
+    status = tmp_path / relative / "status.json"
+    status_doc = json.loads(status.read_text())
+    status_doc["artifact_sha256"]["validation.json"] = _sha256(validation)
+    _write(status, status_doc)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "inject test evidence")
+
+    with pytest.raises(ValueError, match="test.*selection"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+def test_freeze_requires_the_selected_checkpoint_bundle_to_match_final_checkpoint(tmp_path):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["shared_ddqn_legacy"]["11"]
+    (run_dir / "checkpoints/step-80/weights.npz").unlink()
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-qm", "remove selected checkpoint")
+
+    with pytest.raises(ValueError, match="selected checkpoint"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+def test_freeze_refuses_a_short_horizon_disguised_as_final_training(tmp_path):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["neighbor_phase_ddqn"]["12"]
+    resolved = run_dir / "resolved-config.json"
+    document = json.loads(resolved.read_text())
+    document["run"]["horizon_seconds"] = 120
+    _write(resolved, document)
+    status = run_dir / "status.json"
+    status_document = json.loads(status.read_text())
+    status_document["artifact_sha256"]["resolved-config.json"] = _sha256(resolved)
+    _write(status, status_document)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "short final run")
+
+    with pytest.raises(ValueError, match="full 3600-second horizon"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+def test_freeze_refuses_status_artifact_paths_that_escape_the_training_run(tmp_path):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["neighbor_phase_ddqn"]["13"]
+    status = run_dir / "status.json"
+    document = json.loads(status.read_text())
+    escaped = tmp_path / "release/experiment-manifest.json"
+    document["artifact_sha256"]["../../../release/experiment-manifest.json"] = _sha256(escaped)
+    _write(status, document)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "escape training status")
+
+    with pytest.raises(ValueError, match="escapes the training run"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+def test_freeze_refuses_test_metric_keys_in_checkpoint_selection_evidence(tmp_path):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["shared_ddqn_legacy"]["14"]
+    validation = run_dir / "validation.json"
+    document = json.loads(validation.read_text())
+    document["step-80"]["test_metrics"] = {"queue_integral": 1.0}
+    _write(validation, document)
+    status = run_dir / "status.json"
+    status_document = json.loads(status.read_text())
+    status_document["artifact_sha256"]["validation.json"] = _sha256(validation)
+    _write(status, status_document)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "inject test metric key")
+
+    with pytest.raises(ValueError, match="test metric.*selection"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+def test_freeze_refuses_conflicting_legacy_contract_aliases(tmp_path):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["neighbor_phase_ddqn"]["15"]
+    contract = run_dir / "checkpoint/contract.json"
+    document = json.loads(contract.read_text())
+    document["hidden"] = 64
+    _write(contract, document)
+    status = run_dir / "status.json"
+    status_document = json.loads(status.read_text())
+    status_document["artifact_sha256"]["checkpoint/contract.json"] = _sha256(contract)
+    _write(status, status_document)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "conflicting old checkpoint alias")
+
+    with pytest.raises(ValueError, match="alias drift"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+@pytest.mark.parametrize(
+    "mutate, error",
+    [
+        (lambda contract: contract["action_contract"].update({"version": 2}),
+         "action contract drift"),
+        (lambda contract: contract["network_compatibility"].update(
+            {"phase_contract_sha256": "0" * 64}),
+         "network compatibility drift"),
+    ],
+)
+def test_freeze_requires_exact_neighbor_contract(tmp_path, mutate, error):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["neighbor_phase_ddqn"]["11"]
+    contract = run_dir / "checkpoint/contract.json"
+    document = json.loads(contract.read_text())
+    mutate(document)
+    _write(contract, document)
+    status = run_dir / "status.json"
+    status_document = json.loads(status.read_text())
+    status_document["artifact_sha256"]["checkpoint/contract.json"] = _sha256(contract)
+    _write(status, status_document)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "mutate neighbor contract")
+
+    with pytest.raises(ValueError, match=error):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+    final = tmp_path / "results/haichau_network_v2/final"
+    final.mkdir(parents=True)
+    _write(final / "frozen-protocol.json", "{}")
+    with pytest.raises(ValueError, match="overwrite"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
