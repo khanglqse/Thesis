@@ -64,6 +64,7 @@ LEARNING_SEED ?=
 HAICHAU_BASELINE_TUNING_ARTIFACT ?= results/haichau_network_v2/training/final-baseline-tuning.json
 HAICHAU_FINAL_CONCURRENCY ?= 2
 HAICHAU_BASELINE_SHARD_CONCURRENCY ?= 2
+HAICHAU_SCHEDULE_SELECTION ?= results/haichau_network_v2/training/pilot-v3-schedule-selection.json
 
 haichau-foundation-verify: haichau-image
 	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
@@ -81,12 +82,6 @@ haichau-train-pilot: haichau-foundation-verify
 		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
 		--mode pilot --learning-seed $(LEARNING_SEED)
 
-haichau-train-final: haichau-foundation-verify
-	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
-	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
-		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
-		--mode final --learning-seed $(LEARNING_SEED)
-
 haichau-train-legacy-smoke: haichau-foundation-verify
 	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
 	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
@@ -101,25 +96,24 @@ haichau-train-legacy-pilot: haichau-foundation-verify
 		--controller-family shared_ddqn_legacy \
 		--mode pilot --learning-seed $(LEARNING_SEED)
 
-haichau-train-legacy-final: haichau-foundation-verify
-	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
-	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
-		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
-		--controller-family shared_ddqn_legacy \
-		--mode final --learning-seed $(LEARNING_SEED)
-
 # Produce the single validation-only tuning artifact consumed by all final runs.
 haichau-precompute-final-baseline: haichau-foundation-verify
 	python3 scripts/run_haichau_baseline_shards.py \
 		--artifact $(HAICHAU_BASELINE_TUNING_ARTIFACT) \
 		--max-concurrency $(HAICHAU_BASELINE_SHARD_CONCURRENCY)
 
-# Launch both learned-controller final families for seeds 11--15; verified jobs are skipped.
+# Launch the selected neighbor DDQN for confirmatory seeds 12--16; verified jobs are skipped.
 haichau-train-final-campaign: haichau-foundation-verify
 	@test -f "$(HAICHAU_BASELINE_TUNING_ARTIFACT)" || { echo 'Run make haichau-precompute-final-baseline first'; exit 1; }
+	@test -f "$(HAICHAU_SCHEDULE_SELECTION)" || { echo 'Run make haichau-select-schedule-pilot first'; exit 1; }
 	python3 scripts/run_haichau_final_training.py \
 		--baseline-tuning-artifact $(HAICHAU_BASELINE_TUNING_ARTIFACT) \
+		--pilot-schedule-selection $(HAICHAU_SCHEDULE_SELECTION) \
 		--max-concurrency $(HAICHAU_FINAL_CONCURRENCY)
+
+# Select the validation-eligible V3 schedule arm before any final training starts.
+haichau-select-schedule-pilot:
+	PYTHONPATH=src python3 scripts/select_haichau_pilot_schedule.py
 
 haichau-final-training-test:
 	SUMO_HOME=$(SUMO_HOME) python3 -m pytest tests/scripts/test_run_haichau_final_training.py -v

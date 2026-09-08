@@ -7,11 +7,14 @@ from pathlib import Path
 import pytest
 import yaml
 
+from tests.scripts.test_freeze_haichau_protocol import (
+    _pilot_selection as _schedule_selection_fixture)
 
-CONTROLLERS = ("shared_ddqn_legacy", "neighbor_phase_ddqn")
+
+CONTROLLERS = ("neighbor_phase_ddqn",)
 ALL_CONTROLLERS = (
     "tuned_fixed", "max_pressure", "hysteretic_mp",
-    "shared_ddqn_legacy", "neighbor_phase_ddqn",
+    "neighbor_phase_ddqn",
 )
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "prepare_haichau_release_inputs.py"
 
@@ -40,6 +43,16 @@ def _manifest(root):
     phase_contract = root / "phase-contract.json"
     _write(network, {"network": "fixture"})
     _write(phase_contract, {"phase": "fixture"})
+    train_cases = []
+    for index, scenario in enumerate(("normal", "am_peak", "pm_peak")):
+        flow = root / ("train-%s.json" % scenario)
+        _write(flow, {"train": scenario})
+        train_cases.append({
+            "case_id": "train_%s_%d" % (scenario, index),
+            "scenario": scenario, "split": "train",
+            "flow_path": str(flow.relative_to(root)),
+            "flow_sha256": _sha256(flow),
+        })
     manifest = {
         "protocol_version": 2,
         "network": {
@@ -54,6 +67,15 @@ def _manifest(root):
             "action_interval": 10, "yellow_time": 3,
             "min_green": 20, "maximum_red": 180,
         },
+        "cases": train_cases + [
+            {
+                "case_id": "validation_%s_%d" % (scenario, seed),
+                "scenario": scenario,
+                "split": "validation",
+            }
+            for scenario in ("normal", "am_peak", "pm_peak")
+            for seed in (31, 32)
+        ],
     }
     path = root / "experiment-manifest.json"
     _write(path, manifest)
@@ -61,8 +83,7 @@ def _manifest(root):
 
 
 def _training_run(root, controller, seed, manifest, selected_config, duration=35):
-    name = ("final-seed%d" % seed if controller == "neighbor_phase_ddqn"
-            else "legacy-final-seed%d" % seed)
+    name = "final-seed%d" % seed
     run_dir = root / "training" / name
     resolved = json.loads(json.dumps(selected_config))
     resolved.update({
@@ -92,76 +113,16 @@ def _training_run(root, controller, seed, manifest, selected_config, duration=35
 
 
 def _pilot_selection(root, manifest):
-    canonical = {
-        "schema_version": 2,
-        "exploration": {"epsilon_decay_decisions": 10000},
-        "reward": {
-            "queue_weight": 1.0, "downstream_block_weight": 0.2,
-            "switch_penalty": 0.05,
-        },
-        "tiers": {"final": {"episodes": 80, "horizon_seconds": 3600}},
-    }
-    fast = json.loads(json.dumps(canonical))
-    fast["exploration"]["epsilon_decay_decisions"] = 2160
-    paths = {}
-    for name, config in (("canonical", canonical), ("epsilon2160", fast)):
-        path = root / "configs" / (name + ".yaml")
-        _write_yaml(path, config)
-        paths[name] = path
-    selected_path = root / "configs" / "haichau_training_v2_final_selected.yaml"
-    _write_yaml(selected_path, fast)
-    source_baseline = root / "training" / "pilot-baseline.json"
-    _write(source_baseline, {"baseline": "fixture"})
-    schedules = {}
-    required = (
-        "status.json", "run-manifest.json", "resolved-config.json",
-        "baseline-tuning.json", "baseline-tuning-provenance.json",
-        "validation.json", "selection.json",
-    )
-    for name in ("canonical", "epsilon2160"):
-        run_dir = root / "training" / ("pilot-" + name)
-        artifacts = {}
-        for artifact in required:
-            _write(run_dir / artifact, {"fixture": artifact})
-            artifacts[artifact] = _sha256(run_dir / artifact)
-        schedules[name] = {"run_dir": str(run_dir.relative_to(root)),
-                           "artifacts": artifacts}
-    config_records = {
-        name: {
-            "path": str(path.relative_to(root)), "sha256": _sha256(path),
-            "epsilon_decay_decisions": config["exploration"]["epsilon_decay_decisions"],
-        }
-        for name, path, config in (("canonical", paths["canonical"], canonical),
-                                   ("epsilon2160", paths["epsilon2160"], fast))
-    }
-    decision = {
-        "schema_version": 1,
-        "decision_type": "haichau_pilot_epsilon_schedule_selection",
-        "inputs": {
-            "code_commit": "a" * 40,
-            "manifest": {"path": str((root / "experiment-manifest.json").relative_to(root)),
-                         "sha256": _sha256(root / "experiment-manifest.json")},
-            "baseline_tuning": {"path": str(source_baseline.relative_to(root)),
-                               "sha256": _sha256(source_baseline)},
-            "configs": config_records,
-        },
-        "schedules": schedules,
-        "winner": {"schedule": "epsilon2160", "config": config_records["epsilon2160"]},
-        "selected_config": {"path": str(selected_path.relative_to(root)),
-                            "sha256": _sha256(selected_path)},
-    }
-    decision["decision_identity_sha256"] = _canonical_hash(decision)
-    decision_path = root / "results" / "haichau_network_v2" / "training" / "pilot-epsilon-selection.json"
-    _write(decision_path, decision)
-    return fast, decision_path
-
+    selected, binding, _ = _schedule_selection_fixture(
+        root, root / "experiment-manifest.json")
+    return selected, root / binding["path"]
 
 def _ready_release(root):
     manifest_path, manifest = _manifest(root)
     selected_config, _ = _pilot_selection(root, manifest)
     runs = {}
     for controller in CONTROLLERS:
-        for seed in range(11, 16):
+        for seed in range(12, 17):
             runs[(controller, seed)] = _training_run(
                 root, controller, seed, manifest, selected_config)
     return manifest_path, manifest, runs
@@ -174,6 +135,7 @@ def _run_script(root):
         "--manifest", "experiment-manifest.json",
         "--training-root", "training",
         "--output-dir", "release",
+        "--pilot-schedule-selection", "release/pilot-v3-schedule-selection.json",
     ], cwd=str(root), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
        universal_newlines=True)
 
@@ -189,7 +151,7 @@ def test_build_release_inputs_writes_evaluator_ready_index_and_configs(tmp_path)
     assert index == {
         controller: dict(
             (str(seed), str(runs[(controller, seed)].relative_to(tmp_path)))
-            for seed in range(11, 16))
+            for seed in range(12, 17))
         for controller in CONTROLLERS
     }
     assert result.returncode == 0, result.stderr
@@ -201,7 +163,7 @@ def test_build_release_inputs_writes_evaluator_ready_index_and_configs(tmp_path)
         "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "simulation": manifest["simulation"],
         "reward": {
-            "queue_weight": 1.0, "downstream_block_weight": 0.2,
+            "queue_weight": 1.0, "downstream_block_weight": 0.1,
             "switch_penalty": 0.05,
         },
         "step_seconds": 1.0,
@@ -214,20 +176,28 @@ def test_build_release_inputs_writes_evaluator_ready_index_and_configs(tmp_path)
             "controller_version": 2, "min_hold_decisions": 3,
             "switch_threshold": 2.5,
         },
-        "shared_ddqn_legacy": {"controller_version": 2},
         "neighbor_phase_ddqn": {"controller_version": 2},
     }
     assert config["controller_commands"] == dict(
         (controller, ["python3", "scripts/evaluate_haichau_network.py"])
         for controller in ALL_CONTROLLERS)
-    assert config["pilot_epsilon_selection"]["winner"]["schedule"] == "epsilon2160"
-    assert config["pilot_epsilon_selection"]["selected_config"] == {
-        "path": "configs/haichau_training_v2_final_selected.yaml",
-        "sha256": _sha256(tmp_path / "configs/haichau_training_v2_final_selected.yaml"),
+    assert config["primary_learned_controller"] == "neighbor_phase_ddqn"
+    assert config["confirmatory_learning_seeds"] == [12, 13, 14, 15, 16]
+    assert config["pilot_schedule_selection"]["winner"]["arm"] == \
+        "schedule_bc_rehearsal"
+    assert config["pilot_schedule_selection"]["selected_config"] == {
+        "path": "release/selected.yaml",
+        "sha256": _sha256(tmp_path / "release/selected.yaml"),
+    }
+    assert config["training_config_bindings"] == {
+        "neighbor_phase_ddqn": {
+            "path": "release/selected.yaml",
+            "sha256": _sha256(tmp_path / "release/selected.yaml"),
+        },
     }
 
 
-def test_build_release_inputs_requires_pilot_epsilon_selection(tmp_path):
+def test_build_release_inputs_requires_pilot_schedule_selection(tmp_path):
     manifest_path, manifest = _manifest(tmp_path)
     selected_config = {
         "schema_version": 2, "exploration": {"epsilon_decay_decisions": 2160},
@@ -236,18 +206,18 @@ def test_build_release_inputs_requires_pilot_epsilon_selection(tmp_path):
         "tiers": {"final": {"episodes": 80, "horizon_seconds": 3600}},
     }
     for controller in CONTROLLERS:
-        for seed in range(11, 16):
+        for seed in range(12, 17):
             _training_run(tmp_path, controller, seed, manifest, selected_config)
 
     result = _run_script(tmp_path)
 
     assert result.returncode != 0
-    assert "pilot epsilon selection" in result.stderr
+    assert "pilot schedule selection" in result.stderr
 
 
 def test_build_release_inputs_rejects_a_final_resolved_config_that_drifts_from_selection(tmp_path):
     _, _, runs = _ready_release(tmp_path)
-    target = runs[("neighbor_phase_ddqn", 11)]
+    target = runs[("neighbor_phase_ddqn", 12)]
     resolved_path = target / "resolved-config.json"
     resolved = json.loads(resolved_path.read_text())
     resolved["exploration"]["epsilon_decay_decisions"] = 10000
@@ -274,7 +244,7 @@ def test_build_release_inputs_rejects_a_final_resolved_config_that_drifts_from_s
 def test_build_release_inputs_refuses_untrustworthy_final_training(
         tmp_path, mutation, error):
     manifest_path, manifest, runs = _ready_release(tmp_path)
-    target = runs[("neighbor_phase_ddqn", 11)]
+    target = runs[("neighbor_phase_ddqn", 12)]
     if mutation == "ineligible":
         status_path = target / "status.json"
         status = json.loads(status_path.read_text())
@@ -315,7 +285,7 @@ def test_build_release_inputs_refuses_untrustworthy_final_training(
         status["artifact_sha256"]["baseline-tuning.json"] = _sha256(tuning_path)
         _write(status_path, status)
     else:
-        missing = runs[("shared_ddqn_legacy", 15)]
+        missing = runs[("neighbor_phase_ddqn", 16)]
         for path in sorted(missing.rglob("*"), reverse=True):
             if path.is_file():
                 path.unlink()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch the ten hash-checked Hai Chau final-training runs.
+"""Launch five hash-checked Hai Chau V3 confirmatory training runs.
 
 The launcher deliberately never resumes a partially written training directory.
 Delete or repair that directory after inspection, then rerun this command.
@@ -11,6 +11,7 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 from collections import namedtuple
 from pathlib import Path
 
@@ -18,8 +19,14 @@ import yaml
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CONTROLLERS = ("neighbor_phase_ddqn", "shared_ddqn_legacy")
-SEEDS = (11, 12, 13, 14, 15)
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from traffic_rl.research.pilot_schedule_selector import (
+    CONFIRMATORY_LEARNING_SEEDS, FINAL_CHECKPOINTS,
+    PRIMARY_LEARNED_CONTROLLER,
+    validate_final_resolved_config, validate_final_schedule_selection)
+CONTROLLERS = (PRIMARY_LEARNED_CONTROLLER,)
+SEEDS = CONFIRMATORY_LEARNING_SEEDS
 PINNED_IMAGE_TAG = "traffic-rl-cityflow-research:v2"
 PINNED_PLATFORM = "linux/amd64"
 REQUIRED_ARTIFACTS = (
@@ -34,7 +41,10 @@ REQUIRED_ARTIFACTS = (
     "summary.json",
     "train-log.json",
     "validation.json",
-)
+) + tuple(
+    "checkpoints/%s/%s" % (checkpoint, name)
+    for checkpoint in FINAL_CHECKPOINTS
+    for name in ("contract.json", "weights.npz"))
 Job = namedtuple("Job", "controller seed output command")
 
 
@@ -87,9 +97,9 @@ def _container_path(root, path, label):
 
 
 def _output_name(controller, seed):
-    if controller == "neighbor_phase_ddqn":
-        return "final-seed%d" % seed
-    return "legacy-final-seed%d" % seed
+    if controller != PRIMARY_LEARNED_CONTROLLER:
+        raise ValueError("final training controller differs from V3 selection")
+    return "final-seed%d" % seed
 
 
 def _artifact_path(run_dir, relative):
@@ -136,12 +146,8 @@ def inspect_existing_job(job, baseline_artifact, training_config):
         raise ValueError("existing output is not a fully verified completed run: %s" % run_dir)
     _verified_artifacts(run_dir, status)
     resolved = _read_json(run_dir / "resolved-config.json", "resolved training config")
-    if (resolved.get("mode") != "final"
-            or resolved.get("learning_seed") != job.seed):
-        raise ValueError("completed output has the wrong final-run identity")
     selected = _read_yaml(training_config, "selected training config")
-    if any(resolved.get(key) != value for key, value in selected.items()):
-        raise ValueError("completed output differs from the selected training config")
+    validate_final_resolved_config(resolved, selected, job.seed)
     run_manifest = _read_json(run_dir / "run-manifest.json", "training run manifest")
     if (run_manifest.get("controller_id") != job.controller
             or run_manifest.get("learning_seed") != job.seed):
@@ -156,16 +162,36 @@ def inspect_existing_job(job, baseline_artifact, training_config):
     return "skipped"
 
 
+def _training_config_path(root, training_config):
+    path = _inside(root, training_config, "selected V3 training config")
+    return path, _read_yaml(path, "selected V3 training config")
+
+
+def validate_schedule_training_config(root, schedule_selection, training_config):
+    """Bind the sole learned controller config to the immutable V3 decision."""
+    root = Path(root).resolve()
+    selection = validate_final_schedule_selection(root, schedule_selection)
+    config_path, config = _training_config_path(root, training_config)
+    if (selection["primary_learned_controller"] != PRIMARY_LEARNED_CONTROLLER
+            or config_path != root / selection["selected_config"]["path"]
+            or _sha256(config_path) != selection["selected_config"]["sha256"]
+            or config != selection["selected_config"]["config"]):
+        raise ValueError("final training config differs from V3 schedule selection")
+    return selection, {
+        "path": str(config_path.relative_to(root)),
+        "sha256": _sha256(config_path),
+    }
+
+
 def build_jobs(root, manifest_path, baseline_artifact, training_dir,
                training_config):
     root = Path(root).resolve()
     manifest_path = _inside(root, manifest_path, "manifest")
     baseline_artifact = _inside(root, baseline_artifact, "baseline artifact")
     training_dir = _inside(root, training_dir, "training directory")
-    training_config = _inside(root, training_config, "selected training config")
+    training_config, _ = _training_config_path(root, training_config)
     if not baseline_artifact.is_file():
         raise ValueError("shared precomputed baseline artifact is required")
-    _read_yaml(training_config, "selected training config")
     manifest = _read_json(manifest_path, "experiment manifest")
     runtime = manifest.get("runtime") if isinstance(manifest, dict) else None
     if not isinstance(runtime, dict):
@@ -229,18 +255,23 @@ def _execute_job(root, job, record, baseline_artifact, training_config, runner):
 
 def run_campaign(root, manifest_path, baseline_artifact, training_dir,
                  status_path, training_config, max_concurrency=2,
-                 runner=subprocess.run):
+                 runner=subprocess.run, schedule_selection=None):
     if max_concurrency < 1:
         raise ValueError("max concurrency must be at least one")
+    if schedule_selection is None:
+        raise ValueError("pilot V3 schedule selection is required for final training")
     root = Path(root).resolve()
     baseline_artifact = _inside(root, baseline_artifact, "baseline artifact")
-    training_config = _inside(root, training_config, "selected training config")
+    config_path, _ = _training_config_path(root, training_config)
+    selection, config_binding = validate_schedule_training_config(
+        root, schedule_selection, training_config)
     jobs = build_jobs(
         root, manifest_path, baseline_artifact, training_dir, training_config)
     records = []
     pending = []
     for job in jobs:
-        state = inspect_existing_job(job, baseline_artifact, training_config)
+        state = inspect_existing_job(
+            job, baseline_artifact, config_path)
         record = _job_record(root, job, state)
         records.append(record)
         if state == "pending":
@@ -252,9 +283,18 @@ def run_campaign(root, manifest_path, baseline_artifact, training_dir,
         "max_concurrency": max_concurrency,
         "baseline_artifact": str(baseline_artifact.relative_to(root)),
         "baseline_artifact_sha256": _sha256(baseline_artifact),
-        "training_config": str(training_config.relative_to(root)),
-        "training_config_sha256": _sha256(training_config),
+        "primary_learned_controller": PRIMARY_LEARNED_CONTROLLER,
+        "confirmatory_learning_seeds": list(SEEDS),
+        "training_config_binding": config_binding,
         "jobs": records,
+    }
+    campaign["pilot_schedule_selection"] = {
+        key: value for key, value in selection.items()
+        if key != "selected_config"
+    }
+    campaign["pilot_schedule_selection"]["selected_config"] = {
+        key: value for key, value in selection["selected_config"].items()
+        if key != "config"
     }
     _write_json(status_path, campaign)
     failure = False
@@ -269,7 +309,7 @@ def run_campaign(root, manifest_path, baseline_artifact, training_dir,
             record["state"] = "running"
             active[executor.submit(
                 _execute_job, root, job, record, baseline_artifact,
-                training_config, runner)] = record
+                config_path, runner)] = record
         while active:
             done, _ = wait(active, return_when=FIRST_COMPLETED)
             for future in done:
@@ -290,7 +330,7 @@ def run_campaign(root, manifest_path, baseline_artifact, training_dir,
                 record["state"] = "running"
                 active[executor.submit(
                     _execute_job, root, job, record, baseline_artifact,
-                    training_config, runner)] = record
+                    config_path, runner)] = record
     campaign["status"] = "failed" if failure else "complete"
     _write_json(status_path, campaign)
     return campaign
@@ -300,8 +340,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline-tuning-artifact", required=True)
     parser.add_argument(
-        "--config", default="configs/haichau_training_v2_final_selected.yaml",
-        help="immutable final config emitted by the preregistered pilot selector")
+        "--config", default="configs/haichau_training_v3_final_selected.yaml",
+        help="config emitted by the V3 schedule pilot selector")
+    parser.add_argument(
+        "--pilot-schedule-selection",
+        default="results/haichau_network_v2/training/pilot-v3-schedule-selection.json",
+        help="immutable V3 schedule pilot decision required before final training")
     parser.add_argument("--manifest", default="results/haichau_network_v2/experiment-manifest.json")
     parser.add_argument("--training-dir", default="results/haichau_network_v2/training")
     parser.add_argument("--status", default="results/haichau_network_v2/training/final-campaign-status.json")
@@ -313,7 +357,8 @@ def main(argv=None):
             PROJECT_ROOT / args.baseline_tuning_artifact,
             PROJECT_ROOT / args.training_dir, PROJECT_ROOT / args.status,
             PROJECT_ROOT / args.config,
-            max_concurrency=args.max_concurrency)
+            max_concurrency=args.max_concurrency,
+            schedule_selection=PROJECT_ROOT / args.pilot_schedule_selection)
     except ValueError as exc:
         parser.error(str(exc))
     print(json.dumps(result, sort_keys=True))

@@ -29,12 +29,19 @@ def _manifest(root):
     return path
 
 
-def _training_config(root):
-    path = root / "selected.yaml"
-    path.write_text(yaml.safe_dump({
-        "schema_version": 2,
+def _training_config(root, name="selected.yaml", behavior_prior=True):
+    path = root / name
+    config = {
+        "schema_version": 3,
         "exploration": {"epsilon_decay_decisions": 2160},
-    }, sort_keys=True))
+        "tiers": {"final": {
+            "episodes": 12, "horizon_seconds": 3600, "eval_every": 4}},
+    }
+    if behavior_prior:
+        config["behavior_prior"] = {
+            "type": "fixed_time_behavior_cloning", "bc_epochs": 1,
+        }
+    path.write_text(yaml.safe_dump(config, sort_keys=True))
     return path
 
 
@@ -46,7 +53,10 @@ def _complete_run(directory, controller, seed, baseline, training_config):
         target.write_text(relative + "\n")
         artifacts[relative] = _sha256(target)
     resolved = yaml.safe_load(training_config.read_text())
-    resolved.update({"mode": "final", "learning_seed": seed})
+    resolved.update({
+        "mode": "final", "learning_seed": seed,
+        "run": resolved["tiers"]["final"],
+    })
     _write_json(directory / "resolved-config.json", resolved)
     artifacts["resolved-config.json"] = _sha256(directory / "resolved-config.json")
     _write_json(directory / "run-manifest.json", {
@@ -70,18 +80,39 @@ def _complete_run(directory, controller, seed, baseline, training_config):
     })
 
 
-def test_build_jobs_covers_both_families_and_uses_pinned_runtime(tmp_path):
+def _validated_selection_stub(monkeypatch, root, selected):
+    decision = root / "pilot-v3-schedule-selection.json"
+    decision.write_text("{}\n")
+    binding = {"path": str(selected.relative_to(root)),
+               "sha256": _sha256(selected)}
+    monkeypatch.setattr(
+        launcher, "validate_schedule_training_config",
+        lambda *args: ({
+            "path": str(decision.relative_to(root)), "sha256": "a" * 64,
+            "decision_identity_sha256": "b" * 64,
+            "primary_learned_controller": "neighbor_phase_ddqn",
+            "pilot_learning_seed": 11,
+            "winner": {"arm": "schedule_bc_rehearsal",
+                       "selected_checkpoint": "step-12"},
+            "selected_config": {
+                "path": str(selected.relative_to(root)),
+                "sha256": _sha256(selected),
+                "config": yaml.safe_load(selected.read_text())},
+        }, binding))
+    return decision
+
+
+def test_build_jobs_covers_selected_family_and_confirmatory_seeds(tmp_path):
     baseline = tmp_path / "baseline.json"
     baseline.write_text("{}\n")
 
+    selected = _training_config(tmp_path)
     jobs = launcher.build_jobs(
         tmp_path, _manifest(tmp_path), baseline, tmp_path / "training",
-        _training_config(tmp_path))
+        selected)
 
     assert [(job.controller, job.seed) for job in jobs] == [
-        (controller, seed)
-        for controller in launcher.CONTROLLERS
-        for seed in range(11, 16)
+        ("neighbor_phase_ddqn", seed) for seed in (12, 13, 14, 15, 16)
     ]
     command = jobs[0].command
     assert list(command[:5]) == ["docker", "run", "--rm", "--platform", "linux/amd64"]
@@ -95,9 +126,9 @@ def test_existing_completed_output_is_skipped_only_after_hash_and_baseline_check
     baseline = tmp_path / "baseline.json"
     baseline.write_text("baseline\n")
     training_config = _training_config(tmp_path)
-    directory = tmp_path / "training" / "final-seed11"
-    _complete_run(directory, "neighbor_phase_ddqn", 11, baseline, training_config)
-    job = launcher.Job("neighbor_phase_ddqn", 11, directory, ("docker",))
+    directory = tmp_path / "training" / "final-seed12"
+    _complete_run(directory, "neighbor_phase_ddqn", 12, baseline, training_config)
+    job = launcher.Job("neighbor_phase_ddqn", 12, directory, ("docker",))
 
     assert launcher.inspect_existing_job(job, baseline, training_config) == "skipped"
 
@@ -105,19 +136,40 @@ def test_existing_completed_output_is_skipped_only_after_hash_and_baseline_check
     with pytest.raises(ValueError, match="hash mismatch"):
         launcher.inspect_existing_job(job, baseline, training_config)
 
-    _complete_run(directory, "neighbor_phase_ddqn", 11, baseline, training_config)
+    _complete_run(directory, "neighbor_phase_ddqn", 12, baseline, training_config)
     changed = yaml.safe_load(training_config.read_text())
     changed["exploration"]["epsilon_decay_decisions"] = 10000
     training_config.write_text(yaml.safe_dump(changed, sort_keys=True))
-    with pytest.raises(ValueError, match="selected training config"):
+    with pytest.raises(ValueError, match="selected config"):
         launcher.inspect_existing_job(job, baseline, training_config)
 
 
-def test_partial_existing_output_refuses_to_launch(tmp_path):
+def test_existing_completed_output_requires_all_v3_checkpoint_bundles(tmp_path):
     baseline = tmp_path / "baseline.json"
     baseline.write_text("baseline\n")
     training_config = _training_config(tmp_path)
-    output = tmp_path / "training" / "final-seed11"
+    directory = tmp_path / "training" / "final-seed12"
+    _complete_run(directory, "neighbor_phase_ddqn", 12, baseline, training_config)
+    missing = directory / "checkpoints/step-8/contract.json"
+    if missing.exists():
+        missing.unlink()
+    status_path = directory / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"].pop(
+        "checkpoints/step-8/contract.json", None)
+    _write_json(status_path, status)
+    job = launcher.Job("neighbor_phase_ddqn", 12, directory, ("docker",))
+
+    with pytest.raises(ValueError, match="missing checkpoints/step-8/contract.json"):
+        launcher.inspect_existing_job(job, baseline, training_config)
+
+
+def test_partial_existing_output_refuses_to_launch(tmp_path, monkeypatch):
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text("baseline\n")
+    training_config = _training_config(tmp_path)
+    decision = _validated_selection_stub(monkeypatch, tmp_path, training_config)
+    output = tmp_path / "training" / "final-seed12"
     output.mkdir(parents=True)
     _write_json(output / "status.json", {"status": "partial"})
 
@@ -126,16 +178,18 @@ def test_partial_existing_output_refuses_to_launch(tmp_path):
             tmp_path, _manifest(tmp_path), baseline, tmp_path / "training",
             tmp_path / "campaign-status.json", training_config,
             max_concurrency=2,
+            schedule_selection=decision,
             runner=lambda *args, **kwargs: (_ for _ in ()).throw(
                 AssertionError("partial output must prevent launch")),
         )
 
 
-def test_campaign_records_logs_and_resumes_completed_jobs(tmp_path):
+def test_campaign_records_logs_and_resumes_completed_jobs(tmp_path, monkeypatch):
     baseline = tmp_path / "baseline.json"
     baseline.write_text("baseline\n")
     manifest = _manifest(tmp_path)
-    training_config = _training_config(tmp_path)
+    training_config = _training_config(tmp_path, behavior_prior=True)
+    decision = _validated_selection_stub(monkeypatch, tmp_path, training_config)
     training = tmp_path / "training"
     status = tmp_path / "campaign-status.json"
     calls = []
@@ -152,36 +206,55 @@ def test_campaign_records_logs_and_resumes_completed_jobs(tmp_path):
     first = launcher.run_campaign(
         tmp_path, manifest, baseline, training, status, training_config,
         max_concurrency=2,
+        schedule_selection=decision,
         runner=runner,
     )
 
-    assert len(calls) == 10
+    assert len(calls) == 5
     assert first["status"] == "complete"
     assert {item["state"] for item in first["jobs"]} == {"completed"}
     assert all((tmp_path / item["stdout_log"]).read_text() == "trained\n"
                for item in first["jobs"])
+    assert first["training_config_binding"] == {
+        "path": "selected.yaml", "sha256": _sha256(training_config)}
+    assert first["confirmatory_learning_seeds"] == [12, 13, 14, 15, 16]
 
     second = launcher.run_campaign(
         tmp_path, manifest, baseline, training, status, training_config,
         max_concurrency=2,
+        schedule_selection=decision,
         runner=runner,
     )
 
-    assert len(calls) == 10
+    assert len(calls) == 5
     assert {item["state"] for item in second["jobs"]} == {"skipped"}
 
 
-def test_successful_process_without_verified_output_marks_campaign_failed(tmp_path):
+def test_successful_process_without_verified_output_marks_campaign_failed(
+        tmp_path, monkeypatch):
     baseline = tmp_path / "baseline.json"
     baseline.write_text("baseline\n")
     training_config = _training_config(tmp_path)
+    decision = _validated_selection_stub(monkeypatch, tmp_path, training_config)
 
     result = launcher.run_campaign(
         tmp_path, _manifest(tmp_path), baseline, tmp_path / "training",
         tmp_path / "campaign-status.json", training_config, max_concurrency=1,
         runner=lambda *args, **kwargs: SimpleNamespace(returncode=0),
+        schedule_selection=decision,
     )
 
     assert result["status"] == "failed"
     assert result["jobs"][0]["state"] == "failed"
     assert "fully verified" in result["jobs"][0]["error"]
+
+
+def test_final_campaign_refuses_to_run_without_schedule_selection(tmp_path):
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text("baseline\n")
+    training_config = _training_config(tmp_path)
+
+    with pytest.raises(ValueError, match="schedule selection is required"):
+        launcher.run_campaign(
+            tmp_path, _manifest(tmp_path), baseline, tmp_path / "training",
+            tmp_path / "campaign-status.json", training_config)

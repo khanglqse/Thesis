@@ -19,7 +19,8 @@ import yaml
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.eval.checkpoint_selection import (
     CHECKPOINT_ELIGIBILITY_POLICY, choose_checkpoint,
-    choose_reporting_checkpoint, score_validation)
+    choose_reporting_checkpoint, score_validation,
+    validate_checkpoint_selection)
 from traffic_rl.research.artifacts import canonical_sha256, sha256_file
 from traffic_rl.sim.phase_encoder import SCHEDULE_CONTEXT_FEATURES
 from traffic_rl.train.network_trainer import (
@@ -29,6 +30,11 @@ from traffic_rl.train.network_trainer import (
 _ARMS = ("schedule_bc_rehearsal", "schedule_bc_no_rehearsal")
 _CHECKPOINTS = ("step-4", "step-8", "step-12")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+PRIMARY_LEARNED_CONTROLLER = "neighbor_phase_ddqn"
+PILOT_LEARNING_SEED = 11
+CONFIRMATORY_LEARNING_SEEDS = (12, 13, 14, 15, 16)
+FINAL_TIER = {"episodes": 12, "horizon_seconds": 3600, "eval_every": 4}
+FINAL_CHECKPOINTS = _CHECKPOINTS
 
 
 def _json(path, label):
@@ -109,6 +115,63 @@ def _number(value, label, minimum=None, maximum=None):
     if maximum is not None and number > maximum:
         raise ValueError("%s exceeds its maximum" % label)
     return number
+
+
+def _contains_test_reference(value):
+    if isinstance(value, dict):
+        return any(
+            ((key != "eligible_for_test_evaluation"
+              and _contains_test_reference(key))
+             or _contains_test_reference(item))
+            for key, item in value.items())
+    if isinstance(value, list):
+        return any(_contains_test_reference(item) for item in value)
+    if isinstance(value, str):
+        tokens = [token for token in re.split(
+            r"[/\s_.-]+", value.lower().replace("\\", "/")) if token]
+        return any(token == "test" or token.startswith("testcase")
+                   for token in tokens)
+    return False
+
+
+def _reject_test_evidence(value, label):
+    if _contains_test_reference(value):
+        raise ValueError("held-out test evidence appears in %s" % label)
+
+
+def _validation_case_contract(manifest):
+    cases = manifest.get("cases")
+    if not isinstance(cases, list):
+        raise ValueError("experiment manifest cases are invalid")
+    validation = [case for case in cases if isinstance(case, dict)
+                  and case.get("split") == "validation"]
+    records = {}
+    for case in validation:
+        case_id = case.get("case_id")
+        scenario = case.get("scenario")
+        if (not isinstance(case_id, str) or not case_id
+                or scenario not in ("normal", "am_peak", "pm_peak")
+                or case_id in records):
+            raise ValueError("manifest validation case identity is invalid")
+        records[case_id] = scenario
+    if len(records) != 6:
+        raise ValueError("manifest must contain exactly six validation cases")
+    return records
+
+
+def _validate_baseline_partition(baseline_rows, manifest):
+    registered = _validation_case_contract(manifest)
+    observed = {}
+    for row in baseline_rows:
+        if not isinstance(row, dict):
+            raise ValueError("baseline validation row is invalid")
+        case_id = row.get("case_id")
+        scenario = row.get("scenario")
+        if case_id in observed or registered.get(case_id) != scenario:
+            raise ValueError("baseline tuning uses a non-validation case")
+        observed[case_id] = scenario
+    if observed != registered:
+        raise ValueError("baseline tuning does not use the exact validation split")
 
 
 def _validate_spec(root, spec_path):
@@ -251,6 +314,7 @@ def _expected_cases(baseline):
 
 
 def _validate_baseline(baseline):
+    _reject_test_evidence(baseline, "baseline tuning")
     if (baseline.get("schema_version") != 1
             or baseline.get("method") != "validation_grid_search"):
         raise ValueError("baseline tuning schema is invalid")
@@ -296,6 +360,7 @@ def _manifest_train_cases(root, manifest):
 
 def _validate_behavior_source(root, artifact_path, manifest):
     evidence = _json(artifact_path, "behavior prior evidence")
+    _reject_test_evidence(evidence, "behavior training evidence")
     expected_ids, expected_hashes = _manifest_train_cases(root, manifest)
     if evidence.get("source_split") != "train":
         raise ValueError("behavior training source must be the train split")
@@ -328,6 +393,7 @@ def _validate_behavior_source(root, artifact_path, manifest):
 
 def _validate_status(run_dir, required, label):
     status = _json(run_dir / "status.json", label + " status")
+    _reject_test_evidence(status, label + " status")
     hashes = status.get("artifact_sha256")
     if not isinstance(hashes, dict) or not set(required).issubset(hashes):
         raise ValueError("%s status artifact hashes are incomplete" % label)
@@ -461,6 +527,7 @@ def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
         raise ValueError("%s baseline provenance drift" % arm)
     _validate_behavior_source(root, run_dir / "behavior-prior.json", manifest)
     summary = _json(run_dir / "summary.json", arm + " summary")
+    _reject_test_evidence(summary, arm + " summary")
     rehearsal = summary.get("behavior_rehearsal")
     expected_rehearsal = config["behavior_prior"]["rehearsal"]["enabled"]
     if (not isinstance(rehearsal, dict)
@@ -471,6 +538,7 @@ def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
                             arm + " rehearsal updates", 1.0) < 1.0)):
         raise ValueError("%s rehearsal summary evidence is invalid" % arm)
     validation = _json(run_dir / "validation.json", arm + " validation")
+    _reject_test_evidence(validation, arm + " validation")
     diagnostic_checkpoint = spec.get("diagnostic_checkpoint")
     if diagnostic_checkpoint != "step-0" \
             or set(validation) != set(_CHECKPOINTS + ("step-0",)):
@@ -547,6 +615,7 @@ def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
         scores[checkpoint] = score
         quality[checkpoint] = checkpoint_quality
     selection = _json(run_dir / "selection.json", arm + " selection")
+    _reject_test_evidence(selection, arm + " selection")
     if selection.get("eligibility_policy") != CHECKPOINT_ELIGIBILITY_POLICY:
         raise ValueError("%s checkpoint eligibility policy drift" % arm)
     try:
@@ -637,6 +706,182 @@ def _write_outputs(selected_path, selected_bytes, decision_path, decision):
                 temporary.unlink()
 
 
+
+def validate_final_schedule_selection(root, decision_path):
+    """Validate immutable V3 schedule selection for a descendant release commit."""
+    root = Path(root).resolve()
+    supplied = Path(decision_path)
+    if supplied.is_absolute():
+        try:
+            supplied = supplied.resolve().relative_to(root)
+        except ValueError:
+            raise ValueError("pilot schedule selection must remain inside the project")
+    decision_path = _inside(root, supplied, "pilot schedule selection")
+    decision = _json(decision_path, "pilot schedule selection")
+    _reject_test_evidence(decision, "pilot schedule selection")
+    if (decision.get("schema_version") != 1
+            or decision.get("decision_type")
+            != "haichau_pilot_schedule_rehearsal_selection"):
+        raise ValueError("pilot schedule selection schema is invalid")
+    identity = decision.get("decision_identity_sha256")
+    unsigned = dict(decision)
+    unsigned.pop("decision_identity_sha256", None)
+    if (not _SHA256.match(str(identity or ""))
+            or identity != canonical_sha256(unsigned)):
+        raise ValueError("pilot schedule selection identity hash drift")
+    specification = _artifact(
+        root, decision.get("specification"), "schedule selection specification")
+    _, spec = _validate_spec(root, specification)
+    if (spec.get("learning_seed") != PILOT_LEARNING_SEED
+            or tuple(decision.get("validation_checkpoints", ())) != _CHECKPOINTS
+            or decision.get("diagnostic_checkpoint") != "step-0"):
+        raise ValueError("pilot schedule selection protocol drift")
+    inputs = decision.get("inputs")
+    if not isinstance(inputs, dict):
+        raise ValueError("pilot schedule selection inputs are invalid")
+    source_tree = inputs.get("source_tree")
+    code_commit = inputs.get("code_commit")
+    if (not re.fullmatch(r"[0-9a-f]{40,64}", str(code_commit or ""))
+            or not isinstance(source_tree, dict)
+            or source_tree.get("git_commit") != code_commit
+            or source_tree.get("tracked_worktree") != "clean"
+            or source_tree.get("index") != "clean"):
+        raise ValueError("pilot schedule selection source identity is invalid")
+    manifest_record = inputs.get("manifest")
+    manifest_path = _artifact(
+        root, manifest_record, "schedule pilot manifest")
+    manifest = _json(manifest_path, "schedule pilot manifest")
+    manifest_hash = canonical_json_sha256(manifest)
+    if (manifest_record.get("path") != spec["manifest"]
+            or manifest_record.get("canonical_json_sha256") != manifest_hash):
+        raise ValueError("schedule pilot manifest binding is invalid")
+    baseline_record = inputs.get("baseline_tuning")
+    baseline_path = _artifact(
+        root, baseline_record, "schedule pilot baseline tuning")
+    baseline = _json(baseline_path, "schedule pilot baseline tuning")
+    _validate_baseline_partition(_validate_baseline(baseline), manifest)
+    if (baseline_record.get("path") != spec["baseline_tuning_artifact"]
+            or baseline_record.get("tuning_sha256") != baseline.get("tuning_sha256")
+            or baseline.get("binding", {}).get("manifest_sha256") != manifest_hash):
+        raise ValueError("schedule pilot baseline binding is invalid")
+    config_records = inputs.get("configs")
+    outcomes = decision.get("arms")
+    winner = decision.get("winner")
+    if (not isinstance(config_records, dict) or set(config_records) != set(_ARMS)
+            or not isinstance(outcomes, dict) or set(outcomes) != set(_ARMS)
+            or not isinstance(winner, dict)):
+        raise ValueError("pilot schedule selection arm records are invalid")
+    configs, expected_config_records = _source_configs(root, spec)
+    if config_records != expected_config_records:
+        raise ValueError("schedule pilot source config binding is invalid")
+    for arm in _ARMS:
+        recomputed = _validate_arm(
+            root, arm, spec, configs[arm], manifest, baseline,
+            sha256_file(baseline_path), manifest_hash, code_commit, source_tree)
+        if outcomes[arm] != recomputed:
+            raise ValueError("%s pilot outcome differs from source evidence" % arm)
+    eligible = [arm for arm in _ARMS if outcomes[arm]["eligible"]]
+    if not eligible:
+        raise ValueError("pilot schedule selection records no eligible arm")
+    expected_winner = min(
+        eligible, key=lambda arm: tuple(outcomes[arm]["rank_tuple"]))
+    if (winner.get("arm") != expected_winner
+            or winner.get("selected_checkpoint")
+            != outcomes[expected_winner]["selected_checkpoint"]
+            or winner.get("rank_tuple") != outcomes[expected_winner]["rank_tuple"]
+            or winner.get("config") != config_records[expected_winner]):
+        raise ValueError("pilot schedule selection winner is invalid")
+    selected_path = _artifact(
+        root, decision.get("selected_config"), "selected config")
+    selected_config = _yaml(selected_path, "selected config")
+    if selected_config != configs[expected_winner]:
+        raise ValueError("selected config differs from winning schedule config")
+    return {
+        "path": str(decision_path.relative_to(root)),
+        "sha256": sha256_file(decision_path),
+        "decision_identity_sha256": identity,
+        "primary_learned_controller": PRIMARY_LEARNED_CONTROLLER,
+        "pilot_learning_seed": PILOT_LEARNING_SEED,
+        "winner": {
+            "arm": expected_winner,
+            "selected_checkpoint": winner["selected_checkpoint"],
+            "config": dict(config_records[expected_winner]),
+        },
+        "selected_config": {
+            "path": str(selected_path.relative_to(root)),
+            "sha256": sha256_file(selected_path),
+            "config": selected_config,
+        },
+    }
+
+
+def validate_frozen_schedule_selection(root, binding):
+    """Revalidate the compact V3 selector binding stored by release freeze."""
+    if not isinstance(binding, dict):
+        raise ValueError("pilot V3 schedule selection binding is missing")
+    selection = validate_final_schedule_selection(root, binding.get("path"))
+    compact = dict(
+        (key, value) for key, value in selection.items()
+        if key != "selected_config")
+    compact["selected_config"] = dict(
+        (key, value) for key, value in selection["selected_config"].items()
+        if key != "config")
+    if binding != compact:
+        raise ValueError("pilot V3 schedule selection binding drift")
+    return selection
+
+
+def validate_final_checkpoint_selection(
+        validation, selection, tuning, expected_case_ids):
+    """Validate the exact V3 final checkpoint schedule and selected step."""
+    if not isinstance(validation, dict) \
+            or set(validation) != set(FINAL_CHECKPOINTS):
+        raise ValueError(
+            "final validation checkpoints must be exactly step-4, step-8, step-12")
+    for checkpoint in FINAL_CHECKPOINTS:
+        evidence = validation.get(checkpoint)
+        score = evidence.get("score") if isinstance(evidence, dict) else None
+        expected_step = int(checkpoint.split("-")[1])
+        if (not isinstance(score, dict)
+                or type(score.get("training_step")) is not int
+                or score.get("training_step") != expected_step):
+            raise ValueError(
+                "validation score training_step differs from checkpoint %s" %
+                checkpoint)
+    selected = validate_checkpoint_selection(
+        validation, selection, tuning, expected_case_ids)
+    if selected not in FINAL_CHECKPOINTS:
+        raise ValueError("selected checkpoint must be step-4, step-8 or step-12")
+    recomputed_best = choose_checkpoint(dict(
+        (checkpoint, validation[checkpoint]["score"])
+        for checkpoint in FINAL_CHECKPOINTS))
+    if selected != recomputed_best:
+        raise ValueError(
+            "selected checkpoint differs from best eligible checkpoint")
+    expected_step = int(selected.split("-")[1])
+    if selection.get("score", {}).get("training_step") != expected_step:
+        raise ValueError("selected score training_step differs from selected checkpoint")
+    return selected
+
+
+def validate_final_resolved_config(resolved, selected_config, learning_seed):
+    """Require a final run to use the exact V3 config and a confirmation seed."""
+    if not isinstance(resolved, dict) or not isinstance(selected_config, dict):
+        raise ValueError("final resolved training configuration is invalid")
+    if learning_seed not in CONFIRMATORY_LEARNING_SEEDS:
+        raise ValueError("final training requires a registered confirmatory seed")
+    if (resolved.get("mode") != "final"
+            or resolved.get("learning_seed") != learning_seed):
+        raise ValueError("final resolved training configuration identity drift")
+    final_tier = selected_config.get("tiers", {}).get("final")
+    if final_tier != FINAL_TIER or resolved.get("run") != FINAL_TIER:
+        raise ValueError("final resolved training tier drift")
+    for key, value in selected_config.items():
+        if resolved.get(key) != value:
+            raise ValueError(
+                "final resolved training configuration differs from selected config")
+
+
 def select_from_spec(root, spec_path):
     """Select a final schedule-rehearsal configuration from two validation pilots."""
     root = Path(root).resolve()
@@ -647,7 +892,7 @@ def select_from_spec(root, spec_path):
     baseline_path = _inside(root, spec["baseline_tuning_artifact"], "baseline tuning")
     manifest = _json(manifest_path, "experiment manifest")
     baseline = _json(baseline_path, "baseline tuning")
-    _validate_baseline(baseline)
+    _validate_baseline_partition(_validate_baseline(baseline), manifest)
     manifest_hash = canonical_json_sha256(manifest)
     if baseline.get("binding", {}).get("manifest_sha256") != manifest_hash:
         raise ValueError("baseline tuning manifest identity differs from experiment manifest")

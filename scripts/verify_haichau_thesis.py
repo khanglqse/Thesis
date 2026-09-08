@@ -10,6 +10,8 @@ import re
 import subprocess
 from pathlib import Path
 
+import yaml
+
 from traffic_rl.train.objective_contract import training_objective
 from traffic_rl.eval.network_campaign import (
     bind_frozen_manifest,
@@ -20,26 +22,26 @@ from traffic_rl.eval.network_replay import validate_network, validate_replay
 from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
 from traffic_rl.eval.release_attestation import validate_attestation
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
-from traffic_rl.eval.checkpoint_selection import (
-    CHECKPOINT_ELIGIBILITY_POLICY, validate_checkpoint_selection)
-from traffic_rl.research.pilot_epsilon_selector import (
-    validate_final_resolved_config, validate_final_selection)
+from traffic_rl.eval.checkpoint_selection import CHECKPOINT_ELIGIBILITY_POLICY
+from traffic_rl.research.pilot_schedule_selector import (
+    CONFIRMATORY_LEARNING_SEEDS, FINAL_CHECKPOINTS, FINAL_TIER,
+    PRIMARY_LEARNED_CONTROLLER, validate_final_checkpoint_selection,
+    validate_final_resolved_config, validate_frozen_schedule_selection)
 from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.haichau_demo_fallbacks import validate_fallbacks
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
-from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
-from traffic_rl.sim.phase_encoder import FEATURES
+from traffic_rl.sim.phase_encoder import SCHEDULE_CONTEXT_FEATURES
 
 
 DEMAND_LABEL = "synthetic network demand constrained by Da Nang evidence"
 REQUIRED_CONTROLLERS = (
     "tuned_fixed", "max_pressure", "hysteretic_mp",
-    "shared_ddqn_legacy", "neighbor_phase_ddqn",
+    PRIMARY_LEARNED_CONTROLLER,
 )
-LEARNING_CONTROLLERS = ("shared_ddqn_legacy", "neighbor_phase_ddqn")
+LEARNING_CONTROLLERS = (PRIMARY_LEARNED_CONTROLLER,)
 REQUIRED_REGIMES = ("normal", "am_peak", "pm_peak")
-REQUIRED_SEEDS = (11, 12, 13, 14, 15)
+REQUIRED_SEEDS = CONFIRMATORY_LEARNING_SEEDS
 REQUIRED_FALLBACKS = (
     "demo-walkthrough.mp4", "result-summary.pdf", "network-overview.png",
 )
@@ -50,24 +52,21 @@ REQUIRED_FRONTEND = {
 CHECKPOINT_CONTRACT_FIELDS = {
     "obs_schema_version", "feature_order", "normalization", "hidden_size",
     "action_contract", "network_compatibility", "controller_family",
-    "checkpoint_eligibility_policy",
+    "checkpoint_eligibility_policy", "training_step",
 }
 REQUIRED_TRAINING_ARTIFACTS = (
     "checkpoint/weights.npz", "checkpoint/contract.json", "validation.json",
     "selection.json", "resolved-config.json", "baseline-tuning.json",
     "run-manifest.json",
-)
+) + tuple(
+    "checkpoints/%s/%s" % (checkpoint, name)
+    for checkpoint in FINAL_CHECKPOINTS
+    for name in ("contract.json", "weights.npz"))
 ACTION_CONTRACTS = {
-    "neighbor_phase_ddqn": {
+    PRIMARY_LEARNED_CONTROLLER: {
         "type": "phase_rows", "version": 1,
         "mask_type": "boolean_selectable_green_rows",
         "padding_actions_selectable": False,
-    },
-    "shared_ddqn_legacy": {
-        "type": "fixed_vector", "version": 1,
-        "mask_type": "boolean_phase_index",
-        "padding_actions_selectable": False,
-        "n_actions": 3,
     },
 }
 THESIS_ARTIFACTS = {
@@ -228,20 +227,44 @@ def _runtime_gate(root, protocol):
         return _gate(False, str(exc))
 
 
-def _pilot_epsilon_selection_gate(root, protocol):
+def _pilot_schedule_selection_gate(root, protocol):
     try:
-        declared = (protocol or {}).get("pilot_epsilon_selection")
-        if not isinstance(declared, dict):
-            raise ValueError("pilot epsilon selection binding is missing")
-        selection = validate_final_selection(root, declared.get("path"))
-        actual = {key: value for key, value in selection.items()
-                  if key != "selected_config"}
-        actual["selected_config"] = {
-            key: value for key, value in selection["selected_config"].items()
-            if key != "config"
-        }
-        if declared != actual:
-            raise ValueError("pilot epsilon selection binding drift")
+        declared = (protocol or {}).get("selection")
+        selection = validate_frozen_schedule_selection(root, declared)
+        if ((protocol or {}).get("primary_learned_controller")
+                != PRIMARY_LEARNED_CONTROLLER
+                or tuple((protocol or {}).get(
+                    "confirmatory_learning_seeds", ())) != REQUIRED_SEEDS):
+            raise ValueError("V3 release controller/confirmatory seed contract drift")
+        bindings = (protocol or {}).get("training_config_bindings")
+        if (not isinstance(bindings, dict)
+                or set(bindings) != set(LEARNING_CONTROLLERS)):
+                raise ValueError("selected controller training config binding is missing")
+        training_configs = {}
+        normalized_bindings = {}
+        for controller in LEARNING_CONTROLLERS:
+            record = bindings[controller]
+            if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
+                raise ValueError("controller training config binding is invalid")
+            path = _inside(root, record.get("path"))
+            if (not path or not path.is_file()
+                    or _sha256(path) != record.get("sha256")):
+                raise ValueError("controller training config hash drift")
+            try:
+                config = yaml.safe_load(path.read_text())
+            except (OSError, yaml.YAMLError) as exc:
+                raise ValueError("controller training config is invalid: %s" % exc)
+            if not isinstance(config, dict):
+                raise ValueError("controller training config must be a mapping")
+            training_configs[controller] = config
+            normalized_bindings[controller] = {
+                "path": str(path.relative_to(root)), "sha256": _sha256(path)}
+        selected = selection["selected_config"]
+        if (normalized_bindings[PRIMARY_LEARNED_CONTROLLER] != {
+                "path": selected["path"], "sha256": selected["sha256"]}
+                or training_configs[PRIMARY_LEARNED_CONTROLLER]
+                != selected["config"]):
+            raise ValueError("training config differs from V3 schedule selection")
         expected_cells = set(
             (controller, seed) for controller in LEARNING_CONTROLLERS
             for seed in REQUIRED_SEEDS)
@@ -256,14 +279,15 @@ def _pilot_epsilon_selection_gate(root, protocol):
                 raise ValueError("pilot selection source run is missing")
             validate_final_resolved_config(
                 _json(run_dir / "resolved-config.json"),
-                selection["selected_config"]["config"], seed)
+                training_configs[controller], seed)
             observed.add((controller, seed))
         if observed != expected_cells:
             raise ValueError("pilot selection does not cover all final runs")
-        return _gate(True, "pilot epsilon decision and selected config bind all final runs", {
+        return _gate(True, "V3 schedule decision and selected config bind all confirmatory runs", {
             "decision_identity_sha256": selection["decision_identity_sha256"],
-            "winner": selection["winner"]["schedule"],
-            "selected_config": actual["selected_config"],
+            "winner": selection["winner"]["arm"],
+            "selected_config": declared["selected_config"],
+            "training_config_bindings": normalized_bindings,
         })
     except Exception as exc:
         return _gate(False, str(exc))
@@ -293,7 +317,11 @@ def _checkpoint_contract_valid(contract, protocol, controller):
         hidden = contract["hidden_size"]
         if isinstance(hidden, bool) or not isinstance(hidden, int) or hidden <= 0:
             return False
-        if contract["obs_schema_version"] != 2 \
+        if type(contract.get("training_step")) is not int \
+                or contract["training_step"] not in (4, 8, 12):
+            return False
+        if (contract["obs_schema_version"] != 3
+                or contract.get("feature_dim") != len(SCHEDULE_CONTEXT_FEATURES)) \
                 or contract["controller_family"] != controller:
             return False
         if (not isinstance(features, list) or not features
@@ -305,7 +333,8 @@ def _checkpoint_contract_valid(contract, protocol, controller):
                 or any(isinstance(value, bool) or not math.isfinite(float(value))
                        or float(value) <= 0 for value in normalization.values())):
             return False
-        if controller == "neighbor_phase_ddqn" and features != list(FEATURES):
+        if (controller == PRIMARY_LEARNED_CONTROLLER
+                and features != list(SCHEDULE_CONTEXT_FEATURES)):
             return False
         if contract["action_contract"] != ACTION_CONTRACTS.get(controller):
             return False
@@ -364,12 +393,8 @@ def _source_selection_valid(validation, selection, tuning, validation_ids):
     if (_contains_test_reference(validation) or _contains_test_reference(selection)
             or _contains_test_reference(tuning)):
         raise ValueError("test metric appears in source checkpoint selection evidence")
-    selected = validate_checkpoint_selection(
+    selected = validate_final_checkpoint_selection(
         validation, selection, tuning, validation_ids)
-    if (not isinstance(selected, str)
-            or not re.fullmatch(r"[A-Za-z0-9_.-]+", selected)
-            or selected in (".", "..")):
-        raise ValueError("source selected checkpoint identifier is invalid")
     selection_cases = tuning.get("selection_cases", []) if isinstance(tuning, dict) else []
     if selection_cases and any(case_id not in validation_ids for case_id in selection_cases):
         raise ValueError("source baseline tuning uses a non-validation case")
@@ -438,11 +463,22 @@ def _source_checkpoint_valid(root, entry, protocol, controller, seed,
     expected_objective = training_objective(protocol_resolved.get("reward"))
     if (resolved.get("mode") != "final" or resolved.get("learning_seed") != seed
             or resolved.get("network_sha256") != (protocol or {}).get("network_sha256")
-            or not isinstance(run_config, dict)
-            or int(run_config.get("episodes", 0)) <= 0
-            or int(run_config.get("horizon_seconds", 0)) != 3600
+            or run_config != FINAL_TIER
             or training_objective(resolved.get("reward")) != expected_objective):
         raise ValueError("checkpoint source resolved training configuration drift")
+    intermediate_contracts = {}
+    for checkpoint in FINAL_CHECKPOINTS:
+        checkpoint_dir = run_dir / "checkpoints" / checkpoint
+        checkpoint_contract = _json(checkpoint_dir / "contract.json")
+        expected_step = int(checkpoint.split("-")[1])
+        if (checkpoint_contract.get("training_step") != expected_step
+                or not _checkpoint_contract_valid(
+                    checkpoint_contract, protocol, controller)):
+            raise ValueError(
+                "%s source contract training_step/config drift" % checkpoint)
+        PhaseScoringDDQN.load_bundle(
+            str(checkpoint_dir), checkpoint_contract)
+        intermediate_contracts[checkpoint] = checkpoint_contract
     weights_relative = str((run_dir / "checkpoint/weights.npz").relative_to(root))
     contract_relative = str((run_dir / "checkpoint/contract.json").relative_to(root))
     if (entry.get("path") != weights_relative
@@ -454,10 +490,12 @@ def _source_checkpoint_valid(root, entry, protocol, controller, seed,
             != source_artifacts["checkpoint/weights.npz"]):
         raise ValueError("checkpoint source bundle identity drift")
     contract = _json(_source_run_file(run_dir, "checkpoint/contract.json"))
-    selected_contract = _json(
-        _source_run_file(run_dir, selected_prefix + "contract.json"))
+    selected_contract = intermediate_contracts[selected]
     if _canonical_hash(selected_contract) != _canonical_hash(contract):
         raise ValueError("selected source checkpoint contract drift")
+    if contract.get("training_step") != int(selected.split("-")[1]):
+        raise ValueError(
+            "final source contract training_step differs from selected checkpoint")
 
 
 def _checkpoint_gate(root, protocol):
@@ -498,11 +536,9 @@ def _checkpoint_gate(root, protocol):
         if path and path.is_file() and contract_path \
                 and path.parent == contract_path.parent:
             try:
-                loaders = {
-                    "shared_ddqn_legacy": SharedDQN,
-                    "neighbor_phase_ddqn": PhaseScoringDDQN,
-                }
-                loaders[controller].load_bundle(str(path.parent), contract)
+                if controller != PRIMARY_LEARNED_CONTROLLER:
+                    raise ValueError("unselected learned controller")
+                PhaseScoringDDQN.load_bundle(str(path.parent), contract)
                 bundle_valid = True
             except (KeyError, OSError, ValueError, TypeError):
                 bundle_valid = False
@@ -540,7 +576,7 @@ def _checkpoint_gate(root, protocol):
 def _acceptance_rules(protocol):
     rules = (protocol or {}).get("acceptance_rules", {})
     if set(rules.get("required_learning_seeds", ())) != set(REQUIRED_SEEDS):
-        raise ValueError("acceptance rules must freeze learning seeds 11--15")
+        raise ValueError("acceptance rules must freeze confirmatory seeds 12--16")
     if set(rules.get("required_regimes", ())) != set(REQUIRED_REGIMES):
         raise ValueError("acceptance rules must freeze normal/AM/PM regimes")
     if int(rules.get("minimum_learning_seeds", 0)) < 5:
@@ -566,6 +602,11 @@ def _expected_runs(root, protocol):
     manifest = bind_frozen_manifest(case_manifest, protocol)
     if len(manifest["agent_ids"]) != 53:
         raise ValueError("frozen protocol must bind the exact 53 agent IDs")
+    if ((protocol or {}).get("primary_learned_controller")
+            != PRIMARY_LEARNED_CONTROLLER
+            or tuple((protocol or {}).get(
+                "confirmatory_learning_seeds", ())) != REQUIRED_SEEDS):
+        raise ValueError("frozen V3 controller/seed contract is invalid")
     if set(manifest["controller_configs"]) != set(REQUIRED_CONTROLLERS):
         raise ValueError("frozen protocol must bind every controller config")
     return expand_runs(
@@ -633,6 +674,7 @@ def _expected_summary(protocol, rows):
         normal_ci_margin_fraction=rules["normal_ci_margin_fraction"],
         peak_ci_upper_limit=rules["peak_ci_upper_limit"],
         completion_degradation_limit=rules["completion_degradation_limit"],
+        primary_learned_controller=protocol["primary_learned_controller"],
     )
     return {
         "study_scope": {
@@ -827,7 +869,7 @@ def audit_demo(root, protocol=None, campaign=None, summary=None):
         for regime in REQUIRED_REGIMES:
             entries = [entry for entry in replays if entry.get("regime") == regime]
             if len(entries) != 2 or set(entry.get("controller_id") for entry in entries) != {
-                    "tuned_fixed", "neighbor_phase_ddqn"} \
+                    "tuned_fixed", PRIMARY_LEARNED_CONTROLLER} \
                     or len(set(entry.get("case_id") for entry in entries)) != 1:
                 return _gate(False, "offline demo replay pair is not matched: %s" % regime)
             grids = []
@@ -887,8 +929,8 @@ def verify_project(root, skip_clean_checkout=False):
         "network_53_signals": _network_gate(root, protocol),
         "thirty_case_split": _case_gate(root, protocol),
         "runtime_pinned": _runtime_gate(root, protocol),
-        "pilot_epsilon_selection": _pilot_epsilon_selection_gate(root, protocol),
-        "five_learning_seeds": _checkpoint_gate(root, protocol),
+        "pilot_schedule_selection": _pilot_schedule_selection_gate(root, protocol),
+        "five_confirmatory_learning_seeds": _checkpoint_gate(root, protocol),
         "fresh_matched_runs": matched,
         "scenario_coverage": scenarios,
         "horizon_complete": horizons,
@@ -901,7 +943,7 @@ def verify_project(root, skip_clean_checkout=False):
         gates["clean_checkout"] = _clean_checkout_gate(root, protocol)
     failed = [name for name, value in gates.items() if not value["passed"]]
     return {
-        "verification_version": 5,
+        "verification_version": 6,
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "protocol_path": str(protocol_path.relative_to(root)),
         "complete": not failed,

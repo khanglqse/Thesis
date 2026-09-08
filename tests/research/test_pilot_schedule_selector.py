@@ -224,6 +224,112 @@ def test_selects_v3_arm_and_keeps_step_zero_diagnostic_only(tmp_path):
         "behavior_prior"]["rehearsal"]["enabled"] is False
 
 
+def test_final_release_validator_binds_v3_decision_and_selected_config(tmp_path):
+    from traffic_rl.research.pilot_schedule_selector import (
+        select_from_spec, validate_final_schedule_selection,
+        validate_frozen_schedule_selection)
+
+    root, spec = _fixture(tmp_path)
+    decision = select_from_spec(root, root / "schedule-spec.yaml")
+
+    validated = validate_final_schedule_selection(
+        root, root / spec["decision_output"])
+
+    assert validated["decision_identity_sha256"] == decision[
+        "decision_identity_sha256"]
+    assert validated["primary_learned_controller"] == "neighbor_phase_ddqn"
+    assert validated["winner"]["selected_checkpoint"] in {
+        "step-4", "step-8", "step-12"}
+    assert validated["selected_config"]["config"]["tiers"]["final"] == {
+        "episodes": 12, "horizon_seconds": 3600, "eval_every": 4}
+    compact = dict((key, value) for key, value in validated.items()
+                   if key != "selected_config")
+    compact["selected_config"] = dict(
+        (key, value) for key, value in validated["selected_config"].items()
+        if key != "config")
+    assert validate_frozen_schedule_selection(root, compact) == validated
+
+    compact["sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="binding drift"):
+        validate_frozen_schedule_selection(root, compact)
+
+
+def test_final_release_validator_rejects_selected_config_hash_drift(tmp_path):
+    from traffic_rl.research.pilot_schedule_selector import (
+        select_from_spec, validate_final_schedule_selection)
+
+    root, spec = _fixture(tmp_path)
+    select_from_spec(root, root / "schedule-spec.yaml")
+    selected = root / spec["selected_config_output"]
+    config = yaml.safe_load(selected.read_text())
+    config["tiers"]["final"]["episodes"] = 80
+    selected.write_text(yaml.safe_dump(config, sort_keys=True))
+
+    with pytest.raises(ValueError, match="selected config.*hash drift"):
+        validate_final_schedule_selection(root, root / spec["decision_output"])
+
+
+def test_final_release_validator_recomputes_winner_rank_from_source_rows(tmp_path):
+    from traffic_rl.research.pilot_schedule_selector import (
+        select_from_spec, validate_final_schedule_selection)
+
+    root, spec = _fixture(tmp_path)
+    select_from_spec(root, root / "schedule-spec.yaml")
+    decision_path = root / spec["decision_output"]
+    decision = json.loads(decision_path.read_text())
+    winner = decision["winner"]["arm"]
+    forged_rank = [-999.0, -999.0, 4, winner]
+    decision["arms"][winner]["rank_tuple"] = forged_rank
+    decision["winner"]["rank_tuple"] = forged_rank
+    decision.pop("decision_identity_sha256")
+    decision["decision_identity_sha256"] = canonical_json_sha256(decision)
+    _write(decision_path, decision)
+
+    with pytest.raises(ValueError, match="differs from source evidence"):
+        validate_final_schedule_selection(root, decision_path)
+
+
+def test_final_resolved_config_requires_exact_v3_tier_and_confirmatory_seed():
+    from traffic_rl.research.pilot_schedule_selector import (
+        validate_final_resolved_config)
+
+    selected = {
+        "schema_version": 3,
+        "tiers": {"final": {
+            "episodes": 12, "horizon_seconds": 3600, "eval_every": 4}},
+    }
+    resolved = dict(selected)
+    resolved.update({
+        "mode": "final", "learning_seed": 12,
+        "run": selected["tiers"]["final"],
+    })
+    validate_final_resolved_config(resolved, selected, 12)
+
+    pilot_seed = dict(resolved, learning_seed=11)
+    with pytest.raises(ValueError, match="confirmatory seed"):
+        validate_final_resolved_config(pilot_seed, selected, 11)
+
+    wrong_tier = json.loads(json.dumps(resolved))
+    wrong_tier["run"]["episodes"] = 80
+    with pytest.raises(ValueError, match="tier"):
+        validate_final_resolved_config(wrong_tier, selected, 12)
+
+
+def test_schedule_selector_rejects_held_out_metric_before_freeze(tmp_path):
+    from traffic_rl.research.pilot_schedule_selector import select_from_spec
+
+    root, _ = _fixture(tmp_path)
+    run_dir = root / "training/pilot-bc_prior-seed11"
+    validation_path = run_dir / "validation.json"
+    validation = json.loads(validation_path.read_text())
+    validation["step-4"]["rows"][0]["held_out_test_metric"] = 1.0
+    _write(validation_path, validation)
+    _refresh_status(run_dir)
+
+    with pytest.raises(ValueError, match="held-out test evidence"):
+        select_from_spec(root, root / "schedule-spec.yaml")
+
+
 def test_rejects_selectable_step_zero_diagnostic(tmp_path):
     from traffic_rl.research.pilot_schedule_selector import select_from_spec
 

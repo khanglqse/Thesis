@@ -179,9 +179,10 @@ def expand_runs(manifest, learning_seeds, controller_ids):
     if unknown:
         raise ValueError("unknown controllers: %s" % ", ".join(unknown))
     commands = manifest.get("controller_commands")
-    if not isinstance(commands, dict) or set(commands) != set(CONTROLLERS):
-        raise ValueError("frozen manifest must define commands for every controller")
-    for controller_id in CONTROLLERS:
+    if (not isinstance(commands, dict)
+            or not set(controller_ids).issubset(set(commands))):
+        raise ValueError("frozen manifest must define each selected controller command")
+    for controller_id in controller_ids:
         command = commands[controller_id]
         if command != ["python3", "scripts/evaluate_haichau_network.py"]:
             raise ValueError(

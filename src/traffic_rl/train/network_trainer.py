@@ -961,7 +961,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                     _write_json(os.path.join(
                         output_dir, "behavior-prior.json"),
                         behavior_pretraining)
-                    if behavior_prior.get("pre_rl_validation", False):
+                    if (config.get("mode") == "pilot"
+                            and behavior_prior.get("pre_rl_validation", False)):
                         validation_start = time.time()
                         rows = _validation_rows(
                             env_factory, validation_cases, horizon_seconds,

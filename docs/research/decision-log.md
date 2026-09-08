@@ -427,3 +427,24 @@ records, and this decision log preserve the negative result.
 Consequence: V3-A is not a candidate for final training, held-out evaluation,
 or the defense demo. The thesis may report it only as a rejected diagnostic
 that motivated the separately pre-registered bounded residual V3-B controller.
+
+## 2026-09-09 — Bind V3 release to schedule selection and fresh confirmation
+
+Decision: the final campaign may start only after the preregistered V3 schedule
+selector emits a validation-eligible decision and selected configuration. Pilot
+seed 11 compares schedule rehearsal with no rehearsal; step 0 is diagnostic and
+only checkpoints 4, 8, and 12 can win. The final release contains exactly one
+learned family, `neighbor_phase_ddqn`, trained with new seeds 12--16 for 12
+one-hour episodes and validation every four episodes. Its held-out campaign adds
+the three deterministic baselines.
+
+Reason: using seed 11 again for confirmation would reuse selection evidence,
+while retaining both learned families after the selector chose one would make
+the confirmatory claim ambiguous. A single selector identity and selected YAML
+must bind training, freeze, execution, statistics, and final verification.
+
+Consequence: every post-pilot stage rechecks the decision identity, selected
+configuration, source configs, pilot artifact hashes, exact tier, checkpoint
+step, controller family, and seed set. Freeze consumes validation evidence only
+and rejects any held-out metric or test-case reference. Missing, changed, mixed,
+or seed-11 confirmatory evidence fails closed before release.

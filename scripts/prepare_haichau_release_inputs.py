@@ -8,21 +8,23 @@ import math
 import sys
 from pathlib import Path
 
+import yaml
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from traffic_rl.research.pilot_epsilon_selector import (
-    validate_final_resolved_config, validate_final_selection)
+from traffic_rl.research.pilot_schedule_selector import (
+    CONFIRMATORY_LEARNING_SEEDS, PRIMARY_LEARNED_CONTROLLER,
+    validate_final_resolved_config, validate_final_schedule_selection)
 
 LEARNING_CONTROLLERS = (
-    "shared_ddqn_legacy",
-    "neighbor_phase_ddqn",
+    PRIMARY_LEARNED_CONTROLLER,
 )
 CONTROLLERS = (
     "tuned_fixed", "max_pressure", "hysteretic_mp",
-    "shared_ddqn_legacy", "neighbor_phase_ddqn",
+    PRIMARY_LEARNED_CONTROLLER,
 )
-SEEDS = (11, 12, 13, 14, 15)
+SEEDS = CONFIRMATORY_LEARNING_SEEDS
 REQUIRED_ARTIFACTS = (
     "resolved-config.json", "baseline-tuning.json", "run-manifest.json",
 )
@@ -47,6 +49,16 @@ def _json(path, label):
         return json.loads(Path(path).read_text())
     except (OSError, ValueError) as exc:
         raise ValueError("%s is not valid JSON: %s" % (label, exc))
+
+
+def _yaml(path, label):
+    try:
+        value = yaml.safe_load(Path(path).read_text())
+    except (OSError, yaml.YAMLError) as exc:
+        raise ValueError("%s is not valid YAML: %s" % (label, exc))
+    if not isinstance(value, dict):
+        raise ValueError("%s must be a YAML mapping" % label)
+    return value
 
 
 def _project_file(root, value, label):
@@ -83,9 +95,9 @@ def _number(value, label, positive=False):
 
 
 def _expected_directory(controller, seed):
-    if controller == "neighbor_phase_ddqn":
-        return "final-seed%d" % seed
-    return "legacy-final-seed%d" % seed
+    if controller != PRIMARY_LEARNED_CONTROLLER:
+        raise ValueError("final training controller differs from V3 selection")
+    return "final-seed%d" % seed
 
 
 def _read_final_run(root, training_root, controller, seed, manifest_hash,
@@ -211,7 +223,7 @@ def _write_once(path, encoded):
 
 
 def build_release_inputs(project_root, manifest, training_root, output_dir,
-                         pilot_epsilon_selection):
+                         pilot_schedule_selection):
     """Validate final training artifacts and write freeze-ready input JSON."""
     root = Path(project_root).resolve()
     manifest_path = _project_file(root, manifest, "experiment manifest")
@@ -225,14 +237,25 @@ def build_release_inputs(project_root, manifest, training_root, output_dir,
         raise ValueError("training root must remain inside project root")
     manifest_document, resolved = _manifest_configuration(root, manifest_path)
     manifest_hash = _canonical_hash(manifest_document)
-    selection = validate_final_selection(root, pilot_epsilon_selection)
+    selection = validate_final_schedule_selection(root, pilot_schedule_selection)
+    if selection["primary_learned_controller"] != PRIMARY_LEARNED_CONTROLLER:
+        raise ValueError("V3 schedule selection learned controller is invalid")
     selected_config = selection["selected_config"]["config"]
+    training_configs = {
+        PRIMARY_LEARNED_CONTROLLER: selected_config,
+    }
+    training_config_bindings = {
+        PRIMARY_LEARNED_CONTROLLER: {
+            "path": selection["selected_config"]["path"],
+            "sha256": selection["selected_config"]["sha256"],
+        },
+    }
     runs = []
     for controller in LEARNING_CONTROLLERS:
         for seed in SEEDS:
             runs.append((controller, seed, _read_final_run(
                 root, training_path, controller, seed, manifest_hash,
-                selected_config)))
+                training_configs[controller])))
     rewards = set(json.dumps(run[2]["reward"], sort_keys=True)
                   for run in runs)
     if len(rewards) != 1:
@@ -255,15 +278,18 @@ def build_release_inputs(project_root, manifest, training_root, output_dir,
     })
     document = {
         "resolved_config": resolved,
-        "pilot_epsilon_selection": {
+        "primary_learned_controller": PRIMARY_LEARNED_CONTROLLER,
+        "confirmatory_learning_seeds": list(SEEDS),
+        "pilot_schedule_selection": {
             key: value for key, value in selection.items()
             if key != "selected_config"
         },
+        "training_config_bindings": training_config_bindings,
         "controller_configs": configs,
         "controller_commands": dict(
             (controller, list(EVALUATOR_COMMAND)) for controller in CONTROLLERS),
     }
-    document["pilot_epsilon_selection"]["selected_config"] = {
+    document["pilot_schedule_selection"]["selected_config"] = {
         key: value for key, value in selection["selected_config"].items()
         if key != "config"
     }
@@ -300,13 +326,13 @@ def main(argv=None):
     parser.add_argument(
         "--output-dir", default="results/haichau_network_v2/release-inputs")
     parser.add_argument(
-        "--pilot-epsilon-selection",
-        default="results/haichau_network_v2/training/pilot-epsilon-selection.json")
+        "--pilot-schedule-selection",
+        default="results/haichau_network_v2/training/pilot-v3-schedule-selection.json")
     args = parser.parse_args(argv)
     try:
         result = build_release_inputs(
             args.project_root, args.manifest, args.training_root, args.output_dir,
-            args.pilot_epsilon_selection)
+            args.pilot_schedule_selection)
     except ValueError as exc:
         print("release inputs refused: %s" % exc, file=sys.stderr)
         return 1

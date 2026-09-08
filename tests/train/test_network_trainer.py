@@ -263,11 +263,30 @@ def test_v3_behavior_prior_reports_conditional_bc_and_rehearses_train_only_label
         assert audit["switch_eligible_reference_disagreement_rate"] == \
             float(audit["switch_eligible_reference_disagreements"]) / \
             audit["switch_eligible_decisions"]
+    validation = json.loads((output / "validation.json").read_text())
+    assert set(validation) == {"step-3"}
+    assert summary["selected_checkpoint"] == "step-3"
+
+
+def test_pilot_mode_keeps_pre_rl_validation_as_diagnostic_only(tmp_path):
+    output = tmp_path / "v3-pilot"
+    manifest = _manifest()
+    config = _v3_bc_config()
+    config["mode"] = "pilot"
+    tuning = _precomputed_tuning(manifest, config)
+    tuning_path = tmp_path / "baseline-v3-pilot.json"
+    tuning_path.write_text(json.dumps(tuning))
+
+    train_network(
+        lambda case, horizon: FakeV3NetworkEnv(case, horizon),
+        manifest, config, str(output), foundation_root=str(tmp_path),
+        foundation_verifier=_verified,
+        baseline_tuning_artifact=str(tuning_path))
+
     step_zero = json.loads((output / "validation.json").read_text())["step-0"]
     assert step_zero["diagnostic_only"] is True
     assert step_zero["selectable"] is False
     assert step_zero["score"]["training_step"] == 0
-    assert summary["selected_checkpoint"] == "step-3"
 
 
 @pytest.mark.parametrize("dirty_kind", ["tracked", "staged"])

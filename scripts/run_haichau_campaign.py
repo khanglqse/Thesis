@@ -7,16 +7,19 @@ import json
 from pathlib import Path
 
 from traffic_rl.eval.network_campaign import (
-    CONTROLLERS,
     bind_frozen_manifest,
     expand_runs,
     run_pending,
     verify_campaign,
 )
 from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
+from traffic_rl.research.pilot_schedule_selector import (
+    CONFIRMATORY_LEARNING_SEEDS, PRIMARY_LEARNED_CONTROLLER,
+    validate_frozen_schedule_selection)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DETERMINISTIC_CONTROLLERS = ("tuned_fixed", "max_pressure", "hysteretic_mp")
 
 
 def _sha256(path):
@@ -43,10 +46,8 @@ def main(argv=None):
     parser.add_argument("--manifest")
     parser.add_argument(
         "--protocol", default="results/haichau_network_v2/final/frozen-protocol.json")
-    parser.add_argument("--learning-seeds", default="11,12,13,14,15")
-    parser.add_argument("--controllers", default=(
-        "tuned_fixed,max_pressure,hysteretic_mp,shared_ddqn_legacy,"
-        "neighbor_phase_ddqn"))
+    parser.add_argument("--learning-seeds")
+    parser.add_argument("--controllers")
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--verify-only", action="store_true")
     args = parser.parse_args(argv)
@@ -58,6 +59,16 @@ def main(argv=None):
     if not protocol_path.is_file():
         raise ValueError("frozen protocol is required")
     protocol = json.loads(protocol_path.read_text())
+    validate_frozen_schedule_selection(PROJECT_ROOT, protocol.get("selection"))
+    primary = protocol.get("primary_learned_controller")
+    if primary != PRIMARY_LEARNED_CONTROLLER:
+        raise ValueError("frozen primary learned controller is invalid")
+    controllers = tuple(DETERMINISTIC_CONTROLLERS) + (primary,)
+    frozen_seeds = protocol.get("confirmatory_learning_seeds")
+    if (tuple(frozen_seeds or ()) != CONFIRMATORY_LEARNING_SEEDS
+            or frozen_seeds != protocol.get("acceptance_rules", {}).get(
+                "required_learning_seeds")):
+        raise ValueError("frozen confirmatory seed bindings disagree")
     if args.verify_only:
         manifest_path = Path(protocol.get("case_manifest_path", ""))
         if not manifest_path.is_absolute():
@@ -67,9 +78,7 @@ def main(argv=None):
             raise ValueError("frozen case manifest is missing or changed")
         manifest = bind_frozen_manifest(
             json.loads(manifest_path.read_text()), protocol)
-        seeds = protocol.get("acceptance_rules", {}).get(
-            "required_learning_seeds", [])
-        expected = expand_runs(manifest, seeds, CONTROLLERS)
+        expected = expand_runs(manifest, frozen_seeds, controllers)
         actual = json.loads(
             (campaign_dir / "campaign-manifest.json").read_text()).get("runs")
         if actual != expected:
@@ -84,15 +93,16 @@ def main(argv=None):
             raise ValueError("case manifest hash differs from frozen protocol")
         manifest = bind_frozen_manifest(
             json.loads(manifest_path.read_text()), protocol)
-        seeds = [int(value) for value in args.learning_seeds.split(",") if value]
-        frozen_seeds = protocol.get("acceptance_rules", {}).get(
-            "required_learning_seeds")
+        seeds = (frozen_seeds if args.learning_seeds is None else
+                 [int(value) for value in args.learning_seeds.split(",") if value])
         if seeds != frozen_seeds:
             raise ValueError("learning seeds differ from frozen acceptance rules")
-        controllers = [value for value in args.controllers.split(",") if value]
-        if tuple(controllers) != CONTROLLERS:
+        supplied_controllers = (list(controllers) if args.controllers is None else
+                                [value for value in args.controllers.split(",") if value])
+        if tuple(supplied_controllers) != controllers:
             raise ValueError("controllers differ from the frozen campaign contract")
-        _write_campaign(campaign_dir, expand_runs(manifest, seeds, controllers))
+        _write_campaign(campaign_dir, expand_runs(
+            manifest, seeds, supplied_controllers))
     if args.prepare_only:
         return 0
     result = run_pending(campaign_dir, project_root=PROJECT_ROOT)

@@ -6,19 +6,20 @@ import subprocess
 import pytest
 
 import traffic_rl.eval.release_identity as release_identity
-from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from scripts.export_haichau_replays import export_bundle
 from scripts.verify_haichau_thesis import (
-    _checkpoint_contract_valid, _pilot_epsilon_selection_gate, audit_demo,
-    verify_project)
+    _checkpoint_contract_valid, _checkpoint_gate,
+    _pilot_schedule_selection_gate, audit_demo, verify_project)
+from tests.scripts.test_freeze_haichau_protocol import (
+    _pilot_selection as _schedule_selection_fixture)
 from traffic_rl.eval.network_campaign import bind_frozen_manifest, expand_runs, run_pending
 from traffic_rl.eval.checkpoint_selection import (
     CHECKPOINT_ELIGIBILITY_POLICY, score_validation)
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_demo_fallbacks import build_fallbacks, validate_fallbacks
 from traffic_rl.report.haichau_network import write_artifacts, write_release_manifest
-from traffic_rl.sim.phase_encoder import FEATURES
+from traffic_rl.sim.phase_encoder import SCHEDULE_CONTEXT_FEATURES
 
 
 RUNTIME_DIGEST = "sha256:" + "a" * 64
@@ -234,22 +235,16 @@ def _checkpoint_contract(network_sha256, controller="neighbor_phase_ddqn",
                        "switch_penalty": 0.05},
             "temporal_aggregation": "mean_over_simulator_steps_in_action_interval",
         },
-        "obs_schema_version": 2,
-        "feature_order": (list(FEATURES)
-                          if controller == "neighbor_phase_ddqn"
-                          else ["lane_count_0"]),
+        "obs_schema_version": 3,
+        "feature_dim": len(SCHEDULE_CONTEXT_FEATURES),
+        "feature_order": list(SCHEDULE_CONTEXT_FEATURES),
         "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "hidden_size": 64,
-        "action_contract": ({
+        "action_contract": {
             "type": "phase_rows", "version": 1,
             "mask_type": "boolean_selectable_green_rows",
             "padding_actions_selectable": False,
-        } if controller == "neighbor_phase_ddqn" else {
-            "type": "fixed_vector", "version": 1,
-            "mask_type": "boolean_phase_index",
-            "padding_actions_selectable": False,
-            "n_actions": 3,
-        }),
+        },
         "network_compatibility": {
             "network_sha256": network_sha256,
             "phase_contract_sha256": phase_sha256,
@@ -258,73 +253,12 @@ def _checkpoint_contract(network_sha256, controller="neighbor_phase_ddqn",
         },
         "controller_family": controller,
         "checkpoint_eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
+        "training_step": 12,
     }
 
 
 def _pilot_selection(root, manifest_path):
-    canonical = {
-        "schema_version": 2,
-        "exploration": {"epsilon_decay_decisions": 10000},
-        "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.1,
-                   "switch_penalty": 0.05},
-        "tiers": {"final": {"episodes": 80, "horizon_seconds": 3600}},
-    }
-    fast = json.loads(json.dumps(canonical))
-    fast["exploration"]["epsilon_decay_decisions"] = 2160
-    configs = {}
-    for name, source in (("canonical", canonical), ("epsilon2160", fast)):
-        path = root / "release" / (name + ".yaml")
-        _write(path, json.dumps(source))
-        configs[name] = {
-            "path": str(path.relative_to(root)), "sha256": _digest(path),
-            "epsilon_decay_decisions": source["exploration"]["epsilon_decay_decisions"],
-        }
-    selected_path = root / "release" / "selected.yaml"
-    _write(selected_path, json.dumps(fast))
-    baseline = root / "release" / "pilot-baseline.json"
-    _write(baseline, "fixture")
-    required = (
-        "status.json", "run-manifest.json", "resolved-config.json",
-        "baseline-tuning.json", "baseline-tuning-provenance.json",
-        "validation.json", "selection.json",
-    )
-    schedules = {}
-    for name in ("canonical", "epsilon2160"):
-        run_dir = root / "release" / ("pilot-" + name)
-        artifacts = {}
-        for artifact in required:
-            _write(run_dir / artifact, "fixture:" + artifact)
-            artifacts[artifact] = _digest(run_dir / artifact)
-        schedules[name] = {"run_dir": str(run_dir.relative_to(root)),
-                           "artifacts": artifacts}
-    decision = {
-        "schema_version": 1,
-        "decision_type": "haichau_pilot_epsilon_schedule_selection",
-        "inputs": {
-            "code_commit": "a" * 40,
-            "manifest": {"path": str(manifest_path.relative_to(root)),
-                         "sha256": _digest(manifest_path)},
-            "baseline_tuning": {"path": str(baseline.relative_to(root)),
-                               "sha256": _digest(baseline)},
-            "configs": configs,
-        },
-        "schedules": schedules,
-        "winner": {"schedule": "epsilon2160", "config": configs["epsilon2160"]},
-        "selected_config": {"path": str(selected_path.relative_to(root)),
-                            "sha256": _digest(selected_path)},
-    }
-    decision["decision_identity_sha256"] = _json_digest(decision)
-    decision_path = root / "release" / "pilot-epsilon-selection.json"
-    _write(decision_path, json.dumps(decision))
-    return fast, {
-        "path": str(decision_path.relative_to(root)),
-        "sha256": _digest(decision_path),
-        "decision_identity_sha256": decision["decision_identity_sha256"],
-        "winner": {"schedule": "epsilon2160", "config": configs["epsilon2160"]},
-        "selected_config": {"path": str(selected_path.relative_to(root)),
-                            "sha256": _digest(selected_path)},
-    }
-
+    return _schedule_selection_fixture(root, manifest_path)
 
 def _write_bound_project(root):
     runtime_dockerfile = root / "docker/haichau-evaluation.Dockerfile"
@@ -364,21 +298,25 @@ def _write_bound_project(root):
     _write(network_manifest_path, json.dumps(network_manifest))
 
     cases = []
-    for index in range(21):
+    for index in range(18):
         demand_path = root / ("release/demand-train-%02d.json" % index)
         _write(demand_path, "train-%02d" % index)
         cases.append({
             "case_id": "train-%02d" % index, "split": "train",
+            "scenario": ("normal", "am_peak", "pm_peak")[index % 3],
             "scheduled_vehicles": 1000 + index,
             "demand_path": str(demand_path.relative_to(root)),
             "demand_sha256": _digest(demand_path),
+            "flow_path": str(demand_path.relative_to(root)),
+            "flow_sha256": _digest(demand_path),
         })
-    for index in range(3):
+    for index in range(6):
         demand_path = root / ("release/demand-validation-%02d.json" % index)
         _write(demand_path, "validation-%02d" % index)
+        scenario = ("normal", "am_peak", "pm_peak")[index % 3]
         cases.append({
             "case_id": "validation-%02d" % index, "split": "validation",
-            "regime": ("normal", "am_peak", "pm_peak")[index],
+            "regime": scenario, "scenario": scenario,
             "scheduled_vehicles": 2000 + index,
             "demand_path": str(demand_path.relative_to(root)),
             "demand_sha256": _digest(demand_path),
@@ -406,20 +344,17 @@ def _write_bound_project(root):
     phase_sha = "b" * 64
     generator_sha = "c" * 64
     experiment_sha = "d" * 64
-    selected_config, selection_binding = _pilot_selection(root, case_manifest_path)
+    selected_config, selection_binding, training_bindings = \
+        _pilot_selection(root, case_manifest_path)
     checkpoints = []
-    for controller in ("shared_ddqn_legacy", "neighbor_phase_ddqn"):
-        for seed in range(11, 16):
+    for controller in ("neighbor_phase_ddqn",):
+        for seed in range(12, 17):
             contract = _checkpoint_contract(
                 network_sha, controller, phase_sha, generator_sha, experiment_sha)
             bundle = root / ("release/%s-%s" % (controller, seed))
-            if controller == "shared_ddqn_legacy":
-                model = SharedDQN(1, 3, hidden=64, seed=seed, dueling=True)
-            else:
-                model = PhaseScoringDDQN(
-                    len(FEATURES), hidden=64, lr=1e-3, seed=seed)
+            model = PhaseScoringDDQN(
+                len(SCHEDULE_CONTEXT_FEATURES), hidden=64, lr=1e-3, seed=seed)
             model.save_bundle(str(bundle / "checkpoint"), contract)
-            model.save_bundle(str(bundle / "checkpoints/step-80"), contract)
             path = bundle / "checkpoint/weights.npz"
             contract_path = bundle / "checkpoint/contract.json"
             validation_path = bundle / "validation.json"
@@ -427,32 +362,40 @@ def _write_bound_project(root):
             resolved_path = bundle / "resolved-config.json"
             tuning_path = bundle / "baseline-tuning.json"
             run_manifest_path = bundle / "run-manifest.json"
-            rows = [{
-                "case_id": case["case_id"], "scenario": case["regime"],
-                "candidate_queue": 90.0, "baseline_queue": 100.0,
-                "candidate_completion": 1.0, "baseline_completion": 1.0,
-                "candidate_insertion": 1.0, "baseline_insertion": 1.0,
-            } for case in validation_cases]
-            score = score_validation(rows)
-            score["training_step"] = 80
-            _write(validation_path, json.dumps({
-                "step-80": {
-                    "rows": rows,
-                    "score": score,
-                },
-            }))
+            validation = {}
+            for step in (4, 8, 12):
+                checkpoint = "step-%d" % step
+                checkpoint_contract = json.loads(json.dumps(contract))
+                checkpoint_contract["training_step"] = step
+                model.save_bundle(
+                    str(bundle / "checkpoints" / checkpoint),
+                    checkpoint_contract)
+                candidate_queue = 90.0 if step == 12 else 110.0
+                rows = [{
+                    "case_id": case["case_id"], "scenario": case["regime"],
+                    "candidate_queue": candidate_queue, "baseline_queue": 100.0,
+                    "candidate_completion": 1.0, "baseline_completion": 1.0,
+                    "candidate_insertion": 1.0, "baseline_insertion": 1.0,
+                } for case in validation_cases]
+                checkpoint_score = score_validation(rows)
+                checkpoint_score["training_step"] = step
+                validation[checkpoint] = {
+                    "rows": rows, "score": checkpoint_score}
+            score = validation["step-12"]["score"]
+            _write(validation_path, json.dumps(validation))
             _write(selection_path, json.dumps({
                 "status": "eligible",
-                "selected_checkpoint": "step-80",
+                "selected_checkpoint": "step-12",
                 "eligible_for_test_evaluation": True,
                 "eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
                 "score": score,
             }))
-            resolved = json.loads(json.dumps(selected_config))
+            controller_config = selected_config
+            resolved = json.loads(json.dumps(controller_config))
             resolved.update({
                 "mode": "final", "learning_seed": seed,
                 "network_sha256": network_sha,
-                "run": selected_config["tiers"]["final"],
+                "run": controller_config["tiers"]["final"],
             })
             _write(resolved_path, json.dumps(resolved))
             _write(tuning_path, json.dumps({
@@ -465,7 +408,7 @@ def _write_bound_project(root):
                         "queue_integral_vehicle_seconds": row["baseline_queue"],
                         "completion_rate": row["baseline_completion"],
                         "insertion_rate": row["baseline_insertion"],
-                    } for row in rows],
+                    } for row in validation["step-12"]["rows"]],
                 }],
             }))
             _write(run_manifest_path, json.dumps({
@@ -475,7 +418,10 @@ def _write_bound_project(root):
             for name in (
                     "checkpoint/weights.npz", "checkpoint/contract.json",
                     "validation.json", "selection.json", "resolved-config.json",
-                    "baseline-tuning.json", "run-manifest.json"):
+                    "baseline-tuning.json", "run-manifest.json") + tuple(
+                        "checkpoints/step-%d/%s" % (step, name)
+                        for step in (4, 8, 12)
+                        for name in ("contract.json", "weights.npz")):
                 artifacts[name] = _digest(bundle / name)
             status_path = bundle / "status.json"
             _write(status_path, json.dumps({
@@ -483,10 +429,6 @@ def _write_bound_project(root):
                 "artifact_sha256": artifacts,
             }))
             source_artifacts = dict(artifacts)
-            source_artifacts["checkpoints/step-80/weights.npz"] = _digest(
-                bundle / "checkpoints/step-80/weights.npz")
-            source_artifacts["checkpoints/step-80/contract.json"] = _digest(
-                bundle / "checkpoints/step-80/contract.json")
             checkpoints.append({
                 "controller_id": controller,
                 "learning_seed": seed,
@@ -505,7 +447,7 @@ def _write_bound_project(root):
         controller: {"controller_version": 2}
         for controller in (
             "tuned_fixed", "max_pressure", "hysteretic_mp",
-            "shared_ddqn_legacy", "neighbor_phase_ddqn",
+            "neighbor_phase_ddqn",
         )
     }
     controller_configs["tuned_fixed"]["green_duration"] = 30
@@ -517,7 +459,7 @@ def _write_bound_project(root):
         for controller in controller_configs
     }
     rules = {
-        "required_learning_seeds": [11, 12, 13, 14, 15],
+        "required_learning_seeds": [12, 13, 14, 15, 16],
         "required_regimes": ["normal", "am_peak", "pm_peak"],
         "minimum_learning_seeds": 5,
         "minimum_demand_units": 2,
@@ -563,7 +505,10 @@ def _write_bound_project(root):
         },
         "controller_configs": controller_configs,
         "controller_commands": controller_commands,
-        "pilot_epsilon_selection": selection_binding,
+        "selection": selection_binding,
+        "primary_learned_controller": "neighbor_phase_ddqn",
+        "confirmatory_learning_seeds": [12, 13, 14, 15, 16],
+        "training_config_bindings": training_bindings,
         "checkpoints": checkpoints,
         "acceptance_rules": rules,
         "code_commit": code_commit,
@@ -587,8 +532,6 @@ def _write_bound_project(root):
         base_queue = 100.0
         if run["controller_id"] == "neighbor_phase_ddqn":
             base_queue = 110.0 if run["regime"] == "normal" else 90.0
-        elif run["controller_id"] == "shared_ddqn_legacy":
-            base_queue = 98.0
         elif run["controller_id"] in ("max_pressure", "hysteretic_mp"):
             base_queue = 95.0
         per_node = dict((node_id, 0.0) for node_id in agent_ids)
@@ -700,7 +643,7 @@ def _write_bound_project(root):
         selected.append(next(run["run_id"] for run in runs if (
             run["regime"] == regime
             and run["controller_id"] == "neighbor_phase_ddqn"
-            and run["learning_seed"] == 11)))
+            and run["learning_seed"] == 12)))
     export_bundle(
         final, root / "results/haichau_network_v2/demo", viewer_path, selected,
         fallback_dir=fallbacks_dir, project_root=root,
@@ -729,16 +672,29 @@ def _write_bound_project(root):
 def test_final_verifier_lists_missing_requirements(tmp_path):
     report = verify_project(tmp_path)
     assert report["complete"] is False
-    assert "five_learning_seeds" in report["failed_gates"]
+    assert "five_confirmatory_learning_seeds" in report["failed_gates"]
     assert "offline_demo" in report["failed_gates"]
     assert "network_53_signals" in report["failed_gates"]
 
 
 def test_final_verifier_has_a_fail_closed_pilot_selection_gate(tmp_path):
-    gate = _pilot_epsilon_selection_gate(tmp_path, {})
+    gate = _pilot_schedule_selection_gate(tmp_path, {})
 
     assert gate["passed"] is False
-    assert "pilot epsilon selection" in gate["detail"]
+    assert "pilot V3 schedule selection" in gate["detail"]
+
+
+def test_valid_v3_fixture_passes_pilot_selection_gate(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol = json.loads((
+        tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    ).read_text())
+
+    gate = _pilot_schedule_selection_gate(tmp_path, protocol)
+
+    assert gate["passed"] is True
+    assert gate["evidence"]["selected_config"] == protocol[
+        "selection"]["selected_config"]
 
 
 def test_final_verifier_rejects_one_final_config_that_drifts_from_selected_config(tmp_path):
@@ -752,8 +708,42 @@ def test_final_verifier_rejects_one_final_config_that_drifts_from_selected_confi
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["pilot_epsilon_selection"]["passed"] is False
-    assert "selected config" in report["gates"]["pilot_epsilon_selection"]["detail"]
+    assert report["gates"]["pilot_schedule_selection"]["passed"] is False
+    assert "selected config" in report["gates"]["pilot_schedule_selection"]["detail"]
+
+
+def test_final_verifier_rejects_controller_training_config_hash_drift(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    selected = tmp_path / protocol["training_config_bindings"][
+        "neighbor_phase_ddqn"]["path"]
+    selected.write_text(selected.read_text() + "\n")
+
+    report = verify_project(tmp_path)
+
+    gate = report["gates"]["pilot_schedule_selection"]
+    assert gate["passed"] is False
+    assert "selected config hash drift" in gate["detail"]
+
+
+def test_final_verifier_rejects_pilot_seed_in_held_out_campaign(tmp_path):
+    _write_bound_project(tmp_path)
+    campaign_path = (
+        tmp_path / "results/haichau_network_v2/final/campaign-manifest.json")
+    campaign = json.loads(campaign_path.read_text())
+    learned = next(
+        run for run in campaign["runs"]
+        if run["controller_id"] == "neighbor_phase_ddqn"
+        and run["learning_seed"] == 12)
+    learned["learning_seed"] = 11
+    _write(campaign_path, json.dumps(campaign))
+
+    report = verify_project(tmp_path)
+
+    gate = report["gates"]["fresh_matched_runs"]
+    assert gate["passed"] is False
+    assert "campaign run matrix differs" in gate["detail"]
 
 
 def test_final_verifier_rejects_disjoint_placeholder_evidence(tmp_path):
@@ -859,7 +849,7 @@ def test_export_rejects_matched_runs_that_are_not_the_predeclared_walkthrough(tm
             run["regime"] == regime
             and run["case_id"].endswith("-1")
             and run["controller_id"] == controller
-            and (controller == "tuned_fixed" or run["learning_seed"] == 11)))
+            and (controller == "tuned_fixed" or run["learning_seed"] == 12)))
                         for controller in ("tuned_fixed", "neighbor_phase_ddqn"))
 
     with pytest.raises(ValueError, match="exactly equal predeclared walkthrough"):
@@ -984,11 +974,34 @@ def test_malformed_checkpoint_contract_fails_gate_without_crashing(tmp_path):
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
+
+
+def test_checkpoint_gate_rejects_sparse_v3_validation_schedule(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol = json.loads((
+        tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    ).read_text())
+    entry = protocol["checkpoints"][0]
+    run_dir = tmp_path / entry["source_run_dir"]
+    validation_path = run_dir / "validation.json"
+    validation = json.loads(validation_path.read_text())
+    _write(validation_path, json.dumps({"step-12": validation["step-12"]}))
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["validation.json"] = _digest(validation_path)
+    _write(status_path, json.dumps(status))
+    entry["source_artifacts"]["validation.json"] = _digest(validation_path)
+    entry["source_status_sha256"] = _digest(status_path)
+
+    gate = _checkpoint_gate(tmp_path, protocol)
+
+    assert gate["passed"] is False
 
 
 @pytest.mark.parametrize("mutate", [
     lambda contract: contract.update({"obs_schema_version": 999}),
+    lambda contract: contract.update({"training_step": None}),
     lambda contract: contract.update({"feature_order": [42]}),
     lambda contract: contract.update({"normalization": {"other": 1.0}}),
     lambda contract: contract.update({"action_contract": {"type": "anything"}}),
@@ -1025,7 +1038,7 @@ def test_checkpoint_gate_binds_protocol_contract_to_contract_file(tmp_path):
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
 
 
 def test_checkpoint_gate_rejects_non_npz_weights_even_when_hash_bound(tmp_path):
@@ -1040,7 +1053,7 @@ def test_checkpoint_gate_rejects_non_npz_weights_even_when_hash_bound(tmp_path):
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
 
 
 def test_non_object_checkpoint_entry_fails_gate_without_crashing(tmp_path):
@@ -1052,7 +1065,7 @@ def test_non_object_checkpoint_entry_fails_gate_without_crashing(tmp_path):
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
 
 
 def test_checkpoint_gate_rejects_post_freeze_source_status_drift(tmp_path):
@@ -1067,8 +1080,8 @@ def test_checkpoint_gate_rejects_post_freeze_source_status_drift(tmp_path):
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
-    assert report["gates"]["five_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
 
 
 def test_checkpoint_gate_revalidates_rehashed_source_selection_evidence(tmp_path):
@@ -1079,7 +1092,7 @@ def test_checkpoint_gate_revalidates_rehashed_source_selection_evidence(tmp_path
     run_dir = tmp_path / entry["source_run_dir"]
     validation_path = run_dir / "validation.json"
     validation = json.loads(validation_path.read_text())
-    validation["step-80"]["rows"] = [{"case_id": "test-normal-0"}]
+    validation["step-12"]["rows"] = [{"case_id": "test-normal-0"}]
     validation_path.write_text(json.dumps(validation))
     status_path = run_dir / "status.json"
     status = json.loads(status_path.read_text())
@@ -1091,8 +1104,8 @@ def test_checkpoint_gate_revalidates_rehashed_source_selection_evidence(tmp_path
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
-    assert report["gates"]["five_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
 
 
 def test_checkpoint_gate_rejects_rehashed_source_without_insertion_evidence(tmp_path):
@@ -1103,7 +1116,7 @@ def test_checkpoint_gate_rejects_rehashed_source_without_insertion_evidence(tmp_
     run_dir = tmp_path / entry["source_run_dir"]
     validation_path = run_dir / "validation.json"
     validation = json.loads(validation_path.read_text())
-    for row in validation["step-80"]["rows"]:
+    for row in validation["step-12"]["rows"]:
         row.pop("candidate_insertion")
         row.pop("baseline_insertion")
     validation_path.write_text(json.dumps(validation))
@@ -1117,8 +1130,8 @@ def test_checkpoint_gate_rejects_rehashed_source_without_insertion_evidence(tmp_
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
-    assert report["gates"]["five_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
 
 
 def test_checkpoint_gate_fails_closed_for_rehashed_non_object_source_status(tmp_path):
@@ -1133,7 +1146,7 @@ def test_checkpoint_gate_fails_closed_for_rehashed_non_object_source_status(tmp_
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
 
 
 def test_checkpoint_gate_fails_closed_for_non_object_protocol_resolved_config(tmp_path):
@@ -1145,7 +1158,7 @@ def test_checkpoint_gate_fails_closed_for_non_object_protocol_resolved_config(tm
 
     report = verify_project(tmp_path)
 
-    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_confirmatory_learning_seeds"]["passed"] is False
 
 
 def test_offline_demo_rejects_remote_dependency_even_when_hashed(tmp_path):

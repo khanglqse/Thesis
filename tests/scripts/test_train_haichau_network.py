@@ -97,12 +97,16 @@ def test_env_factory_wires_v3_fixed_schedule_encoder(monkeypatch, tmp_path):
     assert captured["schedule_green_duration"] == 25.0
 
 
-def test_makefile_exposes_all_pinned_training_modes():
+def test_makefile_routes_final_training_through_v3_campaign_only():
     makefile = open("Makefile").read()
-    for mode in ("smoke", "pilot", "final"):
+    for mode in ("smoke", "pilot"):
         assert "haichau-train-%s: haichau-foundation-verify" % mode in makefile
         assert "--mode %s --learning-seed $(LEARNING_SEED)" % mode in makefile
         assert "haichau-train-legacy-%s: haichau-foundation-verify" % mode in makefile
+    assert "haichau-train-final-campaign: haichau-foundation-verify" in makefile
+    assert "python3 scripts/run_haichau_final_training.py" in makefile
+    assert "haichau-train-final:" not in makefile
+    assert "haichau-train-legacy-final:" not in makefile
     assert "--controller-family shared_ddqn_legacy" in makefile
 
 

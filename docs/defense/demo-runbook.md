@@ -13,15 +13,15 @@ The extension has no performance or acceptance claim until
 `scripts/verify_haichau_thesis.py` exits zero and its report says `"complete": true`.
 
 The foundation/model pipeline must first provide a tracked or checksum-verified canonical
-network manifest, a frozen 30-case split, CityFlow image digest and ten validation-eligible
-candidate checkpoint bundles: two learned controller families at seeds 11--15. Record their
-exact paths and hashes in
+network manifest, a frozen 30-case split, CityFlow image digest and five
+validation-eligible candidate checkpoint bundles for the selected
+`neighbor_phase_ddqn` family at confirmatory seeds 12--16. Record their exact paths and hashes in
 `results/haichau_network_v2/final/frozen-protocol.json`. Do not create that file from
 placeholders.
 
 The frozen protocol also records the ordered 53 agent IDs, hashes for both the executable
 CityFlow roadnet and the viewer projection, the complete resolved config for every
-controller, and checkpoint contracts for both learned controllers at seeds 11--15. Each
+controller, and checkpoint contracts for the selected learned controller at seeds 12--16. Each
 checkpoint contract contains the observation schema version, feature order, normalization,
 hidden size, action contract and compatible network hash. Its acceptance rules declare the
 same five seeds, all three regimes, at least two matched demand units per regime, bootstrap
@@ -49,22 +49,31 @@ retained container's image ID/reference, command, working directory, disabled ne
 project mount and exit state, then requires its stdout JSON to equal the hashed config,
 metrics and replay artifacts. Keep these containers until the final audit succeeds.
 
-Use the freeze CLI only after the ten learned training runs are complete and
+Use the freeze CLI only after the five confirmatory training runs are complete and
 validation-eligible. First precompute one shared, validation-only fixed-time tuning
-artifact; the launcher hash-binds it to every final run. Then launch both controller
-families for seeds `11` through `15`. Its default concurrency is two and it resumes a
-campaign by skipping only fully verified completed jobs; it refuses partial, ineligible,
-or hash-drifted outputs. The input scripts refuse an incomplete, ineligible, drifted, or
-mixed-duration training set. The resulting index has exactly the two learned controller
-IDs and seeds `11` through `15`; the controller configuration has the resolved evaluator
-config and entries for all five controllers.
+artifact; the launcher hash-binds it to every final run. Pilot seed `11` is used only to
+select the preregistered schedule-rehearsal arm and is excluded from the confirmatory
+campaign. Then launch the selected `neighbor_phase_ddqn` family for seeds `12` through
+`16`, exactly 12 one-hour episodes per seed with validation at steps `4`, `8`, and `12`.
+The launcher resumes by skipping only fully verified completed jobs and refuses partial,
+ineligible, or hash-drifted outputs. The resulting index has exactly one learned controller
+ID and seeds `12` through `16`; the controller configuration contains the three
+deterministic baselines plus the selected learned family.
 
 ```sh
 make haichau-precompute-final-baseline
+make haichau-select-schedule-pilot
 make haichau-train-final-campaign
 python3 scripts/prepare_haichau_release_inputs.py
 python3 scripts/prepare_haichau_viewer_network.py
 ```
+
+The V3 schedule selector must succeed before final training. It binds the winning
+rehearsal or no-rehearsal configuration and eligible checkpoint step to one immutable
+decision identity. The launcher, release-input builder, freeze command, campaign, statistics
+and final verifier all recheck that decision, selected YAML and SHA-256 binding. Freeze reads
+validation evidence only; any test metric or held-out case reference in selection evidence
+is rejected.
 
 To select a different campaign parallelism, set `HAICHAU_FINAL_CONCURRENCY`; leave it at
 the default `2` for the release path. The focused launcher test is available as
@@ -210,10 +219,10 @@ nonzero pages, dimensions or duration as appropriate.
 - **2:10--3:25 — Peak cases.** Repeat the comparison for AM and PM. Point to the aggregate
   queue-difference interval and completion degradation for each regime. Use the generated
   values shown by the bundle; do not memorize or insert values before the final campaign.
-- **3:25--4:15 — Controller contribution.** Explain that the legacy shared-vector DDQN uses
-  fixed action positions, while the candidate scores valid phase rows using local movement
-  features plus mean-pooled upstream/downstream queues. Clarify that this is neighbor-aware
-  DDQN rather than learned CoLight-style graph attention.
+- **3:25--4:15 — Controller contribution.** Explain how the candidate scores valid phase
+  rows using local movement features, fixed-schedule context and mean-pooled
+  upstream/downstream queues. Clarify that this is neighbor-aware DDQN rather than learned
+  CoLight-style graph attention.
 - **4:15--5:00 — Claim boundary and takeaway.** State whether the predeclared normal
   non-inferiority, peak improvement and completion gates passed. Conclude only at the level
   supported by that status. Finish with the empirical single-junction anchor as the source

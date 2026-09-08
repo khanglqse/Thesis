@@ -191,9 +191,9 @@ PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
 ```
 
 It writes `results/haichau_network_v2/verification/final-report.json` and exits nonzero
-until the network, split, ten learned checkpoint bundles (two controller families × five
-seeds), fresh matched runs, statistics, paper, offline demo and clean-checkout record are all
-hash-valid.
+until the network, split, five learned checkpoint bundles for the selected
+`neighbor_phase_ddqn` family, fresh matched runs, statistics, paper, offline demo and
+clean-checkout record are all hash-valid.
 
 ### Pre-final Hai Chau capacity calibration
 
@@ -274,8 +274,12 @@ bound validation flows; the source test-flow contents remain sealed.
 
 The verifier recomputes the numeric summary and acceptance decision from the hash-verified
 run metrics. It also requires exact frozen run identity (flow hash, simulator seed,
-checkpoint, code commit, inspected Docker image and resolved config). Each learned family
-must contain seeds 11--15, and every seed must contain the exact tuned-fixed
+checkpoint, code commit, inspected Docker image and resolved config). Final training is
+authorized only by the fail-closed V3 schedule-pilot decision. Pilot seed 11 selects between
+the preregistered rehearsal and no-rehearsal arms using validation checkpoints 4, 8 and 12,
+then remains excluded from confirmation. The selected `neighbor_phase_ddqn` configuration is
+trained at seeds 12--16 for exactly 12 one-hour episodes with validation every four episodes.
+Each confirmatory seed must contain the exact tuned-fixed
 demand/simulator cells, with at least two cells in every gated regime. The current checkout
 must be clean, descend from the frozen
 40-character commit and leave `src/`, `scripts/`, `frontend/`, `docker/` and build config
@@ -297,11 +301,12 @@ The empirical evidence supports a **single demand-matched SUMO junction** recons
 four camera movement lines, a published timing plan and audited geometry. Its findings are
 site- and regime-specific.
 
-The `haichau_network_v2` work is a **53-signal synthetic CityFlow scale experiment**. It
-implements both a legacy parameter-shared vector DDQN and a mean-pooled neighbor-aware
-phase-scoring DDQN, evaluated against validation-tuned fixed-time and two Max-Pressure
-baselines. It can test software scalability and coordination behavior inside the frozen task
-family. It is not empirical validation of district-wide traffic, signal timing or field
-performance, and its result section remains conditional until
+The `haichau_network_v2` work is a **53-signal synthetic CityFlow scale experiment**. The
+V3 release evaluates the schedule-selected mean-pooled neighbor-aware phase-scoring DDQN
+against validation-tuned fixed-time and two Max-Pressure baselines. The implementation keeps
+the legacy parameter-shared vector DDQN for historical experiments, but V3 release inputs
+cannot select it. The experiment can test software scalability and coordination behavior
+inside the frozen task family. It is not empirical validation of district-wide traffic,
+signal timing or field performance, and its result section remains conditional until
 `scripts/verify_haichau_thesis.py` reports `"complete": true`. Learned graph attention,
 measured district OD demand and field-calibrated multi-signal operation remain future work.

@@ -16,27 +16,29 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import yaml
+
 from traffic_rl.train.objective_contract import training_objective
 from traffic_rl.eval.release_identity import inspect_runtime_image, verify_git_checkout
-from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
-from traffic_rl.eval.checkpoint_selection import (
-    CHECKPOINT_ELIGIBILITY_POLICY, validate_checkpoint_selection)
-from traffic_rl.research.pilot_epsilon_selector import (
-    validate_final_resolved_config, validate_final_selection)
-from traffic_rl.sim.phase_encoder import FEATURES
+from traffic_rl.eval.checkpoint_selection import CHECKPOINT_ELIGIBILITY_POLICY
+from traffic_rl.research.pilot_schedule_selector import (
+    CONFIRMATORY_LEARNING_SEEDS, FINAL_CHECKPOINTS, FINAL_TIER,
+    PRIMARY_LEARNED_CONTROLLER, validate_final_checkpoint_selection,
+    validate_final_resolved_config, validate_frozen_schedule_selection)
+from traffic_rl.sim.phase_encoder import SCHEDULE_CONTEXT_FEATURES
 from traffic_rl.train.network_trainer import (
     _tuning_binding, _validate_precomputed_tuning)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FINAL_RELATIVE = "results/haichau_network_v2/final"
-LEARNING_CONTROLLERS = ("shared_ddqn_legacy", "neighbor_phase_ddqn")
+LEARNING_CONTROLLERS = (PRIMARY_LEARNED_CONTROLLER,)
 CONTROLLERS = (
     "tuned_fixed", "max_pressure", "hysteretic_mp",
-    "shared_ddqn_legacy", "neighbor_phase_ddqn",
+    PRIMARY_LEARNED_CONTROLLER,
 )
-LEARNING_SEEDS = (11, 12, 13, 14, 15)
+LEARNING_SEEDS = CONFIRMATORY_LEARNING_SEEDS
 REGIMES = ("normal", "am_peak", "pm_peak")
 CHECKPOINT_FIELDS = frozenset((
     "obs_schema_version", "feature_order", "normalization", "hidden_size",
@@ -49,17 +51,14 @@ NEIGHBOR_ACTION_CONTRACT = {
     "mask_type": "boolean_selectable_green_rows",
     "padding_actions_selectable": False,
 }
-LEGACY_ACTION_CONTRACT = {
-    "type": "fixed_vector", "version": 1,
-    "mask_type": "boolean_phase_index",
-    "padding_actions_selectable": False,
-    "n_actions": 3,
-}
 REQUIRED_TRAINING_ARTIFACTS = (
     "checkpoint/weights.npz", "checkpoint/contract.json", "validation.json",
     "selection.json", "resolved-config.json", "baseline-tuning.json",
     "run-manifest.json",
-)
+) + tuple(
+    "checkpoints/%s/%s" % (checkpoint, name)
+    for checkpoint in FINAL_CHECKPOINTS
+    for name in ("contract.json", "weights.npz"))
 
 
 def _sha256(path):
@@ -157,6 +156,9 @@ def _checkpoint_contract(contract, controller, compatibility, normalization):
     hidden = contract["hidden_size"]
     if isinstance(hidden, bool) or not isinstance(hidden, int) or hidden <= 0:
         raise ValueError("checkpoint contract hidden size is invalid")
+    training_step = contract.get("training_step")
+    if type(training_step) is not int or training_step not in (4, 8, 12):
+        raise ValueError("checkpoint contract training_step is invalid")
     compatible = contract["network_compatibility"]
     if not isinstance(compatible, dict) or compatible != compatibility:
         raise ValueError("checkpoint contract network compatibility drift")
@@ -164,13 +166,12 @@ def _checkpoint_contract(contract, controller, compatibility, normalization):
         raise ValueError("checkpoint contract controller family drift")
     if contract["checkpoint_eligibility_policy"] != CHECKPOINT_ELIGIBILITY_POLICY:
         raise ValueError("checkpoint eligibility policy is missing or obsolete")
-    if controller == "neighbor_phase_ddqn" \
-            and contract["feature_order"] != list(FEATURES):
+    if controller == PRIMARY_LEARNED_CONTROLLER \
+            and (contract["feature_order"] != list(SCHEDULE_CONTEXT_FEATURES)
+                 or contract.get("obs_schema_version") != 3
+                 or contract.get("feature_dim") != len(SCHEDULE_CONTEXT_FEATURES)):
         raise ValueError("neighbor checkpoint feature order drift")
-    expected_action = (NEIGHBOR_ACTION_CONTRACT
-                       if controller == "neighbor_phase_ddqn"
-                       else LEGACY_ACTION_CONTRACT)
-    if contract["action_contract"] != expected_action:
+    if contract["action_contract"] != NEIGHBOR_ACTION_CONTRACT:
         raise ValueError("checkpoint action contract drift")
     aliases = (
         ("hidden", contract["hidden_size"]),
@@ -186,10 +187,8 @@ def _checkpoint_contract(contract, controller, compatibility, normalization):
 
 
 def _load_checkpoint_bundle(directory, controller, contract):
-    if controller == "neighbor_phase_ddqn":
+    if controller == PRIMARY_LEARNED_CONTROLLER:
         return PhaseScoringDDQN.load_bundle(str(directory), contract)
-    if controller == "shared_ddqn_legacy":
-        return SharedDQN.load_bundle(str(directory), contract)
     raise ValueError("unknown learned checkpoint controller")
 
 
@@ -295,8 +294,14 @@ def _controller_configuration(root, path):
         raise ValueError("controller commands must define every controller")
     if not isinstance(resolved, dict):
         raise ValueError("resolved campaign configuration must be an object")
-    if not isinstance(document.get("pilot_epsilon_selection"), dict):
-        raise ValueError("pilot epsilon selection binding is required")
+    if not isinstance(document.get("pilot_schedule_selection"), dict):
+        raise ValueError("pilot V3 schedule selection binding is required")
+    if document.get("primary_learned_controller") != PRIMARY_LEARNED_CONTROLLER:
+        raise ValueError("primary learned controller must match V3 selection")
+    if tuple(document.get("confirmatory_learning_seeds", ())) != LEARNING_SEEDS:
+        raise ValueError("confirmatory learning seeds must be exactly 12--16")
+    if not isinstance(document.get("training_config_bindings"), dict):
+        raise ValueError("controller training config bindings are required")
     for controller in CONTROLLERS:
         if not isinstance(configs[controller], dict) or not configs[controller]:
             raise ValueError("controller config is invalid: %s" % controller)
@@ -307,14 +312,48 @@ def _controller_configuration(root, path):
     return document, relative, _sha256(path)
 
 
+def _yaml_mapping(path, label):
+    try:
+        value = yaml.safe_load(Path(path).read_text())
+    except (OSError, yaml.YAMLError) as exc:
+        raise ValueError("%s is not valid YAML: %s" % (label, exc))
+    if not isinstance(value, dict):
+        raise ValueError("%s must be a YAML mapping" % label)
+    return value
+
+
+def _training_configurations(root, bindings, selection):
+    if not isinstance(bindings, dict) or set(bindings) != set(LEARNING_CONTROLLERS):
+        raise ValueError("training config bindings must define the selected learned controller")
+    configs = {}
+    normalized = {}
+    for controller in LEARNING_CONTROLLERS:
+        record = bindings[controller]
+        if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
+            raise ValueError("training config binding is invalid: %s" % controller)
+        path, relative = _relative_file(
+            root, record.get("path"), "%s training config" % controller)
+        _assert_hash(path, record.get("sha256"), "%s training config" % controller)
+        configs[controller] = _yaml_mapping(path, "%s training config" % controller)
+        normalized[controller] = {"path": relative, "sha256": _sha256(path)}
+    selected = selection["selected_config"]
+    if (normalized[PRIMARY_LEARNED_CONTROLLER] != {
+            "path": selected["path"], "sha256": selected["sha256"]}
+            or configs[PRIMARY_LEARNED_CONTROLLER] != selected["config"]):
+        raise ValueError("training config binding drifts from V3 schedule selection")
+    return configs, normalized
+
+
 def _validate_selection_inputs(validation, selection, tuning, validation_ids):
     if _contains_test_reference(validation) or _contains_test_reference(selection) \
             or _contains_test_reference(tuning):
         raise ValueError("test metric appears in checkpoint selection evidence")
-    validate_checkpoint_selection(validation, selection, tuning, validation_ids)
+    selected = validate_final_checkpoint_selection(
+        validation, selection, tuning, validation_ids)
     selection_cases = tuning.get("selection_cases", []) if isinstance(tuning, dict) else []
     if selection_cases and any(case_id not in validation_ids for case_id in selection_cases):
         raise ValueError("baseline tuning uses a non-validation case")
+    return selected
 
 
 def _validate_precomputed_tuning_provenance(run_dir, run_manifest, tuning,
@@ -412,10 +451,8 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
     if resolved.get("network_sha256") != compatibility["network_sha256"]:
         raise ValueError("training artifact is not a final run for this network")
     run_config = resolved.get("run")
-    if (not isinstance(run_config, dict)
-            or int(run_config.get("episodes", 0)) <= 0
-            or int(run_config.get("horizon_seconds", 0)) != 3600):
-        raise ValueError("final training artifact must use the full 3600-second horizon")
+    if run_config != FINAL_TIER:
+        raise ValueError("final training artifact must use exact tier 12/3600/4")
     selection = _json(run_dir / "selection.json", "checkpoint selection")
     if (selection.get("status") != "eligible"
             or selection.get("eligible_for_test_evaluation") is not True
@@ -423,9 +460,14 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
         raise ValueError("checkpoint selection is not validation-eligible")
     validation = _json(run_dir / "validation.json", "validation evidence")
     tuning = _json(run_dir / "baseline-tuning.json", "baseline tuning")
-    _validate_selection_inputs(validation, selection, tuning, validation_ids)
+    selected = _validate_selection_inputs(
+        validation, selection, tuning, validation_ids)
     contract = _json(run_dir / "checkpoint/contract.json", "checkpoint contract")
     _checkpoint_contract(contract, controller, compatibility, normalization)
+    selected_step = int(selected.split("-")[1])
+    if contract.get("training_step") != selected_step:
+        raise ValueError(
+            "final checkpoint contract training_step differs from selected checkpoint")
     if (contract.get("training_objective") != expected_objective
             or training_objective(contract["training_objective"]["reward"])
             != expected_objective
@@ -437,10 +479,18 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
     _load_checkpoint_bundle(run_dir / "checkpoint", controller, contract)
     contract_path = run_dir / "checkpoint/contract.json"
     weight_path = run_dir / "checkpoint/weights.npz"
-    selected = selection["selected_checkpoint"]
-    if (not isinstance(selected, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+", selected)
-            or selected in (".", "..")):
-        raise ValueError("selected checkpoint identifier is unsafe")
+    checkpoint_contracts = {}
+    for checkpoint in FINAL_CHECKPOINTS:
+        checkpoint_dir = run_dir / "checkpoints" / checkpoint
+        checkpoint_contract = _json(
+            checkpoint_dir / "contract.json", "%s checkpoint contract" % checkpoint)
+        _checkpoint_contract(
+            checkpoint_contract, controller, compatibility, normalization)
+        if checkpoint_contract.get("training_step") != int(checkpoint.split("-")[1]):
+            raise ValueError(
+                "%s contract training_step differs from checkpoint" % checkpoint)
+        _load_checkpoint_bundle(checkpoint_dir, controller, checkpoint_contract)
+        checkpoint_contracts[checkpoint] = checkpoint_contract
     selected_dir = run_dir / "checkpoints" / selected
     selected_weights = selected_dir / "weights.npz"
     selected_contract_path = selected_dir / "contract.json"
@@ -448,7 +498,7 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
         raise ValueError("selected checkpoint bundle is missing")
     if _sha256(selected_weights) != source_artifacts["checkpoint/weights.npz"]:
         raise ValueError("selected checkpoint weights differ from final checkpoint")
-    selected_contract = _json(selected_contract_path, "selected checkpoint contract")
+    selected_contract = checkpoint_contracts[selected]
     if _canonical_hash(selected_contract) != _canonical_hash(contract):
         raise ValueError("selected checkpoint contract differs from final checkpoint")
     selected_prefix = "checkpoints/%s/" % selected
@@ -472,16 +522,16 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
 
 def _training_checkpoints(root, index_path, compatibility, normalization,
                           validation_ids, manifest, expected_objective,
-                          selected_config):
+                          selected_configs):
     index_path, relative = _relative_file(root, index_path, "training index")
     index = _json(index_path, "training index")
     if set(index or ()) != set(LEARNING_CONTROLLERS):
-        raise ValueError("training index must define both learned controllers")
+        raise ValueError("training index must define the selected learned controller")
     checkpoints = []
     for controller in LEARNING_CONTROLLERS:
         by_seed = index[controller]
         if not isinstance(by_seed, dict) or set(by_seed) != set(str(seed) for seed in LEARNING_SEEDS):
-            raise ValueError("training index must define seeds 11--15 for %s" % controller)
+            raise ValueError("training index must define confirmatory seeds 12--16 for %s" % controller)
         for seed in LEARNING_SEEDS:
             run_relative = by_seed[str(seed)]
             if not isinstance(run_relative, str) or not run_relative:
@@ -489,7 +539,7 @@ def _training_checkpoints(root, index_path, compatibility, normalization,
             checkpoints.append(_checkpoint_entry(
                 root, controller, seed, run_relative, compatibility,
                 normalization, validation_ids, manifest, expected_objective,
-                selected_config))
+                selected_configs[controller]))
     return checkpoints, relative, _sha256(index_path)
 
 
@@ -570,22 +620,15 @@ def freeze_protocol(root, experiment_manifest, viewer_network, controller_config
     validation_ids = set(case["case_id"] for case in cases
                          if case["split"] == "validation")
     config, config_relative, config_sha = _controller_configuration(root, controller_configs)
-    selection = validate_final_selection(
-        root, config["pilot_epsilon_selection"].get("path"))
-    declared_selection = config["pilot_epsilon_selection"]
-    actual_selection = {
-        key: value for key, value in selection.items() if key != "selected_config"
-    }
-    actual_selection["selected_config"] = {
-        key: value for key, value in selection["selected_config"].items()
-        if key != "config"
-    }
-    if declared_selection != actual_selection:
-        raise ValueError("pilot epsilon selection binding drift")
+    declared_selection = config["pilot_schedule_selection"]
+    selection = validate_frozen_schedule_selection(root, declared_selection)
+    actual_selection = declared_selection
+    training_configs, training_config_bindings = _training_configurations(
+        root, config["training_config_bindings"], selection)
     checkpoints, index_relative, index_sha = _training_checkpoints(
         root, training_index, compatibility, normalization, validation_ids,
         manifest, training_objective(config["resolved_config"].get("reward")),
-        selection["selected_config"]["config"])
+        training_configs)
     runtime = _runtime(root, runtime_image, runtime_dockerfile, runtime_inspector)
     case_manifest = {
         "schema_version": 1,
@@ -612,7 +655,10 @@ def freeze_protocol(root, experiment_manifest, viewer_network, controller_config
         "controller_config_sha256": config_sha,
         "training_index_path": index_relative,
         "training_index_sha256": index_sha,
-        "pilot_epsilon_selection": actual_selection,
+        "selection": actual_selection,
+        "primary_learned_controller": PRIMARY_LEARNED_CONTROLLER,
+        "confirmatory_learning_seeds": list(LEARNING_SEEDS),
+        "training_config_bindings": training_config_bindings,
         "resolved_config": config["resolved_config"],
         "controller_configs": config["controller_configs"],
         "controller_commands": config["controller_commands"],
@@ -646,9 +692,9 @@ def main(argv=None):
     parser.add_argument("--viewer-network", required=True,
                         help="verified 53-signal viewer projection")
     parser.add_argument("--controller-configs", required=True,
-                        help="JSON with resolved config, five configs and commands")
+                        help="JSON with resolved config and V3-selected controller commands")
     parser.add_argument("--training-index", required=True,
-                        help="JSON mapping both learned controllers and seeds 11--15")
+                        help="JSON mapping the selected learned controller and seeds 12--16")
     parser.add_argument("--runtime-image", required=True,
                         help="immutable repository@sha256 image reference")
     parser.add_argument("--runtime-dockerfile", default="docker/haichau-evaluation.Dockerfile")

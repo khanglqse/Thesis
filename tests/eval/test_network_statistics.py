@@ -110,6 +110,24 @@ def test_five_seed_gate_counts_candidate_seeds_only():
     assert result["five_learning_seeds"] is False
 
 
+def test_acceptance_uses_primary_controller_frozen_in_summary_metadata():
+    rows = _rows(
+        learning_seeds=(12, 13, 14, 15, 16),
+        regimes=("normal", "am_peak", "pm_peak"))
+    for row in rows:
+        if row["controller_id"] == "neighbor_phase_ddqn":
+            row["controller_id"] = "selected_schedule_ddqn"
+
+    summary = aggregate_campaign(
+        rows, required_learning_seeds=(12, 13, 14, 15, 16),
+        primary_learned_controller="selected_schedule_ddqn")
+    result = evaluate_acceptance(summary)
+
+    assert summary["_metadata"]["primary_learned_controller"] == \
+        "selected_schedule_ddqn"
+    assert result["five_learning_seeds"] is True
+
+
 def test_each_gated_regime_requires_the_declared_learning_seed_set():
     rows = _rows(
         learning_seeds=(11, 12, 13, 14, 15),

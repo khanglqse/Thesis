@@ -96,10 +96,15 @@ def aggregate_campaign(runs, required_learning_seeds=None,
                        normal_point_limit=0.0,
                        normal_ci_margin_fraction=0.05,
                        peak_ci_upper_limit=0.0,
-                       completion_degradation_limit=0.02):
+                       completion_degradation_limit=0.02,
+                       primary_learned_controller="neighbor_phase_ddqn"):
     """Aggregate demand cases inside learning seeds before inference."""
     if int(minimum_learning_seeds) <= 0 or int(minimum_demand_units) <= 0:
         raise ValueError("minimum independent units must be positive")
+    if (not isinstance(primary_learned_controller, str)
+            or not primary_learned_controller
+            or primary_learned_controller in DETERMINISTIC_CONTROLLERS):
+        raise ValueError("primary learned controller is invalid")
     rows = [_row(run) for run in runs]
     required = (
         "controller_id", "case_id", "regime", "demand_seed",
@@ -215,6 +220,7 @@ def aggregate_campaign(runs, required_learning_seeds=None,
         "completion_degradation_limit": float(completion_degradation_limit),
         "queue_metric": "queue_integral_vehicle_seconds",
         "baseline_controller": "tuned_fixed",
+        "primary_learned_controller": primary_learned_controller,
     }
     return summary
 
@@ -232,7 +238,9 @@ def evaluate_acceptance(summary):
     peak_ci_upper_limit = float(metadata.get("peak_ci_upper_limit", 0.0))
     completion_degradation_limit = float(
         metadata.get("completion_degradation_limit", 0.02))
-    candidate = summary.get("neighbor_phase_ddqn", {})
+    primary = metadata.get(
+        "primary_learned_controller", "neighbor_phase_ddqn")
+    candidate = summary.get(primary, {})
     normal = candidate.get("normal")
     if not normal or "queue_difference_vs_tuned_fixed" not in normal:
         return {

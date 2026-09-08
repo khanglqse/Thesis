@@ -8,6 +8,12 @@ from pathlib import Path
 
 from traffic_rl.eval.network_campaign import verify_campaign
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
+from traffic_rl.research.pilot_schedule_selector import (
+    CONFIRMATORY_LEARNING_SEEDS, PRIMARY_LEARNED_CONTROLLER,
+    validate_frozen_schedule_selection)
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _load_runs(campaign_dir):
@@ -51,8 +57,20 @@ def main(argv=None):
         "--protocol", default="results/haichau_network_v2/final/frozen-protocol.json")
     args = parser.parse_args(argv)
     campaign_dir = Path(args.campaign_dir)
-    protocol = json.loads(Path(args.protocol).read_text())
+    protocol_path = Path(args.protocol)
+    if not protocol_path.is_absolute():
+        protocol_path = PROJECT_ROOT / protocol_path
+    protocol = json.loads(protocol_path.read_text())
+    validate_frozen_schedule_selection(PROJECT_ROOT, protocol.get("selection"))
+    if (protocol.get("primary_learned_controller")
+            != PRIMARY_LEARNED_CONTROLLER
+            or tuple(protocol.get("confirmatory_learning_seeds", ()))
+            != CONFIRMATORY_LEARNING_SEEDS):
+        raise ValueError("frozen V3 controller/seed contract is invalid")
     rules = protocol.get("acceptance_rules", {})
+    if tuple(rules.get("required_learning_seeds", ())) \
+            != CONFIRMATORY_LEARNING_SEEDS:
+        raise ValueError("acceptance rules must freeze confirmatory seeds 12--16")
     summary = aggregate_campaign(
         _load_runs(campaign_dir),
         required_learning_seeds=rules.get("required_learning_seeds"),
@@ -64,6 +82,7 @@ def main(argv=None):
         peak_ci_upper_limit=rules.get("peak_ci_upper_limit", 0.0),
         completion_degradation_limit=rules.get(
             "completion_degradation_limit", 0.02),
+        primary_learned_controller=protocol.get("primary_learned_controller"),
     )
     document = {
         "study_scope": {
