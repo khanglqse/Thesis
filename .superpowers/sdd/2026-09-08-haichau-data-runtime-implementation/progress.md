@@ -38,3 +38,5 @@ Entries below record the command and observed reason for RED before production c
 - Task 5 GREEN: specified host suite passed 22 tests; host verifier returned 53 signals, 30 cases and split counts 9/6/15.
 - Runtime build: `make haichau-image` completed with linux/amd64 image ID `sha256:6e9eccf4cceb4251a8f7c0614699fe25c7e45e25ff1a41c654f645995bb17069` from the required base digest.
 - Runtime smoke: `make haichau-smoke` completed a real 60-step Fixed-Time CityFlow episode on `train_normal_demand11`: 53 controlled signals, 496 active vehicles, 1,938 vehicle-seconds queue integral, average travel time 60.0 seconds.
+- Full-suite RED: `make test` reached 132 passed and 1 failed because `tests/network/test_roadnet_neighbors.py` still referenced ignored `data/danang/roadnet_haichau.json`; the original-checkout file has the same SHA-256 as the new tracked roadnet. Updated the test to consume the tracked clean-checkout dataset.
+- Full-suite GREEN: `make test` — 133 passed, 1 Docker-marked test deselected, zero failures.
