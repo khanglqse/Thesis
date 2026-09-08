@@ -12,7 +12,7 @@
 - [x] Task 2: signal constraints, switch cost, service timers
 - [x] Task 3: phase-scoring Double DQN and checkpoint contract
 - [x] Task 4: balanced case sampler and replay
-- [ ] Task 5: validation regret and non-inferiority selection
+- [x] Task 5: validation regret and non-inferiority selection
 - [ ] Task 6: multi-case trainer and 53-node training smoke/pilot
 
 ## RED/GREEN evidence
@@ -26,6 +26,8 @@
 - Task 3 GREEN: `PYTHONPATH=src pytest tests/agents/test_phase_ddqn.py tests/agents/test_dqn.py -v` -> 17 passed, including numeric Double DQN target and 100-update stability tests.
 - Task 4 RED: `PYTHONPATH=src pytest tests/train/test_case_sampler.py tests/train/test_network_replay.py -v` -> collection failed with expected missing sampler/replay modules.
 - Task 4 GREEN: same command -> 4 passed, including ring-buffer overwrite coverage.
+- Task 5 RED: `PYTHONPATH=src pytest tests/eval/test_checkpoint_selection.py -v` -> collection failed with expected missing checkpoint-selection module.
+- Task 5 GREEN: same command -> 6 passed, including normal/completion gates and deterministic tie-breaking.
 
 ## Runtime evidence
 
