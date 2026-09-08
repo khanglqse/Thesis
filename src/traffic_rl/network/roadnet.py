@@ -255,6 +255,15 @@ class RoadNet:
                 errors.append(
                     "intersection {} selectable phase {} is shorter than min_green".format(
                         inter_id, phase_index))
+        for phase_index in transitions:
+            if 0 <= phase_index < phase_count \
+                    and isinstance(min_green, (int, float)) \
+                    and self.phase_movement_pairs(inter_id, phase_index) \
+                    and float(self._lightphases(inter_id)[phase_index].get(
+                        "time", 0)) >= float(min_green):
+                errors.append(
+                    "intersection {} transition phase {} is selectable by rule".format(
+                        inter_id, phase_index))
         mapping = record.get("transitions", {})
         normalized = {}
         for source in selectable:
