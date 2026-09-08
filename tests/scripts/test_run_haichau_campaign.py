@@ -14,8 +14,13 @@ def test_release_cli_uses_library_owned_docker_executor(monkeypatch, tmp_path):
     calls = []
     monkeypatch.setattr(campaign_script, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(
-        campaign_script, "verify_git_checkout", lambda *args, **kwargs: {})
-    monkeypatch.setattr(campaign_script, "verify_runtime", lambda *args: {})
+        campaign_script, "verify_git_checkout",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("run manifests must precede release verification")))
+    monkeypatch.setattr(
+        campaign_script, "verify_runtime",
+        lambda *args: (_ for _ in ()).throw(
+            AssertionError("run_pending owns runtime verification")))
 
     def run_pending(campaign, **kwargs):
         calls.append((campaign, kwargs))

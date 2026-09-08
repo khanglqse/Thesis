@@ -58,18 +58,6 @@ def main(argv=None):
     if not protocol_path.is_file():
         raise ValueError("frozen protocol is required")
     protocol = json.loads(protocol_path.read_text())
-    allowed_dirty = ()
-    if not args.prepare_only:
-        try:
-            allowed_dirty = (str(
-                campaign_dir.resolve().relative_to(PROJECT_ROOT.resolve())),)
-        except ValueError:
-            raise ValueError("campaign directory must remain inside project root")
-    verify_git_checkout(
-        PROJECT_ROOT, protocol.get("code_commit"),
-        allowed_dirty_prefixes=allowed_dirty)
-    verify_runtime(PROJECT_ROOT, protocol)
-
     if args.verify_only:
         manifest_path = Path(protocol.get("case_manifest_path", ""))
         if not manifest_path.is_absolute():
