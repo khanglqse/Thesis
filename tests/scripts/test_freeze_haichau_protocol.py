@@ -186,12 +186,31 @@ def _fixture(root):
                            if case["split"] == "validation")
     dockerfile = root / "docker/haichau-evaluation.Dockerfile"
     _write(dockerfile, "FROM %s\n" % RUNTIME_IMAGE)
+    controller_configs = dict(
+        (controller, {"controller_version": 2}) for controller in CONTROLLERS)
+    controller_configs["tuned_fixed"]["green_duration"] = 30
+    controller_configs["hysteretic_mp"].update({
+        "min_hold_decisions": 3, "switch_threshold": 2.5,
+    })
     config = {
-        "resolved_config": {"step_seconds": 1},
-        "controller_configs": dict(
-            (controller, {"controller_version": 2}) for controller in CONTROLLERS),
+        "resolved_config": {
+            "network_path": str(roadnet.relative_to(root)),
+            "phase_contract_path": str(phase_contract.relative_to(root)),
+            "phase_contract_sha256": _sha256(phase_contract),
+            "step_seconds": 1,
+            "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
+            "simulation": {
+                "action_interval": 10, "yellow_time": 3,
+                "min_green": 20, "maximum_red": 180,
+            },
+            "reward": {
+                "queue_weight": 1.0, "downstream_block_weight": 0.1,
+                "switch_penalty": 0.05,
+            },
+        },
+        "controller_configs": controller_configs,
         "controller_commands": dict(
-            (controller, ["python3", "scripts/evaluate.py", "{case_id}"])
+            (controller, ["python3", "scripts/evaluate_haichau_network.py"])
             for controller in CONTROLLERS),
     }
     config_path = root / "release/controller-configs.json"

@@ -6,7 +6,13 @@ import subprocess
 import pytest
 
 import traffic_rl.eval.network_campaign as network_campaign
-from traffic_rl.eval.network_campaign import expand_runs, run_pending, verify_campaign
+from traffic_rl.eval.network_campaign import (
+    CONTROLLERS,
+    bind_frozen_manifest,
+    expand_runs,
+    run_pending,
+    verify_campaign,
+)
 
 
 def _manifest():
@@ -14,6 +20,8 @@ def _manifest():
         "protocol_version": 2,
         "network_sha256": "a" * 64,
         "viewer_network_sha256": "a" * 64,
+        "phase_contract_sha256": "9" * 64,
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "runtime_digest": "sha256:" + "b" * 64,
         "runtime_image": "cityflowproject/cityflow@sha256:" + "b" * 64,
         "runtime_image_id": "sha256:" + "b" * 64,
@@ -23,6 +31,34 @@ def _manifest():
         "controlled_signals": 53,
         "agent_ids": ["N%02d" % index for index in range(53)],
         "default_horizon_steps": 3600,
+        "resolved_config": {
+            "network_path": "results/haichau_network_v2/network/roadnet.json",
+            "phase_contract_path": (
+                "results/haichau_network_v2/network/phase-contract.json"),
+            "phase_contract_sha256": "9" * 64,
+            "step_seconds": 1.0,
+            "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
+            "simulation": {
+                "action_interval": 10, "yellow_time": 3,
+                "min_green": 20, "maximum_red": 180,
+            },
+            "reward": {
+                "queue_weight": 1.0, "downstream_block_weight": 0.1,
+                "switch_penalty": 0.05,
+            },
+        },
+        "controller_configs": {
+            "tuned_fixed": {"green_duration": 30},
+            "max_pressure": {"controller_version": 2},
+            "hysteretic_mp": {
+                "min_hold_decisions": 3, "switch_threshold": 2.5,
+            },
+            "shared_ddqn_legacy": {"controller_version": 2},
+            "neighbor_phase_ddqn": {"controller_version": 2},
+        },
+        "controller_commands": dict(
+            (controller, ["python3", "scripts/evaluate_haichau_network.py"])
+            for controller in CONTROLLERS),
         "cases": [
             {
                 "case_id": "test-normal-101",
@@ -50,6 +86,114 @@ def _manifest():
             },
         ],
     }
+
+
+def test_frozen_protocol_resolves_a_command_for_every_controller():
+    case_manifest = _manifest()
+    case_manifest.pop("controller_commands")
+    commands = dict(
+        (controller, ["python3", "scripts/evaluate_haichau_network.py"])
+        for controller in CONTROLLERS)
+    protocol = dict(_manifest())
+    protocol["controller_commands"] = commands
+
+    frozen = bind_frozen_manifest(case_manifest, protocol)
+    runs = expand_runs(frozen, [11], CONTROLLERS)
+
+    selected = dict((run["controller_id"], run["command"]) for run in runs)
+    assert set(selected) == set(CONTROLLERS)
+    for controller in CONTROLLERS:
+        assert selected[controller] == [
+            "python3", "scripts/evaluate_haichau_network.py",
+        ]
+
+
+def test_frozen_controller_command_rejects_arguments_owned_by_runner():
+    manifest = _manifest()
+    manifest["controller_commands"]["tuned_fixed"] += [
+        "--run-manifest", "other.json"]
+
+    with pytest.raises(ValueError, match="evaluator entrypoint"):
+        expand_runs(manifest, [11], ["tuned_fixed"])
+
+
+def test_expansion_rejects_incomplete_evaluator_configuration():
+    manifest = _manifest()
+    manifest["resolved_config"].pop("phase_contract_path")
+
+    with pytest.raises(ValueError, match="phase_contract_path"):
+        expand_runs(manifest, [11], ["tuned_fixed"])
+
+
+def test_expansion_rejects_runtime_config_drift_from_frozen_protocol():
+    manifest = _manifest()
+    manifest["resolved_config"]["phase_contract_sha256"] = "8" * 64
+
+    with pytest.raises(ValueError, match="phase contract differs"):
+        expand_runs(manifest, [11], ["tuned_fixed"])
+
+
+def test_expansion_preserves_common_and_controller_runtime_configuration():
+    run = expand_runs(_manifest(), [11], ["hysteretic_mp"])[0]
+
+    assert run["resolved_config"]["network_path"].endswith("roadnet.json")
+    assert run["resolved_config"]["normalization"] == {
+        "count_norm": 20.0, "capacity_norm": 40.0,
+    }
+    assert run["resolved_config"]["simulation"]["maximum_red"] == 180
+    assert run["resolved_config"]["reward"]["switch_penalty"] == 0.05
+    assert run["resolved_config"]["min_hold_decisions"] == 3
+
+
+def test_run_manifest_is_materialized_before_executor(tmp_path):
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    _write_campaign(tmp_path, [run])
+
+    def inspecting_executor(received, run_dir):
+        manifest_path = run_dir / "run-manifest.json"
+        assert json.loads(manifest_path.read_text()) == received
+        assert (run_dir / "runtime-configs").is_dir()
+        return _executor(run, run_dir)
+
+    result = run_pending(tmp_path, inspecting_executor)
+
+    assert result["completed"] == 1
+    manifest_path = tmp_path / "runs" / run["run_id"] / "run-manifest.json"
+    assert json.loads(manifest_path.read_text()) == run
+
+
+def test_executor_cannot_change_its_hash_bound_run_manifest(tmp_path):
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    _write_campaign(tmp_path, [run])
+
+    def mutating_executor(received, run_dir):
+        (run_dir / "run-manifest.json").write_text("{}\n")
+        return _executor(received, run_dir)
+
+    result = run_pending(tmp_path, mutating_executor)
+
+    assert result["failed"] == 1
+    status = json.loads(
+        (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
+    assert status["status"] == "failed"
+    assert "changed during execution" in status["error"]
+
+
+def test_docker_command_routes_materialized_manifest_and_runtime_directory(tmp_path):
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    run_dir = tmp_path / "results" / "final" / "runs" / run["run_id"]
+    run_dir.mkdir(parents=True)
+    manifest_path = run_dir / "run-manifest.json"
+    network_campaign._write_json(manifest_path, run)
+
+    argv = network_campaign._docker_argv(run, tmp_path, run_dir)
+
+    assert argv[-4:] == [
+        "--run-manifest",
+        "/work/results/final/runs/%s/run-manifest.json" % run["run_id"],
+        "--runtime-dir",
+        "/work/results/final/runs/%s/runtime-configs" % run["run_id"],
+    ]
 
 
 def _write_campaign(path, runs):
@@ -270,11 +414,15 @@ def test_hand_edited_docker_status_requires_a_real_retained_container(
             run_dir, status, run, tmp_path, run["code_commit"])
 
 
-def test_docker_launch_is_detached_and_keeps_cli_diagnostics_out_of_container_logs():
+def test_docker_launch_is_detached_and_keeps_cli_diagnostics_out_of_container_logs(
+        tmp_path):
     run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
     run["command"] = ["python3", "evaluate.py"]
+    run_dir = tmp_path / "results" / "run"
+    run_dir.mkdir(parents=True)
+    network_campaign._write_json(run_dir / "run-manifest.json", run)
 
-    argv = network_campaign._docker_argv(run, "/project", "/project/results/run")
+    argv = network_campaign._docker_argv(run, tmp_path, run_dir)
     diagnostics = network_campaign._docker_cli_diagnostics(
         "WARNING: image platform linux/amd64 differs from host linux/arm64/v8\n",
         "")
@@ -314,6 +462,7 @@ def test_live_platform_warning_is_separate_and_retained_logs_reverify(tmp_path):
     source = {"code_commit": run["code_commit"], "head_commit": run["code_commit"]}
     runtime = dict((key, run[key]) for key in (
         "runtime_image", "runtime_image_id", "runtime_digest"))
+    network_campaign._write_json(run_dir / "run-manifest.json", run)
     container_id = None
     try:
         result, provenance = network_campaign._trusted_docker_executor(

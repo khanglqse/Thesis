@@ -4,7 +4,7 @@ import json
 import pytest
 
 from scripts.export_haichau_replays import export_bundle
-from traffic_rl.eval.network_campaign import expand_runs, run_pending
+from traffic_rl.eval.network_campaign import CONTROLLERS, expand_runs, run_pending
 from traffic_rl.eval.network_replay import validate_network
 
 
@@ -36,6 +36,8 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
         "protocol_version": 2,
         "network_sha256": network_sha256,
         "viewer_network_sha256": network_sha256,
+        "phase_contract_sha256": "e" * 64,
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "runtime_digest": "sha256:" + "b" * 64,
         "runtime_image": "cityflowproject/cityflow@sha256:" + "b" * 64,
         "runtime_image_id": "sha256:" + "b" * 64,
@@ -45,6 +47,32 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
         "controlled_signals": 53,
         "agent_ids": agent_ids,
         "default_horizon_steps": 10,
+        "resolved_config": {
+            "network_path": "roadnet.json",
+            "phase_contract_path": "phase-contract.json",
+            "phase_contract_sha256": "e" * 64,
+            "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
+            "simulation": {
+                "action_interval": 10, "yellow_time": 3,
+                "min_green": 20, "maximum_red": 180,
+            },
+            "reward": {
+                "queue_weight": 1.0, "downstream_block_weight": 0.1,
+                "switch_penalty": 0.05,
+            },
+        },
+        "controller_configs": {
+            "tuned_fixed": {"green_duration": 30},
+            "max_pressure": {"controller_version": 2},
+            "hysteretic_mp": {
+                "min_hold_decisions": 3, "switch_threshold": 2.5,
+            },
+            "shared_ddqn_legacy": {"controller_version": 2},
+            "neighbor_phase_ddqn": {"controller_version": 2},
+        },
+        "controller_commands": dict(
+            (controller, ["python3", "scripts/evaluate_haichau_network.py"])
+            for controller in CONTROLLERS),
         "cases": [{
             "case_id": "test-normal-101", "split": "test", "regime": "normal",
             "demand_seed": 101, "simulator_seed": 201,

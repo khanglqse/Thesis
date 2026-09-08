@@ -361,6 +361,14 @@ def _write_bound_project(root):
             "shared_ddqn_legacy", "neighbor_phase_ddqn",
         )
     }
+    controller_configs["tuned_fixed"]["green_duration"] = 30
+    controller_configs["hysteretic_mp"].update({
+        "min_hold_decisions": 3, "switch_threshold": 2.5,
+    })
+    controller_commands = {
+        controller: ["python3", "scripts/evaluate_haichau_network.py"]
+        for controller in controller_configs
+    }
     rules = {
         "required_learning_seeds": [11, 12, 13, 14, 15],
         "required_regimes": ["normal", "am_peak", "pm_peak"],
@@ -390,8 +398,23 @@ def _write_bound_project(root):
         "runtime_dockerfile_path": str(runtime_dockerfile.relative_to(root)),
         "runtime_dockerfile_sha256": _digest(runtime_dockerfile),
         "agent_ids": agent_ids,
-        "resolved_config": {"step_seconds": 1},
+        "resolved_config": {
+            "network_path": str(roadnet_path.relative_to(root)),
+            "phase_contract_path": "release/phase-contract.json",
+            "phase_contract_sha256": phase_sha,
+            "step_seconds": 1,
+            "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
+            "simulation": {
+                "action_interval": 10, "yellow_time": 3,
+                "min_green": 20, "maximum_red": 180,
+            },
+            "reward": {
+                "queue_weight": 1.0, "downstream_block_weight": 0.1,
+                "switch_penalty": 0.05,
+            },
+        },
         "controller_configs": controller_configs,
+        "controller_commands": controller_commands,
         "checkpoints": checkpoints,
         "acceptance_rules": rules,
         "code_commit": code_commit,
