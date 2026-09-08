@@ -8,6 +8,7 @@ from scripts.freeze_haichau_protocol import _contains_test_reference, freeze_pro
 from scripts import verify_haichau_thesis
 from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
+from traffic_rl.sim.phase_encoder import FEATURES
 
 
 RUNTIME_DIGEST = "sha256:" + "a" * 64
@@ -56,7 +57,9 @@ def _contract(network_sha, phase_contract_sha, generator_config_sha,
               manifest_sha, controller_family):
     return {
         "obs_schema_version": 2,
-        "feature_order": ["phase_pressure"],
+        "feature_order": (list(FEATURES)
+                          if controller_family == "neighbor_phase_ddqn"
+                          else ["lane_count_0"]),
         "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "hidden_size": 128,
         "action_contract": ({
@@ -88,7 +91,7 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
         network_sha, phase_contract_sha, generator_config_sha, manifest_sha,
         controller)
     if controller == "neighbor_phase_ddqn":
-        model = PhaseScoringDDQN(1, hidden=128, lr=0.001, seed=seed)
+        model = PhaseScoringDDQN(len(FEATURES), hidden=128, lr=0.001, seed=seed)
     else:
         model = SharedDQN(1, 3, hidden=128, lr=0.001, seed=seed, dueling=True)
     model.save_bundle(str(run_dir / "checkpoint"), contract)
@@ -171,6 +174,7 @@ def _fixture(root):
         },
         "generator_config_path": str(generator_config.relative_to(root)),
         "generator_config_sha256": _sha256(generator_config),
+        "preprocessing": {"count_norm": 20.0, "capacity_norm": 40.0},
         "cases": cases,
     }
     manifest_path = root / "release/experiment-manifest.json"
@@ -391,10 +395,16 @@ def test_freeze_refuses_conflicting_legacy_contract_aliases(tmp_path):
 
 @pytest.mark.parametrize(
     "mutate, error",
-    [
-        (lambda contract: contract["action_contract"].update({"version": 2}),
-         "action contract drift"),
-        (lambda contract: contract["network_compatibility"].update(
+        [
+            (lambda contract: contract["action_contract"].update({"version": 2}),
+             "action contract drift"),
+            (lambda contract: contract.update(
+                {"feature_order": ["forged_%d" % index for index in range(12)]}),
+             "feature order drift"),
+            (lambda contract: contract["normalization"].update(
+                {"count_norm": 99.0}),
+             "normalization is invalid"),
+            (lambda contract: contract["network_compatibility"].update(
             {"phase_contract_sha256": "0" * 64}),
          "network compatibility drift"),
     ],

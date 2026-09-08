@@ -223,6 +223,9 @@ class PhaseScoringDDQN(object):
                   float(data["meta_lr"]), seed=0, grad_clip=grad_clip,
                   huber_delta=float(data["meta_huber_delta"]))
         for name in net.params:
+            if data[name].shape != getattr(net, name).shape \
+                    or data["target_" + name].shape != getattr(net, "t" + name).shape:
+                raise ValueError("checkpoint parameter shape differs: %s" % name)
             setattr(net, name, data[name].astype(np.float32))
             setattr(net, "t" + name, data["target_" + name].astype(np.float32))
         return net

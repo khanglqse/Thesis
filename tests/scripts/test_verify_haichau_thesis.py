@@ -12,6 +12,7 @@ from scripts.verify_haichau_thesis import (
 from traffic_rl.eval.network_campaign import bind_frozen_manifest, expand_runs, run_pending
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import write_artifacts, write_release_manifest
+from traffic_rl.sim.phase_encoder import FEATURES
 
 
 RUNTIME_DIGEST = "sha256:" + "a" * 64
@@ -223,7 +224,9 @@ def _checkpoint_contract(network_sha256, controller="neighbor_phase_ddqn",
     manifest_sha256 = manifest_sha256 or "d" * 64
     return {
         "obs_schema_version": 2,
-        "feature_order": ["phase_pressure", "neighbor_queue"],
+        "feature_order": (list(FEATURES)
+                          if controller == "neighbor_phase_ddqn"
+                          else ["lane_count_0"]),
         "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "hidden_size": 64,
         "action_contract": ({
@@ -370,6 +373,7 @@ def _write_bound_project(root):
         "phase_contract_sha256": phase_sha,
         "generator_config_sha256": generator_sha,
         "experiment_manifest_sha256": experiment_sha,
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "runtime_digest": RUNTIME_DIGEST,
         "runtime_image": RUNTIME_IMAGE,
         "runtime_image_id": RUNTIME_DIGEST,
@@ -710,6 +714,7 @@ def test_checkpoint_contract_validator_rejects_semantic_drift(mutate):
         "phase_contract_sha256": "b" * 64,
         "generator_config_sha256": "c" * 64,
         "experiment_manifest_sha256": "d" * 64,
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
     }
     contract = _checkpoint_contract("a" * 64)
     mutate(contract)

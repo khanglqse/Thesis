@@ -8,6 +8,7 @@ or read a test metric.  The campaign runner consumes the resulting protocol.
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -18,6 +19,7 @@ from pathlib import Path
 from traffic_rl.eval.release_identity import inspect_runtime_image, verify_git_checkout
 from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
+from traffic_rl.sim.phase_encoder import FEATURES
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -135,27 +137,26 @@ def _contains_test_reference(value):
     return False
 
 
-def _checkpoint_contract(contract, controller, compatibility):
+def _checkpoint_contract(contract, controller, compatibility, normalization):
     if not isinstance(contract, dict) or not CHECKPOINT_FIELDS.issubset(contract):
         raise ValueError("checkpoint contract schema is incomplete")
     if not isinstance(contract["feature_order"], list) or not contract["feature_order"]:
         raise ValueError("checkpoint contract feature order is invalid")
-    if (not isinstance(contract["normalization"], dict)
-            or set(contract["normalization"]) != {"count_norm", "capacity_norm"}):
+    if contract["normalization"] != normalization:
         raise ValueError("checkpoint contract normalization is invalid")
     if not isinstance(contract["action_contract"], dict):
         raise ValueError("checkpoint contract action contract is invalid")
-    try:
-        hidden = int(contract["hidden_size"])
-    except (TypeError, ValueError):
-        hidden = 0
-    if hidden <= 0:
+    hidden = contract["hidden_size"]
+    if isinstance(hidden, bool) or not isinstance(hidden, int) or hidden <= 0:
         raise ValueError("checkpoint contract hidden size is invalid")
     compatible = contract["network_compatibility"]
     if not isinstance(compatible, dict) or compatible != compatibility:
         raise ValueError("checkpoint contract network compatibility drift")
     if contract["controller_family"] != controller:
         raise ValueError("checkpoint contract controller family drift")
+    if controller == "neighbor_phase_ddqn" \
+            and contract["feature_order"] != list(FEATURES):
+        raise ValueError("neighbor checkpoint feature order drift")
     expected_action = (NEIGHBOR_ACTION_CONTRACT
                        if controller == "neighbor_phase_ddqn"
                        else LEGACY_ACTION_CONTRACT)
@@ -325,7 +326,8 @@ def _run_artifact_path(run_dir, relative):
     return candidate
 
 
-def _checkpoint_entry(root, controller, seed, run_relative, compatibility, validation_ids):
+def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
+                      normalization, validation_ids):
     run_path, normalized_relative = _relative_file(
         root, run_relative + "/status.json", "training artifact status")
     run_dir = run_path.parent
@@ -369,7 +371,7 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility, valid
     tuning = _json(run_dir / "baseline-tuning.json", "baseline tuning")
     _validate_selection_inputs(validation, selection, tuning, validation_ids)
     contract = _json(run_dir / "checkpoint/contract.json", "checkpoint contract")
-    _checkpoint_contract(contract, controller, compatibility)
+    _checkpoint_contract(contract, controller, compatibility, normalization)
     _load_checkpoint_bundle(run_dir / "checkpoint", controller, contract)
     contract_path = run_dir / "checkpoint/contract.json"
     weight_path = run_dir / "checkpoint/weights.npz"
@@ -406,7 +408,8 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility, valid
     }
 
 
-def _training_checkpoints(root, index_path, compatibility, validation_ids):
+def _training_checkpoints(root, index_path, compatibility, normalization,
+                          validation_ids):
     index_path, relative = _relative_file(root, index_path, "training index")
     index = _json(index_path, "training index")
     if set(index or ()) != set(LEARNING_CONTROLLERS):
@@ -421,7 +424,8 @@ def _training_checkpoints(root, index_path, compatibility, validation_ids):
             if not isinstance(run_relative, str) or not run_relative:
                 raise ValueError("training index run path is invalid")
             checkpoints.append(_checkpoint_entry(
-                root, controller, seed, run_relative, compatibility, validation_ids))
+                root, controller, seed, run_relative, compatibility,
+                normalization, validation_ids))
     return checkpoints, relative, _sha256(index_path)
 
 
@@ -487,12 +491,23 @@ def freeze_protocol(root, experiment_manifest, viewer_network, controller_config
     compatibility = _experiment_compatibility(root, manifest)
     if compatibility["network_sha256"] != network_sha:
         raise ValueError("experiment network hash drift")
+    preprocessing = manifest.get("preprocessing", {})
+    try:
+        normalization = {
+            "count_norm": float(preprocessing["count_norm"]),
+            "capacity_norm": float(preprocessing["capacity_norm"]),
+        }
+    except (KeyError, TypeError, ValueError):
+        raise ValueError("experiment preprocessing normalization is invalid")
+    if any(not math.isfinite(value) or value <= 0
+           for value in normalization.values()):
+        raise ValueError("experiment preprocessing normalization is invalid")
     cases = _release_cases(root, manifest)
     validation_ids = set(case["case_id"] for case in cases
                          if case["split"] == "validation")
     config, config_relative, config_sha = _controller_configuration(root, controller_configs)
     checkpoints, index_relative, index_sha = _training_checkpoints(
-        root, training_index, compatibility, validation_ids)
+        root, training_index, compatibility, normalization, validation_ids)
     runtime = _runtime(root, runtime_image, runtime_dockerfile, runtime_inspector)
     case_manifest = {
         "schema_version": 1,
@@ -510,6 +525,7 @@ def freeze_protocol(root, experiment_manifest, viewer_network, controller_config
         "phase_contract_sha256": compatibility["phase_contract_sha256"],
         "generator_config_sha256": compatibility["generator_config_sha256"],
         "experiment_manifest_sha256": compatibility["manifest_sha256"],
+        "normalization": normalization,
         "agent_ids": agent_ids,
         "code_commit": code_commit,
         "source_experiment_manifest_path": manifest_relative,

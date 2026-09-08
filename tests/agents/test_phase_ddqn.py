@@ -110,6 +110,21 @@ def test_loader_rejects_family_and_alias_drift(tmp_path):
         PhaseScoringDDQN.load_bundle(str(tmp_path), aliases)
 
 
+def test_loader_rejects_corrupt_parameter_shape(tmp_path):
+    net = PhaseScoringDDQN(3, hidden=4, lr=2e-3, seed=2)
+    contract = {"controller_family": "neighbor_phase_ddqn",
+                "feature_dim": 3, "hidden_size": 4}
+    net.save_bundle(str(tmp_path), contract)
+    weights = tmp_path / "weights.npz"
+    with np.load(str(weights)) as source:
+        arrays = dict((name, source[name]) for name in source.files)
+    arrays["W1"] = np.zeros((2, 4), np.float32)
+    np.savez(str(weights), **arrays)
+
+    with pytest.raises(ValueError, match="parameter shape.*W1"):
+        PhaseScoringDDQN.load_bundle(str(tmp_path), contract)
+
+
 def test_synthetic_updates_remain_finite_and_reduce_loss():
     net = PhaseScoringDDQN(4, hidden=16, lr=1e-2, seed=3,
                            grad_clip=10.0, huber_delta=1.0)

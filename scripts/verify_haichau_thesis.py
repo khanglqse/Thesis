@@ -21,6 +21,7 @@ from traffic_rl.eval.release_attestation import validate_attestation
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
+from traffic_rl.sim.phase_encoder import FEATURES
 
 
 DEMAND_LABEL = "synthetic network demand constrained by Da Nang evidence"
@@ -223,7 +224,7 @@ def _checkpoint_contract_valid(contract, protocol, controller):
             "manifest_sha256": "experiment_manifest_sha256",
         }
         hidden = contract["hidden_size"]
-        if isinstance(hidden, bool) or int(hidden) <= 0:
+        if isinstance(hidden, bool) or not isinstance(hidden, int) or hidden <= 0:
             return False
         if contract["obs_schema_version"] != 2 \
                 or contract["controller_family"] != controller:
@@ -233,9 +234,11 @@ def _checkpoint_contract_valid(contract, protocol, controller):
                 or len(set(features)) != len(features)):
             return False
         if (not isinstance(normalization, dict)
-                or set(normalization) != {"count_norm", "capacity_norm"}
+                or normalization != (protocol or {}).get("normalization")
                 or any(isinstance(value, bool) or not math.isfinite(float(value))
                        or float(value) <= 0 for value in normalization.values())):
+            return False
+        if controller == "neighbor_phase_ddqn" and features != list(FEATURES):
             return False
         if contract["action_contract"] != ACTION_CONTRACTS.get(controller):
             return False
