@@ -246,7 +246,8 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification):
 
 
 def _train_network_impl(env_factory, manifest, config, output_dir,
-                        foundation_root, verification):
+                        foundation_root, verification, run_start_time,
+                        foundation_verification_seconds):
     """Train without opening the manifest's locked test split."""
     if manifest.get("protocol_version") != 2:
         raise ValueError("Hai Chau manifest protocol_version must be 2")
@@ -285,9 +286,11 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "runtime": manifest["runtime"],
         "validation_case_hashes": validation_case_hashes,
     }
+    tuning_start = time.time()
     tuning = _tune_fixed_time(
         env_factory, validation_cases, int(run["horizon_seconds"]), config,
         tuning_binding)
+    tuning_seconds = time.time() - tuning_start
     fixed_duration = tuning["selected"]["fixed_green_duration"]
     _write_json(os.path.join(output_dir, "baseline-tuning.json"), tuning)
     resolved = json.loads(json.dumps(config))
@@ -317,7 +320,7 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     episode_log = []
     validation_log = {}
     validation_seconds = 0.0
-    start_time = time.time()
+    training_start_time = time.time()
 
     for episode in range(int(run["episodes"])):
         episode_start = time.time()
@@ -494,7 +497,7 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         finally:
             _close(env)
 
-    wall_time = time.time() - start_time
+    training_and_validation_seconds = time.time() - training_start_time
     coverage = replay.coverage()
     summary = {
         "episode_regimes": [row["scenario"] for row in episode_log],
@@ -502,10 +505,17 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "decisions": decisions,
         "updates": updates,
         "simulated_seconds": simulated_seconds,
-        "wall_time_seconds": wall_time,
+        "wall_time_seconds": None,
+        "measured_scope": (
+            "foundation_verification_through_artifact_verification"),
+        "foundation_verification_wall_time_seconds": (
+            foundation_verification_seconds),
+        "baseline_tuning_wall_time_seconds": tuning_seconds,
+        "training_and_validation_wall_time_seconds": (
+            training_and_validation_seconds),
         "simulated_seconds_per_second": (
-            simulated_seconds / wall_time if wall_time > 0 else None),
-        "updates_per_second": updates / wall_time if wall_time > 0 else None,
+            None),
+        "updates_per_second": None,
         "validation_wall_time_seconds": validation_seconds,
         "selected_checkpoint": selected,
         "selection_status": selection_status,
@@ -535,6 +545,15 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         if not os.path.isfile(artifact_path):
             raise ValueError("required artifact missing: %s" % relative_path)
         artifact_hashes[relative_path] = _file_sha256(artifact_path)
+    wall_time = time.time() - run_start_time
+    summary["wall_time_seconds"] = wall_time
+    summary["simulated_seconds_per_second"] = (
+        simulated_seconds / wall_time if wall_time > 0 else None)
+    summary["updates_per_second"] = (
+        updates / wall_time if wall_time > 0 else None)
+    _write_json(os.path.join(output_dir, "summary.json"), summary)
+    artifact_hashes["summary.json"] = _file_sha256(
+        os.path.join(output_dir, "summary.json"))
     _write_json(os.path.join(output_dir, "status.json"), {
         "status": ("complete" if selection_status == "eligible"
                    else "ineligible"),
@@ -545,14 +564,20 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
 
 
 def train_network(env_factory, manifest, config, output_dir,
-                  foundation_root=None, foundation_verifier=None):
+                  foundation_root=None, foundation_verifier=None,
+                  run_started_at=None):
     """Verify the immutable foundation, then train without opening test cases."""
+    run_start_time = (time.time() if run_started_at is None
+                      else float(run_started_at))
     root = os.path.abspath(foundation_root or os.getcwd())
     verifier = foundation_verifier or _default_foundation_verifier
+    verification_start = time.time()
     verification = _verify_training_foundation(root, manifest, verifier)
+    verification_seconds = time.time() - verification_start
     try:
         return _train_network_impl(
-            env_factory, manifest, config, output_dir, root, verification)
+            env_factory, manifest, config, output_dir, root, verification,
+            run_start_time, verification_seconds)
     except Exception as exc:
         absolute_output = os.path.abspath(output_dir)
         if os.path.isdir(absolute_output):

@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import traffic_rl.train.network_trainer as network_trainer
 
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.train.network_trainer import (
@@ -228,3 +229,31 @@ def test_incomplete_rollout_fails_run_status(tmp_path):
                       foundation_verifier=_verified)
 
     assert json.loads((output / "status.json").read_text())["status"] == "failed"
+
+
+def test_total_wall_time_includes_baseline_tuning(monkeypatch, tmp_path):
+    clock = [0.0]
+    original_tune = network_trainer._tune_fixed_time
+
+    def measured_tune(*args, **kwargs):
+        result = original_tune(*args, **kwargs)
+        clock[0] += 50.0
+        return result
+
+    def measured_verifier(root, manifest):
+        clock[0] += 10.0
+        return _verified(root, manifest)
+
+    monkeypatch.setattr(network_trainer.time, "time", lambda: clock[0])
+    monkeypatch.setattr(network_trainer, "_tune_fixed_time", measured_tune)
+
+    summary = train_network(
+        lambda case, horizon: FakeNetworkEnv(case, horizon),
+        _manifest(), _config(), str(tmp_path / "timed"),
+        foundation_root=str(tmp_path), foundation_verifier=measured_verifier)
+
+    assert summary["foundation_verification_wall_time_seconds"] == 10.0
+    assert summary["baseline_tuning_wall_time_seconds"] == 50.0
+    assert summary["wall_time_seconds"] >= 60.0
+    assert summary["measured_scope"] == (
+        "foundation_verification_through_artifact_verification")

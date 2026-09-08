@@ -157,6 +157,23 @@ def test_infeasible_maximum_red_configuration_fails_closed(tmp_path):
         _env(tmp_path, min_green=20, maximum_red=10)
 
 
+def test_maximum_red_feasibility_includes_decision_granularity(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
+    phases[:] = [
+        {"time": 40, "availableRoadLinks": [0]},
+        {"time": 3, "availableRoadLinks": []},
+        {"time": 40, "availableRoadLinks": [1]},
+        {"time": 3, "availableRoadLinks": []},
+        {"time": 40, "availableRoadLinks": [0, 1]},
+        {"time": 3, "availableRoadLinks": []},
+    ]
+
+    with np.testing.assert_raises_regex(ValueError, "maximum_red"):
+        MultiAgentTrafficEnv(roadnet, FakeEngine(), action_interval=10,
+                             min_green=20, maximum_red=50)
+
+
 def test_switch_executes_nonempty_transition_without_exposing_it_as_action(tmp_path):
     roadnet = _roadnet(tmp_path)
     phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
@@ -203,3 +220,60 @@ def test_long_transition_sequence_continues_across_decision_intervals(tmp_path):
     assert ("set", "A", 2) in engine.calls
     assert ("set", "A", 3) in engine.calls
     assert ("set", "A", 4) in engine.calls
+
+
+def test_maximum_red_includes_clearance_and_reports_episode_peak(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
+    phases[:] = [
+        {"time": 40, "availableRoadLinks": [0]},
+        {"time": 6, "availableRoadLinks": []},
+        {"time": 6, "availableRoadLinks": []},
+        {"time": 6, "availableRoadLinks": []},
+        {"time": 40, "availableRoadLinks": [1]},
+        {"time": 6, "availableRoadLinks": []},
+    ]
+    env = MultiAgentTrafficEnv(roadnet, FakeEngine(), action_interval=10,
+                               min_green=20, maximum_red=180, max_steps=400)
+    env.reset()
+    info = None
+    for _ in range(30):
+        mask = env.action_masks()["A"]
+        action = env._green["A"]
+        if not mask[action]:
+            action = int(np.flatnonzero(mask)[0])
+        _, _, _, info = env.step({"A": action})
+        if env._green["A"] == 1 and env._pending_transitions["A"] is None:
+            break
+
+    assert env._green["A"] == 1
+    assert info["max_red_seconds"] <= 180
+    assert info["max_red_seconds"] >= 100
+    assert info["max_red_seconds"] > max(env._time_since_service["A"])
+
+
+def test_maximum_red_bound_serves_multiple_urgent_phases(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
+    phases[:] = []
+    for movement in ([0], [1], [0, 1]):
+        phases.append({"time": 40, "availableRoadLinks": movement})
+        phases.extend({"time": 6, "availableRoadLinks": []}
+                      for _ in range(3))
+    env = MultiAgentTrafficEnv(roadnet, FakeEngine(), action_interval=10,
+                               min_green=20, maximum_red=180, max_steps=800)
+    env.reset()
+    served = {0}
+    info = None
+    while True:
+        mask = env.action_masks()["A"]
+        action = env._green["A"]
+        if not mask[action]:
+            action = int(np.flatnonzero(mask)[0])
+        _, _, done, info = env.step({"A": action})
+        served.add(env._green["A"])
+        assert info["max_red_seconds"] <= 180
+        if done:
+            break
+
+    assert served == {0, 1, 2}

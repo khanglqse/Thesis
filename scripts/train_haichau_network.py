@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import resource
+import time
 
 import yaml
 
@@ -67,7 +68,24 @@ def _make_env_factory(manifest, resolved, output_dir):
     return factory
 
 
+def _pilot_profile(summary, learning_seed, peak_rss_kb, source_summary):
+    return {
+        "learning_seed": learning_seed,
+        "simulated_seconds_per_second": summary["simulated_seconds_per_second"],
+        "updates_per_second": summary["updates_per_second"],
+        "peak_rss_kb": peak_rss_kb,
+        "validation_wall_time_seconds": summary["validation_wall_time_seconds"],
+        "baseline_tuning_wall_time_seconds": summary[
+            "baseline_tuning_wall_time_seconds"],
+        "measured_end_to_end_wall_time_seconds": summary["wall_time_seconds"],
+        "projected_five_seed_campaign_seconds": (
+            5.0 * summary["wall_time_seconds"]),
+        "source_summary": source_summary,
+    }
+
+
 def main(argv=None):
+    command_start = time.time()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", required=True,
                         choices=("smoke", "pilot", "final"))
@@ -91,19 +109,14 @@ def main(argv=None):
         output_dir = ROOT / output_dir
     env_factory = _make_env_factory(manifest, resolved, output_dir)
     summary = train_network(
-        env_factory, manifest, resolved, str(output_dir), foundation_root=str(ROOT))
+        env_factory, manifest, resolved, str(output_dir), foundation_root=str(ROOT),
+        run_started_at=command_start)
 
     if args.mode == "pilot":
         peak_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        profile = {
-            "learning_seed": args.learning_seed,
-            "simulated_seconds_per_second": summary["simulated_seconds_per_second"],
-            "updates_per_second": summary["updates_per_second"],
-            "peak_rss_kb": peak_rss,
-            "validation_wall_time_seconds": summary["validation_wall_time_seconds"],
-            "projected_five_seed_campaign_seconds": 5.0 * summary["wall_time_seconds"],
-            "source_summary": str(output_dir / "summary.json"),
-        }
+        profile = _pilot_profile(
+            summary, args.learning_seed, peak_rss,
+            str(output_dir / "summary.json"))
         _write_json(ROOT / "results" / "haichau_network_v2" / "profiling" /
                     ("pilot-seed%d.json" % args.learning_seed), profile)
     print(json.dumps(summary, indent=2, sort_keys=True))

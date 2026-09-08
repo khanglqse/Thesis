@@ -7,6 +7,8 @@ max-pressure.
 
 3.6-safe: no `from __future__ import annotations`.
 """
+import math
+
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.encoder import ObservationEncoder
 from traffic_rl.sim.intersection import (
@@ -59,18 +61,37 @@ class MultiAgentTrafficEnv:
             for a in self.agent_ids
         }
         self.num_actions = {a: len(self._green_phases[a]) for a in self.agent_ids}
+        self._maximum_red_trigger = {}
         for a in self.agent_ids:
             transition_total = sum(
                 sum(duration for _, duration in
                     self._transition_paths[(a, source, (source + 1) % self.num_actions[a])])
-                for source in range(self.num_actions[a]))
+                for source in range(self.num_actions[a])) * self.sim_step_seconds
             required_red = ((self.num_actions[a] - 1) * float(self.min_green)
                             + transition_total)
+            maximum_path = max(
+                sum(duration for _, duration in path)
+                for key, path in self._transition_paths.items()
+                if key[0] == a) * self.sim_step_seconds
+            decision = float(self.action_interval) * self.sim_step_seconds
+            green = float(self.min_green)
+            service_slot = math.ceil((maximum_path + green) / decision) * decision
+            remaining_service_budget = (
+                maximum_path
+                + max(0, self.num_actions[a] - 2) * service_slot)
+            minimum_start_delay = math.ceil(green / decision) * decision
+            safe_required_red = minimum_start_delay + remaining_service_budget
             if self.maximum_red is not None \
-                    and float(self.maximum_red) < required_red:
+                    and float(self.maximum_red) < max(required_red,
+                                                      safe_required_red):
                 raise ValueError(
                     "maximum_red is infeasible for {}: {} < {}".format(
-                        a, self.maximum_red, required_red))
+                        a, self.maximum_red,
+                        max(required_red, safe_required_red)))
+            if self.maximum_red is not None:
+                self._maximum_red_trigger[a] = max(
+                    0.0, float(self.maximum_red)
+                    - remaining_service_budget - decision)
         self.obs_dim = getattr(self.encoder, "obs_dim", 12)
         self._green = {a: 0 for a in self.agent_ids}       # current green INDEX
         self._since_switch = {a: 0 for a in self.agent_ids}
@@ -85,6 +106,7 @@ class MultiAgentTrafficEnv:
         self._active_vehicle_ids = None
         self._t = 0
         self._queue_integral_vehicle_seconds = 0.0
+        self._episode_max_red_seconds = 0.0
 
     # --- introspection used by controllers/runner ---
     def action_masks(self):
@@ -105,7 +127,8 @@ class MultiAgentTrafficEnv:
                 if self.maximum_red is not None:
                     overdue = [idx for idx, elapsed in
                                enumerate(self._time_since_service[a])
-                               if elapsed >= float(self.maximum_red)]
+                               if idx != self._green[a]
+                               and elapsed >= self._maximum_red_trigger[a]]
                 if overdue:
                     forced = max(overdue,
                                  key=lambda idx: self._time_since_service[a][idx])
@@ -145,6 +168,7 @@ class MultiAgentTrafficEnv:
             self._seen_vehicle_ids = None
         self._t = 0
         self._queue_integral_vehicle_seconds = 0.0
+        self._episode_max_red_seconds = 0.0
         for a in self.agent_ids:
             self.engine.set_tl_phase(a, self._green_phases[a][0])
         return self._observations()
@@ -179,6 +203,10 @@ class MultiAgentTrafficEnv:
                 else:
                     self._elapsed_green[a] += elapsed
                     timers[self._green[a]] = 0.0
+            self._episode_max_red_seconds = max(
+                self._episode_max_red_seconds,
+                max([max(values) for values in
+                     self._time_since_service.values()] or [0.0]))
             waiting = (self.engine.true_lane_waiting_counts()
                        if hasattr(self.engine, "true_lane_waiting_counts")
                        else self.engine.lane_waiting_counts())
@@ -285,8 +313,10 @@ class MultiAgentTrafficEnv:
             "step": self._t,
             "phase_switches": self._phase_switches,
             "intergreen_vehicle_seconds": self._intergreen_vehicle_seconds,
-            "max_red_seconds": max(
+            "current_max_red_seconds": max(
                 [max(values) for values in self._time_since_service.values()] or [0.0]),
+            "max_red_seconds": self._episode_max_red_seconds,
+            "maximum_red_trigger_seconds": dict(self._maximum_red_trigger),
             "per_agent_queue": per_agent_queue,
         }
         return self._observations(), rewards, done, info
