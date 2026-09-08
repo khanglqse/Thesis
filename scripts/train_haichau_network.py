@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Train the phase-scoring DDQN on the versioned Hai Chau case manifest."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -104,6 +105,62 @@ def _pilot_profile(summary, learning_seed, peak_rss_kb, source_summary):
     }
 
 
+def _sha256_file(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _pilot_profile_path(output_dir, controller_family, learning_seed):
+    """Keep canonical names while separating explicitly named pilot runs."""
+    output_dir = Path(output_dir).resolve()
+    default_name = ("pilot-seed%d" if controller_family == "neighbor_phase_ddqn"
+                    else "legacy-pilot-seed%d") % learning_seed
+    name = default_name if output_dir.name == default_name else output_dir.name
+    if name in ("", ".", ".."):
+        raise ValueError("pilot output directory must have a usable name")
+    return ROOT / "results" / "haichau_network_v2" / "profiling" / (name + ".json")
+
+
+def _profile_source_artifacts(sources, root):
+    root = Path(root).resolve()
+    bound = {}
+    for label in ("summary", "resolved_config", "run_manifest", "baseline_tuning"):
+        path = Path(sources.get(label, ""))
+        if not path.is_file():
+            raise ValueError("pilot profile source artifact is missing: %s" % label)
+        resolved = path.resolve()
+        try:
+            display_path = str(resolved.relative_to(root))
+        except ValueError:
+            display_path = str(resolved)
+        bound[label] = {
+            "path": display_path,
+            "sha256": _sha256_file(resolved),
+        }
+    return bound
+
+
+def _write_pilot_profile(path, profile, sources, root=ROOT):
+    """Write a profile only when an existing artifact has the same sources."""
+    source_artifacts = _profile_source_artifacts(sources, root)
+    path = Path(path)
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text())
+        except (OSError, ValueError) as exc:
+            raise ValueError("cannot safely overwrite invalid pilot profile: %s" % exc)
+        if existing.get("source_artifacts") != source_artifacts:
+            raise ValueError(
+                "refusing to overwrite pilot profile with different source artifact identity")
+    value = dict(profile)
+    value["schema_version"] = 2
+    value["source_artifacts"] = source_artifacts
+    _write_json(path, value)
+
+
 def main(argv=None):
     command_start = time.time()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -168,10 +225,16 @@ def main(argv=None):
         profile = _pilot_profile(
             summary, args.learning_seed, peak_rss,
             str(output_dir / "summary.json"))
-        _write_json(ROOT / "results" / "haichau_network_v2" / "profiling" /
-                    (("pilot-seed%d.json" if args.controller_family
-                      == "neighbor_phase_ddqn" else "legacy-pilot-seed%d.json")
-                     % args.learning_seed), profile)
+        _write_pilot_profile(
+            _pilot_profile_path(
+                output_dir, args.controller_family, args.learning_seed),
+            profile,
+            sources={
+                "summary": output_dir / "summary.json",
+                "resolved_config": output_dir / "resolved-config.json",
+                "run_manifest": output_dir / "run-manifest.json",
+                "baseline_tuning": output_dir / "baseline-tuning.json",
+            })
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 

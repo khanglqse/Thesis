@@ -1,4 +1,7 @@
 import json
+import hashlib
+
+import pytest
 
 from scripts import train_haichau_network
 from scripts.train_haichau_network import _pilot_profile
@@ -79,6 +82,56 @@ def test_five_seed_projection_uses_end_to_end_wall_time():
     assert profile["measured_end_to_end_wall_time_seconds"] == 120.0
     assert profile["baseline_tuning_wall_time_seconds"] == 80.0
     assert profile["projected_five_seed_campaign_seconds"] == 600.0
+
+
+def test_pilot_profile_path_uses_custom_output_name_without_colliding():
+    canonical = train_haichau_network._pilot_profile_path(
+        train_haichau_network.ROOT / "results" / "haichau_network_v2" /
+        "training" / "pilot-seed11",
+        controller_family="neighbor_phase_ddqn", learning_seed=11)
+    diagnostic = train_haichau_network._pilot_profile_path(
+        train_haichau_network.ROOT / "results" / "haichau_network_v2" /
+        "training" / "pilot-epsilon2160-seed11",
+        controller_family="neighbor_phase_ddqn", learning_seed=11)
+    legacy = train_haichau_network._pilot_profile_path(
+        train_haichau_network.ROOT / "results" / "haichau_network_v2" /
+        "training" / "legacy-pilot-seed11",
+        controller_family="shared_ddqn_legacy", learning_seed=11)
+
+    profiles = train_haichau_network.ROOT / "results" / "haichau_network_v2" / "profiling"
+    assert canonical == profiles / "pilot-seed11.json"
+    assert diagnostic == profiles / "pilot-epsilon2160-seed11.json"
+    assert legacy == profiles / "legacy-pilot-seed11.json"
+
+
+def test_pilot_profile_binds_source_artifact_hashes_and_rejects_collision(tmp_path):
+    sources = {}
+    for label, contents in {
+            "summary": "summary", "resolved_config": "config",
+            "run_manifest": "manifest", "baseline_tuning": "baseline"}.items():
+        path = tmp_path / (label + ".json")
+        path.write_text(contents)
+        sources[label] = path
+    profile_path = tmp_path / "profiling" / "pilot-epsilon2160-seed11.json"
+    profile = {"learning_seed": 11, "source_summary": str(sources["summary"])}
+
+    train_haichau_network._write_pilot_profile(
+        profile_path, profile, sources=sources, root=tmp_path)
+
+    written = json.loads(profile_path.read_text())
+    assert written["source_summary"] == str(sources["summary"])
+    assert written["source_artifacts"] == {
+        label: {
+            "path": path.name,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }
+        for label, path in sources.items()
+    }
+
+    sources["summary"].write_text("different summary")
+    with pytest.raises(ValueError, match="different source artifact identity"):
+        train_haichau_network._write_pilot_profile(
+            profile_path, profile, sources=sources, root=tmp_path)
 
 
 def test_cli_passes_precomputed_baseline_artifact_to_trainer(monkeypatch, tmp_path):
