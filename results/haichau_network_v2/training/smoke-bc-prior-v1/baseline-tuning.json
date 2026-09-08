@@ -1,0 +1,94 @@
+{
+  "binding": {
+    "action_interval": 10,
+    "generator_config_sha256": "55eb359b6afaca87a901ce53731e5d455d8c5845c2a1f374cdcf582ed1863987",
+    "horizon_seconds": 120,
+    "manifest_sha256": "75f236b330c81c5af70c62bf66393cee7c30fb1af144ef3f461e0a59e4a09154",
+    "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+    "queue_objective": {
+      "entry_pending": "due_not_inserted",
+      "future_departures": "unreleased_excluded",
+      "network_queue": "per_step_waiting",
+      "schema_version": 2
+    },
+    "runtime": {
+      "base_image": "cityflowproject/cityflow",
+      "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+      "derived_image_tag": "traffic-rl-cityflow-research:v2",
+      "dockerfile": {
+        "path": "docker/cityflow-research/Dockerfile",
+        "sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf"
+      },
+      "platform": "linux/amd64"
+    },
+    "validation_case_hashes": {
+      "validation_am_peak_demand31": "367cbf6e93b3643459e856a00a25d10762b9f029eae5e128f6a9e9cca76ff8ec",
+      "validation_am_peak_demand32": "31dc30feb950c80eb8e76412a1f28d79104d87d38926cf5f669062cf44cca103",
+      "validation_normal_demand31": "f69b0e960e61f7eb4f064d229a0e7cafcd2333642b483d6d3bb78d2ba7b4d363",
+      "validation_normal_demand32": "110a2f6e7bbdd3d3036f550314c3cb518bf2df0d710b42f4cba0e66fed2b44bc",
+      "validation_pm_peak_demand31": "713f05afb6d8f6836e1e52cfeb939f553ddf4ebc83f53c68c86399ccd069ed0d",
+      "validation_pm_peak_demand32": "63c83913fd0be0933e937d810043bc64f88cc25aa8c23c048c8c24d6832e1975"
+    }
+  },
+  "candidates": [
+    {
+      "fixed_green_duration": 25,
+      "mean_queue_integral_vehicle_seconds": 864.5,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0,
+          "insertion_rate": 0.03953147877013177,
+          "queue_integral_vehicle_seconds": 1091.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0,
+          "insertion_rate": 0.02368886269888038,
+          "queue_integral_vehicle_seconds": 551.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "insertion_rate": 0.02449651432997676,
+          "queue_integral_vehicle_seconds": 978.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0,
+          "insertion_rate": 0.0409606404269513,
+          "queue_integral_vehicle_seconds": 1161.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0,
+          "insertion_rate": 0.02456222822893407,
+          "queue_integral_vehicle_seconds": 589.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0,
+          "insertion_rate": 0.02524422091111326,
+          "queue_integral_vehicle_seconds": 817.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    }
+  ],
+  "method": "validation_grid_search",
+  "schema_version": 1,
+  "search_space": {
+    "fixed_green_duration": [
+      25
+    ]
+  },
+  "selected": {
+    "fixed_green_duration": 25
+  },
+  "tuning_sha256": "927e01dc8cac37507cdcc8048275a33ad8ab5d74ea1c3d7b1b4ff4542e467578"
+}

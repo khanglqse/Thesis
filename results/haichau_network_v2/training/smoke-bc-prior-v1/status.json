@@ -1,0 +1,17 @@
+{
+  "artifact_sha256": {
+    "baseline-tuning.json": "94cbc67c16b03948c88d8ddaf5d3b2e657a5d442814dad85b77a826b0c8fa39b",
+    "behavior-prior.json": "298bd678360e10c115094eac9efd9b6bcbbc798e3a432bbbe99f68877e332f48",
+    "checkpoint/contract.json": "ae6f0505e7c4d1625776f28c740351484ead6f1e8683dfa15f4bc3be2fbd8373",
+    "checkpoint/weights.npz": "584e8481bf1603b32c72e860067e396bc35f552f196e5aca8fcffce69013acff",
+    "replay-coverage.json": "bb86d1dda1d1c6ab88ccabdcfcd57cf4a9fa3be77e610caca719aa60e0368c8e",
+    "resolved-config.json": "91c31706b3d22bbbb4a3b35e18910bbc45ce44f9ceca45316b265c40d1a658a6",
+    "run-manifest.json": "0cb74aaab4b2b940ae3c27ce5094dc1896040b08d9c297ccb3b1e55b53c72e17",
+    "selection.json": "cb76203f0a3461bd6c1520f3f53fd4a85a006dcdaa13f426276e0f74007f2cc6",
+    "summary.json": "610ac7f15497668ae0e34980c320e6ad62f2428c291e4606be6aecca03cc70e8",
+    "train-log.json": "a2f639d1f913562fecdcef4d73d1fae78ed5f1be5ff95ca77b7d7bf0acf073f4",
+    "validation.json": "7c83d7cf324702c4170b83517c27a0f911b539b5a546764a056967696d31a8d0"
+  },
+  "eligible_for_test_evaluation": false,
+  "status": "ineligible"
+}

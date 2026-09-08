@@ -1,0 +1,574 @@
+{
+  "action_contract": {
+    "mask_type": "boolean_selectable_green_rows",
+    "padding_actions_selectable": false,
+    "type": "phase_rows",
+    "version": 1
+  },
+  "baseline_tuning_sha256": "927e01dc8cac37507cdcc8048275a33ad8ab5d74ea1c3d7b1b4ff4542e467578",
+  "behavior_prior": {
+    "bc_epochs": 1,
+    "minimum_validation_reference_disagreement_rate": 0.01,
+    "random_probability_end": 0.02,
+    "random_probability_start": 0.1,
+    "reference_probability_end": 0.1,
+    "reference_probability_start": 0.75,
+    "type": "fixed_time_behavior_cloning"
+  },
+  "capacity_norm": 40.0,
+  "checkpoint_eligibility_policy": {
+    "comparison_unit": "matched_validation_case",
+    "maximum_completion_loss": 0.02,
+    "maximum_insertion_loss": 0.02,
+    "queue_regret_limit_per_regime": 0.0,
+    "required_regimes": [
+      "normal",
+      "am_peak",
+      "pm_peak"
+    ],
+    "schema_version": 2
+  },
+  "controller_family": "neighbor_phase_ddqn",
+  "count_norm": 20.0,
+  "feature_dim": 12,
+  "feature_order": [
+    "incoming_queue_mean",
+    "incoming_queue_max",
+    "incoming_running_mean",
+    "outgoing_queue_mean",
+    "outgoing_remaining_capacity_mean",
+    "pressure",
+    "is_current_phase",
+    "elapsed_green",
+    "upstream_queue_mean",
+    "downstream_queue_mean",
+    "time_since_service",
+    "movement_count"
+  ],
+  "foundation_verification": {
+    "cases": 30,
+    "controlled_signals": 53,
+    "generator_config_sha256": "55eb359b6afaca87a901ce53731e5d455d8c5845c2a1f374cdcf582ed1863987",
+    "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+    "protocol_version": 2,
+    "route_coverage": {
+      "base_route_algorithm": "deterministic_metric_shortest_boundary_od",
+      "case_coverage": {
+        "test_am_peak_demand101": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_am_peak_demand102": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_am_peak_demand103": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_am_peak_demand104": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_am_peak_demand105": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_normal_demand101": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_normal_demand102": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_normal_demand103": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_normal_demand104": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_normal_demand105": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_pm_peak_demand101": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_pm_peak_demand102": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_pm_peak_demand103": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_pm_peak_demand104": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "test_pm_peak_demand105": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 323
+        },
+        "train_am_peak_demand11": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "train_am_peak_demand12": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "train_am_peak_demand13": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "train_normal_demand11": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "train_normal_demand12": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "train_normal_demand13": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "train_pm_peak_demand11": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "train_pm_peak_demand12": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "train_pm_peak_demand13": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 500
+        },
+        "validation_am_peak_demand31": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 322
+        },
+        "validation_am_peak_demand32": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 322
+        },
+        "validation_normal_demand31": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 322
+        },
+        "validation_normal_demand32": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 322
+        },
+        "validation_pm_peak_demand31": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 322
+        },
+        "validation_pm_peak_demand32": {
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "unique_origin_destination_pairs": 322
+        }
+      },
+      "case_sampling_rule": "seeded required-signal set cover then seeded family sample",
+      "catalog_active_controlled_signal_ids": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249146",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_10925625407_3070396769_3070396791",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246012_1333246028_3540437805_6040645617",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335",
+        "cluster_6521341372_6521341373_6521341380"
+      ],
+      "catalog_inactive_required_signal_ids": [],
+      "catalog_statistics": {
+        "alternative_route_families": 6,
+        "route_families": 1290,
+        "route_length_meters": {
+          "maximum": 13648.456209,
+          "mean": 6515.117671,
+          "median": 6416.519802,
+          "minimum": 391.546618
+        },
+        "unique_origin_destination_pairs": 1284
+      },
+      "loop_rule": "no repeated road or intersection in any route family",
+      "maximum_supplemental_stretch_ratio": 1.25,
+      "minimum_route_families_per_signal": 3,
+      "partition_rule": "disjoint weighted partitions seeded by required-signal set cover",
+      "require_each_case": true,
+      "require_each_split": true,
+      "required_controlled_signal_ids": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249146",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_10925625407_3070396769_3070396791",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246012_1333246028_3540437805_6040645617",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335",
+        "cluster_6521341372_6521341373_6521341380"
+      ],
+      "required_controlled_signals": 53,
+      "schema_version": 1,
+      "split_coverage": {
+        "test": {
+          "active_controlled_signal_ids": [
+            "1333258672",
+            "1333258675",
+            "1333258678",
+            "1333303403",
+            "1333730385",
+            "1333762614",
+            "1334170383",
+            "3761464424",
+            "420248538",
+            "420248590",
+            "420248766",
+            "420248835",
+            "420248842",
+            "420248975",
+            "420248999",
+            "420249023",
+            "420249060",
+            "420249080",
+            "420249146",
+            "420249151",
+            "420249236",
+            "420249421",
+            "420249521",
+            "420249525",
+            "5896811072",
+            "cluster_10925625407_3070396769_3070396791",
+            "cluster_11568485806_420249005_6513691661",
+            "cluster_1261738019_3070396244_3070396254_6522135551",
+            "cluster_1261738236_2996178189",
+            "cluster_1333246012_1333246028_3540437805_6040645617",
+            "cluster_1333246087_3078041918",
+            "cluster_1333246117_2991183833",
+            "cluster_1333258669_1333279736",
+            "cluster_1334202699_3080182071",
+            "cluster_1334305553_420249257",
+            "cluster_1616276760_2991819238",
+            "cluster_1726781971_1726781974",
+            "cluster_2623083098_2988146967_2988146972_9662761813",
+            "cluster_2988146960_2988146981",
+            "cluster_2988146980_3068684702",
+            "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+            "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+            "cluster_2991183856_2991183859_2991183862_6548202094",
+            "cluster_2991819236_420249033",
+            "cluster_3065559064_3065559065",
+            "cluster_3070269464_3070269465",
+            "cluster_3501206652_420248485_6531294016",
+            "cluster_420249139_6525355442",
+            "cluster_420249144_6524986722",
+            "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+            "cluster_420249565_6525355441",
+            "cluster_6164917307_6164917332_6164917334_6164917335",
+            "cluster_6521341372_6521341373_6521341380"
+          ],
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "route_families": 323,
+          "unique_origin_destination_pairs": 323
+        },
+        "train": {
+          "active_controlled_signal_ids": [
+            "1333258672",
+            "1333258675",
+            "1333258678",
+            "1333303403",
+            "1333730385",
+            "1333762614",
+            "1334170383",
+            "3761464424",
+            "420248538",
+            "420248590",
+            "420248766",
+            "420248835",
+            "420248842",
+            "420248975",
+            "420248999",
+            "420249023",
+            "420249060",
+            "420249080",
+            "420249146",
+            "420249151",
+            "420249236",
+            "420249421",
+            "420249521",
+            "420249525",
+            "5896811072",
+            "cluster_10925625407_3070396769_3070396791",
+            "cluster_11568485806_420249005_6513691661",
+            "cluster_1261738019_3070396244_3070396254_6522135551",
+            "cluster_1261738236_2996178189",
+            "cluster_1333246012_1333246028_3540437805_6040645617",
+            "cluster_1333246087_3078041918",
+            "cluster_1333246117_2991183833",
+            "cluster_1333258669_1333279736",
+            "cluster_1334202699_3080182071",
+            "cluster_1334305553_420249257",
+            "cluster_1616276760_2991819238",
+            "cluster_1726781971_1726781974",
+            "cluster_2623083098_2988146967_2988146972_9662761813",
+            "cluster_2988146960_2988146981",
+            "cluster_2988146980_3068684702",
+            "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+            "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+            "cluster_2991183856_2991183859_2991183862_6548202094",
+            "cluster_2991819236_420249033",
+            "cluster_3065559064_3065559065",
+            "cluster_3070269464_3070269465",
+            "cluster_3501206652_420248485_6531294016",
+            "cluster_420249139_6525355442",
+            "cluster_420249144_6524986722",
+            "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+            "cluster_420249565_6525355441",
+            "cluster_6164917307_6164917332_6164917334_6164917335",
+            "cluster_6521341372_6521341373_6521341380"
+          ],
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "route_families": 644,
+          "unique_origin_destination_pairs": 644
+        },
+        "validation": {
+          "active_controlled_signal_ids": [
+            "1333258672",
+            "1333258675",
+            "1333258678",
+            "1333303403",
+            "1333730385",
+            "1333762614",
+            "1334170383",
+            "3761464424",
+            "420248538",
+            "420248590",
+            "420248766",
+            "420248835",
+            "420248842",
+            "420248975",
+            "420248999",
+            "420249023",
+            "420249060",
+            "420249080",
+            "420249146",
+            "420249151",
+            "420249236",
+            "420249421",
+            "420249521",
+            "420249525",
+            "5896811072",
+            "cluster_10925625407_3070396769_3070396791",
+            "cluster_11568485806_420249005_6513691661",
+            "cluster_1261738019_3070396244_3070396254_6522135551",
+            "cluster_1261738236_2996178189",
+            "cluster_1333246012_1333246028_3540437805_6040645617",
+            "cluster_1333246087_3078041918",
+            "cluster_1333246117_2991183833",
+            "cluster_1333258669_1333279736",
+            "cluster_1334202699_3080182071",
+            "cluster_1334305553_420249257",
+            "cluster_1616276760_2991819238",
+            "cluster_1726781971_1726781974",
+            "cluster_2623083098_2988146967_2988146972_9662761813",
+            "cluster_2988146960_2988146981",
+            "cluster_2988146980_3068684702",
+            "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+            "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+            "cluster_2991183856_2991183859_2991183862_6548202094",
+            "cluster_2991819236_420249033",
+            "cluster_3065559064_3065559065",
+            "cluster_3070269464_3070269465",
+            "cluster_3501206652_420248485_6531294016",
+            "cluster_420249139_6525355442",
+            "cluster_420249144_6524986722",
+            "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+            "cluster_420249565_6525355441",
+            "cluster_6164917307_6164917332_6164917334_6164917335",
+            "cluster_6521341372_6521341373_6521341380"
+          ],
+          "active_controlled_signals": 53,
+          "inactive_required_signal_ids": [],
+          "route_families": 323,
+          "unique_origin_destination_pairs": 322
+        }
+      },
+      "supplemental_route_algorithm": "deterministic_simple_boundary_route_constrained_through_signal"
+    },
+    "route_families": 1290,
+    "runtime_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "selectable_green_phases": 107,
+    "split_counts": {
+      "test": 15,
+      "train": 9,
+      "validation": 6
+    },
+    "status": "verified",
+    "transition_phases": 127
+  },
+  "generator_config_sha256": "55eb359b6afaca87a901ce53731e5d455d8c5845c2a1f374cdcf582ed1863987",
+  "hidden": 128,
+  "hidden_size": 128,
+  "manifest_sha256": "75f236b330c81c5af70c62bf66393cee7c30fb1af144ef3f461e0a59e4a09154",
+  "max_green": 3,
+  "network_compatibility": {
+    "generator_config_sha256": "55eb359b6afaca87a901ce53731e5d455d8c5845c2a1f374cdcf582ed1863987",
+    "manifest_sha256": "75f236b330c81c5af70c62bf66393cee7c30fb1af144ef3f461e0a59e4a09154",
+    "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+    "phase_contract_sha256": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae"
+  },
+  "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+  "normalization": {
+    "capacity_norm": 40.0,
+    "count_norm": 20.0
+  },
+  "obs_schema_version": 2,
+  "phase_contract_schema_version": 1,
+  "phase_contract_sha256": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae",
+  "runtime": {
+    "base_image": "cityflowproject/cityflow",
+    "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "derived_image_tag": "traffic-rl-cityflow-research:v2",
+    "dockerfile": {
+      "path": "docker/cityflow-research/Dockerfile",
+      "sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf"
+    },
+    "platform": "linux/amd64"
+  },
+  "training_objective": {
+    "reward": {
+      "downstream_block_weight": 0.2,
+      "queue_weight": 1.0,
+      "switch_penalty": 0.05
+    },
+    "temporal_aggregation": "mean_over_simulator_steps_in_action_interval"
+  }
+}
