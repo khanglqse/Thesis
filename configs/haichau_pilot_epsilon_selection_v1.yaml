@@ -1,0 +1,20 @@
+# Immutable before-pilot selection contract.  The command refuses to overwrite
+# its decision or selected config outputs.
+schema_version: 1
+decision_type: haichau_pilot_epsilon_schedule_selection
+learning_seed: 11
+mode: pilot
+manifest: results/haichau_network_v2/experiment-manifest.json
+baseline_tuning_artifact: results/haichau_network_v2/training/final-baseline-tuning.json
+validation_checkpoints: [step-4, step-8, step-12]
+schedules:
+  canonical:
+    config: configs/haichau_training_v2.yaml
+    run_dir: results/haichau_network_v2/training/pilot-seed11
+    epsilon_decay_decisions: 10000
+  epsilon2160:
+    config: configs/haichau_training_v2_pilot_epsilon2160.yaml
+    run_dir: results/haichau_network_v2/training/pilot-epsilon2160-seed11
+    epsilon_decay_decisions: 2160
+decision_output: results/haichau_network_v2/training/pilot-epsilon-selection.json
+selected_config_output: configs/haichau_training_v2_final_selected.yaml

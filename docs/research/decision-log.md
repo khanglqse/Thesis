@@ -181,6 +181,37 @@ defense replay. Any decision to change the canonical final epsilon schedule
 requires a separate logged decision made from pilot/validation evidence before
 final training starts; otherwise the final schedule remains 10,000 decisions.
 
+## 2026-09-08 — Pre-register the fail-closed epsilon pilot selector
+
+Decision: before either pilot is executed, freeze
+`configs/haichau_pilot_epsilon_selection_v1.yaml`. It names only the canonical
+10,000-decision and diagnostic 2,160-decision pilot directories, their exact
+source configurations, seed 11, the shared experiment manifest, the shared
+precomputed validation-only baseline artifact, and validation checkpoints 4,
+8, and 12. The selector recomputes every checkpoint's existing eligibility
+evidence on exactly the six registered validation cases; it does not open a
+held-out flow or metric.
+
+Selection rule: first choose each schedule's eligible checkpoint by the
+existing tuple `(worst regime normalized queue regret, mean regret, earlier
+training step)`. If both schedules are eligible, the faster schedule can
+replace canonical only with a strictly smaller tuple; a tie retains canonical.
+If exactly one schedule is eligible, it is selected. Missing artifacts,
+provenance mismatch, malformed evidence, a non-epsilon configuration
+difference, or neither schedule being eligible fails closed. The selector
+recomputes the canonical hash of the actual manifest and requires it to match
+the baseline binding; it also checks the terminal pilot status hashes. It
+writes a hash-bound decision JSON and the exact hash-bound generated YAML bytes
+for the winner, refusing to overwrite either output.
+
+Reason: the pilot may diagnose whether the shorter schedule creates usable
+greedy experience, but it must not permit post-hoc schedule choice or test-set
+tuning. This rule is fixed before pilot execution.
+
+Consequence: final training uses only the selected generated configuration
+after the decision artifact exists. The pilot outputs and selection decision
+remain validation-only provenance, not final comparison evidence.
+
 ## 2026-09-08 — Respect safety masks in pressure baselines
 
 Decision: raw and hysteretic Max-Pressure choose only valid real green actions.
