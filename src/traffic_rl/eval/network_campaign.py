@@ -78,7 +78,7 @@ def _materialize_run_manifest(run_dir, run):
     expected = _json_bytes(run)
     if path.exists():
         if not path.is_file() or path.read_bytes() != expected:
-            raise ValueError("refusing to change an existing run-manifest.json")
+            raise ValueError("run spec differs from existing run-manifest.json")
     else:
         temporary = path.with_name(path.name + ".tmp")
         temporary.write_bytes(expected)
@@ -202,9 +202,20 @@ def expand_runs(manifest, learning_seeds, controller_ids):
             for case in cases:
                 horizon = case.get("horizon_steps", horizon_default)
                 for field in ("case_id", "regime", "demand_seed",
-                              "simulator_seed", "demand_sha256"):
+                              "simulator_seed", "scheduled_vehicles",
+                              "demand_sha256"):
                     if case.get(field) is None:
                         raise ValueError("test case requires %s" % field)
+                scheduled_vehicles = case["scheduled_vehicles"]
+                if isinstance(scheduled_vehicles, bool):
+                    raise ValueError("test case requires positive scheduled_vehicles")
+                try:
+                    scheduled_vehicles = int(scheduled_vehicles)
+                except (TypeError, ValueError):
+                    raise ValueError("test case requires positive scheduled_vehicles")
+                if scheduled_vehicles <= 0 \
+                        or scheduled_vehicles != case["scheduled_vehicles"]:
+                    raise ValueError("test case requires positive scheduled_vehicles")
                 if not horizon or int(horizon) <= 0:
                     raise ValueError("test case requires positive horizon_steps")
                 suffix = "det" if seed is None else "ls%s" % seed
@@ -221,6 +232,7 @@ def expand_runs(manifest, learning_seeds, controller_ids):
                     "learning_seed": seed,
                     "demand_seed": case["demand_seed"],
                     "simulator_seed": case["simulator_seed"],
+                    "scheduled_vehicles": scheduled_vehicles,
                     "horizon_steps": int(horizon),
                     "network_sha256": manifest.get("network_sha256"),
                     "viewer_network_sha256": manifest.get(
@@ -249,6 +261,7 @@ def expand_runs(manifest, learning_seeds, controller_ids):
                 identity = dict((field, run[field]) for field in (
                     "case_id", "regime", "controller_id", "learning_seed",
                     "demand_seed", "simulator_seed", "horizon_steps",
+                    "scheduled_vehicles",
                     "network_sha256", "demand_sha256", "runtime_digest",
                     "runtime_image", "runtime_image_id",
                     "runtime_dockerfile_path", "runtime_dockerfile_sha256",
@@ -458,6 +471,7 @@ def _trusted_docker_executor(run, run_dir, project_root, source, runtime):
         "runtime_image": runtime["runtime_image"],
         "runtime_image_id": runtime["runtime_image_id"],
         "runtime_digest": runtime["runtime_digest"],
+        "scheduled_vehicles": run.get("scheduled_vehicles"),
         "run_manifest_sha256": run_manifest_sha256,
         "stdout_sha256": receipt["stdout_sha256"],
         "stderr_sha256": receipt["stderr_sha256"],
@@ -504,6 +518,7 @@ def _verify_execution_provenance(run_dir, status, expected_run, project_root,
         "runtime_image": expected_run.get("runtime_image"),
         "runtime_image_id": expected_run.get("runtime_image_id"),
         "runtime_digest": expected_run.get("runtime_digest"),
+        "scheduled_vehicles": expected_run.get("scheduled_vehicles"),
     }
     if any(provenance.get(key) != value for key, value in expected_identity.items()):
         raise ValueError("trusted Docker executor identity differs from the frozen run")
@@ -568,7 +583,8 @@ def _verify_complete(run_dir, status, expected_run,
         raise ValueError("complete run spec digest does not match campaign")
     if any(status.get(field) != expected_run.get(field) for field in (
             "code_commit", "runtime_image", "runtime_image_id",
-            "runtime_digest", "runtime_dockerfile_sha256")):
+            "runtime_digest", "runtime_dockerfile_sha256",
+            "scheduled_vehicles")):
         raise ValueError("complete status code/runtime identity does not match campaign")
     hashes = status.get("artifact_sha256", {})
     if not set(_ARTIFACTS).issubset(set(hashes)):
@@ -640,6 +656,9 @@ def _validate_network_metrics(run, metrics):
     if metrics["completion_denominator"] != "scheduled":
         raise ValueError("network metric completion denominator must be scheduled")
     scheduled = int(metrics["scheduled"])
+    if scheduled != int(run["scheduled_vehicles"]):
+        raise ValueError(
+            "network metric scheduled differs from frozen scheduled_vehicles")
     inserted = int(metrics["inserted"])
     arrived = int(metrics["arrived"])
     running = int(metrics["running"])
@@ -696,7 +715,8 @@ def _validate_result(run, result):
         raise ValueError("resolved config mismatch")
     for field in (
             "case_id", "regime", "controller_id", "learning_seed", "demand_seed",
-            "simulator_seed", "network_sha256", "demand_sha256", "runtime_digest",
+            "simulator_seed", "scheduled_vehicles", "network_sha256",
+            "demand_sha256", "runtime_digest",
             "runtime_image", "runtime_image_id", "runtime_dockerfile_path",
             "runtime_dockerfile_sha256", "code_commit", "viewer_network_sha256",
             "demand_path",
@@ -767,6 +787,13 @@ def run_pending(campaign_dir, executor=None, project_root=None):
     if campaign.get("evidence_namespace") != "haichau_network_v2":
         raise ValueError("campaign evidence_namespace must be haichau_network_v2")
     runs = campaign.get("runs", [])
+    prepared = {}
+    for run in runs:
+        run_dir = campaign_dir / "runs" / _safe_id(run["run_id"])
+        run_dir.mkdir(parents=True, exist_ok=True)
+        run_manifest_sha256 = _materialize_run_manifest(run_dir, run)
+        (run_dir / "runtime-configs").mkdir(exist_ok=True)
+        prepared[run["run_id"]] = (run_dir, run_manifest_sha256)
     source = runtime = None
     if executor is None:
         project_root = Path(project_root or campaign_dir).resolve()
@@ -782,8 +809,7 @@ def run_pending(campaign_dir, executor=None, project_root=None):
         runtime = verify_runtime(project_root, runs[0])
     counts = {"completed": 0, "failed": 0, "skipped": 0, "total": len(runs)}
     for run in runs:
-        run_dir = campaign_dir / "runs" / _safe_id(run["run_id"])
-        run_dir.mkdir(parents=True, exist_ok=True)
+        run_dir, run_manifest_sha256 = prepared[run["run_id"]]
         status_path = run_dir / "status.json"
         if status_path.is_file():
             status = json.loads(status_path.read_text())
@@ -796,8 +822,6 @@ def run_pending(campaign_dir, executor=None, project_root=None):
                 continue
 
         try:
-            run_manifest_sha256 = _materialize_run_manifest(run_dir, run)
-            (run_dir / "runtime-configs").mkdir(exist_ok=True)
             _write_json(status_path, {
                 "status": "running", "started_at": _utc_now(),
                 "run_manifest_sha256": run_manifest_sha256,
@@ -845,6 +869,7 @@ def run_pending(campaign_dir, executor=None, project_root=None):
                 "runtime_digest": run.get("runtime_digest"),
                 "runtime_dockerfile_sha256": run.get(
                     "runtime_dockerfile_sha256"),
+                "scheduled_vehicles": run.get("scheduled_vehicles"),
                 "execution_provenance": provenance,
                 "artifact_sha256": hashes,
             })

@@ -66,6 +66,7 @@ def _manifest():
                 "regime": "normal",
                 "demand_seed": 101,
                 "simulator_seed": 201,
+                "scheduled_vehicles": 1200,
                 "demand_sha256": "c" * 64,
             },
             {
@@ -74,6 +75,7 @@ def _manifest():
                 "regime": "pm_peak",
                 "demand_seed": 102,
                 "simulator_seed": 202,
+                "scheduled_vehicles": 2400,
                 "demand_sha256": "d" * 64,
             },
             {
@@ -133,6 +135,18 @@ def test_expansion_rejects_runtime_config_drift_from_frozen_protocol():
         expand_runs(manifest, [11], ["tuned_fixed"])
 
 
+def test_expansion_requires_and_binds_scheduled_vehicle_count():
+    manifest = _manifest()
+    run = expand_runs(manifest, [11], ["tuned_fixed"])[0]
+
+    assert run["scheduled_vehicles"] == 1200
+    assert run["resolved_config"]["scheduled_vehicles"] == 1200
+
+    manifest["cases"][0].pop("scheduled_vehicles")
+    with pytest.raises(ValueError, match="scheduled_vehicles"):
+        expand_runs(manifest, [11], ["tuned_fixed"])
+
+
 def test_expansion_preserves_common_and_controller_runtime_configuration():
     run = expand_runs(_manifest(), [11], ["hysteretic_mp"])[0]
 
@@ -160,6 +174,32 @@ def test_run_manifest_is_materialized_before_executor(tmp_path):
     assert result["completed"] == 1
     manifest_path = tmp_path / "runs" / run["run_id"] / "run-manifest.json"
     assert json.loads(manifest_path.read_text()) == run
+
+
+def test_all_run_manifests_exist_before_docker_runtime_inspection(
+        tmp_path, monkeypatch):
+    runs = expand_runs(_manifest(), [11], ["tuned_fixed"])
+    campaign_dir = tmp_path / "results" / "final"
+    _write_campaign(campaign_dir, runs)
+
+    def assert_inputs_exist(*args, **kwargs):
+        for run in runs:
+            run_dir = campaign_dir / "runs" / run["run_id"]
+            assert json.loads(
+                (run_dir / "run-manifest.json").read_text()) == run
+            assert (run_dir / "runtime-configs").is_dir()
+        return {"head_commit": runs[0]["code_commit"]}
+
+    monkeypatch.setattr(network_campaign, "verify_git_checkout", assert_inputs_exist)
+    monkeypatch.setattr(network_campaign, "verify_runtime", assert_inputs_exist)
+    monkeypatch.setattr(
+        network_campaign, "_trusted_docker_executor",
+        lambda run, run_dir, project_root, source, runtime: (
+            _executor(run, run_dir), {"mode": "test"}))
+
+    result = run_pending(campaign_dir, project_root=tmp_path)
+
+    assert result["completed"] == 2
 
 
 def test_executor_cannot_change_its_hash_bound_run_manifest(tmp_path):
@@ -216,6 +256,7 @@ def _executor(run, run_dir):
             "learning_seed": run["learning_seed"],
             "demand_seed": run["demand_seed"],
             "simulator_seed": run["simulator_seed"],
+            "scheduled_vehicles": run["scheduled_vehicles"],
             "network_sha256": run["network_sha256"],
             "viewer_network_sha256": run["viewer_network_sha256"],
             "demand_sha256": run["demand_sha256"],
@@ -237,17 +278,17 @@ def _executor(run, run_dir):
             "per_node_queue_integral_vehicle_seconds": nodes,
             "per_node_max_queue": nodes,
             "spillback_lane_seconds": {},
-            "scheduled": 0,
+            "scheduled": run["scheduled_vehicles"],
             "inserted": 0,
             "departed": 0,
             "arrived": 0,
             "running": 0,
-            "pending": 0,
+            "pending": run["scheduled_vehicles"],
             "removed": 0,
-            "censored_or_unfinished": 0,
+            "censored_or_unfinished": run["scheduled_vehicles"],
             "completion_denominator": "scheduled",
-            "completion_rate": None,
-            "insertion_rate": None,
+            "completion_rate": 0.0,
+            "insertion_rate": 0.0,
             "completed_travel_time_count": 0,
             "phase_switches": 0,
             "intergreen_seconds": 0.0,
@@ -512,6 +553,7 @@ def test_incomplete_network_metric_schema_is_never_marked_complete(tmp_path):
                 "learning_seed": run["learning_seed"],
                 "demand_seed": run["demand_seed"],
                 "simulator_seed": run["simulator_seed"],
+                "scheduled_vehicles": run["scheduled_vehicles"],
                 "network_sha256": run["network_sha256"],
                 "viewer_network_sha256": run["viewer_network_sha256"],
                 "demand_sha256": run["demand_sha256"],
@@ -537,6 +579,25 @@ def test_incomplete_network_metric_schema_is_never_marked_complete(tmp_path):
         (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
     assert status["status"] == "failed"
     assert "network metric" in status["error"]
+
+
+def test_metrics_scheduled_count_must_match_frozen_case(tmp_path):
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    _write_campaign(tmp_path, [run])
+
+    def wrong_scheduled_executor(run, run_dir):
+        result = _executor(run, run_dir)
+        result["metrics"]["scheduled"] -= 1
+        result["metrics"]["pending"] -= 1
+        result["metrics"]["censored_or_unfinished"] -= 1
+        return result
+
+    result = run_pending(tmp_path, wrong_scheduled_executor)
+
+    assert result["failed"] == 1
+    status = json.loads(
+        (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
+    assert "scheduled_vehicles" in status["error"]
 
 
 def test_incomplete_run_is_rebuilt_and_only_then_marked_complete(tmp_path):
@@ -567,9 +628,12 @@ def test_invalid_completed_travel_aggregates_are_never_complete(tmp_path, values
     def invalid_executor(run, run_dir):
         result = _executor(run, run_dir)
         result["metrics"].update({
-            "scheduled": 1, "inserted": 1, "departed": 1, "arrived": 1,
-            "completed_travel_time_count": 1, "completion_rate": 1.0,
-            "insertion_rate": 1.0,
+            "inserted": 1, "departed": 1, "arrived": 1,
+            "pending": run["scheduled_vehicles"] - 1,
+            "censored_or_unfinished": run["scheduled_vehicles"] - 1,
+            "completed_travel_time_count": 1,
+            "completion_rate": 1.0 / run["scheduled_vehicles"],
+            "insertion_rate": 1.0 / run["scheduled_vehicles"],
             "travel_time_completed_mean": values[0],
             "travel_time_completed_median": values[1],
             "travel_time_completed_p95": values[2],
