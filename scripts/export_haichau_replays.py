@@ -17,6 +17,9 @@ from traffic_rl.report.haichau_demo_fallbacks import validate_fallbacks
 
 
 DEMAND_LABEL = "synthetic network demand constrained by Da Nang evidence"
+VIEWER_METRIC_KEYS = METRIC_KEYS + (
+    "pending_integral_vehicle_seconds",
+)
 def _sha256(path):
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -100,7 +103,10 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
             "learning_seed": run.get("learning_seed"),
             "demand_seed": run["demand_seed"],
             "simulator_seed": run["simulator_seed"],
-            "metrics": dict((key, metrics.get(key)) for key in METRIC_KEYS
+            "checkpoint_path": run.get("checkpoint_path"),
+            "checkpoint_sha256": run.get("checkpoint_sha256"),
+            "checkpoint_contract_sha256": run.get("checkpoint_contract_sha256"),
+            "metrics": dict((key, metrics.get(key)) for key in VIEWER_METRIC_KEYS
                             if key in metrics),
         })
         relative = "replays/%s.json" % run_id
@@ -164,6 +170,8 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
         "summary_sha256": _canonical_hash(summary),
         "network_path": "network.json",
         "aggregate_path": "aggregate-summary.json",
+        "acceptance": (summary.get("acceptance")
+                       if isinstance(summary.get("acceptance"), dict) else None),
         "replays": replay_entries,
         "fallbacks": fallbacks,
         "fallback_provenance_path": (

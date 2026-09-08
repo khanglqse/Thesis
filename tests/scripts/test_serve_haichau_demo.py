@@ -40,3 +40,34 @@ def test_server_binds_loopback_only(monkeypatch):
 
     assert serve_haichau_demo.main(["--port", "8765", "--no-browser"]) == 0
     assert bound["address"] == ("127.0.0.1", 8765)
+
+
+def test_server_uses_next_loopback_port_when_requested_port_is_busy(monkeypatch):
+    from scripts import serve_haichau_demo
+
+    bound = []
+
+    class FakeServer:
+        allow_reuse_address = False
+
+        def __init__(self, address, handler):
+            if address[1] == 8080:
+                raise OSError("occupied")
+            bound.append(address)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(serve_haichau_demo, "validate_demo_bundle", lambda root: {})
+    monkeypatch.setattr(serve_haichau_demo.socketserver, "TCPServer", FakeServer)
+
+    assert serve_haichau_demo.main([
+        "--port", "8080", "--port-fallback-count", "2", "--no-browser",
+    ]) == 0
+    assert bound == [("127.0.0.1", 8081)]

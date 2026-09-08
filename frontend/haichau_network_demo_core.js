@@ -86,6 +86,26 @@
     }
     return { fixed: fixed[0], learned: learned[0] };
   }
+  function evidenceValue(value) {
+    if (value === null || value === undefined || value === "") return "N/A";
+    return String(value);
+  }
+  function provenanceRows(replay, acceptance) {
+    replay = replay || {};
+    const metrics = replay.metrics || {};
+    const accepted = acceptance && acceptance.accepted;
+    return {
+      run_id: evidenceValue(replay.run_id),
+      case_id: evidenceValue(replay.case_id),
+      controller: evidenceValue(replay.controller_id),
+      checkpoint: evidenceValue(replay.checkpoint_sha256),
+      checkpoint_contract: evidenceValue(replay.checkpoint_contract_sha256),
+      learning_seed: evidenceValue(replay.learning_seed),
+      terminal_pending: evidenceValue(metrics.pending),
+      pending_integral: evidenceValue(metrics.pending_integral_vehicle_seconds),
+      acceptance: accepted === true ? "Accepted" : accepted === false ? "Not accepted" : "N/A",
+    };
+  }
   return {
     queueColor,
     frameIndexAt,
@@ -93,5 +113,6 @@
     networkTransform,
     nearestNode,
     pairedReplays,
+    provenanceRows,
   };
 });

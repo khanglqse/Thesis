@@ -44,6 +44,43 @@
     ];
     return values.map(([value, label]) => `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`).join("");
   }
+  function escapeMarkup(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[character]));
+  }
+  function bundleAcceptance() {
+    const fromManifest = state.manifest && state.manifest.acceptance;
+    const fromSummary = state.summary && state.summary.acceptance;
+    if (!fromManifest || !fromSummary ||
+        typeof fromManifest.accepted !== "boolean" ||
+        fromManifest.accepted !== fromSummary.accepted) return {};
+    return fromManifest;
+  }
+  function provenanceMarkup(title, replay, acceptance) {
+    const rows = core.provenanceRows(replay, acceptance);
+    const fields = [
+      ["Run", rows.run_id], ["Case", rows.case_id], ["Controller", rows.controller],
+      ["Checkpoint SHA-256", rows.checkpoint],
+      ["Contract SHA-256", rows.checkpoint_contract],
+      ["Learning seed", rows.learning_seed],
+      ["Terminal pending demand", rows.terminal_pending],
+      ["Pending-demand integral", rows.pending_integral],
+    ];
+    return `<article class="provenance-record"><h3>${escapeMarkup(title)}</h3><dl>${fields.map(
+      ([label, value]) => `<dt>${escapeMarkup(label)}</dt><dd>${escapeMarkup(value)}</dd>`
+    ).join("")}</dl></article>`;
+  }
+  function renderProvenance() {
+    const acceptance = bundleAcceptance();
+    const rows = core.provenanceRows(state.learned, acceptance);
+    element("acceptanceStatus").textContent = `Acceptance status: ${rows.acceptance}`;
+    element("acceptanceStatus").className = rows.acceptance === "Accepted" ? "good" :
+      rows.acceptance === "Not accepted" ? "bad" : "";
+    element("replayProvenance").innerHTML =
+      provenanceMarkup("Tuned fixed replay", state.fixed, acceptance) +
+      provenanceMarkup("DDQN replay", state.learned, acceptance);
+  }
   function draw(canvas, replay, seconds) {
     const context = canvas.getContext("2d");
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -110,6 +147,7 @@
     element("learnedMetrics").innerHTML = metricMarkup(state.learned.metrics);
     element("clock").textContent = formatTime(seconds);
     renderDetail(seconds);
+    renderProvenance();
   }
   function renderAggregate(regime) {
     const document = state.summary.summary || state.summary;

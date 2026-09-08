@@ -148,13 +148,42 @@ PYTHONPATH=src python3 scripts/export_haichau_replays.py \
   --run-id AM_FIXED --run-id AM_DDQN \
   --run-id PM_FIXED --run-id PM_DDQN \
   --fallback-dir results/haichau_network_v2/demo-fallbacks
-PYTHONPATH=src python3 scripts/serve_haichau_demo.py
+PYTHONPATH=src python3 scripts/serve_haichau_demo.py \
+  --port 8080 --port-fallback-count 10
 ```
 
 The launch command requires the complete project verifier to pass before binding only to
-`127.0.0.1`; it refuses an incomplete, legacy, stale or hash-drifted v2 bundle. Open `http://127.0.0.1:8080/index.html`
-with the network disabled. Confirm **Verified bundle loaded**, then exercise play/pause, seek,
-all three regimes and node selection. The browser console must have no warning or error.
+`127.0.0.1`; it refuses an incomplete, legacy, stale or hash-drifted v2 bundle. It tries
+ports `8080` through `8090` and prints the exact local URL it bound. Disconnect the network,
+open that URL, and confirm **Verified bundle loaded**. Exercise play/pause, seek, all three
+regimes, and node selection. The browser console must have no warning or error.
+
+### Portable presentation copy
+
+After the canonical launch and verifier have passed, create the laptop/USB copy from that
+canonical bundle. The packager never accepts an arbitrary replay directory and refuses to
+overwrite an existing destination.
+
+```sh
+PYTHONPATH=src python3 scripts/package_haichau_demo.py \
+  --output results/haichau_network_v2/demo-portable
+```
+
+Copy the resulting `demo-portable` directory as one unit. On the presentation laptop,
+double-click `launch_demo.command`, or run `python3 launch_demo.py --no-browser` from inside
+that directory. The portable launcher uses Python's standard library only, rechecks every
+asset hash listed in `manifest.json`, binds only to `127.0.0.1`, and tries ports `8080`
+through `8090`. It does not contact a network, run CityFlow, load a checkpoint, or install
+packages. The terminal prints the local URL when a port is chosen.
+
+### What the viewer proves at presentation time
+
+The **Verified replay provenance** panel is part of the 53-signal viewer. For the displayed
+fixed-time and DDQN replay it shows the run ID, case ID, controller, checkpoint and contract
+SHA-256, learning seed, terminal pending demand, and pending-demand integral. It also shows
+the frozen acceptance status. The viewer shows `N/A` for any field absent from the exported
+bundle; it does not infer a checkpoint, seed, acceptance decision, or pending-demand value.
+Acceptance becomes `N/A` if the authenticated manifest and aggregate summary do not agree.
 
 Every selected replay contains the exact `0, 5, ..., horizon` time grid. The exporter binds
 the viewer network, campaign manifest and aggregate summary hashes; the final verifier
@@ -209,9 +238,11 @@ nonzero pages, dimensions or duration as appropriate.
   in Hai Chau. The routes, flows and signal plans are synthetic and constrained by Da Nang
   evidence; the experiment tests scalability and coordination, not measured district
   performance.
-- **0:35--1:10 — Evidence contract.** Show **Verified bundle loaded**, the frozen protocol
-  and network hashes, the 30-case split (9 train, 6 validation, 15 held-out test), and the
-  result of every acceptance gate. If acceptance is negative, say so directly.
+- **0:35--1:10 — Evidence contract.** Show **Verified bundle loaded** and the **Verified
+replay provenance** panel. Read the shown acceptance status, run/case IDs, controller,
+checkpoint digest, learning seed, and pending-demand fields; distinguish `N/A` from evidence.
+State the 30-case split (9 train, 6 validation, 15 held-out test) and the result of every
+acceptance gate. If acceptance is negative, say so directly.
 - **1:10--2:10 — Network behavior.** Open the matched normal tuned-fixed and neighbor-DDQN
   replays. Play them in sync, select one or two nodes, and explain queue integral, pending
   demand and completion. Describe what the replay shows without turning one case into the
@@ -236,11 +267,14 @@ nonzero pages, dimensions or duration as appropriate.
 2. Check that the six displayed run IDs equal the selected IDs in the demo manifest and that
    none of the uppercase placeholders above remains in an executed command or manifest.
 3. Disconnect the Internet, start the local server, and exercise all three regime switches,
-   synchronized playback, seeking and node selection.
-4. Open `fallbacks/demo-walkthrough.mp4`, `fallbacks/result-summary.pdf`, and
-   `fallbacks/network-overview.png` locally before the session.
-5. Rehearse both outcomes: an accepted candidate and a scientifically valid negative
-   result. The verbal conclusion must match the generated acceptance status.
+synchronized playback, seeking, node selection, and the provenance panel. Confirm it reports
+the selected replay IDs and acceptance status rather than manually memorized values.
+4. Create and test the `demo-portable` folder on a second local directory or USB copy. Confirm
+`launch_demo.command` reports a loopback URL if port 8080 is already occupied.
+5. Open `fallbacks/demo-walkthrough.mp4`, `fallbacks/result-summary.pdf`, and
+`fallbacks/network-overview.png` locally before the session.
+6. Rehearse both outcomes: an accepted candidate and a scientifically valid negative
+result. The verbal conclusion must match the generated acceptance status.
 
 ### Vehicle accounting shown in the demo and thesis
 

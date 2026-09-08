@@ -54,3 +54,27 @@ test("paired replay selection requires one matched case", () => {
     entries[0], { ...entries[1], case_id: "c2" },
   ]), /matched case/);
 });
+
+test("provenance rows use only supplied evidence and mark missing fields N/A", () => {
+  const supplied = core.provenanceRows({
+    run_id: "run-12", case_id: "test-normal-101",
+    controller_id: "neighbor_phase_ddqn", learning_seed: 12,
+    checkpoint_sha256: "checkpoint-digest",
+    checkpoint_contract_sha256: "contract-digest",
+    metrics: { pending: 7, pending_integral_vehicle_seconds: 42.5 },
+  }, { accepted: true });
+  assert.deepEqual(supplied, {
+    run_id: "run-12", case_id: "test-normal-101",
+    controller: "neighbor_phase_ddqn", checkpoint: "checkpoint-digest",
+    checkpoint_contract: "contract-digest", learning_seed: "12",
+    terminal_pending: "7", pending_integral: "42.5",
+    acceptance: "Accepted",
+  });
+
+  const absent = core.provenanceRows({ metrics: {} }, {});
+  assert.deepEqual(absent, {
+    run_id: "N/A", case_id: "N/A", controller: "N/A", checkpoint: "N/A",
+    checkpoint_contract: "N/A", learning_seed: "N/A", terminal_pending: "N/A",
+    pending_integral: "N/A", acceptance: "N/A",
+  });
+});

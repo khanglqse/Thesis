@@ -94,6 +94,29 @@ canvas {
 .neighbors li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
 .neighbors span { color: var(--steel); }
 
+.provenance-panel {
+  display: grid;
+  grid-template-columns: minmax(210px, .45fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin: 0 24px 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--steel);
+  background: var(--slate);
+}
+.provenance-panel h2 { margin-bottom: 6px; font-size: 17px; }
+.provenance-panel > div > p:last-child { margin: 0; color: var(--steel); font-size: 12px; }
+.provenance-records { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.provenance-record {
+  min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 3px;
+  background: var(--estuary);
+}
+.provenance-record h3 { margin: 0 0 7px; color: var(--amber); font-size: 13px; }
+.provenance-record dl { display: grid; grid-template-columns: 98px minmax(0, 1fr); gap: 4px 8px; margin: 0; font-size: 11px; }
+.provenance-record dt { color: var(--steel); }
+.provenance-record dd { min-width: 0; margin: 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
 .aggregate {
   display: flex;
   align-items: center;
@@ -126,6 +149,8 @@ footer { padding: 0 24px 16px; color: var(--steel); font-size: 11px; }
   main { padding: 14px 16px; }
   .comparison { grid-template-columns: 1fr; }
   .aggregate { display: block; margin: 0 16px 12px; }
+  .provenance-panel { grid-template-columns: 1fr; margin: 0 16px 12px; }
+  .provenance-records { grid-template-columns: 1fr; }
   .aggregate > p { margin-top: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }

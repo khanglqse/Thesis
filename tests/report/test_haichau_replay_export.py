@@ -30,7 +30,7 @@ def _network():
 
 
 def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
-              replay_times=(0, 5, 10)):
+              replay_times=(0, 5, 10), with_checkpoint=False):
     agent_ids = ["N%02d" % index for index in range(53)]
     manifest = {
         "protocol_version": 2,
@@ -82,6 +82,14 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
     }
     runs = expand_runs(
         manifest, [11], ["tuned_fixed", "neighbor_phase_ddqn"])
+    if with_checkpoint:
+        learned = next(run for run in runs
+                       if run["controller_id"] == "neighbor_phase_ddqn")
+        learned.update({
+            "checkpoint_path": "checkpoints/seed11.npz",
+            "checkpoint_sha256": "f" * 64,
+            "checkpoint_contract_sha256": "a" * 64,
+        })
     campaign_dir = tmp_path / "campaign"
     campaign_dir.mkdir()
     (campaign_dir / "campaign-manifest.json").write_text(json.dumps({
@@ -204,6 +212,26 @@ def test_export_reproduces_run_metrics_and_hashes_every_path(tmp_path):
          "metrics.json").read_text())
     assert exported["metrics"]["queue_integral_vehicle_seconds"] == (
         original["queue_integral_vehicle_seconds"])
+
+
+def test_export_binds_supplied_run_provenance_and_acceptance_to_viewer(tmp_path):
+    network_path = tmp_path / "network.json"
+    network_path.write_text(json.dumps(_network()))
+    campaign_dir, runs = _campaign(
+        tmp_path, _digest(network_path), with_checkpoint=True)
+
+    manifest = export_bundle(
+        campaign_dir, tmp_path / "demo", network_path,
+        selected_run_ids=[run["run_id"] for run in runs],
+    )
+
+    learned_entry = next(entry for entry in manifest["replays"]
+                         if entry["controller_id"] == "neighbor_phase_ddqn")
+    learned = json.loads((tmp_path / "demo" / learned_entry["path"]).read_text())
+    assert learned["checkpoint_sha256"] == "f" * 64
+    assert learned["checkpoint_contract_sha256"] == "a" * 64
+    assert learned["metrics"]["pending_integral_vehicle_seconds"] == 0.0
+    assert manifest["acceptance"] == {"accepted": False}
 
 
 def test_export_rejects_replay_metric_drift(tmp_path):

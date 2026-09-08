@@ -34,10 +34,14 @@ def validate_demo_bundle(project_root, bundle_dir=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--port-fallback-count", type=int, default=10)
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args(argv)
     if args.port < 1 or args.port > 65535:
         raise ValueError("port must be in 1..65535")
+    if (args.port_fallback_count < 0
+            or args.port + args.port_fallback_count > 65535):
+        raise ValueError("port fallback range must remain in 1..65535")
     validate_demo_bundle(ROOT)
     handler = functools.partial(http.server.SimpleHTTPRequestHandler,
                                 directory=str(ROOT / DEMO_RELATIVE))
@@ -45,8 +49,20 @@ def main(argv=None):
     class ReusableServer(socketserver.TCPServer):
         allow_reuse_address = True
 
-    with ReusableServer(("127.0.0.1", args.port), handler) as server:
-        url = "http://127.0.0.1:%d/index.html" % args.port
+    server = None
+    port = None
+    for candidate in range(args.port, args.port + args.port_fallback_count + 1):
+        try:
+            server = ReusableServer(("127.0.0.1", candidate), handler)
+            port = candidate
+            break
+        except OSError:
+            continue
+    if server is None:
+        raise OSError("no free loopback port in %d..%d" % (
+            args.port, args.port + args.port_fallback_count))
+    with server:
+        url = "http://127.0.0.1:%d/index.html" % port
         print("Verified Hai Chau v2 demo: %s" % url)
         if not args.no_browser:
             webbrowser.open(url)
