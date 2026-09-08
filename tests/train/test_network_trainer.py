@@ -139,8 +139,24 @@ def test_training_visits_all_regimes_and_saves_resolved_contract(tmp_path):
     assert set(summary["episode_regimes"]) == {"normal", "am_peak", "pm_peak"}
     assert summary["episode_agent_counts"] == [2, 2, 2]
     contract = json.loads((output / "checkpoint" / "contract.json").read_text())
-    assert contract["count_norm"] == 20.0
-    assert contract["network_sha256"] == manifest["network"]["sha256"]
+    assert contract["controller_family"] == "neighbor_phase_ddqn"
+    assert contract["hidden_size"] == 8
+    assert contract["normalization"] == {
+        "capacity_norm": 40.0,
+        "count_norm": 20.0,
+    }
+    assert contract["action_contract"] == {
+        "mask_type": "boolean_selectable_green_rows",
+        "padding_actions_selectable": False,
+        "type": "phase_rows",
+        "version": 1,
+    }
+    assert contract["network_compatibility"] == {
+        "generator_config_sha256": "generator-hash",
+        "manifest_sha256": canonical_json_sha256(manifest),
+        "network_sha256": manifest["network"]["sha256"],
+        "phase_contract_sha256": "phase-contract-hash",
+    }
     assert contract["manifest_sha256"] == canonical_json_sha256(manifest)
     assert contract["generator_config_sha256"] == "generator-hash"
     assert contract["baseline_tuning_sha256"]

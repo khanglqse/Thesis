@@ -234,20 +234,42 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
 def _checkpoint_contract(manifest, config, max_green, tuning, verification):
     preprocessing = manifest["preprocessing"]
     model = config["model"]
+    manifest_sha256 = canonical_json_sha256(manifest)
+    network_sha256 = manifest["network"]["sha256"]
+    phase_contract_sha256 = manifest["phase_contract"]["sha256"]
+    generator_config_sha256 = manifest["generator_config_sha256"]
     return {
+        "controller_family": "neighbor_phase_ddqn",
         "obs_schema_version": 2,
         "feature_order": list(FEATURES),
         "feature_dim": int(model["feature_dim"]),
+        "hidden_size": int(model["hidden"]),
+        "normalization": {
+            "count_norm": float(preprocessing["count_norm"]),
+            "capacity_norm": float(preprocessing["capacity_norm"]),
+        },
+        "action_contract": {
+            "type": "phase_rows",
+            "version": 1,
+            "mask_type": "boolean_selectable_green_rows",
+            "padding_actions_selectable": False,
+        },
+        "network_compatibility": {
+            "network_sha256": network_sha256,
+            "phase_contract_sha256": phase_contract_sha256,
+            "generator_config_sha256": generator_config_sha256,
+            "manifest_sha256": manifest_sha256,
+        },
+        # Flat aliases remain for readers of pre-release training artifacts.
         "hidden": int(model["hidden"]),
         "count_norm": float(preprocessing["count_norm"]),
         "capacity_norm": float(preprocessing["capacity_norm"]),
         "max_green": int(max_green),
-        "action_contract": "phase_rows_with_boolean_mask_v1",
         "phase_contract_schema_version": 1,
-        "phase_contract_sha256": manifest["phase_contract"]["sha256"],
-        "network_sha256": manifest["network"]["sha256"],
-        "manifest_sha256": canonical_json_sha256(manifest),
-        "generator_config_sha256": manifest["generator_config_sha256"],
+        "phase_contract_sha256": phase_contract_sha256,
+        "network_sha256": network_sha256,
+        "manifest_sha256": manifest_sha256,
+        "generator_config_sha256": generator_config_sha256,
         "runtime": manifest["runtime"],
         "baseline_tuning_sha256": tuning["tuning_sha256"],
         "foundation_verification": verification,
