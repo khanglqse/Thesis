@@ -11,7 +11,10 @@ from traffic_rl.eval.capacity_calibration import (
     prepare_campaign,
 )
 from traffic_rl.research.artifacts import canonical_sha256
-from traffic_rl.research.capacity_decision import apply_capacity_decision
+from traffic_rl.research.capacity_decision import (
+    _load_prepare,
+    apply_capacity_decision,
+)
 
 
 def test_capacity_decision_module_exposes_bridge_entry_point():
@@ -21,6 +24,16 @@ def test_capacity_decision_module_exposes_bridge_entry_point():
     namespace = {}
     exec(compile(module.read_text(), str(module), "exec"), namespace)
     assert callable(namespace["apply_capacity_decision"])
+
+
+def test_load_prepare_imports_the_project_script_without_project_root_on_sys_path(tmp_path):
+    script = tmp_path / "scripts/prepare_haichau_network_v2.py"
+    script.parent.mkdir()
+    script.write_text("def prepare(*args, **kwargs):\n    return 'loaded'\n")
+
+    prepare = _load_prepare(tmp_path)
+
+    assert prepare() == "loaded"
 
 
 def _commit(root, message):

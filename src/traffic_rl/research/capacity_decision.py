@@ -4,6 +4,7 @@ import copy
 from decimal import Decimal, localcontext
 from fractions import Fraction
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -417,6 +418,23 @@ def _install_transaction(root, replacements):
         shutil.rmtree(transaction, ignore_errors=True)
 
 
+def _load_prepare(root):
+    """Load the repository preparer by path, independent of ``sys.path``."""
+    script = Path(root).resolve() / "scripts/prepare_haichau_network_v2.py"
+    if not script.is_file():
+        raise ValueError("Hai Chau preparer script is required")
+    spec = importlib.util.spec_from_file_location(
+        "_traffic_rl_haichau_capacity_preparer", script)
+    if spec is None or spec.loader is None:
+        raise ValueError("Hai Chau preparer script cannot be loaded")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    prepare = getattr(module, "prepare", None)
+    if not callable(prepare):
+        raise ValueError("Hai Chau preparer script must expose prepare")
+    return prepare
+
+
 def apply_capacity_decision(project_root, stage_d_dir, config_path,
                             decision_path=None, new_version=False,
                             validate_only=False, prepare_fn=None):
@@ -441,8 +459,7 @@ def apply_capacity_decision(project_root, stage_d_dir, config_path,
         config_path, decision["reference_interval"]["yaml_decimal"])
     preparer = prepare_fn
     if preparer is None:
-        from scripts.prepare_haichau_network_v2 import prepare
-        preparer = prepare
+        preparer = _load_prepare(root)
     with tempfile.TemporaryDirectory(prefix="haichau-capacity-promotion-") as temporary:
         staged_root = Path(temporary).resolve()
         staged_config = _copy_stage_inputs(
