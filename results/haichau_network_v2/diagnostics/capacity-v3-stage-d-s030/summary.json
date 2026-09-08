@@ -1,0 +1,52 @@
+{
+  "campaign_identity_sha256": "e0e200a8b92de3b7fa58bfd0b71c78252d8dc6d87da6ac13bf7713f31fd7f86b",
+  "completed": 12,
+  "eligible_for_release": false,
+  "eligible_for_test_evaluation": false,
+  "evidence_namespace": "haichau_capacity_calibration_diagnostic",
+  "failed": 0,
+  "schema_version": 1,
+  "skipped": 0,
+  "stage_gates": {
+    "complete": true,
+    "completed_runs": 12,
+    "expected_runs": 12,
+    "highest_passing_scale": 0.3,
+    "scales": {
+      "0.3": {
+        "checks": {
+          "all_individual_gates": {
+            "passed": true
+          },
+          "all_runs_complete": {
+            "completed": 12,
+            "expected": 12,
+            "passed": true
+          },
+          "pm_normal_aggregate_ordering": {
+            "controllers": {
+              "fixed_time_30": {
+                "normal_mean_completion_rate": 0.7622052186984716,
+                "normal_mean_queue_integral_vehicle_seconds": 1184310.0,
+                "passed": true,
+                "pm_mean_completion_rate": 0.5436949427836109,
+                "pm_mean_queue_integral_vehicle_seconds": 3351518.5
+              },
+              "max_pressure_masked_v2": {
+                "normal_mean_completion_rate": 0.7973754965966924,
+                "normal_mean_queue_integral_vehicle_seconds": 733493.0,
+                "passed": true,
+                "pm_mean_completion_rate": 0.6034178475239607,
+                "pm_mean_queue_integral_vehicle_seconds": 2596589.5
+              }
+            },
+            "passed": true
+          }
+        },
+        "passed": true
+      }
+    }
+  },
+  "status": "diagnostic_complete",
+  "total": 12
+}
