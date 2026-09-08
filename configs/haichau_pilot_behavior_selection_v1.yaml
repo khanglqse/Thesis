@@ -1,0 +1,18 @@
+# Immutable before-pilot behavior-arm selection contract. The command refuses
+# to replace either this arm decision or the selected final-training config.
+schema_version: 1
+decision_type: haichau_pilot_behavior_arm_selection
+learning_seed: 11
+mode: pilot
+manifest: results/haichau_network_v2/experiment-manifest.json
+baseline_tuning_artifact: results/haichau_network_v2/training/final-baseline-tuning.json
+validation_checkpoints: [step-4, step-8, step-12]
+arms:
+  bc_prior:
+    config: configs/haichau_training_v2_bc_prior.yaml
+    run_dir: results/haichau_network_v2/training/pilot-bc-prior-seed11
+  bc_only:
+    config: configs/haichau_training_v2_bc_only.yaml
+    run_dir: results/haichau_network_v2/training/pilot-bc-only-seed11
+decision_output: results/haichau_network_v2/training/pilot-behavior-selection.json
+selected_config_output: configs/haichau_training_v2_final_selected.yaml
