@@ -20,6 +20,8 @@ from traffic_rl.train.objective_contract import training_objective
 from traffic_rl.eval.release_identity import inspect_runtime_image, verify_git_checkout
 from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
+from traffic_rl.eval.checkpoint_selection import (
+    CHECKPOINT_ELIGIBILITY_POLICY, validate_checkpoint_selection)
 from traffic_rl.sim.phase_encoder import FEATURES
 from traffic_rl.train.network_trainer import (
     _tuning_binding, _validate_precomputed_tuning)
@@ -37,6 +39,7 @@ REGIMES = ("normal", "am_peak", "pm_peak")
 CHECKPOINT_FIELDS = frozenset((
     "obs_schema_version", "feature_order", "normalization", "hidden_size",
     "action_contract", "network_compatibility", "controller_family",
+    "checkpoint_eligibility_policy",
 ))
 NEIGHBOR_ACTION_CONTRACT = {
     "type": "phase_rows",
@@ -157,6 +160,8 @@ def _checkpoint_contract(contract, controller, compatibility, normalization):
         raise ValueError("checkpoint contract network compatibility drift")
     if contract["controller_family"] != controller:
         raise ValueError("checkpoint contract controller family drift")
+    if contract["checkpoint_eligibility_policy"] != CHECKPOINT_ELIGIBILITY_POLICY:
+        raise ValueError("checkpoint eligibility policy is missing or obsolete")
     if controller == "neighbor_phase_ddqn" \
             and contract["feature_order"] != list(FEATURES):
         raise ValueError("neighbor checkpoint feature order drift")
@@ -302,22 +307,7 @@ def _validate_selection_inputs(validation, selection, tuning, validation_ids):
     if _contains_test_reference(validation) or _contains_test_reference(selection) \
             or _contains_test_reference(tuning):
         raise ValueError("test metric appears in checkpoint selection evidence")
-    if not isinstance(validation, dict) or not validation:
-        raise ValueError("validation evidence is missing")
-    selected = selection.get("selected_checkpoint") if isinstance(selection, dict) else None
-    if not selected or selected not in validation:
-        raise ValueError("selected checkpoint lacks validation evidence")
-    selected_evidence = validation[selected]
-    if not isinstance(selected_evidence, dict) or not selected_evidence.get("score"):
-        raise ValueError("selected checkpoint validation score is missing")
-    if selection.get("score") != selected_evidence.get("score"):
-        raise ValueError("selection score drifts from validation evidence")
-    for item in validation.values():
-        if not isinstance(item, dict) or not isinstance(item.get("rows"), list):
-            raise ValueError("validation checkpoint rows are missing")
-        for row in item["rows"]:
-            if not isinstance(row, dict) or row.get("case_id") not in validation_ids:
-                raise ValueError("checkpoint selection uses a non-validation case")
+    validate_checkpoint_selection(validation, selection, tuning, validation_ids)
     selection_cases = tuning.get("selection_cases", []) if isinstance(tuning, dict) else []
     if selection_cases and any(case_id not in validation_ids for case_id in selection_cases):
         raise ValueError("baseline tuning uses a non-validation case")

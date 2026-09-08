@@ -43,6 +43,7 @@ class FakeNetworkEnv(object):
             "total_queue": 10.0,
             "queue_integral_vehicle_seconds": 80.0 if self._switched else 100.0,
             "completion_rate": 1.0,
+            "insertion_rate": 1.0,
             "phase_switches": 0,
             "total_queue": 10.0,
             "arrived": 4,
@@ -198,6 +199,14 @@ def test_training_visits_all_regimes_and_saves_resolved_contract(tmp_path):
     assert contract["manifest_sha256"] == canonical_json_sha256(manifest)
     assert contract["generator_config_sha256"] == "generator-hash"
     assert contract["baseline_tuning_sha256"]
+    assert contract["checkpoint_eligibility_policy"] == {
+        "comparison_unit": "matched_validation_case",
+        "maximum_completion_loss": 0.02,
+        "maximum_insertion_loss": 0.02,
+        "queue_regret_limit_per_regime": 0.0,
+        "required_regimes": ["normal", "am_peak", "pm_peak"],
+        "schema_version": 2,
+    }
     run_manifest = json.loads((output / "run-manifest.json").read_text())
     assert run_manifest["controller_id"] == "neighbor_phase_ddqn"
     assert run_manifest["mode"] == "final"
@@ -220,6 +229,15 @@ def test_training_visits_all_regimes_and_saves_resolved_contract(tmp_path):
     default_rows = json.loads((output / "validation.json").read_text())["step-3"]["rows"]
     assert all(row["fresh_baseline"] is True for row in default_rows)
     assert all("baseline_source" not in row for row in default_rows)
+    assert all(row["candidate_insertion"] == 1.0 for row in default_rows)
+    assert all(row["baseline_insertion"] == 1.0 for row in default_rows)
+    selection = json.loads((output / "selection.json").read_text())
+    assert selection["score"]["insertion_evidence_complete"] is True
+    assert selection["eligibility_policy"] == contract[
+        "checkpoint_eligibility_policy"]
+    assert summary["selected_validation_score"] == selection["score"]
+    assert summary["checkpoint_eligibility_policy"] == selection[
+        "eligibility_policy"]
     episode = json.loads((output / "train-log.json").read_text())[0]
     for field in ("demand_seed", "sim_seed", "flow_sha256",
                   "queue_integral_vehicle_seconds", "total_queue", "arrived",
@@ -281,6 +299,29 @@ def test_precomputed_baseline_rejects_horizon_drift_before_writing_run(tmp_path)
     output = tmp_path / "rejected-cache"
 
     with np.testing.assert_raises_regex(ValueError, "horizon"):
+        train_network(
+            lambda case, horizon: FakeNetworkEnv(case, horizon), manifest, config,
+            str(output), foundation_root=str(tmp_path), foundation_verifier=_verified,
+            baseline_tuning_artifact=str(cache_path))
+
+    assert not output.exists()
+
+
+def test_precomputed_baseline_without_insertion_rate_is_rejected(tmp_path):
+    manifest = _manifest()
+    config = _config()
+    tuning = _precomputed_tuning(manifest, config)
+    for candidate in tuning["candidates"]:
+        for row in candidate["rows"]:
+            row.pop("insertion_rate")
+    tuning["tuning_sha256"] = canonical_json_sha256(
+        dict((key, value) for key, value in tuning.items()
+             if key != "tuning_sha256"))
+    cache_path = tmp_path / "old-baseline.json"
+    cache_path.write_text(json.dumps(tuning))
+    output = tmp_path / "rejected-cache"
+
+    with np.testing.assert_raises_regex(ValueError, "insertion"):
         train_network(
             lambda case, horizon: FakeNetworkEnv(case, horizon), manifest, config,
             str(output), foundation_root=str(tmp_path), foundation_verifier=_verified,

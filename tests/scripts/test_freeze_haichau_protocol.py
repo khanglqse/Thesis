@@ -9,6 +9,8 @@ from scripts.freeze_haichau_protocol import (
 from scripts import verify_haichau_thesis
 from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
+from traffic_rl.eval.checkpoint_selection import (
+    CHECKPOINT_ELIGIBILITY_POLICY, score_validation)
 from traffic_rl.sim.phase_encoder import FEATURES
 
 
@@ -85,11 +87,12 @@ def _contract(network_sha, phase_contract_sha, generator_config_sha,
             "manifest_sha256": manifest_sha,
         },
         "controller_family": controller_family,
+        "checkpoint_eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
     }
 
 
 def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
-                       generator_config_sha, manifest_sha, validation_case,
+                       generator_config_sha, manifest_sha, validation_cases,
                        include_test=False):
     relative = "release-training/%s/final-seed%d" % (controller, seed)
     run_dir = root / relative
@@ -102,10 +105,18 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
         model = SharedDQN(1, 3, hidden=128, lr=0.001, seed=seed, dueling=True)
     model.save_bundle(str(run_dir / "checkpoint"), contract)
     model.save_bundle(str(run_dir / "checkpoints/step-80"), contract)
+    rows = [{
+        "case_id": case["case_id"], "scenario": case["scenario"],
+        "candidate_queue": 90.0, "baseline_queue": 100.0,
+        "candidate_completion": 1.0, "baseline_completion": 1.0,
+        "candidate_insertion": 1.0, "baseline_insertion": 1.0,
+    } for case in validation_cases]
+    score = score_validation(rows)
+    score["training_step"] = 80
     validation = {
         "step-80": {
-            "rows": [{"case_id": validation_case}],
-            "score": {"eligible": True},
+            "rows": rows,
+            "score": score,
         }
     }
     if include_test:
@@ -115,7 +126,8 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
         "status": "eligible",
         "selected_checkpoint": "step-80",
         "eligible_for_test_evaluation": True,
-        "score": {"eligible": True},
+        "eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
+        "score": score,
     })
     _write(run_dir / "resolved-config.json", {
         "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.1,
@@ -125,7 +137,17 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
         "run": {"episodes": 80, "horizon_seconds": 3600},
     })
     _write(run_dir / "baseline-tuning.json", {
-        "selection_cases": [validation_case],
+        "selection_cases": [case["case_id"] for case in validation_cases],
+        "selected": {"fixed_green_duration": 30},
+        "candidates": [{
+            "fixed_green_duration": 30,
+            "rows": [{
+                "case_id": row["case_id"], "scenario": row["scenario"],
+                "queue_integral_vehicle_seconds": row["baseline_queue"],
+                "completion_rate": row["baseline_completion"],
+                "insertion_rate": row["baseline_insertion"],
+            } for row in rows],
+        }],
     })
     _write(run_dir / "run-manifest.json", {
         "controller_id": controller,
@@ -191,8 +213,7 @@ def _fixture(root):
     _write(manifest_path, manifest)
     manifest_sha = hashlib.sha256(json.dumps(
         manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    validation_case = next(case["case_id"] for case in cases
-                           if case["split"] == "validation")
+    validation_cases = [case for case in cases if case["split"] == "validation"]
     dockerfile = root / "docker/haichau-evaluation.Dockerfile"
     _write(dockerfile, "FROM %s\n" % RUNTIME_IMAGE)
     controller_configs = dict(
@@ -231,7 +252,7 @@ def _fixture(root):
                 root, controller, seed, network_sha,
                 manifest["phase_contract"]["sha256"],
                 manifest["generator_config_sha256"], manifest_sha,
-                validation_case)
+                validation_cases)
     index_path = root / "release/training-index.json"
     _write(index_path, index)
     commit = _commit(root)
@@ -287,6 +308,7 @@ def _add_precomputed_tuning_provenance(root, relative):
                 "scenario": case["scenario"],
                 "queue_integral_vehicle_seconds": 100.0,
                 "completion_rate": 1.0,
+                "insertion_rate": 1.0,
             } for case in validation_cases],
         }],
         "binding": {
@@ -529,6 +551,30 @@ def test_freeze_refuses_overwrite_or_any_test_case_in_selection_evidence(tmp_pat
     _git(tmp_path, "commit", "-qm", "inject test evidence")
 
     with pytest.raises(ValueError, match="test.*selection"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+def test_freeze_recomputes_insertion_gate_and_rejects_old_eligible_artifact(tmp_path):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["neighbor_phase_ddqn"]["11"]
+    validation_path = run_dir / "validation.json"
+    validation = json.loads(validation_path.read_text())
+    for row in validation["step-80"]["rows"]:
+        row.pop("candidate_insertion")
+        row.pop("baseline_insertion")
+    _write(validation_path, validation)
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["validation.json"] = _sha256(validation_path)
+    _write(status_path, status)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "remove insertion evidence")
+
+    with pytest.raises(ValueError, match="score|insertion|eligible|baseline"):
         freeze_protocol(
             tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
             fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],

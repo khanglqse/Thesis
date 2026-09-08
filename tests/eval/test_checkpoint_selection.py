@@ -2,17 +2,20 @@ import pytest
 
 from traffic_rl.eval.checkpoint_selection import (
     choose_checkpoint, choose_reporting_checkpoint, relative_regret,
-    score_validation)
+    score_validation, validate_checkpoint_selection)
 
 
 def _row(scenario, candidate_queue, baseline_queue,
-         candidate_completion=1.0, baseline_completion=1.0):
+         candidate_completion=1.0, baseline_completion=1.0,
+         candidate_insertion=1.0, baseline_insertion=1.0):
     return {
         "scenario": scenario,
         "candidate_queue": candidate_queue,
         "baseline_queue": baseline_queue,
         "candidate_completion": candidate_completion,
         "baseline_completion": baseline_completion,
+        "candidate_insertion": candidate_insertion,
+        "baseline_insertion": baseline_insertion,
     }
 
 
@@ -80,6 +83,38 @@ def test_missing_completion_is_ineligible():
     assert score_validation(rows)["eligible"] is False
 
 
+def test_insertion_degradation_over_two_points_is_ineligible():
+    rows = [_row("normal", 90, 100, candidate_insertion=0.979,
+                 baseline_insertion=1.0),
+            _row("am_peak", 80, 100), _row("pm_peak", 70, 100)]
+
+    score = score_validation(rows)
+
+    assert score["max_insertion_degradation"] == pytest.approx(0.021)
+    assert score["eligible"] is False
+
+
+def test_missing_insertion_evidence_is_ineligible():
+    rows = [_row(scenario, 90, 100)
+            for scenario in ("normal", "am_peak", "pm_peak")]
+    del rows[0]["candidate_insertion"]
+
+    score = score_validation(rows)
+
+    assert score["insertion_evidence_complete"] is False
+    assert score["eligible"] is False
+
+
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), -0.01, 1.01])
+def test_invalid_insertion_rate_fails_closed(invalid):
+    rows = [_row(scenario, 90, 100)
+            for scenario in ("normal", "am_peak", "pm_peak")]
+    rows[0]["candidate_insertion"] = invalid
+
+    with pytest.raises(ValueError, match="insertion rate"):
+        score_validation(rows)
+
+
 def test_score_averages_seeds_within_each_regime():
     rows = [_row("normal", 90, 100), _row("normal", 100, 100),
             _row("am_peak", 80, 100), _row("pm_peak", 70, 100)]
@@ -122,3 +157,81 @@ def test_reporting_selection_chooses_best_validation_when_all_ineligible():
     }
 
     assert choose_reporting_checkpoint(evaluations) == "step-10"
+
+
+def test_artifact_validation_rejects_forged_old_eligible_score():
+    rows = [_row(scenario, 90, 100)
+            for scenario in ("normal", "am_peak", "pm_peak")]
+    for row in rows:
+        row.pop("candidate_insertion")
+        row.pop("baseline_insertion")
+        row["case_id"] = "validation-" + row["scenario"]
+    validation = {"step-80": {"rows": rows, "score": {"eligible": True}}}
+    selection = {
+        "status": "eligible", "selected_checkpoint": "step-80",
+        "eligible_for_test_evaluation": True,
+        "eligibility_policy": {"schema_version": 1},
+        "score": {"eligible": True},
+    }
+
+    with pytest.raises(ValueError, match="policy|score"):
+        validate_checkpoint_selection(
+            validation, selection, _tuning(rows),
+            {row["case_id"] for row in rows})
+
+
+def test_artifact_validation_requires_each_exact_validation_case_once():
+    rows = []
+    for scenario in ("normal", "am_peak", "pm_peak"):
+        row = _row(scenario, 90, 100)
+        row["case_id"] = "validation-" + scenario
+        rows.append(row)
+    score = score_validation(rows)
+    validation = {"step-80": {"rows": rows, "score": score}}
+    selection = {
+        "status": "eligible", "selected_checkpoint": "step-80",
+        "eligible_for_test_evaluation": True,
+        "eligibility_policy": score["eligibility_policy"], "score": score,
+    }
+
+    with pytest.raises(ValueError, match="exact validation cases"):
+        validate_checkpoint_selection(
+            validation, selection, _tuning(rows),
+            {"validation-normal", "validation-am_peak", "validation-pm_peak",
+             "validation-normal-second-seed"})
+
+
+def _tuning(rows):
+    return {
+        "selected": {"fixed_green_duration": 30},
+        "candidates": [{
+            "fixed_green_duration": 30,
+            "rows": [{
+                "case_id": row["case_id"], "scenario": row["scenario"],
+                "queue_integral_vehicle_seconds": row["baseline_queue"],
+                "completion_rate": row.get("baseline_completion"),
+                "insertion_rate": row.get("baseline_insertion"),
+            } for row in rows],
+        }],
+    }
+
+
+def test_artifact_validation_rejects_baseline_values_from_another_case_run():
+    rows = []
+    for scenario in ("normal", "am_peak", "pm_peak"):
+        row = _row(scenario, 90, 100)
+        row["case_id"] = "validation-" + scenario
+        rows.append(row)
+    score = score_validation(rows)
+    validation = {"step-80": {"rows": rows, "score": score}}
+    selection = {
+        "status": "eligible", "selected_checkpoint": "step-80",
+        "eligible_for_test_evaluation": True,
+        "eligibility_policy": score["eligibility_policy"], "score": score,
+    }
+    tuning = _tuning(rows)
+    tuning["candidates"][0]["rows"][0]["insertion_rate"] = 0.95
+
+    with pytest.raises(ValueError, match="baseline.*drift"):
+        validate_checkpoint_selection(
+            validation, selection, tuning, {row["case_id"] for row in rows})

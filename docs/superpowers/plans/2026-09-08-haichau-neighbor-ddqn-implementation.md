@@ -263,7 +263,7 @@ Run: `PYTHONPATH=src pytest tests/eval/test_checkpoint_selection.py -v`
 
 - [ ] **Step 3: Implement normalized matched-case scoring**
 
-Regret is `(candidate_queue - baseline_queue) / baseline_queue`. Aggregate each scenario across validation demand seeds. Eligibility requires exactly the three regimes `normal`, `am_peak`, and `pm_peak`, mean regret `<= 0` in each regime, complete completion evidence for every row, and completion degradation no worse than 0.02 in any case. This validation point-estimate gate is separate from the held-out statistical acceptance rules. Rank eligible checkpoints by worst scenario regret, then mean regret, then earlier training step.
+Regret is `(candidate_queue - baseline_queue) / baseline_queue`. Aggregate each scenario across validation demand seeds. Eligibility requires exactly the three regimes `normal`, `am_peak`, and `pm_peak`, mean regret `<= 0` in each regime, and complete matched completion and insertion-rate evidence for every row. Neither completion nor insertion rate may degrade by more than 0.02 against validation-tuned Fixed-Time in any exact case. This validation point-estimate gate is separate from the held-out statistical acceptance rules. Rank eligible checkpoints by worst scenario regret, then mean regret, then earlier training step.
 
 - [ ] **Step 4: Verify and commit**
 

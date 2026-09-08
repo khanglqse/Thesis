@@ -12,6 +12,8 @@ from scripts.export_haichau_replays import export_bundle
 from scripts.verify_haichau_thesis import (
     _checkpoint_contract_valid, audit_demo, verify_project)
 from traffic_rl.eval.network_campaign import bind_frozen_manifest, expand_runs, run_pending
+from traffic_rl.eval.checkpoint_selection import (
+    CHECKPOINT_ELIGIBILITY_POLICY, score_validation)
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_demo_fallbacks import build_fallbacks, validate_fallbacks
 from traffic_rl.report.haichau_network import write_artifacts, write_release_manifest
@@ -254,6 +256,7 @@ def _checkpoint_contract(network_sha256, controller="neighbor_phase_ddqn",
             "manifest_sha256": manifest_sha256,
         },
         "controller_family": controller,
+        "checkpoint_eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
     }
 
 
@@ -309,6 +312,7 @@ def _write_bound_project(root):
         _write(demand_path, "validation-%02d" % index)
         cases.append({
             "case_id": "validation-%02d" % index, "split": "validation",
+            "regime": ("normal", "am_peak", "pm_peak")[index],
             "scheduled_vehicles": 2000 + index,
             "demand_path": str(demand_path.relative_to(root)),
             "demand_sha256": _digest(demand_path),
@@ -331,8 +335,7 @@ def _write_bound_project(root):
     case_manifest = {"protocol_version": 2, "cases": cases}
     case_manifest_path = root / "release/case-manifest.json"
     _write(case_manifest_path, json.dumps(case_manifest))
-    validation_case = next(case["case_id"] for case in cases
-                           if case["split"] == "validation")
+    validation_cases = [case for case in cases if case["split"] == "validation"]
 
     phase_sha = "b" * 64
     generator_sha = "c" * 64
@@ -357,17 +360,26 @@ def _write_bound_project(root):
             resolved_path = bundle / "resolved-config.json"
             tuning_path = bundle / "baseline-tuning.json"
             run_manifest_path = bundle / "run-manifest.json"
+            rows = [{
+                "case_id": case["case_id"], "scenario": case["regime"],
+                "candidate_queue": 90.0, "baseline_queue": 100.0,
+                "candidate_completion": 1.0, "baseline_completion": 1.0,
+                "candidate_insertion": 1.0, "baseline_insertion": 1.0,
+            } for case in validation_cases]
+            score = score_validation(rows)
+            score["training_step"] = 80
             _write(validation_path, json.dumps({
                 "step-80": {
-                    "rows": [{"case_id": validation_case}],
-                    "score": {"eligible": True},
+                    "rows": rows,
+                    "score": score,
                 },
             }))
             _write(selection_path, json.dumps({
                 "status": "eligible",
                 "selected_checkpoint": "step-80",
                 "eligible_for_test_evaluation": True,
-                "score": {"eligible": True},
+                "eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
+                "score": score,
             }))
             _write(resolved_path, json.dumps({
                 "mode": "final", "learning_seed": seed,
@@ -375,7 +387,19 @@ def _write_bound_project(root):
                 "run": {"episodes": 80, "horizon_seconds": 3600},
                 "reward": dict(contract["training_objective"]["reward"]),
             }))
-            _write(tuning_path, json.dumps({"selection_cases": [validation_case]}))
+            _write(tuning_path, json.dumps({
+                "selection_cases": [case["case_id"] for case in validation_cases],
+                "selected": {"fixed_green_duration": 30},
+                "candidates": [{
+                    "fixed_green_duration": 30,
+                    "rows": [{
+                        "case_id": row["case_id"], "scenario": row["scenario"],
+                        "queue_integral_vehicle_seconds": row["baseline_queue"],
+                        "completion_rate": row["baseline_completion"],
+                        "insertion_rate": row["baseline_insertion"],
+                    } for row in rows],
+                }],
+            }))
             _write(run_manifest_path, json.dumps({
                 "controller_id": controller, "learning_seed": seed,
             }))
@@ -965,6 +989,32 @@ def test_checkpoint_gate_revalidates_rehashed_source_selection_evidence(tmp_path
     validation_path = run_dir / "validation.json"
     validation = json.loads(validation_path.read_text())
     validation["step-80"]["rows"] = [{"case_id": "test-normal-0"}]
+    validation_path.write_text(json.dumps(validation))
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"]["validation.json"] = _digest(validation_path)
+    status_path.write_text(json.dumps(status))
+    entry["source_artifacts"]["validation.json"] = _digest(validation_path)
+    entry["source_status_sha256"] = _digest(status_path)
+    protocol_path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
+    assert report["gates"]["five_learning_seeds"]["evidence"]["cells"][0]["valid"] is False
+
+
+def test_checkpoint_gate_rejects_rehashed_source_without_insertion_evidence(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    entry = protocol["checkpoints"][0]
+    run_dir = tmp_path / entry["source_run_dir"]
+    validation_path = run_dir / "validation.json"
+    validation = json.loads(validation_path.read_text())
+    for row in validation["step-80"]["rows"]:
+        row.pop("candidate_insertion")
+        row.pop("baseline_insertion")
     validation_path.write_text(json.dumps(validation))
     status_path = run_dir / "status.json"
     status = json.loads(status_path.read_text())

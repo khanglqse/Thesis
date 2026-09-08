@@ -13,7 +13,8 @@ from traffic_rl.agents.dqn import NStepAccumulator, SharedDQN
 from traffic_rl.agents.fixed_time import FixedTimeController
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.eval.checkpoint_selection import (
-    choose_checkpoint, choose_reporting_checkpoint, score_validation)
+    CHECKPOINT_ELIGIBILITY_POLICY, choose_checkpoint,
+    choose_reporting_checkpoint, score_validation)
 from traffic_rl.sim.phase_encoder import FEATURES
 from traffic_rl.train.case_sampler import BalancedCaseSampler
 from traffic_rl.train.network_replay import (
@@ -162,12 +163,18 @@ def _tune_fixed_time(env_factory, cases, horizon_seconds, config, binding):
                 _close(env)
             _assert_rollout_complete(
                 info, horizon_seconds, "fixed-time tuning %s" % case["case_id"])
+            insertion_rate = info.get("insertion_rate")
+            if (insertion_rate is None
+                    or not math.isfinite(float(insertion_rate))
+                    or not 0.0 <= float(insertion_rate) <= 1.0):
+                raise ValueError("fixed-time tuning insertion rate is invalid")
             rows.append({
                 "case_id": case["case_id"],
                 "scenario": case["scenario"],
                 "queue_integral_vehicle_seconds": float(
                     info["queue_integral_vehicle_seconds"]),
                 "completion_rate": info.get("completion_rate"),
+                "insertion_rate": float(insertion_rate),
             })
         mean_queue = sum(row["queue_integral_vehicle_seconds"]
                          for row in rows) / len(rows)
@@ -296,6 +303,11 @@ def _validate_precomputed_tuning(tuning, binding, config, validation_cases):
             completion = row.get("completion_rate")
             if completion is not None and not math.isfinite(float(completion)):
                 raise ValueError("precomputed baseline tuning completion is invalid")
+            insertion = row.get("insertion_rate")
+            if (insertion is None or not math.isfinite(float(insertion))
+                    or not 0.0 <= float(insertion) <= 1.0):
+                raise ValueError(
+                    "precomputed baseline tuning insertion rate is invalid")
             queues.append(queue)
         mean_queue = sum(queues) / len(queues)
         try:
@@ -347,12 +359,14 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
                 "baseline validation %s" % case["case_id"])
             baseline_queue = float(baseline["queue_integral_vehicle_seconds"])
             baseline_completion = baseline.get("completion_rate")
+            baseline_insertion = baseline.get("insertion_rate")
             fresh_baseline = True
             baseline_source = None
         else:
             baseline = precomputed_baseline_rows[case["case_id"]]
             baseline_queue = float(baseline["queue_integral_vehicle_seconds"])
             baseline_completion = baseline.get("completion_rate")
+            baseline_insertion = baseline.get("insertion_rate")
             fresh_baseline = False
             baseline_source = "precomputed_tuning"
         row = {
@@ -371,6 +385,10 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
                 and baseline_completion is not None:
             row["candidate_completion"] = float(candidate["completion_rate"])
             row["baseline_completion"] = float(baseline_completion)
+        if candidate.get("insertion_rate") is not None \
+                and baseline_insertion is not None:
+            row["candidate_insertion"] = float(candidate["insertion_rate"])
+            row["baseline_insertion"] = float(baseline_insertion)
         rows.append(row)
     return rows
 
@@ -428,6 +446,7 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
         "runtime": manifest["runtime"],
         "baseline_tuning_sha256": tuning["tuning_sha256"],
         "foundation_verification": verification,
+        "checkpoint_eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
         "training_objective": {
             "reward": json.loads(json.dumps(config["reward"])),
             "temporal_aggregation": "mean_over_simulator_steps_in_action_interval",
@@ -706,6 +725,7 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                 "active_vehicles": info.get("active_vehicles"),
                 "pending": info.get("pending"),
                 "completion_rate": info.get("completion_rate"),
+                "insertion_rate": info.get("insertion_rate"),
                 "average_travel_time": info.get("average_travel_time"),
                 "arrived_throughput_vehicles_per_hour": (
                     float(info["arrived"]) * 3600.0 / float(info["step"])
@@ -795,6 +815,9 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "validation_wall_time_seconds": validation_seconds,
         "selected_checkpoint": selected,
         "selection_status": selection_status,
+        "selected_validation_score": scores[selected],
+        "checkpoint_eligibility_policy": dict(
+            CHECKPOINT_ELIGIBILITY_POLICY),
         "checkpoint_reload": reload_verification,
     }
     if run.get("require_optimizer_updates") and updates <= 0:
@@ -806,6 +829,7 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "status": selection_status,
         "selected_checkpoint": selected,
         "eligible_for_test_evaluation": selection_status == "eligible",
+        "eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
         "score": scores[selected],
     })
     _write_json(os.path.join(output_dir, "summary.json"), summary)

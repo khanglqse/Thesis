@@ -347,3 +347,25 @@ Consequence: all scale-1, ladder, baseline, pilot, checkpoint, and campaign
 artifacts generated with the former route catalog remain diagnostic or
 superseded. Capacity calibration restarts on the regenerated foundation before
 any final training is authorized.
+
+## 2026-09-08 — Gate checkpoint insertion rate on matched validation cases
+
+Decision: checkpoint and pilot eligibility uses policy schema version 2. Every
+candidate row must be paired with the same validation case from the selected
+validation-tuned Fixed-Time artifact. The candidate must retain insertion rate
+within 0.02 of that baseline on every case, alongside the existing per-case
+completion-loss limit of 0.02 and non-positive mean queue regret in each of
+normal, AM-peak, and PM-peak regimes. Selection artifacts, training summaries,
+and checkpoint contracts store the exact policy. Freeze and final verification
+recompute every validation score from its rows and compare each baseline value
+with the hash-bound tuning artifact.
+
+Reason: a controller can reduce visible in-network queue by starving boundary
+entries. Pending demand is included in the reported queue objective, but the
+learned reward is internal to the network, so checkpoint selection needs an
+independent boundary-throughput safeguard before any test case is opened.
+
+Consequence: training or checkpoint artifacts without candidate and baseline
+insertion rates, without all six exact validation cases, or without policy
+schema version 2 are ineligible. Existing artifacts are not upgraded in place;
+they must be regenerated from validation-only evaluation under this contract.

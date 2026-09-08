@@ -20,6 +20,8 @@ from traffic_rl.eval.network_replay import validate_network, validate_replay
 from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
 from traffic_rl.eval.release_attestation import validate_attestation
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
+from traffic_rl.eval.checkpoint_selection import (
+    CHECKPOINT_ELIGIBILITY_POLICY, validate_checkpoint_selection)
 from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.haichau_demo_fallbacks import validate_fallbacks
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
@@ -46,6 +48,7 @@ REQUIRED_FRONTEND = {
 CHECKPOINT_CONTRACT_FIELDS = {
     "obs_schema_version", "feature_order", "normalization", "hidden_size",
     "action_contract", "network_compatibility", "controller_family",
+    "checkpoint_eligibility_policy",
 }
 REQUIRED_TRAINING_ARTIFACTS = (
     "checkpoint/weights.npz", "checkpoint/contract.json", "validation.json",
@@ -263,6 +266,9 @@ def _checkpoint_contract_valid(contract, protocol, controller):
             return False
         if contract["action_contract"] != ACTION_CONTRACTS.get(controller):
             return False
+        if contract["checkpoint_eligibility_policy"] != \
+                CHECKPOINT_ELIGIBILITY_POLICY:
+            return False
         if not isinstance(compatibility, dict) \
                 or set(compatibility) != set(compatibility_fields):
             return False
@@ -315,34 +321,12 @@ def _source_selection_valid(validation, selection, tuning, validation_ids):
     if (_contains_test_reference(validation) or _contains_test_reference(selection)
             or _contains_test_reference(tuning)):
         raise ValueError("test metric appears in source checkpoint selection evidence")
-    if not isinstance(validation, dict) or not validation:
-        raise ValueError("source validation evidence is missing")
-    if not isinstance(selection, dict):
-        raise ValueError("source checkpoint selection is invalid")
-    score = selection.get("score")
-    if not isinstance(score, dict):
-        raise ValueError("source checkpoint selection score is invalid")
-    selected = selection.get("selected_checkpoint")
+    selected = validate_checkpoint_selection(
+        validation, selection, tuning, validation_ids)
     if (not isinstance(selected, str)
             or not re.fullmatch(r"[A-Za-z0-9_.-]+", selected)
-            or selected in (".", "..")
-            or selected not in validation):
-        raise ValueError("source selected checkpoint lacks validation evidence")
-    selected_evidence = validation[selected]
-    if not isinstance(selected_evidence, dict) or not selected_evidence.get("score"):
-        raise ValueError("source selected checkpoint validation score is missing")
-    if selection.get("score") != selected_evidence.get("score"):
-        raise ValueError("source selection score drifts from validation evidence")
-    if (selection.get("status") != "eligible"
-            or selection.get("eligible_for_test_evaluation") is not True
-            or score.get("eligible") is not True):
-        raise ValueError("source checkpoint selection is not validation-eligible")
-    for item in validation.values():
-        if not isinstance(item, dict) or not isinstance(item.get("rows"), list):
-            raise ValueError("source validation checkpoint rows are missing")
-        for row in item["rows"]:
-            if not isinstance(row, dict) or row.get("case_id") not in validation_ids:
-                raise ValueError("source checkpoint selection uses a non-validation case")
+            or selected in (".", "..")):
+        raise ValueError("source selected checkpoint identifier is invalid")
     selection_cases = tuning.get("selection_cases", []) if isinstance(tuning, dict) else []
     if selection_cases and any(case_id not in validation_ids for case_id in selection_cases):
         raise ValueError("source baseline tuning uses a non-validation case")

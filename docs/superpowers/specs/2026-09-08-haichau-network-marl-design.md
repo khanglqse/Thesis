@@ -130,9 +130,10 @@ Mỗi episode lấy một case từ train manifest bằng sampler cân bằng no
 - network, demand-manifest và runtime hashes;
 - learning seed, episode case ID và simulator seed;
 - loss, reward, queue, throughput/completion, switches và wall time;
-- checkpoint evaluations trên từng validation regime.
+- checkpoint evaluations trên từng validation regime, với queue, completion và
+  insertion rate của candidate và validation-tuned Fixed-Time trên cùng case.
 
-Checkpoint selection tối thiểu hóa worst-case normalized regret so với tuned Fixed-Time trên validation, sau đó dùng mean regret làm tie-breaker. Validation phải bao phủ đúng ba regime normal/AM/PM; mean regret của từng regime phải <= 0 và completion degradation của mọi case phải <= 0.02 với đầy đủ completion evidence. Candidate không đạt gate này không được đưa vào final test. Đây là điều kiện chọn checkpoint bằng point estimate; statistical acceptance trên held-out test vẫn được đánh giá riêng.
+Checkpoint selection tối thiểu hóa worst-case normalized regret so với tuned Fixed-Time trên validation, sau đó dùng mean regret làm tie-breaker. Validation phải bao phủ đúng ba regime normal/AM/PM; mean regret của từng regime phải <= 0. Completion degradation và insertion-rate degradation của từng matched case đều phải <= 0.02, với đầy đủ evidence khớp exact case từ baseline-tuning artifact. Candidate không đạt gate này không được đưa vào final test. Contract policy schema version 2 làm checkpoint cũ thiếu insertion evidence không hợp lệ. Đây là điều kiện chọn checkpoint bằng point estimate; statistical acceptance trên held-out test vẫn được đánh giá riêng.
 
 Chiến dịch theo tầng:
 
