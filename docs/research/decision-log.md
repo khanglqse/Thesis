@@ -200,3 +200,70 @@ This bug does not invalidate the published single-junction SUMO results:
 `SumoSingleJunctionEnv` exposes all three actions as valid and enforces minimum
 green internally, with no maximum-red forced mask. Tests confirm pressure
 controller decisions are unchanged under that all-valid mask contract.
+
+## 2026-09-08 — Pre-register Hai Chau capacity calibration before final training
+
+Decision: suspend final Hai Chau training at synthetic demand scale 1.0 and run
+a validation-only, diagnostic capacity calibration. No test case or test flow
+may be opened. Every artifact is marked ineligible for release and test
+evaluation. Preparation binds the source experiment manifest, training config,
+network, phase contract, source validation flows, code commit, and calibration
+code hashes. Existing inputs and completed results are immutable; an identical
+manifest may resume incomplete runs, while any hash drift or attempted overwrite
+must fail closed.
+
+The first stage runs Fixed-Time with a nominal 30-second green on
+`validation_normal_demand31` and `validation_normal_demand32` for 3,600 seconds,
+sampling complete network metrics every 300 seconds. It also runs
+`validation_normal_demand31` with injection ending at second 3,599 and control
+continuing to second 5,400; 7,200 seconds is an explicitly selected diagnostic
+extension, not an automatic retry. The second stage scales only flow intervals
+at factors 0.25, 0.30, and 0.35, while retaining the validation-normal seed-31
+routes, vehicles, three temporal bins, and 500 streams per bin. The third stage
+runs the chosen ladder scale or scales on all six validation cases with both
+Fixed-Time-30 and the mask-corrected Max-Pressure controller. Only scales from
+the registered ladder may enter that stage.
+
+Gates, fixed before any calibration result is generated, are:
+
+1. At every recorded snapshot,
+   `scheduled = due + unreleased`, `due = inserted + pending`, and
+   `inserted = arrived + running + removed`. All counters are non-negative.
+2. At second 3,600, `unreleased = 0` and `removed = 0`.
+3. For each normal case and controller, insertion rate is at least 0.95,
+   pending/scheduled is at most 0.05, and arrived divided by the number of
+   departures that could finish by second 3,600 at route free-flow speed is at
+   least 0.70.
+4. For the scale-1 seed-31 drain run, completion is at least 0.90 and
+   pending/scheduled is at most 0.01 at second 5,400. If the separately chosen
+   7,200-second extension is run, its corresponding thresholds are 0.98 and
+   0.01. The original 3,600-second snapshot remains reported.
+5. In the full six-case stage, every PM-peak run has insertion rate at least
+   0.90. For each chosen scale and controller, mean PM-peak queue integral must
+   exceed mean normal queue integral and mean PM-peak completion must be below
+   mean normal completion. AM peak has no forced ordering because its observed
+   temporal profile is back-loaded within the simulation hour.
+6. A scale is eligible for pre-final use only if all conservation, normal,
+   PM-insertion, and aggregate-ordering gates pass for both validation seeds and
+   both controllers. Choose the highest passing registered scale, record and
+   freeze it before regenerating any final inputs, and keep the test split sealed.
+
+Free-flow eligibility is computed per scheduled departure from its requested
+departure time plus the sum of route-road length divided by the smaller of the
+vehicle and lane speed limits. It is a censoring denominator, not a simulated
+performance result. Interval scaling preserves each stream's normalized offset
+within its temporal bin so lowering demand does not create an artificial burst
+at the beginning of each bin.
+
+Reason: scale 1.0 schedules about 25,000 vehicles in the normal hour and routes
+more than 4,200 vehicles/hour through a one-lane controlled approach. Its
+10--16 percent validation completion is therefore consistent with a synthetic
+capacity collapse and cannot be repaired by longer learning alone. The existing
+foundation verifier checks provenance, route legality, phase semantics, and a
+60-second engine smoke, but it does not establish a feasible one-hour operating
+regime.
+
+Consequence: scale 1.0 may remain only as an explicitly oversaturated stress
+diagnostic. The thesis network experiment continues to represent synthetic
+Hai Chau scalability; capacity calibration does not convert its demand into
+observed district-wide traffic counts.
