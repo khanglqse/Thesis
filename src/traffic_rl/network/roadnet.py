@@ -5,6 +5,7 @@ NOTE: must stay importable under Python 3.6 (the CityFlow Docker image), so no
 in the container (see Makefile cf-test / the run_fixed_time invocation).
 """
 import json
+import hashlib
 from dataclasses import dataclass
 from typing import Dict, List
 
@@ -16,11 +17,31 @@ class RoadNet:
     _by_id: Dict[str, dict]
     _road_by_id: Dict[str, dict]
     _next: Dict[str, List[str]]
+    _phase_contract_data: object = None
 
     @classmethod
-    def load(cls, path: str) -> "RoadNet":
+    def load(cls, path: str, phase_contract_path=None,
+             require_phase_contract=False,
+             expected_phase_contract_sha256=None) -> "RoadNet":
         with open(path) as f:
             data = json.load(f)
+        contract_data = None
+        if phase_contract_path is not None:
+            contract_digest = hashlib.sha256()
+            with open(phase_contract_path, "rb") as source:
+                contract_digest.update(source.read())
+            if expected_phase_contract_sha256 is not None \
+                    and contract_digest.hexdigest() != expected_phase_contract_sha256:
+                raise ValueError("phase contract artifact sha256 mismatch")
+            with open(phase_contract_path) as source:
+                contract_data = json.load(source)
+            digest = hashlib.sha256()
+            with open(path, "rb") as source:
+                digest.update(source.read())
+            if contract_data.get("roadnet_sha256") != digest.hexdigest():
+                raise ValueError("phase contract roadnet_sha256 mismatch")
+        elif require_phase_contract:
+            raise ValueError("explicit phase contract is required")
         by_id = {i["id"]: i for i in data["intersections"]}
         road_by_id = {r["id"]: r for r in data["roads"]}
         # Build road->road adjacency from every intersection's roadLinks.
@@ -32,7 +53,14 @@ class RoadNet:
                 # data["roads"] (possible with converter artifacts on large nets).
                 if end not in nxt.setdefault(start, []):
                     nxt[start].append(end)
-        return cls(data["intersections"], data["roads"], by_id, road_by_id, nxt)
+        roadnet = cls(data["intersections"], data["roads"], by_id, road_by_id,
+                      nxt, contract_data)
+        if contract_data is not None:
+            audit = roadnet.phase_contract_audit()
+            if audit["errors"]:
+                raise ValueError("invalid explicit phase contract: %s" %
+                                 json.dumps(audit["errors"], sort_keys=True))
+        return roadnet
 
     def signalized_ids(self) -> List[str]:
         # A real controllable signal has >1 phase. The CityFlow converter emits a
@@ -126,6 +154,8 @@ class RoadNet:
         movements are a subset of an adjacent long green, so a short but distinct
         traffic movement is never silently re-labelled.
         """
+        if self._phase_contract_data is not None:
+            return self._explicit_phase_contract(inter_id)
         phases = self._lightphases(inter_id)
         movements = [set(self.phase_movement_pairs(inter_id, index))
                      for index in range(len(phases))]
@@ -175,11 +205,85 @@ class RoadNet:
                     "intersection {} selectable phase {} has no transition path".format(
                         inter_id, source))
             transitions_after[str(source)] = sequence
+        directed = {
+            str(source): {
+                str(target): list(transitions_after[str(source)])
+                for target in selectable if target != source}
+            for source in selectable}
         return {
             "schema_version": 1,
             "selectable_phases": selectable,
             "transition_phases": sorted(transition_phases),
             "transitions_after": transitions_after,
+            "transitions": directed,
+            "errors": sorted(set(errors)),
+        }
+
+    def _explicit_phase_contract(self, inter_id):
+        data = self._phase_contract_data
+        errors = []
+        if data.get("schema_version") != 1:
+            errors.append("phase contract schema_version must be 1")
+        agents = data.get("agents", {})
+        expected_agents = set(self.signalized_ids())
+        actual_agents = set(agents)
+        if actual_agents != expected_agents:
+            errors.append("phase contract agent IDs differ from roadnet")
+        record = agents.get(inter_id, {})
+        selectable = record.get("selectable_phases", [])
+        transitions = record.get("transition_phases", [])
+        phase_count = self.num_phases(inter_id)
+        all_indices = selectable + transitions
+        if len(selectable) < 2:
+            errors.append("intersection {} has fewer than two selectable greens".format(
+                inter_id))
+        if sorted(all_indices) != list(range(phase_count)) \
+                or len(set(all_indices)) != len(all_indices):
+            errors.append("intersection {} phase roles do not partition plan".format(
+                inter_id))
+        for phase_index in selectable:
+            if phase_index < 0 or phase_index >= phase_count \
+                    or not self.phase_movement_pairs(inter_id, phase_index):
+                errors.append("intersection {} selectable phase {} is invalid".format(
+                    inter_id, phase_index))
+        mapping = record.get("transitions", {})
+        normalized = {}
+        for source in selectable:
+            targets = mapping.get(str(source), {})
+            normalized[str(source)] = {}
+            expected_chain = []
+            cursor = (source + 1) % phase_count
+            while cursor not in set(selectable):
+                phase = self._lightphases(inter_id)[cursor]
+                duration = phase.get("time")
+                expected_chain.append((cursor, duration))
+                cursor = (cursor + 1) % phase_count
+            for target in selectable:
+                if target == source:
+                    continue
+                raw = targets.get(str(target))
+                if raw is None:
+                    errors.append(
+                        "intersection {} transition {}->{} is missing".format(
+                            inter_id, source, target))
+                    continue
+                sequence = [tuple(item) for item in raw]
+                if sequence != expected_chain or not sequence:
+                    errors.append(
+                        "intersection {} transition {}->{} differs from plan".format(
+                            inter_id, source, target))
+                for phase_index, duration in sequence:
+                    if phase_index not in transitions or not isinstance(duration, int) \
+                            or duration <= 0:
+                        errors.append(
+                            "intersection {} transition {}->{} is invalid".format(
+                                inter_id, source, target))
+                normalized[str(source)][str(target)] = sequence
+        return {
+            "schema_version": 1,
+            "selectable_phases": list(selectable),
+            "transition_phases": list(transitions),
+            "transitions": normalized,
             "errors": sorted(set(errors)),
         }
 
@@ -192,6 +296,8 @@ class RoadNet:
             raise ValueError("transition endpoints must be selectable greens")
         if from_phase == to_phase:
             return []
+        if "transitions" in contract:
+            return list(contract["transitions"][str(from_phase)][str(to_phase)])
         return list(contract["transitions_after"][str(from_phase)])
 
     def phase_contract_audit(self):
@@ -207,8 +313,8 @@ class RoadNet:
             "transition_phases": {
                 inter_id: contract["transition_phases"]
                 for inter_id, contract in contracts.items()},
-            "transitions_after": {
-                inter_id: contract["transitions_after"]
+            "transitions": {
+                inter_id: contract["transitions"]
                 for inter_id, contract in contracts.items()},
             "errors": {inter_id: contract["errors"]
                        for inter_id, contract in contracts.items()

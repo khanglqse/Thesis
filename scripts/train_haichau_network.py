@@ -25,13 +25,18 @@ def _write_json(path, value):
 
 def _make_env_factory(manifest, resolved, output_dir):
     roadnet_path = ROOT / manifest["network"]["path"]
-    roadnet = RoadNet.load(str(roadnet_path))
+    phase_contract = manifest.get("phase_contract")
+    if not isinstance(phase_contract, dict):
+        raise ValueError("manifest phase_contract artifact is required")
+    roadnet = RoadNet.load(
+        str(roadnet_path), str(ROOT / phase_contract["path"]),
+        require_phase_contract=True,
+        expected_phase_contract_sha256=phase_contract["sha256"])
     preprocessing = manifest["preprocessing"]
     simulation = manifest["simulation"]
     encoder = PhaseFeatureEncoder(
         roadnet, preprocessing["count_norm"], preprocessing["capacity_norm"])
     runtime_dir = output_dir / "runtime-configs"
-    runtime_dir.mkdir(parents=True, exist_ok=True)
 
     def factory(case, horizon_seconds):
         run_config = {
@@ -84,10 +89,9 @@ def main(argv=None):
                   ("%s-seed%d" % (args.mode, args.learning_seed)))
     if not output_dir.is_absolute():
         output_dir = ROOT / output_dir
-    output_dir.mkdir(parents=True, exist_ok=True)
     env_factory = _make_env_factory(manifest, resolved, output_dir)
     summary = train_network(
-        env_factory, manifest, resolved, str(output_dir))
+        env_factory, manifest, resolved, str(output_dir), foundation_root=str(ROOT))
 
     if args.mode == "pilot":
         peak_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss

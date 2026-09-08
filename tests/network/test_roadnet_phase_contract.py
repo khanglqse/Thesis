@@ -1,4 +1,5 @@
 import json
+import hashlib
 
 import pytest
 
@@ -86,6 +87,52 @@ def test_audit_exposes_selectable_phases_transitions_and_errors(tmp_path):
     assert audit["schema_version"] == 1
     assert audit["selectable_phases"] == {"A": [0, 2]}
     assert audit["transition_phases"] == {"A": [1, 3]}
-    assert audit["transitions_after"] == {
-        "A": {"0": [(1, 5)], "2": [(3, 5)]}}
+    assert audit["transitions"] == {"A": {
+        "0": {"2": [(1, 5)]}, "2": {"0": [(3, 5)]}}}
     assert audit["errors"] == {}
+
+
+def test_explicit_contract_is_hash_bound_and_controls_roles(tmp_path):
+    _roadnet(tmp_path, [
+        {"time": 40, "availableRoadLinks": [0]},
+        {"time": 10, "availableRoadLinks": [0]},
+        {"time": 40, "availableRoadLinks": [1]},
+        {"time": 5, "availableRoadLinks": []},
+    ])
+    roadnet_path = tmp_path / "roadnet.json"
+    contract = {
+        "schema_version": 1,
+        "dataset_id": "fixture",
+        "roadnet_sha256": hashlib.sha256(roadnet_path.read_bytes()).hexdigest(),
+        "agents": {"A": {
+            "selectable_phases": [0, 2],
+            "transition_phases": [1, 3],
+            "transitions": {
+                "0": {"2": [[1, 10]]},
+                "2": {"0": [[3, 5]]},
+            },
+        }},
+    }
+    contract_path = tmp_path / "phase-contract.json"
+    contract_path.write_text(json.dumps(contract))
+
+    roadnet = RoadNet.load(str(roadnet_path), str(contract_path),
+                           require_phase_contract=True)
+
+    assert roadnet.green_phases("A") == [0, 2]
+    assert roadnet.transition_sequence("A", 0, 2) == [(1, 10)]
+
+
+def test_explicit_contract_rejects_roadnet_hash_mismatch(tmp_path):
+    _roadnet(tmp_path, [
+        {"time": 40, "availableRoadLinks": [0]},
+        {"time": 5, "availableRoadLinks": []},
+        {"time": 40, "availableRoadLinks": [1]},
+        {"time": 5, "availableRoadLinks": []},
+    ])
+    contract_path = tmp_path / "phase-contract.json"
+    contract_path.write_text(json.dumps({"roadnet_sha256": "wrong"}))
+
+    with pytest.raises(ValueError, match="roadnet_sha256"):
+        RoadNet.load(str(tmp_path / "roadnet.json"), str(contract_path),
+                     require_phase_contract=True)
