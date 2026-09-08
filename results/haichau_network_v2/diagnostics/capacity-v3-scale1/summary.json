@@ -1,0 +1,33 @@
+{
+  "campaign_identity_sha256": "7b39efa439e8dadc66cff631510b71e9b3adecfe6450c11941efdaa0799a430f",
+  "completed": 3,
+  "eligible_for_release": false,
+  "eligible_for_test_evaluation": false,
+  "evidence_namespace": "haichau_capacity_calibration_diagnostic",
+  "failed": 0,
+  "schema_version": 1,
+  "skipped": 0,
+  "stage_gates": {
+    "complete": true,
+    "completed_runs": 3,
+    "expected_runs": 3,
+    "highest_passing_scale": null,
+    "scales": {
+      "1.0": {
+        "checks": {
+          "all_individual_gates": {
+            "passed": false
+          },
+          "all_runs_complete": {
+            "completed": 3,
+            "expected": 3,
+            "passed": true
+          }
+        },
+        "passed": false
+      }
+    }
+  },
+  "status": "diagnostic_complete",
+  "total": 3
+}
