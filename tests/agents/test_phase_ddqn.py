@@ -143,3 +143,59 @@ def test_synthetic_updates_remain_finite_and_reduce_loss():
 
     assert np.isfinite(last)
     assert last < first
+
+
+def test_behavior_cloning_uses_only_valid_phases_and_reduces_loss():
+    net = PhaseScoringDDQN(2, hidden=16, lr=1e-2, seed=8,
+                           grad_clip=10.0)
+    features = np.array([
+        [[3.0, 1.0], [0.2, 0.1], [40.0, 40.0]],
+        [[0.2, 0.1], [3.0, 1.0], [0.1, 0.1]],
+        [[0.1, 0.1], [0.2, 0.1], [3.0, 1.0]],
+    ], dtype=np.float32)
+    actions = np.array([0, 1, 2], dtype=np.int64)
+    masks = np.array([
+        [True, True, False],
+        [True, True, True],
+        [False, True, True],
+    ])
+
+    first = net.behavior_clone_step(features, actions, masks)
+    for _ in range(100):
+        last = net.behavior_clone_step(features, actions, masks)
+
+    assert np.isfinite(first)
+    assert np.isfinite(last)
+    assert last < first
+
+
+def test_behavior_cloning_reports_masked_softmax_cross_entropy():
+    net = PhaseScoringDDQN(1, hidden=1, lr=1e-3, seed=1)
+    for name in net.params:
+        getattr(net, name)[:] = 0.0
+
+    loss = net.behavior_clone_step(
+        np.zeros((2, 3, 1), np.float32), np.array([0, 2]),
+        np.array([[True, True, False], [True, True, True]]))
+
+    assert loss == pytest.approx((np.log(2.0) + np.log(3.0)) / 2.0)
+
+
+@pytest.mark.parametrize("features, actions, masks, message", [
+    (np.zeros((2, 3, 4), np.float32), np.array([0]),
+     np.ones((2, 3), bool), "reference_actions shape"),
+    (np.zeros((2, 3, 4), np.float32), np.array([0, 3]),
+     np.ones((2, 3), bool), "reference_actions contain invalid phase"),
+    (np.zeros((2, 3, 4), np.float32), np.array([0, 1]),
+     np.array([[True, True, True], [False, False, False]]),
+     "at least one valid phase"),
+    (np.zeros((2, 3, 4), np.float32), np.array([0, 1]),
+     np.array([[False, True, True], [True, True, True]]),
+     "reference action is masked"),
+])
+def test_behavior_cloning_rejects_invalid_batch_contract(
+        features, actions, masks, message):
+    net = PhaseScoringDDQN(4, hidden=8, lr=1e-3, seed=1)
+
+    with pytest.raises(ValueError, match=message):
+        net.behavior_clone_step(features, actions, masks)

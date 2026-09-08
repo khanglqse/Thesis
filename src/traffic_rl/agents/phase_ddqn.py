@@ -122,6 +122,61 @@ class PhaseScoringDDQN(object):
         self._adam_step(self._backprop(score_gradient.reshape(-1, 1), cache))
         return loss
 
+    def behavior_clone_step(self, features, reference_actions, masks):
+        """Fit the online phase scorer to valid reference phase choices.
+
+        The policy distribution is a softmax over only valid phase rows.  This
+        keeps padding or unavailable phases out of both the loss and gradient.
+        """
+        features = np.asarray(features, dtype=np.float32)
+        if (features.ndim != 3 or features.shape[2] != self.feature_dim):
+            raise ValueError("features must have shape (batch, phases, feature_dim)")
+        if not np.all(np.isfinite(features)):
+            raise ValueError("features must be finite")
+        batch, phases, _ = features.shape
+
+        action_values = np.asarray(reference_actions)
+        if action_values.shape != (batch,):
+            raise ValueError("reference_actions shape does not match batch")
+        if not np.issubdtype(action_values.dtype, np.integer):
+            raise ValueError("reference_actions must contain integer phases")
+        actions = action_values.astype(np.int64, copy=False)
+        if np.any(actions < 0) or np.any(actions >= phases):
+            raise ValueError("reference_actions contain invalid phase")
+
+        valid = np.asarray(masks, dtype=np.bool_)
+        if valid.shape != (batch, phases):
+            raise ValueError("masks shape does not match phase scores")
+        if not np.all(valid.any(axis=1)):
+            raise ValueError("each batch item requires at least one valid phase")
+        indices = np.arange(batch)
+        if not np.all(valid[indices, actions]):
+            raise ValueError("reference action is masked")
+
+        scores, cache = self._scores(features, self._online())
+        if not np.all(np.isfinite(scores)):
+            raise ValueError("behavior cloning scores must be finite")
+        # Float64 arithmetic prevents avoidable overflow in log-sum-exp while
+        # preserving float32 parameter and gradient conventions below.
+        logits = scores.astype(np.float64)
+        masked_logits = np.where(valid, logits, -np.inf)
+        maxima = np.max(masked_logits, axis=1, keepdims=True)
+        shifted = np.where(valid, masked_logits - maxima, -np.inf)
+        exponentials = np.where(valid, np.exp(shifted), 0.0)
+        normalizers = exponentials.sum(axis=1, keepdims=True)
+        probabilities = exponentials / normalizers
+        log_normalizers = maxima[:, 0] + np.log(normalizers[:, 0])
+        loss = float(np.mean(log_normalizers - logits[indices, actions]))
+        if not np.isfinite(loss):
+            raise ValueError("behavior cloning loss must be finite")
+
+        score_gradient = probabilities
+        score_gradient[indices, actions] -= 1.0
+        score_gradient /= float(batch)
+        self._adam_step(self._backprop(score_gradient.astype(np.float32)
+                                       .reshape(-1, 1), cache))
+        return loss
+
     def _backprop(self, score_gradient, cache):
         rows, z1, a1, z2, a2 = cache
         gradients = {}
