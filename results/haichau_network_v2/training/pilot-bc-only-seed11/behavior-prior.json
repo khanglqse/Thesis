@@ -1,0 +1,86 @@
+{
+  "bc_epochs": 1,
+  "fixed_green_duration": 25,
+  "labels": 171720,
+  "mean_loss": 0.2538444598922956,
+  "schema_version": 1,
+  "source_case_ids": [
+    "train_normal_demand11",
+    "train_am_peak_demand11",
+    "train_pm_peak_demand11",
+    "train_normal_demand12",
+    "train_am_peak_demand12",
+    "train_pm_peak_demand12",
+    "train_normal_demand13",
+    "train_am_peak_demand13",
+    "train_pm_peak_demand13"
+  ],
+  "source_split": "train",
+  "teacher": "validation_tuned_fixed",
+  "train_cases": [
+    {
+      "case_id": "train_normal_demand11",
+      "decisions": 360,
+      "flow_sha256": "4600e46c9e537f52b8ecaf88948cbc763f454b042c2e849fdc2ca4ea6197dfbf",
+      "labels": 19080,
+      "scenario": "normal"
+    },
+    {
+      "case_id": "train_am_peak_demand11",
+      "decisions": 360,
+      "flow_sha256": "9ad0f3e2fba89c2c9e7000b99b8ead02618addec82d773e490e5caaf760506f1",
+      "labels": 19080,
+      "scenario": "am_peak"
+    },
+    {
+      "case_id": "train_pm_peak_demand11",
+      "decisions": 360,
+      "flow_sha256": "a81138ce21137ed70fd4c8d98796cefa9375e0f22a802cb3016ecda7946f38d9",
+      "labels": 19080,
+      "scenario": "pm_peak"
+    },
+    {
+      "case_id": "train_normal_demand12",
+      "decisions": 360,
+      "flow_sha256": "56bce2d30d1ed27f5b6d01e0a2a24763086e2027afd28a94872ca929682522d9",
+      "labels": 19080,
+      "scenario": "normal"
+    },
+    {
+      "case_id": "train_am_peak_demand12",
+      "decisions": 360,
+      "flow_sha256": "b54c12791d4531b5a00ed07dc7f522cdf6d5ac19f6e28f2790b3a2384c5a98eb",
+      "labels": 19080,
+      "scenario": "am_peak"
+    },
+    {
+      "case_id": "train_pm_peak_demand12",
+      "decisions": 360,
+      "flow_sha256": "122bccaf2c059779aa6e83fd471fa7e816710dc37e325b4e613ed4d326cc6dce",
+      "labels": 19080,
+      "scenario": "pm_peak"
+    },
+    {
+      "case_id": "train_normal_demand13",
+      "decisions": 360,
+      "flow_sha256": "b3aedc4f7029497a21d70e464f1a27ad127901c35cc9ae8e6e3d0ba0f48db090",
+      "labels": 19080,
+      "scenario": "normal"
+    },
+    {
+      "case_id": "train_am_peak_demand13",
+      "decisions": 360,
+      "flow_sha256": "2697e2561fbdc004944e2c40aad6fab47548906511fce602301cc35dde6e2dd8",
+      "labels": 19080,
+      "scenario": "am_peak"
+    },
+    {
+      "case_id": "train_pm_peak_demand13",
+      "decisions": 360,
+      "flow_sha256": "8221c330c2c13510f08de8b328a801840d89959ed27a63ec72b4e73fd3444561",
+      "labels": 19080,
+      "scenario": "pm_peak"
+    }
+  ],
+  "updates": 3240
+}

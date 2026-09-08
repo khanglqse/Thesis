@@ -1,0 +1,183 @@
+{
+  "baseline_tuning_wall_time_seconds": 0.0,
+  "behavior_pretraining": {
+    "bc_epochs": 1,
+    "fixed_green_duration": 25,
+    "labels": 171720,
+    "mean_loss": 0.2538444598922956,
+    "schema_version": 1,
+    "source_case_ids": [
+      "train_normal_demand11",
+      "train_am_peak_demand11",
+      "train_pm_peak_demand11",
+      "train_normal_demand12",
+      "train_am_peak_demand12",
+      "train_pm_peak_demand12",
+      "train_normal_demand13",
+      "train_am_peak_demand13",
+      "train_pm_peak_demand13"
+    ],
+    "source_split": "train",
+    "teacher": "validation_tuned_fixed",
+    "train_cases": [
+      {
+        "case_id": "train_normal_demand11",
+        "decisions": 360,
+        "flow_sha256": "4600e46c9e537f52b8ecaf88948cbc763f454b042c2e849fdc2ca4ea6197dfbf",
+        "labels": 19080,
+        "scenario": "normal"
+      },
+      {
+        "case_id": "train_am_peak_demand11",
+        "decisions": 360,
+        "flow_sha256": "9ad0f3e2fba89c2c9e7000b99b8ead02618addec82d773e490e5caaf760506f1",
+        "labels": 19080,
+        "scenario": "am_peak"
+      },
+      {
+        "case_id": "train_pm_peak_demand11",
+        "decisions": 360,
+        "flow_sha256": "a81138ce21137ed70fd4c8d98796cefa9375e0f22a802cb3016ecda7946f38d9",
+        "labels": 19080,
+        "scenario": "pm_peak"
+      },
+      {
+        "case_id": "train_normal_demand12",
+        "decisions": 360,
+        "flow_sha256": "56bce2d30d1ed27f5b6d01e0a2a24763086e2027afd28a94872ca929682522d9",
+        "labels": 19080,
+        "scenario": "normal"
+      },
+      {
+        "case_id": "train_am_peak_demand12",
+        "decisions": 360,
+        "flow_sha256": "b54c12791d4531b5a00ed07dc7f522cdf6d5ac19f6e28f2790b3a2384c5a98eb",
+        "labels": 19080,
+        "scenario": "am_peak"
+      },
+      {
+        "case_id": "train_pm_peak_demand12",
+        "decisions": 360,
+        "flow_sha256": "122bccaf2c059779aa6e83fd471fa7e816710dc37e325b4e613ed4d326cc6dce",
+        "labels": 19080,
+        "scenario": "pm_peak"
+      },
+      {
+        "case_id": "train_normal_demand13",
+        "decisions": 360,
+        "flow_sha256": "b3aedc4f7029497a21d70e464f1a27ad127901c35cc9ae8e6e3d0ba0f48db090",
+        "labels": 19080,
+        "scenario": "normal"
+      },
+      {
+        "case_id": "train_am_peak_demand13",
+        "decisions": 360,
+        "flow_sha256": "2697e2561fbdc004944e2c40aad6fab47548906511fce602301cc35dde6e2dd8",
+        "labels": 19080,
+        "scenario": "am_peak"
+      },
+      {
+        "case_id": "train_pm_peak_demand13",
+        "decisions": 360,
+        "flow_sha256": "8221c330c2c13510f08de8b328a801840d89959ed27a63ec72b4e73fd3444561",
+        "labels": 19080,
+        "scenario": "pm_peak"
+      }
+    ],
+    "updates": 3240
+  },
+  "checkpoint_eligibility_policy": {
+    "comparison_unit": "matched_validation_case",
+    "maximum_completion_loss": 0.02,
+    "maximum_insertion_loss": 0.02,
+    "queue_regret_limit_per_regime": 0.0,
+    "required_regimes": [
+      "normal",
+      "am_peak",
+      "pm_peak"
+    ],
+    "schema_version": 2
+  },
+  "checkpoint_reload": {
+    "case_id": "validation_normal_demand31",
+    "completed_steps": 3600,
+    "queue_integral_vehicle_seconds": 3556616.0
+  },
+  "decisions": 4320,
+  "episode_agent_counts": [
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53
+  ],
+  "episode_regimes": [
+    "normal",
+    "pm_peak",
+    "am_peak",
+    "normal",
+    "pm_peak",
+    "am_peak",
+    "pm_peak",
+    "am_peak",
+    "normal",
+    "normal",
+    "am_peak",
+    "pm_peak"
+  ],
+  "foundation_verification_wall_time_seconds": 117.80824327468872,
+  "measured_scope": "foundation_verification_through_artifact_verification",
+  "selected_checkpoint": "step-12",
+  "selected_validation_score": {
+    "completion_evidence_complete": true,
+    "eligibility_policy": {
+      "comparison_unit": "matched_validation_case",
+      "maximum_completion_loss": 0.02,
+      "maximum_insertion_loss": 0.02,
+      "queue_regret_limit_per_regime": 0.0,
+      "required_regimes": [
+        "normal",
+        "am_peak",
+        "pm_peak"
+      ],
+      "schema_version": 2
+    },
+    "eligible": false,
+    "insertion_evidence_complete": true,
+    "max_completion_degradation": 0.23754715156204664,
+    "max_insertion_degradation": 0.05034856700232382,
+    "mean_regret": 1.5519999785360994,
+    "normal_regret": 2.2237576183075363,
+    "scenario_regrets": {
+      "am_peak": 1.1199401539157723,
+      "normal": 2.2237576183075363,
+      "pm_peak": 1.3123021633849894
+    },
+    "training_step": 12,
+    "worst_regret": 2.2237576183075363
+  },
+  "selection_status": "ineligible_negative_result",
+  "simulated_seconds": 43200.0,
+  "simulated_seconds_per_second": 4.876512256420189,
+  "training_and_validation_wall_time_seconds": 8739.48909687996,
+  "training_policy_audit": {
+    "eligible_decisions": 228960,
+    "executed_intervention_rate": 0.10959119496855346,
+    "executed_interventions": 25092,
+    "learned_actions_executed": 117864,
+    "learned_reference_disagreements": 42950,
+    "random_actions_executed": 13953,
+    "reference_actions_executed": 97143
+  },
+  "updates": 4281,
+  "updates_per_second": 0.4832488187438618,
+  "validation_wall_time_seconds": 3556.3912999629974,
+  "wall_time_seconds": 8858.790407657623
+}

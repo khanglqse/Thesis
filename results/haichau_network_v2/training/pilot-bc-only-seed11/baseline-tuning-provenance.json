@@ -1,0 +1,10 @@
+{
+  "copied_artifact_path": "baseline-tuning.json",
+  "copied_artifact_sha256": "fec62a7421f2a7cf6512a74aff41dfb470c89eac354ea2f1e9efe793135d145e",
+  "schema_version": 1,
+  "source_artifact_sha256": "fec62a7421f2a7cf6512a74aff41dfb470c89eac354ea2f1e9efe793135d145e",
+  "source_kind": "file",
+  "source_path": "/work/results/haichau_network_v2/training/final-baseline-tuning.json",
+  "strategy": "precomputed_baseline_tuning",
+  "tuning_sha256": "864a1d556eda6bf9e7d33a93624112415753a41f401121a2a5c30c552bbe1e8b"
+}
