@@ -185,3 +185,29 @@ All Critical and Important findings in `/tmp/review-haichau-evaluation-demo.md` 
   `data/danang/roadnet_haichau.json` baseline input.
 - Frozen campaign and production attestation remain blocked on upstream release inputs; no
   stopped release container, release record or result artifact was fabricated.
+
+## Final R3 Docker-stream remediation
+
+- [x] Canonical container streams: release execution now uses detached `docker run` followed
+  by `docker wait`; it obtains both canonical run streams only from `docker logs`. Host/client
+  stderr is preserved separately in a hashed `docker-cli-diagnostics.json` artifact and is
+  excluded from the container stderr receipt.
+- [x] Retained verification: provenance version 3 binds the exact run/wait argv, container ID,
+  run/wait stdout, diagnostic artifact, inspected receipt and canonical stdout/stderr. Direct
+  verification still compares the retained container logs with the stored artifacts, so adding
+  the platform warning to `stderr.log` or otherwise changing container output fails closed.
+- RED: the platform-warning contract test failed because the old argv attached to the
+  container and no diagnostic-channel contract existed.
+- GREEN: focused campaign/runner/verifier tests passed 32 tests with one host-Docker test
+  deselected; broad eval/report/script tests passed 121 with one host-Docker test deselected.
+  The explicit host-Docker lifecycle test passed against immutable image
+  `traffic-rl-cityflow-research@sha256:8a9461...0517` on arm64. A direct probe measured a
+  152-byte Docker platform warning and zero bytes of container stderr, then proved canonical
+  re-verification succeeds and a warning-contaminated `stderr.log` is rejected.
+- Python 3.6.5 focused compatibility: 22 passed, 1 host-Docker test deselected. `make cf-test`:
+  1 passed, 1 skipped, 171 deselected. The real release campaign remains blocked on the same
+  upstream frozen protocol/case/checkpoint inputs; no release result was created.
+- Final `make test`: 204 passed, 1 failed, 2 deselected. The only failure is the unchanged
+  baseline test whose ignored `data/danang/roadnet_haichau.json` input is absent. One first
+  Python 3.6 attempt saw emulated Git exit with SIGSEGV; an exact retry passed all 22 focused
+  tests, and the generated ignored core file was removed.
