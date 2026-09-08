@@ -31,7 +31,10 @@ def _network():
                 "roadLinks": [{"startRoad": route[index], "endRoad": route[index + 1],
                                "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}]}],
                 "trafficLight": {"lightphases": [
-                    {"availableRoadLinks": [0]}, {"availableRoadLinks": [0]}
+                    {"time": 40, "availableRoadLinks": [0]},
+                    {"time": 5, "availableRoadLinks": [0]},
+                    {"time": 40, "availableRoadLinks": [0]},
+                    {"time": 5, "availableRoadLinks": []},
                 ]},
             })
         intersections.append({"id": nodes[-1], "virtual": True, "roads": [route[-1]]})
@@ -61,6 +64,8 @@ def _write_profile_source(root):
 @pytest.fixture
 def valid_foundation(tmp_path):
     from scripts.prepare_haichau_network_v2 import prepare
+    from traffic_rl.network.haichau_dataset import build_phase_contract
+    from traffic_rl.network.roadnet import RoadNet
 
     dataset = tmp_path / "datasets" / "fixture"
     docker_dir = tmp_path / "docker" / "cityflow-research"
@@ -68,27 +73,58 @@ def valid_foundation(tmp_path):
     docker_dir.mkdir(parents=True)
     roadnet_path = dataset / "roadnet.json"
     roadnet_path.write_text(json.dumps(_network()))
+    source_dir = dataset / "source"
+    source_dir.mkdir()
+    source_records = []
+    for role, name, payload in (
+        ("clipped_osm_pbf", "clipped.osm.pbf", b"fixture-pbf"),
+        ("clipped_osm_xml", "clipped.osm", b"fixture-osm"),
+        ("sumo_network", "network.net.xml", b"fixture-sumo"),
+        ("source_cityflow_roadnet", "source-roadnet.json", roadnet_path.read_bytes()),
+    ):
+        source_path = source_dir / name
+        source_path.write_bytes(payload)
+        source_records.append({
+            "role": role,
+            "path": "datasets/fixture/source/%s" % name,
+            "path_at_conversion": "historical/%s" % name,
+            "sha256": sha256_file(source_path),
+            "availability": "tracked",
+        })
+    phase_contract_path = dataset / "phase-contract.json"
+    phase_contract_path.write_text(json.dumps(build_phase_contract(
+        RoadNet.load(str(roadnet_path)), "fixture", sha256_file(roadnet_path), 20
+    ), sort_keys=True, separators=(",", ":")) + "\n")
     profile_path, counts = _write_profile_source(tmp_path)
     dockerfile = docker_dir / "Dockerfile"
     dockerfile.write_text("FROM cityflowproject/cityflow@%s\n" % BASE_DIGEST)
     provenance = {
         "schema_version": 2, "dataset_id": "fixture",
         "data_source_label": "osm_topology_synthetic_demand",
-        "bbox_wgs84": [1, 2, 3, 4], "license": "fixture",
-        "osm_source": {"url": "unknown_not_recorded", "retrieval_date": "unknown_not_recorded"},
-        "source_artifacts": [{"role": "source_cityflow_roadnet", "sha256": sha256_file(roadnet_path),
-                              "availability": "tracked_fixture"}],
+        "bbox_wgs84": [1, 2, 3, 4], "license": "fixture ODbL",
+        "osm_source": {"extract_provider": "fixture", "url": "https://example.test/input.osm.pbf",
+                       "retrieval_date": "unknown_not_recorded"},
+        "source_artifacts": source_records,
         "conversion": {"commands": ["fixture"], "osmium_version": "unknown_not_recorded",
                        "netconvert_version": "unknown_not_recorded",
-                       "converter_image_digest": "unknown_not_recorded"},
+                       "converter_image_digest": "unknown_not_recorded",
+                       "configuration_definition_commit": "unknown_not_recorded"},
         "repairs": [], "source_roadnet_sha256": sha256_file(roadnet_path),
         "roadnet_expected_sha256": sha256_file(roadnet_path),
         "expected_controlled_signals": 53, "expected_min_green_phases_per_agent": 2,
         "demand_provenance": {"temporal_profile_path": "profiles.csv",
                               "temporal_profile_sha256": sha256_file(profile_path),
-                              "vehicle_mix_basis": "fixture", "applied_motorcycle_ratio": 0.75},
+                              "temporal_aggregation": "fixture sum",
+                              "vehicle_mix_basis": "fixture", "applied_motorcycle_ratio": 0.75,
+                              "vehicle_mix_scope": "synthetic fixture"},
+        "limitations": {
+            "historical_conversion_reproducibility": "unknown_not_recorded",
+            "phase_plan_observation": "unknown_not_recorded",
+            "study_scope": "synthetic fixture",
+        },
     }
-    (dataset / "provenance.json").write_text(json.dumps(provenance))
+    provenance_path = dataset / "provenance.json"
+    provenance_path.write_text(json.dumps(provenance))
     scenario_hours = {
         "normal": ["12:00", "13:00", "14:00"],
         "am_peak": ["07:00", "08:00", "09:00"],
@@ -97,6 +133,10 @@ def valid_foundation(tmp_path):
     config = {
         "schema_version": 2, "dataset_id": "fixture",
         "roadnet": "datasets/fixture/roadnet.json",
+        "phase_contract": {"path": "datasets/fixture/phase-contract.json",
+                           "sha256": sha256_file(phase_contract_path)},
+        "provenance": {"path": "datasets/fixture/provenance.json",
+                       "sha256": sha256_file(provenance_path)},
         "demand_label": "synthetic_osm_haichau_constrained_by_danang_profiles",
         "route_count": 2, "min_controlled_signals_per_route": 2,
         "horizon_seconds": 60, "motorcycle_ratio": 0.75,
@@ -136,11 +176,50 @@ def _verify(root, manifest):
     return verify_foundation(root, manifest)
 
 
+def _rebind_config_artifact(root, manifest, config_key, manifest_record):
+    config_path = root / manifest["generator_config_path"]
+    config = yaml.safe_load(config_path.read_text())
+    config[config_key] = dict(manifest_record)
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False))
+    manifest["generator_config_sha256"] = sha256_file(config_path)
+
+
 def test_foundation_verifier_accepts_semantically_bound_family(valid_foundation):
     root, manifest = valid_foundation
     report = _verify(root, manifest)
     assert report["controlled_signals"] == 53
     assert report["cases"] == 30
+    assert report["selectable_green_phases"] == 106
+
+
+def test_foundation_verifier_rejects_short_phase_promoted_to_action(valid_foundation):
+    root, manifest = valid_foundation
+    record = manifest["phase_contract"]
+    path = root / record["path"]
+    contract = json.loads(path.read_text())
+    agent = contract["agents"][sorted(contract["agents"])[0]]
+    agent["selectable_phases"].append(agent["transition_phases"][0])
+    path.write_text(json.dumps(contract, sort_keys=True, separators=(",", ":")) + "\n")
+    record["sha256"] = sha256_file(path)
+    _rebind_config_artifact(root, manifest, "phase_contract", record)
+    with pytest.raises(ValueError, match="phase contract"):
+        _verify(root, manifest)
+
+
+def test_foundation_verifier_rejects_missing_directed_transition(valid_foundation):
+    root, manifest = valid_foundation
+    record = manifest["phase_contract"]
+    path = root / record["path"]
+    contract = json.loads(path.read_text())
+    agent = contract["agents"][sorted(contract["agents"])[0]]
+    source = str(agent["selectable_phases"][0])
+    target = str(agent["selectable_phases"][1])
+    del agent["transitions"][source][target]
+    path.write_text(json.dumps(contract, sort_keys=True, separators=(",", ":")) + "\n")
+    record["sha256"] = sha256_file(path)
+    _rebind_config_artifact(root, manifest, "phase_contract", record)
+    with pytest.raises(ValueError, match="phase contract"):
+        _verify(root, manifest)
 
 
 @pytest.mark.parametrize(
@@ -212,6 +291,67 @@ def test_foundation_verifier_rejects_missing_provenance_field(valid_foundation):
     provenance_record["sha256"] = sha256_file(provenance_path)
     with pytest.raises(ValueError, match="provenance"):
         _verify(root, manifest)
+
+
+def _empty_osm_source(provenance):
+    provenance["osm_source"] = {}
+
+
+def _empty_conversion_commands(provenance):
+    provenance["conversion"]["commands"] = []
+
+
+def _fabricate_converter_digest(provenance):
+    provenance["conversion"]["converter_image_digest"] = "fabricated"
+
+
+def _fabricate_definition_commit(provenance):
+    provenance["conversion"]["configuration_definition_commit"] = "0" * 40
+
+
+def _fabricate_source_artifact_hash(provenance):
+    provenance["source_artifacts"][0]["sha256"] = "0" * 64
+
+
+def _remove_source_roadnet_role(provenance):
+    provenance["source_artifacts"] = [
+        record for record in provenance["source_artifacts"]
+        if record["role"] != "source_cityflow_roadnet"
+    ]
+
+
+@pytest.mark.parametrize("mutation", [
+    _empty_osm_source,
+    _empty_conversion_commands,
+    _fabricate_converter_digest,
+    _fabricate_definition_commit,
+    _fabricate_source_artifact_hash,
+    _remove_source_roadnet_role,
+])
+def test_foundation_verifier_rejects_fabricated_provenance_even_when_rebound(
+        valid_foundation, mutation):
+    root, manifest = valid_foundation
+    record = manifest["network"]["provenance"]
+    path = root / record["path"]
+    provenance = json.loads(path.read_text())
+    mutation(provenance)
+    path.write_text(json.dumps(provenance, sort_keys=True))
+    record["sha256"] = sha256_file(path)
+    _rebind_config_artifact(root, manifest, "provenance", record)
+    with pytest.raises(ValueError, match="provenance|artifact|hash mismatch"):
+        _verify(root, manifest)
+
+
+def test_canonical_provenance_labels_signal_repair_as_synthetic_assumption():
+    root = Path(__file__).resolve().parents[2]
+    provenance = json.loads(
+        (root / "datasets/haichau_network_v2/provenance.json").read_text()
+    )
+    repair = provenance["repairs"][0]
+    assert repair["intersection_id"] == "5896811072"
+    assert repair["modeling_status"] == "synthetic_engineering_normalization"
+    assert repair["source_evidence"] == "unknown_not_recorded"
+    assert provenance["limitations"]["phase_plan_observation"] == "unknown_not_recorded"
 
 
 def test_foundation_verifier_rejects_profile_count_not_supported_by_source(valid_foundation):

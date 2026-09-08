@@ -9,7 +9,7 @@ import yaml
 
 from traffic_rl.network.haichau_dataset import audit_network, build_flow_cases
 from traffic_rl.network.roadnet import RoadNet
-from traffic_rl.research.artifacts import sha256_file
+from traffic_rl.research.artifacts import sha256_file, verify_artifact
 
 
 BASE_IMAGE_DIGEST = "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32"
@@ -46,7 +46,14 @@ def prepare(config_path, root=None, new_version=False):
         raise ValueError("Hai Chau generator config schema_version must be 2")
 
     roadnet_path = root / config["roadnet"]
-    network_audit = audit_network(roadnet_path)
+    phase_contract_record = config.get("phase_contract", {})
+    phase_contract_path = verify_artifact(root, phase_contract_record)
+    phase_contract = json.loads(phase_contract_path.read_text())
+    network_audit = audit_network(
+        roadnet_path,
+        phase_contract,
+        int(config["simulation"]["min_green"]),
+    )
     if network_audit["phase_errors"]:
         raise ValueError("network audit has phase errors")
 
@@ -83,12 +90,9 @@ def prepare(config_path, root=None, new_version=False):
     network = dict(network_audit)
     network["path"] = _under_root(root, roadnet_path)
     network["sha256"] = network_hash
-    provenance_path = roadnet_path.parent / "provenance.json"
-    if provenance_path.is_file():
-        network["provenance"] = {
-            "path": _under_root(root, provenance_path),
-            "sha256": sha256_file(provenance_path),
-        }
+    provenance_record = config.get("provenance", {})
+    verify_artifact(root, provenance_record)
+    network["provenance"] = dict(provenance_record)
 
     dockerfile_path = root / "docker" / "cityflow-research" / "Dockerfile"
     if not dockerfile_path.is_file():
@@ -100,6 +104,7 @@ def prepare(config_path, root=None, new_version=False):
         "generator_config_path": _under_root(root, config_path),
         "generator_config_sha256": generator_hash,
         "network": network,
+        "phase_contract": dict(phase_contract_record),
         "route_families": {
             "path": _under_root(root, route_catalog_path),
             "sha256": sha256_file(route_catalog_path),

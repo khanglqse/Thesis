@@ -4,7 +4,11 @@ from collections import Counter, deque
 import random
 
 from traffic_rl.network.roadnet import RoadNet
-from traffic_rl.research.artifacts import canonical_sha256, validate_disjoint_splits
+from traffic_rl.research.artifacts import (
+    canonical_sha256,
+    sha256_file,
+    validate_disjoint_splits,
+)
 
 
 # Kept local so the pinned Python 3.6 research runtime does not import the
@@ -56,14 +60,108 @@ def _weak_component_count(nodes, edges):
     return components
 
 
-def audit_network(path):
+def build_phase_contract(roadnet, dataset_id, roadnet_sha256, min_green_seconds):
+    """Derive explicit action and transition roles from each cyclic phase plan."""
+    if not dataset_id or len(roadnet_sha256) != 64 or min_green_seconds <= 0:
+        raise ValueError("phase contract identity and min green are required")
+    agents = {}
+    for agent_id in sorted(roadnet.signalized_ids()):
+        phases = roadnet._lightphases(agent_id)
+        for phase_index, phase in enumerate(phases):
+            duration = phase.get("time")
+            if (isinstance(duration, bool)
+                    or not isinstance(duration, (int, float))
+                    or duration <= 0):
+                raise ValueError(
+                    "phase %s:%d has invalid duration" % (agent_id, phase_index)
+                )
+        selectable = [
+            index for index, phase in enumerate(phases)
+            if phase.get("availableRoadLinks")
+            and phase["time"] >= min_green_seconds
+        ]
+        if len(selectable) < 2:
+            raise ValueError(
+                "intersection %s has fewer than two selectable green phases"
+                % agent_id
+            )
+        selectable_set = set(selectable)
+        transition = [index for index in range(len(phases))
+                      if index not in selectable_set]
+        transitions = {}
+        for source in selectable:
+            phase_index = (source + 1) % len(phases)
+            sequence = []
+            while phase_index not in selectable_set:
+                sequence.append([phase_index, phases[phase_index]["time"]])
+                phase_index = (phase_index + 1) % len(phases)
+            if not sequence:
+                raise ValueError(
+                    "intersection %s has no transition after selectable phase %d"
+                    % (agent_id, source)
+                )
+            transitions[str(source)] = {
+                str(target): [list(step) for step in sequence]
+                for target in selectable if target != source
+            }
+        agents[agent_id] = {
+            "selectable_phases": selectable,
+            "transition_phases": transition,
+            "transitions": transitions,
+        }
+    return {
+        "schema_version": 1,
+        "dataset_id": dataset_id,
+        "roadnet_sha256": roadnet_sha256,
+        "derivation": {
+            "algorithm": "cityflow_cyclic_phase_roles_v1",
+            "min_green_seconds": min_green_seconds,
+            "selectable_rule": (
+                "phase serves at least one roadLink movement and its declared "
+                "duration is min-green compatible"
+            ),
+            "transition_rule": (
+                "preserve every non-selectable phase after a selectable source "
+                "in cyclic plan order until the next selectable phase; use that "
+                "source-exit sequence for every directed switch"
+            ),
+            "signal_state_semantics": (
+                "CityFlow conversion retains permitted roadLinks but not SUMO "
+                "color letters; short permissive phases and empty clearances are "
+                "therefore transition-only and never controller actions"
+            ),
+        },
+        "limitations": {
+            "original_signal_color_states": "unknown_not_recorded",
+            "transition_interpretation": (
+                "synthetic engineering contract derived from preserved cyclic "
+                "phase order, movement permissions, and durations"
+            ),
+        },
+        "agents": agents,
+    }
+
+
+def validate_phase_contract(roadnet, contract, dataset_id, roadnet_sha256,
+                            min_green_seconds):
+    """Reject any phase contract that differs from deterministic derivation."""
+    expected = build_phase_contract(
+        roadnet, dataset_id, roadnet_sha256, min_green_seconds
+    )
+    if contract != expected:
+        raise ValueError("phase contract differs from deterministic phase plan roles")
+    return expected
+
+
+def audit_network(path, phase_contract=None, min_green_seconds=20):
     """Return deterministic graph counts and all detected phase-reference errors."""
     roadnet = RoadNet.load(str(path))
     road_by_id = roadnet._road_by_id
     intersection_ids = set(roadnet._by_id)
     agents = sorted(roadnet.signalized_ids())
     agent_set = set(agents)
-    green_phase_counts = {agent_id: 0 for agent_id in agents}
+    selectable_phase_counts = {agent_id: 0 for agent_id in agents}
+    transition_phase_counts = {agent_id: 0 for agent_id in agents}
     errors = []
 
     for road in sorted(roadnet.roads, key=lambda item: item["id"]):
@@ -140,17 +238,35 @@ def audit_network(path):
                         "intersection %s phase %d roadLink %d has no lane movements"
                         % (intersection_id, phase_index, road_link_index)
                     )
-            if intersection_id in agent_set and serves_movement:
-                green_phase_counts[intersection_id] += 1
-
-        if (
-            intersection_id in agent_set
-            and green_phase_counts[intersection_id] < 2
-        ):
-            errors.append(
-                "intersection %s has fewer than two movement-serving green phases"
-                % intersection_id
+        if intersection_id in agent_set:
+            phases = traffic_light.get("lightphases", [])
+            selectable_phase_counts[intersection_id] = sum(
+                1 for phase in phases
+                if phase.get("availableRoadLinks")
+                and isinstance(phase.get("time"), (int, float))
+                and not isinstance(phase.get("time"), bool)
+                and phase["time"] >= min_green_seconds
             )
+            transition_phase_counts[intersection_id] = (
+                len(phases) - selectable_phase_counts[intersection_id]
+            )
+            if selectable_phase_counts[intersection_id] < 2:
+                errors.append(
+                    "intersection %s has fewer than two selectable green phases"
+                    % intersection_id
+                )
+
+    if phase_contract is not None:
+        try:
+            validate_phase_contract(
+                roadnet,
+                phase_contract,
+                phase_contract.get("dataset_id"),
+                sha256_file(path),
+                min_green_seconds,
+            )
+        except (AttributeError, KeyError, TypeError, ValueError) as error:
+            errors.append("phase contract: %s" % error)
 
     edges = sorted(
         {
@@ -165,8 +281,9 @@ def audit_network(path):
         "lanes": sum(len(road.get("lanes", [])) for road in roadnet.roads),
         "intersections": len(roadnet.intersections),
         "controlled_signals": len(agents),
-        "green_phases": sum(green_phase_counts.values()),
-        "agent_green_phase_counts": green_phase_counts,
+        "selectable_green_phases": sum(selectable_phase_counts.values()),
+        "transition_phases": sum(transition_phase_counts.values()),
+        "agent_selectable_phase_counts": selectable_phase_counts,
         "agent_ids": agents,
         "directed_signal_edges": [list(edge) for edge in edges],
         "weak_components": _weak_component_count(agents, edges),

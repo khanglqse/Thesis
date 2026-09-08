@@ -61,3 +61,18 @@ Entries below record the command and observed reason for RED before production c
 - I5 evidence RED: `PYTHONPATH=src pytest tests/scripts/test_verify_haichau_foundation.py::test_committed_clean_checkout_foundation_evidence -q` — failed because `results/haichau_network_v2/verification/foundation.json` did not exist.
 - I5 clean-checkout GREEN: detached clean worktree at candidate commit `e110437364f19072fcaba7d8b7065ffd0e87626e`, with ignored source absent, passed `make test` (153 passed, 1 deselected), host foundation verification, and a rebuilt real CityFlow smoke. `results/haichau_network_v2/verification/foundation.json` records exact commands, timestamps, wall times, outputs, commit and immutable image identity; its contract test passes.
 - Clean-checkout mount note: an initial clone under `/tmp` passed the host checks but Docker Desktop mounted that path as an empty directory. The recorded run used a clean detached worktree under `/Users/khanglq1/workplace/Thesis`, which Docker mounted correctly; the successful smoke took 88 seconds.
+
+## Re-review phase semantics and provenance
+
+- Phase-role RED: `PYTHONPATH=src pytest tests/network/test_haichau_dataset.py -q` — 5 failures. The audit still reported all 147 non-empty phases as greens, no contract builder existed, and the tracked phase contract was absent.
+- Phase-role GREEN: `PYTHONPATH=src pytest tests/network/test_haichau_dataset.py -q` — 8 passed. The deterministic contract classifies 107 min-green-compatible movement phases as selectable and 127 short/empty phases as transitions across exactly 53 agents; every ordered switch has a non-empty declared transition sequence.
+- Manifest phase binding RED: `PYTHONPATH=src pytest tests/scripts/test_prepare_haichau_network.py -q` — the manifest lacked `phase_contract` even though the fixture config supplied a hash-bound contract.
+- Manifest phase binding GREEN: the builder verifies the config-bound contract, audits the network through it, and writes the exact `{path, sha256}` record at manifest top level.
+- Semantic/provenance RED: `PYTHONPATH=src pytest tests/scripts/test_verify_haichau_foundation.py -q` — 18 failures exposed old audit field assumptions, missing phase-contract verification, accepted fabricated nested provenance, and missing synthetic-repair labeling.
+- Semantic/provenance GREEN: verifier suite — 30 passed. It regenerates the phase contract, rejects promoted short phases or missing directed transitions, enforces exact nested provenance schemas/allowed unknowns, validates all four tracked source/intermediate artifact hashes, binds provenance through YAML and manifest, and applies the documented source→canonical transformation to require exact roadnet equality.
+- Repair provenance: node `5896811072` is explicitly `synthetic_engineering_normalization` with `source_evidence: unknown_not_recorded`; the dataset README states it is not an observed/source-derived signal plan.
+- Source preservation: the clipped PBF, OSM XML, SUMO network and original CityFlow roadnet are tracked under `datasets/haichau_network_v2/source/` with their previously measured SHA-256 values.
+- Re-review full-suite GREEN before evidence refresh: `make test` — 165 passed, 1 Docker-marked test deselected, zero failures.
+- Re-review host verifier GREEN: 53 agents, 107 selectable phases, 127 transition phases, 30 cases and 1,418 route families.
+- Re-review runtime smoke GREEN: `make haichau-smoke` rebuilt/inspected image `sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517` and completed the real 60-step CityFlow episode.
+- [ ] Refresh clean-checkout `foundation.json` after committing the re-review implementation candidate.

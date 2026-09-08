@@ -4,6 +4,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from traffic_rl.research.artifacts import sha256_file
+
 
 def _write_inputs(root):
     dataset = root / "datasets" / "mini"
@@ -21,10 +23,20 @@ def _write_inputs(root):
             {"id": west, "virtual": True, "roads": [route[0]]},
             {"id": first, "virtual": False, "roads": route[:2],
              "roadLinks": [{"startRoad": route[0], "endRoad": route[1], "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}]}],
-             "trafficLight": {"lightphases": [{"availableRoadLinks": [0]}, {"availableRoadLinks": [0]}]}},
+             "trafficLight": {"lightphases": [
+                 {"time": 40, "availableRoadLinks": [0]},
+                 {"time": 5, "availableRoadLinks": []},
+                 {"time": 40, "availableRoadLinks": [0]},
+                 {"time": 5, "availableRoadLinks": []},
+             ]}},
             {"id": second, "virtual": False, "roads": route[1:],
              "roadLinks": [{"startRoad": route[1], "endRoad": route[2], "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}]}],
-             "trafficLight": {"lightphases": [{"availableRoadLinks": [0]}, {"availableRoadLinks": [0]}]}},
+             "trafficLight": {"lightphases": [
+                 {"time": 40, "availableRoadLinks": [0]},
+                 {"time": 5, "availableRoadLinks": []},
+                 {"time": 40, "availableRoadLinks": [0]},
+                 {"time": 5, "availableRoadLinks": []},
+             ]}},
             {"id": east, "virtual": True, "roads": [route[2]]},
         ])
         roads.extend([
@@ -33,14 +45,26 @@ def _write_inputs(root):
             {"id": route[2], "startIntersection": second, "endIntersection": east, "lanes": [{}]},
         ])
     roadnet = {"intersections": intersections, "roads": roads}
-    (dataset / "roadnet.json").write_text(json.dumps(roadnet))
-    (dataset / "provenance.json").write_text(
+    roadnet_path = dataset / "roadnet.json"
+    roadnet_path.write_text(json.dumps(roadnet))
+    from traffic_rl.network.haichau_dataset import build_phase_contract
+    from traffic_rl.network.roadnet import RoadNet
+    phase_contract_path = dataset / "phase-contract.json"
+    phase_contract_path.write_text(json.dumps(build_phase_contract(
+        RoadNet.load(str(roadnet_path)), "mini", sha256_file(roadnet_path), 20
+    ), sort_keys=True, separators=(",", ":")) + "\n")
+    provenance_path = dataset / "provenance.json"
+    provenance_path.write_text(
         json.dumps({"dataset_id": "mini", "expected_controlled_signals": 6})
     )
     config = {
         "schema_version": 2,
         "dataset_id": "mini",
         "roadnet": "datasets/mini/roadnet.json",
+        "phase_contract": {"path": "datasets/mini/phase-contract.json",
+                           "sha256": sha256_file(phase_contract_path)},
+        "provenance": {"path": "datasets/mini/provenance.json",
+                       "sha256": sha256_file(provenance_path)},
         "demand_label": "synthetic_test_demand",
         "route_count": 2,
         "min_controlled_signals_per_route": 2,
@@ -65,7 +89,7 @@ def _write_inputs(root):
             "validation": {"demand_seeds": [31], "sim_seeds": [131]},
             "test": {"demand_seeds": [101], "sim_seeds": [201]},
         },
-        "simulation": {"action_interval": 10},
+        "simulation": {"action_interval": 10, "min_green": 20},
         "preprocessing": {"count_norm": 20.0},
     }
     config_path = root / "mini.yaml"
@@ -82,7 +106,12 @@ def test_prepare_writes_hash_bound_cases(tmp_path):
     assert len(manifest["cases"]) == 9
     assert all(len(case["flow_sha256"]) == 64 for case in manifest["cases"])
     assert manifest["network"]["controlled_signals"] == 6
+    assert manifest["network"]["selectable_green_phases"] == 12
     assert manifest["network"]["path"] == "datasets/mini/roadnet.json"
+    assert manifest["phase_contract"] == {
+        "path": "datasets/mini/phase-contract.json",
+        "sha256": sha256_file(tmp_path / "datasets/mini/phase-contract.json"),
+    }
     assert manifest["runtime"]["base_image_digest"].startswith("sha256:")
     assert len(manifest["runtime"]["dockerfile"]["sha256"]) == 64
 
