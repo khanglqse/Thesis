@@ -71,18 +71,15 @@ class MultiAgentTrafficEnv:
                 for source in range(self.num_actions[a])) * self.sim_step_seconds
             required_red = ((self.num_actions[a] - 1) * float(self.min_green)
                             + transition_total)
-            maximum_path = max(
-                sum(duration for _, duration in path)
-                for key, path in self._transition_paths.items()
-                if key[0] == a) * self.sim_step_seconds
             decision = float(self.action_interval) * self.sim_step_seconds
             green = float(self.min_green)
-            service_slot = math.ceil((maximum_path + green) / decision) * decision
-            remaining_service_budget = (
-                maximum_path
-                + max(0, self.num_actions[a] - 2) * service_slot)
-            minimum_start_delay = math.ceil(green / decision) * decision
-            safe_required_red = minimum_start_delay + remaining_service_budget
+            cycle_service_budget = sum(
+                math.ceil((sum(duration for _, duration in
+                    self._transition_paths[(a, source, (
+                        source + 1) % self.num_actions[a])])
+                    * self.sim_step_seconds + green) / decision) * decision
+                for source in range(self.num_actions[a]))
+            safe_required_red = cycle_service_budget
             if self.maximum_red is not None \
                     and float(self.maximum_red) < max(required_red,
                                                       safe_required_red):
@@ -93,7 +90,7 @@ class MultiAgentTrafficEnv:
             if self.maximum_red is not None:
                 self._maximum_red_trigger[a] = max(
                     0.0, float(self.maximum_red)
-                    - remaining_service_budget - decision)
+                    - cycle_service_budget - decision)
         self.obs_dim = getattr(self.encoder, "obs_dim", 12)
         self._green = {a: 0 for a in self.agent_ids}       # current green INDEX
         self._since_switch = {a: 0 for a in self.agent_ids}
@@ -144,13 +141,21 @@ class MultiAgentTrafficEnv:
                 mask[:] = False
                 mask[self._green[a]] = True
             else:
+                movement_due = (self.maximum_red is not None
+                                and any(elapsed >= self._maximum_red_trigger[a]
+                                        for elapsed in
+                                        self._movement_time_since_service[a].values()))
                 overdue = []
                 if self.maximum_red is not None:
                     overdue = [idx for idx, elapsed in
                                enumerate(self._time_since_service[a])
                                if idx != self._green[a]
                                and elapsed >= self._maximum_red_trigger[a]]
-                if overdue:
+                if movement_due:
+                    forced = (self._green[a] + 1) % self.num_actions[a]
+                    mask[:] = False
+                    mask[forced] = True
+                elif overdue:
                     forced = max(overdue,
                                  key=lambda idx: self._time_since_service[a][idx])
                     mask[:] = False

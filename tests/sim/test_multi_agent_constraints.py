@@ -350,3 +350,38 @@ def test_maximum_red_bound_serves_multiple_urgent_phases(tmp_path):
             break
 
     assert served == {0, 1, 2}
+
+
+def test_maximum_red_schedules_compound_only_movement(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    roadnet._road_by_id["rin"]["lanes"].append({})
+    roadnet._by_id["A"]["roadLinks"].append({
+        "startRoad": "rin", "endRoad": "rout",
+        "laneLinks": [{"startLaneIndex": 2, "endLaneIndex": 0}]})
+    phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
+    phases[:] = [
+        {"time": 40, "availableRoadLinks": [0]},
+        {"time": 6, "availableRoadLinks": []},
+        {"time": 40, "availableRoadLinks": [1]},
+        {"time": 6, "availableRoadLinks": []},
+        {"time": 6, "availableRoadLinks": [2]},
+        {"time": 6, "availableRoadLinks": []},
+    ]
+    engine = FakeEngine()
+    env = MultiAgentTrafficEnv(roadnet, engine, action_interval=10,
+                               min_green=20, maximum_red=180, max_steps=400)
+    env.reset()
+    compound_pair = ("rin_2", "rout_0")
+    info = None
+    while True:
+        mask = env.action_masks()["A"]
+        action = env._green["A"]
+        if not mask[action]:
+            action = int(np.flatnonzero(mask)[0])
+        _, _, done, info = env.step({"A": action})
+        assert env._movement_time_since_service["A"][compound_pair] <= 180
+        if done:
+            break
+
+    assert info["max_red_seconds"] <= 180
+    assert ("set", "A", 4) in engine.calls
