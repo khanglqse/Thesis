@@ -11,7 +11,7 @@
 - [x] Task 1: phase-centric neighbor encoder
 - [x] Task 2: signal constraints, switch cost, service timers
 - [x] Task 3: phase-scoring Double DQN and checkpoint contract
-- [ ] Task 4: balanced case sampler and replay
+- [x] Task 4: balanced case sampler and replay
 - [ ] Task 5: validation regret and non-inferiority selection
 - [ ] Task 6: multi-case trainer and 53-node training smoke/pilot
 
@@ -24,6 +24,8 @@
 - Task 2 GREEN: `PYTHONPATH=src pytest tests/sim/test_multi_agent_constraints.py tests/sim/test_multi_agent_env.py tests/sim/test_intersection.py -v` -> 19 passed.
 - Task 3 RED: `PYTHONPATH=src pytest tests/agents/test_phase_ddqn.py -v` -> collection failed with expected `ModuleNotFoundError: traffic_rl.agents.phase_ddqn`.
 - Task 3 GREEN: `PYTHONPATH=src pytest tests/agents/test_phase_ddqn.py tests/agents/test_dqn.py -v` -> 17 passed, including numeric Double DQN target and 100-update stability tests.
+- Task 4 RED: `PYTHONPATH=src pytest tests/train/test_case_sampler.py tests/train/test_network_replay.py -v` -> collection failed with expected missing sampler/replay modules.
+- Task 4 GREEN: same command -> 4 passed, including ring-buffer overwrite coverage.
 
 ## Runtime evidence
 
