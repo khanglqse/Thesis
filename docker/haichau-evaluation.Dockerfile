@@ -1,3 +1,3 @@
-FROM cityflowproject/cityflow@sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32
+FROM traffic-rl-cityflow-research@sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517
 
 WORKDIR /work
