@@ -188,10 +188,38 @@ class PhaseScoringDDQN(object):
                      if stored_contract.get(key) != expected_contract.get(key)]
             raise ValueError("checkpoint contract mismatch: %s" % ", ".join(drift))
         data = np.load(os.path.join(directory, "weights.npz"))
+        feature_dim = int(data["meta_feature_dim"])
+        hidden = int(data["meta_hidden"])
+        family = expected_contract.get("controller_family")
+        if family is not None and family != "neighbor_phase_ddqn":
+            raise ValueError("checkpoint controller_family is not neighbor_phase_ddqn")
+        if ("feature_dim" in expected_contract
+                and int(expected_contract["feature_dim"]) != feature_dim):
+            raise ValueError("checkpoint feature_dim differs from weights")
+        if ("feature_order" in expected_contract
+                and len(expected_contract["feature_order"]) != feature_dim):
+            raise ValueError("checkpoint feature_order differs from weights")
+        if ("hidden_size" in expected_contract
+                and int(expected_contract["hidden_size"]) != hidden):
+            raise ValueError("checkpoint hidden_size differs from weights")
+        if ("hidden" in expected_contract
+                and int(expected_contract["hidden"]) != hidden):
+            raise ValueError("checkpoint hidden alias differs from weights")
+        if ("hidden_size" in expected_contract and "hidden" in expected_contract
+                and int(expected_contract["hidden_size"])
+                != int(expected_contract["hidden"])):
+            raise ValueError("checkpoint hidden alias differs from hidden_size")
+        normalization = expected_contract.get("normalization")
+        if normalization is not None:
+            for name in ("count_norm", "capacity_norm"):
+                if (name in expected_contract
+                        and float(expected_contract[name])
+                        != float(normalization.get(name))):
+                    raise ValueError("checkpoint %s alias differs from normalization" % name)
         grad_clip = float(data["meta_grad_clip"])
         if np.isnan(grad_clip):
             grad_clip = None
-        net = cls(int(data["meta_feature_dim"]), int(data["meta_hidden"]),
+        net = cls(feature_dim, hidden,
                   float(data["meta_lr"]), seed=0, grad_clip=grad_clip,
                   huber_delta=float(data["meta_huber_delta"]))
         for name in net.params:

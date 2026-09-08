@@ -7,7 +7,8 @@ import pytest
 
 import traffic_rl.eval.release_identity as release_identity
 from scripts.export_haichau_replays import export_bundle
-from scripts.verify_haichau_thesis import audit_demo, verify_project
+from scripts.verify_haichau_thesis import (
+    _checkpoint_contract_valid, audit_demo, verify_project)
 from traffic_rl.eval.network_campaign import bind_frozen_manifest, expand_runs, run_pending
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import write_artifacts, write_release_manifest
@@ -214,14 +215,34 @@ def _write_placeholder_project(root):
     }))
 
 
-def _checkpoint_contract(network_sha256):
+def _checkpoint_contract(network_sha256, controller="neighbor_phase_ddqn",
+                         phase_sha256=None, generator_sha256=None,
+                         manifest_sha256=None):
+    phase_sha256 = phase_sha256 or "b" * 64
+    generator_sha256 = generator_sha256 or "c" * 64
+    manifest_sha256 = manifest_sha256 or "d" * 64
     return {
         "obs_schema_version": 2,
         "feature_order": ["phase_pressure", "neighbor_queue"],
-        "normalization": {"queue": 20.0},
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "hidden_size": 64,
-        "action_contract": {"type": "phase_mask"},
-        "network_compatibility": {"network_sha256": network_sha256},
+        "action_contract": ({
+            "type": "phase_rows", "version": 1,
+            "mask_type": "boolean_selectable_green_rows",
+            "padding_actions_selectable": False,
+        } if controller == "neighbor_phase_ddqn" else {
+            "type": "fixed_vector", "version": 1,
+            "mask_type": "boolean_phase_index",
+            "padding_actions_selectable": False,
+            "n_actions": 3,
+        }),
+        "network_compatibility": {
+            "network_sha256": network_sha256,
+            "phase_contract_sha256": phase_sha256,
+            "generator_config_sha256": generator_sha256,
+            "manifest_sha256": manifest_sha256,
+        },
+        "controller_family": controller,
     }
 
 
@@ -297,17 +318,25 @@ def _write_bound_project(root):
     case_manifest_path = root / "release/case-manifest.json"
     _write(case_manifest_path, json.dumps(case_manifest))
 
+    phase_sha = "b" * 64
+    generator_sha = "c" * 64
+    experiment_sha = "d" * 64
     checkpoints = []
     for controller in ("shared_ddqn_legacy", "neighbor_phase_ddqn"):
         for seed in range(11, 16):
             path = root / ("release/%s-%s.npz" % (controller, seed))
             _write(path, "%s-%s" % (controller, seed))
-            contract = _checkpoint_contract(network_sha)
+            contract = _checkpoint_contract(
+                network_sha, controller, phase_sha, generator_sha, experiment_sha)
+            contract_path = root / ("release/%s-%s-contract.json" % (controller, seed))
+            _write(contract_path, json.dumps(contract, indent=2, sort_keys=True) + "\n")
             checkpoints.append({
                 "controller_id": controller,
                 "learning_seed": seed,
                 "path": str(path.relative_to(root)),
                 "sha256": _digest(path),
+                "contract_path": str(contract_path.relative_to(root)),
+                "contract_file_sha256": _digest(contract_path),
                 "validation_eligible": True,
                 "checkpoint_contract": contract,
                 "checkpoint_contract_sha256": _json_digest(contract),
@@ -338,6 +367,9 @@ def _write_bound_project(root):
         "case_manifest_sha256": _digest(case_manifest_path),
         "network_sha256": network_sha,
         "viewer_network_sha256": viewer_sha,
+        "phase_contract_sha256": phase_sha,
+        "generator_config_sha256": generator_sha,
+        "experiment_manifest_sha256": experiment_sha,
         "runtime_digest": RUNTIME_DIGEST,
         "runtime_image": RUNTIME_IMAGE,
         "runtime_image_id": RUNTIME_DIGEST,
@@ -658,6 +690,43 @@ def test_malformed_checkpoint_contract_fails_gate_without_crashing(tmp_path):
     contract["hidden_size"] = "not-a-number"
     protocol["checkpoints"][0]["checkpoint_contract_sha256"] = _json_digest(contract)
     path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda contract: contract.update({"obs_schema_version": 999}),
+    lambda contract: contract.update({"feature_order": [42]}),
+    lambda contract: contract.update({"normalization": {"other": 1.0}}),
+    lambda contract: contract.update({"action_contract": {"type": "anything"}}),
+    lambda contract: contract["network_compatibility"].pop(
+        "phase_contract_sha256"),
+])
+def test_checkpoint_contract_validator_rejects_semantic_drift(mutate):
+    protocol = {
+        "network_sha256": "a" * 64,
+        "phase_contract_sha256": "b" * 64,
+        "generator_config_sha256": "c" * 64,
+        "experiment_manifest_sha256": "d" * 64,
+    }
+    contract = _checkpoint_contract("a" * 64)
+    mutate(contract)
+
+    assert _checkpoint_contract_valid(
+        contract, protocol, "neighbor_phase_ddqn") is False
+
+
+def test_checkpoint_gate_binds_protocol_contract_to_contract_file(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    entry = protocol["checkpoints"][0]
+    contract_path = tmp_path / entry["contract_path"]
+    contract_path.write_text(json.dumps({"controller_family": "forged"}))
+    entry["contract_file_sha256"] = _digest(contract_path)
+    protocol_path.write_text(json.dumps(protocol))
 
     report = verify_project(tmp_path)
 

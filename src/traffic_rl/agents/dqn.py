@@ -4,6 +4,8 @@ NumPy because the CityFlow Docker image is Python 3.6 (no modern PyTorch). The
 simulator is the bottleneck, so a NumPy net costs little. 3.6-safe.
 """
 from collections import deque
+import json
+import os
 
 import numpy as np
 
@@ -59,7 +61,9 @@ class SharedDQN(object):
         self.grad_clip = grad_clip
         self.huber_delta = float(huber_delta)
         self.dueling = bool(dueling)
-        self.n_actions = n_actions
+        self.obs_dim = int(obs_dim)
+        self.hidden = int(hidden)
+        self.n_actions = int(n_actions)
 
         def he(fan_in, fan_out):
             return (rng.randn(fan_in, fan_out) * np.sqrt(2.0 / fan_in)).astype(np.float32)
@@ -211,6 +215,66 @@ class SharedDQN(object):
         for p in self.params:
             setattr(self, p, d[p].astype(np.float32))
         self.sync_target()
+
+    def save_bundle(self, directory, contract):
+        if not isinstance(contract, dict):
+            raise ValueError("checkpoint contract must be a dictionary")
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        with open(os.path.join(directory, "contract.json"), "w") as output:
+            json.dump(contract, output, indent=2, sort_keys=True)
+            output.write("\n")
+        arrays = {name: getattr(self, name) for name in self.params}
+        arrays.update({"target_" + name: getattr(self, "t" + name)
+                       for name in self.params})
+        arrays.update({
+            "meta_obs_dim": np.asarray(self.obs_dim, np.int64),
+            "meta_n_actions": np.asarray(self.n_actions, np.int64),
+            "meta_hidden": np.asarray(self.hidden, np.int64),
+            "meta_lr": np.asarray(self.lr, np.float64),
+            "meta_grad_clip": np.asarray(
+                np.nan if self.grad_clip is None else self.grad_clip, np.float64),
+            "meta_huber_delta": np.asarray(self.huber_delta, np.float64),
+            "meta_dueling": np.asarray(self.dueling, np.bool_),
+        })
+        np.savez(os.path.join(directory, "weights.npz"), **arrays)
+
+    @classmethod
+    def load_bundle(cls, directory, expected_contract):
+        with open(os.path.join(directory, "contract.json")) as source:
+            stored_contract = json.load(source)
+        if stored_contract != expected_contract:
+            keys = sorted(set(stored_contract) | set(expected_contract))
+            drift = [key for key in keys
+                     if stored_contract.get(key) != expected_contract.get(key)]
+            raise ValueError("checkpoint contract mismatch: %s" % ", ".join(drift))
+        data = np.load(os.path.join(directory, "weights.npz"))
+        obs_dim = int(data["meta_obs_dim"])
+        n_actions = int(data["meta_n_actions"])
+        hidden = int(data["meta_hidden"])
+        if expected_contract.get("controller_family") != "shared_ddqn_legacy":
+            raise ValueError("checkpoint controller_family is not shared_ddqn_legacy")
+        if len(expected_contract.get("feature_order", ())) != obs_dim:
+            raise ValueError("checkpoint feature_order differs from weights")
+        if int(expected_contract.get("hidden_size", 0)) != hidden:
+            raise ValueError("checkpoint hidden_size differs from weights")
+        action_contract = expected_contract.get("action_contract", {})
+        if int(action_contract.get("n_actions", 0)) != n_actions:
+            raise ValueError("checkpoint n_actions differs from weights")
+        grad_clip = float(data["meta_grad_clip"])
+        if np.isnan(grad_clip):
+            grad_clip = None
+        net = cls(
+            obs_dim, n_actions, hidden=hidden, lr=float(data["meta_lr"]), seed=0,
+            grad_clip=grad_clip, huber_delta=float(data["meta_huber_delta"]),
+            dueling=bool(data["meta_dueling"]))
+        for name in net.params:
+            if data[name].shape != getattr(net, name).shape \
+                    or data["target_" + name].shape != getattr(net, "t" + name).shape:
+                raise ValueError("checkpoint parameter shape differs: %s" % name)
+            setattr(net, name, data[name].astype(np.float32))
+            setattr(net, "t" + name, data["target_" + name].astype(np.float32))
+        return net
 
 
 class ReplayBuffer(object):

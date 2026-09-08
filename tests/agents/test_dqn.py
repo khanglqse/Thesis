@@ -1,4 +1,7 @@
+import json
+
 import numpy as np
+import pytest
 from traffic_rl.agents.dqn import SharedDQN, ReplayBuffer
 
 def test_qvalues_shape():
@@ -82,6 +85,46 @@ def test_dueling_save_load_roundtrip(tmp_path):
     net2 = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=7, dueling=True)
     net2.load(p)
     assert np.allclose(before, net2.q_values(x))
+
+
+def test_shared_dqn_bundle_roundtrip_and_contract_binding(tmp_path):
+    net = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=0, dueling=True)
+    contract = {
+        "controller_family": "shared_ddqn_legacy",
+        "feature_order": ["f%d" % index for index in range(5)],
+        "hidden_size": 8,
+        "action_contract": {"n_actions": 3},
+    }
+    before = net.q_values(np.ones((2, 5), np.float32))
+    net.save_bundle(str(tmp_path), contract)
+
+    loaded = SharedDQN.load_bundle(str(tmp_path), contract)
+
+    np.testing.assert_allclose(loaded.q_values(np.ones((2, 5), np.float32)), before)
+    assert json.loads((tmp_path / "contract.json").read_text()) == contract
+
+
+@pytest.mark.parametrize("field,value,message", [
+    ("controller_family", "neighbor_phase_ddqn", "controller_family"),
+    ("hidden_size", 9, "hidden_size"),
+    ("feature_order", ["short"], "feature_order"),
+    ("action_contract", {"n_actions": 2}, "n_actions"),
+])
+def test_shared_dqn_bundle_rejects_contract_weight_drift(
+        tmp_path, field, value, message):
+    net = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=0, dueling=True)
+    contract = {
+        "controller_family": "shared_ddqn_legacy",
+        "feature_order": ["f%d" % index for index in range(5)],
+        "hidden_size": 8,
+        "action_contract": {"n_actions": 3},
+    }
+    net.save_bundle(str(tmp_path), contract)
+    contract[field] = value
+    (tmp_path / "contract.json").write_text(json.dumps(contract))
+
+    with pytest.raises(ValueError, match=message):
+        SharedDQN.load_bundle(str(tmp_path), contract)
 
 
 from traffic_rl.agents.dqn import NStepAccumulator

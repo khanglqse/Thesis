@@ -4,8 +4,10 @@ import subprocess
 
 import pytest
 
-from scripts.freeze_haichau_protocol import freeze_protocol
+from scripts.freeze_haichau_protocol import _contains_test_reference, freeze_protocol
 from scripts import verify_haichau_thesis
+from traffic_rl.agents.dqn import SharedDQN
+from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 
 
 RUNTIME_DIGEST = "sha256:" + "a" * 64
@@ -16,6 +18,13 @@ CONTROLLERS = (
     "tuned_fixed", "max_pressure", "hysteretic_mp",
     "shared_ddqn_legacy", "neighbor_phase_ddqn",
 )
+
+
+@pytest.mark.parametrize("value", [
+    "testcase-01", "results/test/case.json", "TEST-01", "test_normal_case",
+])
+def test_test_reference_detection_covers_ids_and_path_components(value):
+    assert _contains_test_reference(value) is True
 
 
 def _sha256(path):
@@ -50,11 +59,16 @@ def _contract(network_sha, phase_contract_sha, generator_config_sha,
         "feature_order": ["phase_pressure"],
         "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "hidden_size": 128,
-        "action_contract": {
+        "action_contract": ({
             "type": "phase_rows", "version": 1,
             "mask_type": "boolean_selectable_green_rows",
             "padding_actions_selectable": False,
-        },
+        } if controller_family == "neighbor_phase_ddqn" else {
+            "type": "fixed_vector", "version": 1,
+            "mask_type": "boolean_phase_index",
+            "padding_actions_selectable": False,
+            "n_actions": 3,
+        }),
         "network_compatibility": {
             "network_sha256": network_sha,
             "phase_contract_sha256": phase_contract_sha,
@@ -70,15 +84,15 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
                        include_test=False):
     relative = "release-training/%s/final-seed%d" % (controller, seed)
     run_dir = root / relative
-    checkpoint = run_dir / "checkpoint/weights.npz"
-    contract_path = run_dir / "checkpoint/contract.json"
-    _write(checkpoint, "%s-%d" % (controller, seed))
     contract = _contract(
         network_sha, phase_contract_sha, generator_config_sha, manifest_sha,
         controller)
-    _write(contract_path, contract)
-    _write(run_dir / "checkpoints/step-80/weights.npz", "%s-%d" % (controller, seed))
-    _write(run_dir / "checkpoints/step-80/contract.json", contract)
+    if controller == "neighbor_phase_ddqn":
+        model = PhaseScoringDDQN(1, hidden=128, lr=0.001, seed=seed)
+    else:
+        model = SharedDQN(1, 3, hidden=128, lr=0.001, seed=seed, dueling=True)
+    model.save_bundle(str(run_dir / "checkpoint"), contract)
+    model.save_bundle(str(run_dir / "checkpoints/step-80"), contract)
     validation = {
         "step-80": {
             "rows": [{"case_id": validation_case}],

@@ -337,6 +337,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "manifest_sha256": manifest_sha256,
         "foundation_verification": verification,
         "code_commit": _git_sha(foundation_root),
+        "controller_id": "neighbor_phase_ddqn",
+        "mode": config.get("mode"),
         "learning_seed": learning_seed,
     })
 

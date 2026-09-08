@@ -82,6 +82,7 @@ def _manifest():
 def _config():
     return {
         "schema_version": 2,
+        "mode": "final",
         "learning_seed": 11,
         "model": {"feature_dim": 12, "hidden": 8, "lr": 0.01,
                   "gamma": 0.99, "n_step": 1},
@@ -160,6 +161,10 @@ def test_training_visits_all_regimes_and_saves_resolved_contract(tmp_path):
     assert contract["manifest_sha256"] == canonical_json_sha256(manifest)
     assert contract["generator_config_sha256"] == "generator-hash"
     assert contract["baseline_tuning_sha256"]
+    run_manifest = json.loads((output / "run-manifest.json").read_text())
+    assert run_manifest["controller_id"] == "neighbor_phase_ddqn"
+    assert run_manifest["mode"] == "final"
+    assert run_manifest["learning_seed"] == 11
     assert json.loads((output / "replay-coverage.json").read_text()) == {
         "am_peak": 4, "normal": 4, "pm_peak": 4}
     loaded = PhaseScoringDDQN.load_bundle(str(output / "checkpoint"), contract)

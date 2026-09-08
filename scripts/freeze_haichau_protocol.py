@@ -16,6 +16,8 @@ import tempfile
 from pathlib import Path
 
 from traffic_rl.eval.release_identity import inspect_runtime_image, verify_git_checkout
+from traffic_rl.agents.dqn import SharedDQN
+from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +38,12 @@ NEIGHBOR_ACTION_CONTRACT = {
     "version": 1,
     "mask_type": "boolean_selectable_green_rows",
     "padding_actions_selectable": False,
+}
+LEGACY_ACTION_CONTRACT = {
+    "type": "fixed_vector", "version": 1,
+    "mask_type": "boolean_phase_index",
+    "padding_actions_selectable": False,
+    "n_actions": 3,
 }
 REQUIRED_TRAINING_ARTIFACTS = (
     "checkpoint/weights.npz", "checkpoint/contract.json", "validation.json",
@@ -112,15 +120,18 @@ def _assert_hash(path, expected, label):
 
 def _contains_test_reference(value):
     if isinstance(value, dict):
-        return any(_contains_test_reference(key)
-                   or _contains_test_reference(item)
-                   for key, item in value.items())
+        return any(
+            ((key != "eligible_for_test_evaluation"
+              and _contains_test_reference(key))
+             or _contains_test_reference(item))
+            for key, item in value.items())
     if isinstance(value, list):
         return any(_contains_test_reference(item) for item in value)
     if isinstance(value, str):
-        lowered = value.lower()
-        return (lowered == "test" or lowered.startswith("test_")
-                or "/test_" in lowered or "test-" in lowered)
+        lowered = value.lower().replace("\\", "/")
+        tokens = [token for token in re.split(r"[/\s_.-]+", lowered) if token]
+        return any(token == "test" or token.startswith("testcase")
+                   for token in tokens)
     return False
 
 
@@ -145,9 +156,11 @@ def _checkpoint_contract(contract, controller, compatibility):
         raise ValueError("checkpoint contract network compatibility drift")
     if contract["controller_family"] != controller:
         raise ValueError("checkpoint contract controller family drift")
-    if controller == "neighbor_phase_ddqn" \
-            and contract["action_contract"] != NEIGHBOR_ACTION_CONTRACT:
-        raise ValueError("neighbor checkpoint action contract drift")
+    expected_action = (NEIGHBOR_ACTION_CONTRACT
+                       if controller == "neighbor_phase_ddqn"
+                       else LEGACY_ACTION_CONTRACT)
+    if contract["action_contract"] != expected_action:
+        raise ValueError("checkpoint action contract drift")
     aliases = (
         ("hidden", contract["hidden_size"]),
         ("network_sha256", compatible["network_sha256"]),
@@ -159,6 +172,14 @@ def _checkpoint_contract(contract, controller, compatibility):
             continue
         if contract[legacy_name] != canonical_value:
             raise ValueError("checkpoint contract alias drift: %s" % legacy_name)
+
+
+def _load_checkpoint_bundle(directory, controller, contract):
+    if controller == "neighbor_phase_ddqn":
+        return PhaseScoringDDQN.load_bundle(str(directory), contract)
+    if controller == "shared_ddqn_legacy":
+        return SharedDQN.load_bundle(str(directory), contract)
+    raise ValueError("unknown learned checkpoint controller")
 
 
 def _release_cases(root, manifest):
@@ -349,6 +370,7 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility, valid
     _validate_selection_inputs(validation, selection, tuning, validation_ids)
     contract = _json(run_dir / "checkpoint/contract.json", "checkpoint contract")
     _checkpoint_contract(contract, controller, compatibility)
+    _load_checkpoint_bundle(run_dir / "checkpoint", controller, contract)
     contract_path = run_dir / "checkpoint/contract.json"
     weight_path = run_dir / "checkpoint/weights.npz"
     selected = selection["selected_checkpoint"]

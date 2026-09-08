@@ -69,6 +69,47 @@ def test_bundle_round_trip_preserves_online_and_target_values(tmp_path):
     assert loaded.hidden == 4
 
 
+def test_loader_binds_canonical_contract_dimensions_to_weights(tmp_path):
+    net = PhaseScoringDDQN(3, hidden=4, lr=2e-3, seed=2)
+    contract = {
+        "controller_family": "neighbor_phase_ddqn",
+        "feature_dim": 3,
+        "hidden_size": 4,
+        "hidden": 4,
+        "feature_order": ["a", "b", "c"],
+    }
+    net.save_bundle(str(tmp_path), contract)
+
+    drifted = dict(contract)
+    drifted["hidden_size"] = 5
+    (tmp_path / "contract.json").write_text(json.dumps(drifted))
+    with pytest.raises(ValueError, match="hidden_size"):
+        PhaseScoringDDQN.load_bundle(str(tmp_path), drifted)
+
+
+def test_loader_rejects_family_and_alias_drift(tmp_path):
+    net = PhaseScoringDDQN(3, hidden=4, lr=2e-3, seed=2)
+    wrong_family = {
+        "controller_family": "shared_ddqn_legacy",
+        "feature_dim": 3,
+        "hidden_size": 4,
+        "hidden": 4,
+    }
+    net.save_bundle(str(tmp_path), wrong_family)
+    with pytest.raises(ValueError, match="controller_family"):
+        PhaseScoringDDQN.load_bundle(str(tmp_path), wrong_family)
+
+    aliases = {
+        "controller_family": "neighbor_phase_ddqn",
+        "feature_dim": 3,
+        "hidden_size": 4,
+        "hidden": 5,
+    }
+    net.save_bundle(str(tmp_path), aliases)
+    with pytest.raises(ValueError, match="hidden alias"):
+        PhaseScoringDDQN.load_bundle(str(tmp_path), aliases)
+
+
 def test_synthetic_updates_remain_finite_and_reduce_loss():
     net = PhaseScoringDDQN(4, hidden=16, lr=1e-2, seed=3,
                            grad_clip=10.0, huber_delta=1.0)
