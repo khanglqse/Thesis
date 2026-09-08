@@ -9,6 +9,7 @@ import time
 
 import yaml
 
+from traffic_rl.eval.network_metrics import NetworkMetricsObserver
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.engine import CityFlowEngine
 from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
@@ -43,6 +44,10 @@ def _make_env_factory(manifest, resolved, output_dir, controller_family):
     else:
         encoder = ObservationEncoder(
             roadnet, count_norm=preprocessing["count_norm"], state_mode="basic")
+    lane_to_node = {}
+    for node_id in roadnet.signalized_ids():
+        for lane_id in roadnet.incoming_lanes(node_id):
+            lane_to_node[lane_id] = node_id
     runtime_dir = output_dir / "runtime-configs"
 
     def factory(case, horizon_seconds):
@@ -59,6 +64,12 @@ def _make_env_factory(manifest, resolved, output_dir, controller_family):
         config_path = runtime_dir / (case["case_id"] + ".json")
         _write_json(config_path, run_config)
         reward = resolved["reward"]
+        observer = NetworkMetricsObserver(
+            int(case["scheduled_vehicles"]), step_seconds=1.0,
+            lane_to_node=lane_to_node,
+            spillback_thresholds=dict(
+                (lane_id, preprocessing["capacity_norm"])
+                for lane_id in lane_to_node))
         return MultiAgentTrafficEnv(
             roadnet, CityFlowEngine(str(config_path)),
             action_interval=int(simulation["action_interval"]),
@@ -71,6 +82,7 @@ def _make_env_factory(manifest, resolved, output_dir, controller_family):
             queue_weight=float(reward["queue_weight"]),
             downstream_block_weight=float(reward["downstream_block_weight"]),
             switch_penalty=float(reward["switch_penalty"]),
+            network_metric_observer=observer,
             scheduled_vehicles=int(case["scheduled_vehicles"]))
 
     return factory

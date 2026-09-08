@@ -4,6 +4,57 @@ from scripts import train_haichau_network
 from scripts.train_haichau_network import _pilot_profile
 
 
+def test_env_factory_wires_fresh_network_metrics_observer(monkeypatch, tmp_path):
+    class FakeRoadNet(object):
+        def signalized_ids(self):
+            return ["signal-a", "signal-b"]
+
+        def incoming_lanes(self, node_id):
+            return {"signal-a": ["lane-a0", "lane-a1"],
+                    "signal-b": ["lane-b0"]}[node_id]
+
+    captured = []
+
+    class FakeEnv(object):
+        def __init__(self, *args, **kwargs):
+            captured.append(kwargs)
+
+    monkeypatch.setattr(train_haichau_network.RoadNet, "load",
+                        lambda *args, **kwargs: FakeRoadNet())
+    monkeypatch.setattr(train_haichau_network, "PhaseFeatureEncoder",
+                        lambda *args, **kwargs: object())
+    monkeypatch.setattr(train_haichau_network, "CityFlowEngine",
+                        lambda *args, **kwargs: object())
+    monkeypatch.setattr(train_haichau_network, "MultiAgentTrafficEnv", FakeEnv)
+    manifest = {
+        "network": {"path": "network.json"},
+        "phase_contract": {"path": "phases.json", "sha256": "a" * 64},
+        "preprocessing": {"count_norm": 20, "capacity_norm": 12},
+        "simulation": {"action_interval": 10, "yellow_time": 3,
+                       "min_green": 10, "maximum_red": 120},
+    }
+    resolved = {"reward": {"queue_weight": 1.0,
+                           "downstream_block_weight": 0.2,
+                           "switch_penalty": 0.05}}
+    factory = train_haichau_network._make_env_factory(
+        manifest, resolved, tmp_path, "neighbor_phase_ddqn")
+    case = {"case_id": "validation_normal_demand31", "sim_seed": 311,
+            "flow_path": "flow.json", "scheduled_vehicles": 7509}
+
+    factory(case, 3600)
+    factory(case, 3600)
+
+    first = captured[0]["network_metric_observer"]
+    second = captured[1]["network_metric_observer"]
+    assert first is not second
+    assert first.scheduled_vehicles == 7509
+    assert first.step_seconds == 1.0
+    assert first.lane_to_node == {
+        "lane-a0": "signal-a", "lane-a1": "signal-a", "lane-b0": "signal-b"}
+    assert first.spillback_thresholds == {
+        "lane-a0": 12.0, "lane-a1": 12.0, "lane-b0": 12.0}
+
+
 def test_makefile_exposes_all_pinned_training_modes():
     makefile = open("Makefile").read()
     for mode in ("smoke", "pilot", "final"):
