@@ -1,0 +1,19 @@
+{
+  "eligible_for_test_evaluation": false,
+  "score": {
+    "completion_evidence_complete": true,
+    "eligible": false,
+    "max_completion_degradation": 0.0,
+    "mean_regret": 0.43196757067104613,
+    "normal_regret": 0.44863940089106424,
+    "scenario_regrets": {
+      "am_peak": 0.4375790861740426,
+      "normal": 0.44863940089106424,
+      "pm_peak": 0.4096842249480314
+    },
+    "training_step": 3,
+    "worst_regret": 0.44863940089106424
+  },
+  "selected_checkpoint": "step-3",
+  "status": "ineligible_negative_result"
+}

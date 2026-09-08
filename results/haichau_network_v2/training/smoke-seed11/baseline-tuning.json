@@ -1,0 +1,381 @@
+{
+  "binding": {
+    "generator_config_sha256": "95af5107f528705f52787d2930671932f0241a448f694ab36c7f639d6943f559",
+    "manifest_sha256": "9c5a6ae1c451c6e1673722177d4d25e7394474637cbc03a60246898ea58ccc9d",
+    "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+    "runtime": {
+      "base_image": "cityflowproject/cityflow",
+      "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+      "derived_image_tag": "traffic-rl-cityflow-research:v2",
+      "dockerfile": {
+        "path": "docker/cityflow-research/Dockerfile",
+        "sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf"
+      },
+      "platform": "linux/amd64"
+    },
+    "validation_case_hashes": {
+      "validation_am_peak_demand31": "d3d6b7ce82c96e60e8980aa2336a2f8a0b94c644296b3686fb890127acb3b796",
+      "validation_am_peak_demand32": "1dac871d2fe53c3eae58f82ad23d85639e0df5827b4e3bb9c57061da3696fb10",
+      "validation_normal_demand31": "f99d9c8ab63958542d2770509b0bdaeb54492f380185f0390cf083953fb2f42a",
+      "validation_normal_demand32": "fce987b8497f1ff38139c806a994807e7db837a1a029092df52f9fbc0ed01d1b",
+      "validation_pm_peak_demand31": "fd6f3eec54e01df67fc85d10f3c071d9410df88153baf070b90777c95a45212a",
+      "validation_pm_peak_demand32": "6cfe0f4b56b4e328f9e0d4ef148d55ba337f15096a55b729eaf5f3789bb7ad48"
+    }
+  },
+  "candidates": [
+    {
+      "fixed_green_duration": 20,
+      "mean_queue_integral_vehicle_seconds": 4703.333333333333,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0020222446916076846,
+          "queue_integral_vehicle_seconds": 5554.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0015128593040847202,
+          "queue_integral_vehicle_seconds": 3892.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 4677.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0010070493454179255,
+          "queue_integral_vehicle_seconds": 5364.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0015128593040847202,
+          "queue_integral_vehicle_seconds": 3581.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0010741138560687433,
+          "queue_integral_vehicle_seconds": 5152.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    },
+    {
+      "fixed_green_duration": 25,
+      "mean_queue_integral_vehicle_seconds": 4461.0,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0010111223458038423,
+          "queue_integral_vehicle_seconds": 5147.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0015128593040847202,
+          "queue_integral_vehicle_seconds": 3231.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 4991.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0010070493454179255,
+          "queue_integral_vehicle_seconds": 5133.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 3411.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0010741138560687433,
+          "queue_integral_vehicle_seconds": 4853.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    },
+    {
+      "fixed_green_duration": 30,
+      "mean_queue_integral_vehicle_seconds": 4536.5,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0010111223458038423,
+          "queue_integral_vehicle_seconds": 5178.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0015128593040847202,
+          "queue_integral_vehicle_seconds": 3301.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5106.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0010070493454179255,
+          "queue_integral_vehicle_seconds": 5194.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 3479.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0010741138560687433,
+          "queue_integral_vehicle_seconds": 4961.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    },
+    {
+      "fixed_green_duration": 35,
+      "mean_queue_integral_vehicle_seconds": 4393.166666666667,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0010111223458038423,
+          "queue_integral_vehicle_seconds": 5183.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0015128593040847202,
+          "queue_integral_vehicle_seconds": 3343.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5003.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0010070493454179255,
+          "queue_integral_vehicle_seconds": 4979.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 2892.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0010741138560687433,
+          "queue_integral_vehicle_seconds": 4959.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    },
+    {
+      "fixed_green_duration": 40,
+      "mean_queue_integral_vehicle_seconds": 4322.833333333333,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0010111223458038423,
+          "queue_integral_vehicle_seconds": 4985.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 3201.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5105.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 4910.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 2932.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0010741138560687433,
+          "queue_integral_vehicle_seconds": 4804.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    },
+    {
+      "fixed_green_duration": 45,
+      "mean_queue_integral_vehicle_seconds": 4429.166666666667,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5015.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 3263.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5363.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 4926.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 2957.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5051.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    },
+    {
+      "fixed_green_duration": 50,
+      "mean_queue_integral_vehicle_seconds": 4863.166666666667,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5522.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 3826.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5765.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5306.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 3296.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5464.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    },
+    {
+      "fixed_green_duration": 60,
+      "mean_queue_integral_vehicle_seconds": 5081.333333333333,
+      "rows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5692.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 4092.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5609.0,
+          "scenario": "pm_peak"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5790.0,
+          "scenario": "normal"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 3763.0,
+          "scenario": "am_peak"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "completion_rate": 0.0,
+          "queue_integral_vehicle_seconds": 5542.0,
+          "scenario": "pm_peak"
+        }
+      ]
+    }
+  ],
+  "method": "validation_grid_search",
+  "schema_version": 1,
+  "search_space": {
+    "fixed_green_duration": [
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      60
+    ]
+  },
+  "selected": {
+    "fixed_green_duration": 40
+  },
+  "tuning_sha256": "069f974d96ef84de9f91b2ebf36fe9bec8bf8070c19513b1a48a22cc45d5854f"
+}

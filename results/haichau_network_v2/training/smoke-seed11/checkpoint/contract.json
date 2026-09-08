@@ -1,0 +1,56 @@
+{
+  "action_contract": "phase_rows_with_boolean_mask_v1",
+  "baseline_tuning_sha256": "069f974d96ef84de9f91b2ebf36fe9bec8bf8070c19513b1a48a22cc45d5854f",
+  "capacity_norm": 40.0,
+  "count_norm": 20.0,
+  "feature_dim": 12,
+  "feature_order": [
+    "incoming_queue_mean",
+    "incoming_queue_max",
+    "incoming_running_mean",
+    "outgoing_queue_mean",
+    "outgoing_remaining_capacity_mean",
+    "pressure",
+    "is_current_phase",
+    "elapsed_green",
+    "upstream_queue_mean",
+    "downstream_queue_mean",
+    "time_since_service",
+    "movement_count"
+  ],
+  "foundation_verification": {
+    "cases": 30,
+    "controlled_signals": 53,
+    "generator_config_sha256": "95af5107f528705f52787d2930671932f0241a448f694ab36c7f639d6943f559",
+    "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+    "protocol_version": 2,
+    "route_families": 1418,
+    "runtime_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "selectable_green_phases": 107,
+    "split_counts": {
+      "test": 15,
+      "train": 9,
+      "validation": 6
+    },
+    "status": "verified",
+    "transition_phases": 127
+  },
+  "generator_config_sha256": "95af5107f528705f52787d2930671932f0241a448f694ab36c7f639d6943f559",
+  "hidden": 128,
+  "manifest_sha256": "9c5a6ae1c451c6e1673722177d4d25e7394474637cbc03a60246898ea58ccc9d",
+  "max_green": 3,
+  "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+  "obs_schema_version": 2,
+  "phase_contract_schema_version": 1,
+  "phase_contract_sha256": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae",
+  "runtime": {
+    "base_image": "cityflowproject/cityflow",
+    "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "derived_image_tag": "traffic-rl-cityflow-research:v2",
+    "dockerfile": {
+      "path": "docker/cityflow-research/Dockerfile",
+      "sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf"
+    },
+    "platform": "linux/amd64"
+  }
+}

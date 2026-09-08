@@ -1,0 +1,92 @@
+{
+  "step-3": {
+    "rows": [
+      {
+        "baseline_completion": 0.0010111223458038423,
+        "baseline_queue": 4985.0,
+        "candidate_completion": 0.0020222446916076846,
+        "candidate_queue": 7003.0,
+        "case_id": "validation_normal_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": true,
+        "fresh_candidate": true,
+        "scenario": "normal",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.0,
+        "baseline_queue": 3201.0,
+        "candidate_completion": 0.0015128593040847202,
+        "candidate_queue": 4201.0,
+        "case_id": "validation_am_peak_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": true,
+        "fresh_candidate": true,
+        "scenario": "am_peak",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.0,
+        "baseline_queue": 5105.0,
+        "candidate_completion": 0.0,
+        "candidate_queue": 6729.0,
+        "case_id": "validation_pm_peak_demand31",
+        "demand_seed": 31,
+        "fresh_baseline": true,
+        "fresh_candidate": true,
+        "scenario": "pm_peak",
+        "sim_seed": 131
+      },
+      {
+        "baseline_completion": 0.0,
+        "baseline_queue": 4910.0,
+        "candidate_completion": 0.0010070493454179255,
+        "candidate_queue": 7328.0,
+        "case_id": "validation_normal_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": true,
+        "fresh_candidate": true,
+        "scenario": "normal",
+        "sim_seed": 132
+      },
+      {
+        "baseline_completion": 0.0,
+        "baseline_queue": 2932.0,
+        "candidate_completion": 0.0,
+        "candidate_queue": 4582.0,
+        "case_id": "validation_am_peak_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": true,
+        "fresh_candidate": true,
+        "scenario": "am_peak",
+        "sim_seed": 132
+      },
+      {
+        "baseline_completion": 0.0010741138560687433,
+        "baseline_queue": 4804.0,
+        "candidate_completion": 0.0010741138560687433,
+        "candidate_queue": 7212.0,
+        "case_id": "validation_pm_peak_demand32",
+        "demand_seed": 32,
+        "fresh_baseline": true,
+        "fresh_candidate": true,
+        "scenario": "pm_peak",
+        "sim_seed": 132
+      }
+    ],
+    "score": {
+      "completion_evidence_complete": true,
+      "eligible": false,
+      "max_completion_degradation": 0.0,
+      "mean_regret": 0.43196757067104613,
+      "normal_regret": 0.44863940089106424,
+      "scenario_regrets": {
+        "am_peak": 0.4375790861740426,
+        "normal": 0.44863940089106424,
+        "pm_peak": 0.4096842249480314
+      },
+      "training_step": 3,
+      "worst_regret": 0.44863940089106424
+    }
+  }
+}

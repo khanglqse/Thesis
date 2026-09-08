@@ -1,0 +1,90 @@
+{
+  "baseline": {
+    "controller": "validation_tuned_fixed",
+    "search_green_durations": [
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      60
+    ]
+  },
+  "baseline_tuning_sha256": "069f974d96ef84de9f91b2ebf36fe9bec8bf8070c19513b1a48a22cc45d5854f",
+  "exploration": {
+    "epsilon_decay_decisions": 10000,
+    "epsilon_end": 0.05,
+    "epsilon_start": 1.0
+  },
+  "generator_config_sha256": "95af5107f528705f52787d2930671932f0241a448f694ab36c7f639d6943f559",
+  "learning_seed": 11,
+  "manifest_protocol_version": 2,
+  "manifest_sha256": "9c5a6ae1c451c6e1673722177d4d25e7394474637cbc03a60246898ea58ccc9d",
+  "mode": "smoke",
+  "model": {
+    "feature_dim": 12,
+    "gamma": 0.99,
+    "hidden": 128,
+    "lr": 0.0003,
+    "n_step": 3
+  },
+  "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+  "optimizer": {
+    "batch_size": 128,
+    "buffer_capacity": 200000,
+    "grad_clip": 10.0,
+    "huber_delta": 1.0,
+    "target_sync": 500,
+    "train_start": 2000
+  },
+  "reward": {
+    "downstream_block_weight": 0.2,
+    "queue_weight": 1.0,
+    "switch_penalty": 0.05
+  },
+  "run": {
+    "episodes": 3,
+    "eval_every": 3,
+    "horizon_seconds": 120,
+    "require_optimizer_updates": true,
+    "train_start": 512
+  },
+  "runtime": {
+    "base_image": "cityflowproject/cityflow",
+    "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "derived_image_tag": "traffic-rl-cityflow-research:v2",
+    "dockerfile": {
+      "path": "docker/cityflow-research/Dockerfile",
+      "sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf"
+    },
+    "platform": "linux/amd64"
+  },
+  "schema_version": 2,
+  "simulation": {
+    "action_interval": 10,
+    "maximum_red": 180,
+    "min_green": 20,
+    "yellow_time": 3
+  },
+  "tiers": {
+    "final": {
+      "episodes": 80,
+      "eval_every": 5,
+      "horizon_seconds": 3600
+    },
+    "pilot": {
+      "episodes": 12,
+      "eval_every": 4,
+      "horizon_seconds": 3600
+    },
+    "smoke": {
+      "episodes": 3,
+      "eval_every": 3,
+      "horizon_seconds": 120,
+      "require_optimizer_updates": true,
+      "train_start": 512
+    }
+  }
+}
