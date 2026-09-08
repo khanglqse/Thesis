@@ -1,4 +1,5 @@
 import json
+import hashlib
 
 from traffic_rl.report.haichau_network import (
     build_tables,
@@ -47,6 +48,24 @@ def _summary():
                     "queue_difference_vs_tuned_fixed": _effect(-20.0, -25.0, -15.0, 120.0),
                 },
             },
+            "max_pressure": {
+                "normal": {
+                    "queue": {"mean": 90.0},
+                    "completion_rate": {"mean": 0.96},
+                },
+            },
+            "hysteretic_mp": {
+                "normal": {
+                    "queue": {"mean": 91.0},
+                    "completion_rate": {"mean": 0.96},
+                },
+            },
+            "shared_ddqn_legacy": {
+                "normal": {
+                    "queue": {"mean": 93.0},
+                    "completion_rate": {"mean": 0.95},
+                },
+            },
         },
         "acceptance": {
             "accepted": True,
@@ -81,10 +100,40 @@ def test_claim_validator_rejects_success_when_acceptance_failed():
 
 
 def test_artifacts_record_exact_summary_hash_and_command(tmp_path):
-    written = write_artifacts(_summary(), tmp_path, command="build-test")
-    assert (tmp_path / "haichau_network_results.tex").is_file()
-    assert (tmp_path / "paired-queue-difference.png").is_file()
+    thesis = tmp_path / "thesis.tex"
+    thesis.write_text("thesis fixture")
+    output = tmp_path / "generated"
+    written = write_artifacts(
+        _summary(), output, command="build-test", thesis_path=thesis)
+    assert (output / "haichau_network_results.tex").is_file()
+    assert (output / "haichau_controller_comparison.tex").is_file()
+    assert (output / "paired-queue-difference.png").is_file()
     sidecar = json.loads(
-        (tmp_path / "paired-queue-difference.png.provenance.json").read_text())
+        (output / "paired-queue-difference.png.provenance.json").read_text())
     assert sidecar["summary_sha256"] == written["summary_sha256"]
     assert sidecar["generation_command"] == "build-test"
+    assert written["thesis_source_sha256"] == hashlib.sha256(
+        thesis.read_bytes()).hexdigest()
+    assert isinstance(written["artifacts"], dict)
+    for name, expected in written["artifacts"].items():
+        assert hashlib.sha256((output / name).read_bytes()).hexdigest() == expected
+
+
+def test_controller_comparison_table_includes_every_required_controller():
+    table = build_tables(_summary())["controller_comparison"]
+    for name in (
+            "Tuned fixed", "Max-Pressure", "Hysteretic Max-Pressure",
+            "Shared DDQN legacy", "Neighbor phase DDQN"):
+        assert name in table
+
+
+def test_artifact_generation_removes_stale_output(tmp_path):
+    thesis = tmp_path / "thesis.tex"
+    thesis.write_text("thesis fixture")
+    output = tmp_path / "generated"
+    output.mkdir()
+    (output / "stale-table.tex").write_text("unsupported old result")
+
+    write_artifacts(_summary(), output, "build-test", thesis_path=thesis)
+
+    assert not (output / "stale-table.tex").exists()

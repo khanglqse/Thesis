@@ -16,7 +16,7 @@
   ],
   "gates": {
     "acceptance_reported": {
-      "detail": "frozen summary.json is missing",
+      "detail": "verified campaign rows or frozen summary.json are missing",
       "evidence": {},
       "passed": false
     },
@@ -26,25 +26,24 @@
       "passed": false
     },
     "five_learning_seeds": {
-      "detail": "five validation-eligible checkpoint contracts are required",
+      "detail": "all learned runs require full hash-bound checkpoint contracts",
       "evidence": {
-        "checkpoints": [],
-        "seeds": []
+        "cells": []
       },
       "passed": false
     },
     "fresh_matched_runs": {
-      "detail": "campaign verification failed: campaign-manifest.json is missing",
+      "detail": "campaign verification failed: frozen-protocol.json is missing",
       "evidence": {},
       "passed": false
     },
     "hierarchical_statistics": {
-      "detail": "frozen summary.json is missing",
+      "detail": "verified campaign rows or frozen summary.json are missing",
       "evidence": {},
       "passed": false
     },
     "horizon_complete": {
-      "detail": "campaign verification failed: campaign-manifest.json is missing",
+      "detail": "campaign verification failed: frozen-protocol.json is missing",
       "evidence": {},
       "passed": false
     },
@@ -66,12 +65,12 @@
       "passed": false
     },
     "scenario_coverage": {
-      "detail": "campaign verification failed: campaign-manifest.json is missing",
+      "detail": "campaign verification failed: frozen-protocol.json is missing",
       "evidence": {},
       "passed": false
     },
     "thesis_artifacts": {
-      "detail": "summary-derived thesis manifest/PDF is missing",
+      "detail": "summary-derived thesis artifact/release manifests are missing",
       "evidence": {},
       "passed": false
     },
@@ -81,7 +80,7 @@
       "passed": false
     }
   },
-  "generated_at": "2026-09-08T05:54:08.921027+00:00",
+  "generated_at": "2026-09-08T06:41:34.117296+00:00",
   "protocol_path": "results/haichau_network_v2/final/frozen-protocol.json",
-  "verification_version": 2
+  "verification_version": 3
 }

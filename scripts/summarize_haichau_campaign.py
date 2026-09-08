@@ -45,9 +45,24 @@ def _csv_rows(summary):
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--campaign-dir", default="results/haichau_network_v2/final")
+    parser.add_argument(
+        "--protocol", default="results/haichau_network_v2/final/frozen-protocol.json")
     args = parser.parse_args(argv)
     campaign_dir = Path(args.campaign_dir)
-    summary = aggregate_campaign(_load_runs(campaign_dir))
+    protocol = json.loads(Path(args.protocol).read_text())
+    rules = protocol.get("acceptance_rules", {})
+    summary = aggregate_campaign(
+        _load_runs(campaign_dir),
+        required_learning_seeds=rules.get("required_learning_seeds"),
+        required_regimes=rules.get("required_regimes", ("normal", "am_peak", "pm_peak")),
+        minimum_learning_seeds=rules.get("minimum_learning_seeds", 5),
+        minimum_demand_units=rules.get("minimum_demand_units", 1),
+        normal_point_limit=rules.get("normal_point_limit", 0.0),
+        normal_ci_margin_fraction=rules.get("normal_ci_margin_fraction", 0.05),
+        peak_ci_upper_limit=rules.get("peak_ci_upper_limit", 0.0),
+        completion_degradation_limit=rules.get(
+            "completion_degradation_limit", 0.02),
+    )
     document = {
         "study_scope": {
             "controlled_signals": 53,

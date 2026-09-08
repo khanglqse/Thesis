@@ -8,15 +8,14 @@ import shutil
 from pathlib import Path
 
 from traffic_rl.eval.network_campaign import verify_campaign
-
-
-DEMAND_LABEL = "synthetic network demand constrained by Da Nang evidence"
-METRIC_KEYS = (
-    "queue_integral_vehicle_seconds", "completion_rate", "arrived",
-    "running", "pending",
+from traffic_rl.eval.network_replay import (
+    METRIC_KEYS,
+    validate_network as _validate_network,
+    validate_replay,
 )
 
 
+DEMAND_LABEL = "synthetic network demand constrained by Da Nang evidence"
 def _sha256(path):
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -29,46 +28,9 @@ def _write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
-def _validate_network(network):
-    nodes = network.get("nodes", [])
-    if network.get("controlled_signals") != 53 or len(nodes) != 53:
-        raise ValueError("offline network must contain exactly 53 controlled signals")
-    node_ids = [node.get("id") for node in nodes]
-    if None in node_ids or len(set(node_ids)) != 53:
-        raise ValueError("offline network node IDs must be present and unique")
-    known = set(node_ids)
-    for link in network.get("links", []):
-        if link.get("source") not in known or link.get("target") not in known:
-            raise ValueError("offline network link references an unknown node")
-    return known
-
-
-def _validate_replay(run, metrics, replay, node_ids):
-    if replay.get("sample_seconds") != 5:
-        raise ValueError("replay frames must use a five-second sample interval")
-    frames = replay.get("frames", [])
-    if not frames or len(frames) > run["horizon_steps"] // 5 + 1:
-        raise ValueError("replay frame count exceeds its bounded horizon")
-    times = [int(frame.get("t", -1)) for frame in frames]
-    if times != sorted(set(times)) or any(
-            right - left != 5 for left, right in zip(times, times[1:])):
-        raise ValueError("replay frame times must be unique five-second samples")
-    if times[0] < 0 or times[-1] > run["horizon_steps"]:
-        raise ValueError("replay frame time is outside the run horizon")
-    for frame in frames:
-        states = frame.get("nodes", {})
-        if set(states) != node_ids:
-            raise ValueError("every replay frame must contain all 53 signal states")
-        for state in states.values():
-            if float(state.get("queue", -1)) < 0 or state.get("phase") is None:
-                raise ValueError("replay node state requires queue and phase")
-        for vehicle in frame.get("vehicles", []):
-            if vehicle.get("x") is None or vehicle.get("y") is None:
-                raise ValueError("visible vehicle requires x and y")
-    replay_metrics = replay.get("metrics", {})
-    for key in METRIC_KEYS:
-        if key in metrics and replay_metrics.get(key) != metrics[key]:
-            raise ValueError("replay metric mismatch: %s" % key)
+def _canonical_hash(value):
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
@@ -87,6 +49,7 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
 
     network = json.loads(network_path.read_text())
     node_ids = _validate_network(network)
+    network_sha256 = _sha256(network_path)
     summary_path = campaign_dir / "summary.json"
     if not summary_path.is_file():
         raise ValueError("frozen campaign summary is missing")
@@ -99,19 +62,28 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
     if output_dir.exists() and any(output_dir.iterdir()):
         raise ValueError("refusing to overwrite a non-empty demo directory")
     (output_dir / "replays").mkdir(parents=True, exist_ok=True)
-    _write_json(output_dir / "network.json", network)
+    shutil.copyfile(network_path, output_dir / "network.json")
     _write_json(output_dir / "aggregate-summary.json", summary)
 
     replay_entries = []
+    grids = {}
     for run_id in selected_run_ids:
         run = runs[run_id]
+        expected_network = run.get(
+            "viewer_network_sha256", run.get("network_sha256"))
+        if network_sha256 != expected_network:
+            raise ValueError("viewer network hash does not match campaign run")
         run_dir = campaign_dir / "runs" / run_id
         status = json.loads((run_dir / "status.json").read_text())
         if "replay.json" not in status.get("artifact_sha256", {}):
             raise ValueError("selected run has no hash-verified replay: %s" % run_id)
         metrics = json.loads((run_dir / "metrics.json").read_text())
         replay = json.loads((run_dir / "replay.json").read_text())
-        _validate_replay(run, metrics, replay, node_ids)
+        validate_replay(run, metrics, replay, node_ids)
+        grid = tuple(frame["t"] for frame in replay["frames"])
+        prior_grid = grids.setdefault(run["regime"], grid)
+        if grid != prior_grid:
+            raise ValueError("matched replay pair must use the same full time grid")
         exported = dict(replay)
         exported.update({
             "run_id": run_id,
@@ -169,6 +141,10 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
         "bundle_version": 2,
         "controlled_signals": 53,
         "demand_label": DEMAND_LABEL,
+        "network_sha256": network_sha256,
+        "campaign_manifest_sha256": _sha256(
+            campaign_dir / "campaign-manifest.json"),
+        "summary_sha256": _canonical_hash(summary),
         "network_path": "network.json",
         "aggregate_path": "aggregate-summary.json",
         "replays": replay_entries,

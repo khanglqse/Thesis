@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from traffic_rl.eval.network_metrics import NetworkMetricAccumulator
@@ -8,9 +10,13 @@ from traffic_rl.sim.engine import CityFlowEngine
 def _snapshot(**overrides):
     value = {
         "queued": 0,
+        "scheduled": 0,
+        "inserted": 0,
         "running": 0,
         "departed": 0,
         "arrived": 0,
+        "pending": 0,
+        "removed": 0,
         "travel_times": [],
         "per_node_queue": {},
         "spillback_lanes": [],
@@ -38,16 +44,19 @@ def test_queue_integral_uses_every_simulation_step():
 def test_travel_time_is_reported_with_completion_and_pending_accounts():
     metrics = NetworkMetricAccumulator(step_seconds=1)
     metrics.observe(_snapshot(
-        departed=10,
+        scheduled=10,
+        inserted=8,
+        departed=8,
         arrived=5,
         running=3,
+        pending=2,
         travel_times=[20, 30, 40, 50, 60],
     ))
 
     result = metrics.finalize()
 
     assert result["completion_rate"] == 0.5
-    assert result["pending"] == 5
+    assert result["pending"] == 2
     assert result["running"] == 3
     assert result["travel_time_completed_mean"] == 40
     assert result["travel_time_completed_median"] == 40
@@ -81,6 +90,64 @@ def test_invalid_snapshot_fails_closed():
         metrics.observe({"queued": 1})
     with pytest.raises(ValueError, match="non-negative"):
         metrics.observe(_snapshot(queued=-1))
+
+
+@pytest.mark.parametrize("step_seconds", [math.nan, math.inf, -math.inf])
+def test_non_finite_step_duration_is_rejected(step_seconds):
+    with pytest.raises(ValueError, match="finite and positive"):
+        NetworkMetricAccumulator(step_seconds=step_seconds)
+
+
+@pytest.mark.parametrize("field", ["queued", "running", "departed", "arrived"])
+def test_non_finite_scalar_is_rejected(field):
+    metrics = NetworkMetricAccumulator(step_seconds=1)
+    with pytest.raises(ValueError, match="finite"):
+        metrics.observe(_snapshot(**{field: math.nan}))
+
+
+def test_non_finite_vector_values_and_fractional_counts_are_rejected():
+    metrics = NetworkMetricAccumulator(step_seconds=1)
+    with pytest.raises(ValueError, match="finite"):
+        metrics.observe(_snapshot(per_node_queue={"A": math.inf}))
+    with pytest.raises(ValueError, match="integers"):
+        metrics.observe(_snapshot(
+            scheduled=1.5, inserted=1.5, departed=1.5,
+            arrived=0, running=1.5,
+        ))
+
+
+def test_arrivals_require_one_finite_travel_time_each():
+    metrics = NetworkMetricAccumulator(step_seconds=1)
+    metrics.observe(_snapshot(
+        scheduled=1, inserted=1, departed=1, arrived=1, travel_times=[]))
+    with pytest.raises(ValueError, match="travel_times count"):
+        metrics.finalize()
+
+
+def test_vehicle_accounting_separates_unreleased_running_and_removed():
+    metrics = NetworkMetricAccumulator(step_seconds=1)
+    metrics.observe(_snapshot(
+        scheduled=10, inserted=8, departed=8, arrived=5, running=2,
+        pending=2, removed=1, travel_times=[1, 2, 3, 4, 5],
+    ))
+
+    result = metrics.finalize()
+
+    assert result["completion_denominator"] == "scheduled"
+    assert result["completion_rate"] == 0.5
+    assert result["insertion_rate"] == 0.8
+    assert result["pending"] == 2
+    assert result["pending_integral_vehicle_seconds"] == 2
+    assert result["censored_or_unfinished"] == 5
+
+
+def test_vehicle_accounting_must_conserve():
+    metrics = NetworkMetricAccumulator(step_seconds=1)
+    with pytest.raises(ValueError, match=r"scheduled = inserted \+ pending"):
+        metrics.observe(_snapshot(
+            scheduled=10, inserted=8, departed=8, arrived=5, running=2,
+            pending=1, removed=1, travel_times=[1, 2, 3, 4, 5],
+        ))
 
 
 def test_empty_accumulator_reports_no_completed_travel_time():

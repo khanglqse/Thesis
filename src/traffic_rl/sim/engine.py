@@ -51,14 +51,16 @@ class CityFlowEngine(object):
     def network_metric_snapshot(self, lane_to_node=None, spillback_lanes=None,
                                 phase_switches=0, intergreen_seconds=0,
                                 max_red_seconds=0, travel_times=None,
-                                departed=None, arrived=None):
+                                scheduled=None, inserted=None, departed=None,
+                                arrived=None, pending=None, removed=None):
         """Return plain metric inputs without advancing or mutating CityFlow.
 
         CityFlow itself exposes current and finished vehicle counts but not the
-        environment's full scheduled/departed accounting.  The default therefore
-        reports vehicles observed in the network (running + finished).  A campaign
-        environment that tracks unreleased or otherwise censored demand must pass
-        its authoritative ``departed`` and ``arrived`` counters explicitly.
+        environment's full scheduled/inserted accounting.  The default therefore
+        reports only vehicles observed in the network.  A campaign environment
+        must pass authoritative ``scheduled``, ``inserted``/``departed``,
+        ``pending`` and ``removed`` counters when demand is unreleased or a
+        vehicle leaves without arriving.
         """
         waiting = self.lane_waiting_counts()
         per_node = {}
@@ -69,12 +71,27 @@ class CityFlowEngine(object):
         get_finished = getattr(self._eng, "get_finished_vehicle_count", None)
         native_arrived = int(get_finished()) if get_finished is not None else 0
         arrived = native_arrived if arrived is None else int(arrived)
-        departed = running + arrived if departed is None else int(departed)
+        if inserted is not None and departed is not None \
+                and int(inserted) != int(departed):
+            raise ValueError("inserted must equal departed")
+        inserted = inserted if inserted is not None else departed
+        if removed is None:
+            removed = max(int(inserted) - arrived - running, 0) \
+                if inserted is not None else 0
+        inserted = (running + arrived + int(removed)
+                    if inserted is None else int(inserted))
+        departed = inserted
+        scheduled = inserted if scheduled is None else int(scheduled)
+        pending = scheduled - inserted if pending is None else int(pending)
         return {
             "queued": float(sum(waiting.values())),
+            "scheduled": scheduled,
+            "inserted": inserted,
             "running": running,
             "departed": departed,
             "arrived": arrived,
+            "pending": pending,
+            "removed": int(removed),
             "travel_times": list(travel_times or []),
             "per_node_queue": per_node,
             "spillback_lanes": sorted(spillback_lanes or []),

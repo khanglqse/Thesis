@@ -7,6 +7,10 @@ from scripts.export_haichau_replays import export_bundle
 from traffic_rl.eval.network_campaign import expand_runs, run_pending
 
 
+def _digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _network():
     nodes = [
         {"id": "N%02d" % index, "x": index % 9, "y": index // 9,
@@ -24,11 +28,15 @@ def _network():
     }
 
 
-def _campaign(tmp_path, wrong_replay_metric=False):
+def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
+              replay_times=(0, 5, 10)):
+    agent_ids = ["N%02d" % index for index in range(53)]
     manifest = {
         "protocol_version": 2,
-        "network_sha256": "a" * 64,
+        "network_sha256": network_sha256,
         "runtime_digest": "sha256:" + "b" * 64,
+        "controlled_signals": 53,
+        "agent_ids": agent_ids,
         "default_horizon_steps": 10,
         "cases": [{
             "case_id": "test-normal-101", "split": "test", "regime": "normal",
@@ -51,26 +59,61 @@ def _campaign(tmp_path, wrong_replay_metric=False):
         replay_queue = queue + 1 if wrong_replay_metric else queue
         nodes = {"N%02d" % index: {"queue": index % 7, "phase": index % 3}
                  for index in range(53)}
-        return {
-            "resolved_config": {"case_id": run["case_id"]},
-            "metrics": {
+        per_node = dict((node_id, 0.0) for node_id in agent_ids)
+        metrics = {
                 "case_id": run["case_id"],
+                "regime": run["regime"],
                 "controller_id": run["controller_id"],
+                "learning_seed": run["learning_seed"],
+                "demand_seed": run["demand_seed"],
+                "simulator_seed": run["simulator_seed"],
+                "network_sha256": run["network_sha256"],
+                "viewer_network_sha256": run["viewer_network_sha256"],
+                "demand_sha256": run["demand_sha256"],
+                "demand_path": run["demand_path"],
+                "runtime_digest": run["runtime_digest"],
+                "checkpoint_sha256": run.get("checkpoint_sha256"),
+                "checkpoint_contract_sha256": run.get(
+                    "checkpoint_contract_sha256"),
                 "completed_steps": 10,
+                "observed_steps": 10,
+                "observed_seconds": 10,
                 "queue_integral_vehicle_seconds": queue,
-                "completion_rate": 0.95,
+                "queue_integral_vehicle_hours": queue / 3600,
+                "pending_integral_vehicle_seconds": 0.0,
+                "per_node_queue_integral_vehicle_seconds": per_node,
+                "per_node_max_queue": per_node,
+                "spillback_lane_seconds": {},
+                "scheduled": 0, "inserted": 0, "departed": 0,
+                "arrived": 0, "running": 0, "pending": 0, "removed": 0,
+                "censored_or_unfinished": 0,
+                "completion_denominator": "scheduled",
+                "completion_rate": None,
+                "insertion_rate": None,
+                "completed_travel_time_count": 0,
+                "phase_switches": 0,
+                "intergreen_seconds": 0.0,
+                "max_red_seconds": 0.0,
+                "travel_time_completed_mean": None,
+                "travel_time_completed_median": None,
+                "travel_time_completed_p95": None,
                 "fresh_evaluation": True,
-            },
+        }
+        return {
+            "resolved_config": run["resolved_config"],
+            "metrics": metrics,
             "replay": {
                 "sample_seconds": 5,
                 "frames": [
-                    {"t": 0, "nodes": nodes, "vehicles": []},
-                    {"t": 5, "nodes": nodes, "vehicles": []},
-                    {"t": 10, "nodes": nodes, "vehicles": []},
+                    {"t": value, "nodes": nodes, "vehicles": []}
+                    for value in replay_times
                 ],
                 "metrics": {
                     "queue_integral_vehicle_seconds": replay_queue,
-                    "completion_rate": 0.95,
+                    "completion_rate": None,
+                    "arrived": 0,
+                    "running": 0,
+                    "pending": 0,
                 },
             },
             "stdout": "",
@@ -90,9 +133,9 @@ def _campaign(tmp_path, wrong_replay_metric=False):
 
 
 def test_export_reproduces_run_metrics_and_hashes_every_path(tmp_path):
-    campaign_dir, runs = _campaign(tmp_path)
     network_path = tmp_path / "network.json"
     network_path.write_text(json.dumps(_network()))
+    campaign_dir, runs = _campaign(tmp_path, _digest(network_path))
     output = tmp_path / "demo"
 
     manifest = export_bundle(
@@ -117,10 +160,36 @@ def test_export_reproduces_run_metrics_and_hashes_every_path(tmp_path):
 
 
 def test_export_rejects_replay_metric_drift(tmp_path):
-    campaign_dir, runs = _campaign(tmp_path, wrong_replay_metric=True)
     network_path = tmp_path / "network.json"
     network_path.write_text(json.dumps(_network()))
+    campaign_dir, runs = _campaign(
+        tmp_path, _digest(network_path), wrong_replay_metric=True)
     with pytest.raises(ValueError, match="replay metric mismatch"):
+        export_bundle(
+            campaign_dir, tmp_path / "demo", network_path,
+            selected_run_ids=[run["run_id"] for run in runs],
+        )
+
+
+def test_export_rejects_network_unrelated_to_campaign(tmp_path):
+    network_path = tmp_path / "network.json"
+    network_path.write_text(json.dumps(_network()))
+    campaign_dir, runs = _campaign(tmp_path, "a" * 64)
+
+    with pytest.raises(ValueError, match="network hash"):
+        export_bundle(
+            campaign_dir, tmp_path / "demo", network_path,
+            selected_run_ids=[run["run_id"] for run in runs],
+        )
+
+
+def test_export_rejects_replay_that_does_not_cover_full_horizon(tmp_path):
+    network_path = tmp_path / "network.json"
+    network_path.write_text(json.dumps(_network()))
+    campaign_dir, runs = _campaign(
+        tmp_path, _digest(network_path), replay_times=(0,))
+
+    with pytest.raises(ValueError, match="full horizon"):
         export_bundle(
             campaign_dir, tmp_path / "demo", network_path,
             selected_run_ids=[run["run_id"] for run in runs],

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from traffic_rl.eval.network_campaign import expand_runs, run_pending
+from traffic_rl.eval.network_campaign import expand_runs, run_pending, verify_campaign
 
 
 def _manifest():
@@ -11,6 +11,8 @@ def _manifest():
         "protocol_version": 2,
         "network_sha256": "a" * 64,
         "runtime_digest": "sha256:" + "b" * 64,
+        "controlled_signals": 53,
+        "agent_ids": ["N%02d" % index for index in range(53)],
         "default_horizon_steps": 3600,
         "cases": [
             {
@@ -51,13 +53,50 @@ def _write_campaign(path, runs):
 
 
 def _executor(run, run_dir):
+    nodes = dict((node_id, 0.0) for node_id in run["agent_ids"])
     return {
-        "resolved_config": {"case_id": run["case_id"]},
+        "resolved_config": run["resolved_config"],
         "metrics": {
             "case_id": run["case_id"],
+            "regime": run["regime"],
             "controller_id": run["controller_id"],
+            "learning_seed": run["learning_seed"],
+            "demand_seed": run["demand_seed"],
+            "simulator_seed": run["simulator_seed"],
+            "network_sha256": run["network_sha256"],
+            "viewer_network_sha256": run["viewer_network_sha256"],
+            "demand_sha256": run["demand_sha256"],
+            "demand_path": run["demand_path"],
+            "runtime_digest": run["runtime_digest"],
+            "checkpoint_sha256": run.get("checkpoint_sha256"),
+            "checkpoint_contract_sha256": run.get("checkpoint_contract_sha256"),
             "completed_steps": run["horizon_steps"],
+            "observed_steps": run["horizon_steps"],
+            "observed_seconds": run["horizon_steps"],
             "queue_integral_vehicle_seconds": 123.0,
+            "queue_integral_vehicle_hours": 123.0 / 3600,
+            "pending_integral_vehicle_seconds": 0.0,
+            "per_node_queue_integral_vehicle_seconds": nodes,
+            "per_node_max_queue": nodes,
+            "spillback_lane_seconds": {},
+            "scheduled": 0,
+            "inserted": 0,
+            "departed": 0,
+            "arrived": 0,
+            "running": 0,
+            "pending": 0,
+            "removed": 0,
+            "censored_or_unfinished": 0,
+            "completion_denominator": "scheduled",
+            "completion_rate": None,
+            "insertion_rate": None,
+            "completed_travel_time_count": 0,
+            "phase_switches": 0,
+            "intergreen_seconds": 0.0,
+            "max_red_seconds": 0.0,
+            "travel_time_completed_mean": None,
+            "travel_time_completed_median": None,
+            "travel_time_completed_p95": None,
             "fresh_evaluation": True,
         },
         "stdout": "fresh run\n",
@@ -82,6 +121,27 @@ def test_learning_controller_crosses_test_cases_with_learning_seeds():
     assert all(run["evidence_namespace"] == "haichau_network_v2" for run in runs)
 
 
+def test_expanded_run_freezes_resolved_config_and_checkpoint_contract():
+    manifest = _manifest()
+    manifest["controller_configs"] = {
+        "neighbor_phase_ddqn": {"gamma": 0.95, "hidden_size": 64},
+    }
+    manifest["checkpoints"] = [{
+        "controller_id": "neighbor_phase_ddqn",
+        "learning_seed": 11,
+        "path": "checkpoints/seed-11.npz",
+        "sha256": "f" * 64,
+        "checkpoint_contract": {"obs_schema_version": 2},
+    }]
+
+    run = expand_runs(manifest, [11], ["neighbor_phase_ddqn"])[0]
+
+    assert run["resolved_config"]["gamma"] == 0.95
+    assert run["resolved_config"]["simulator_seed"] == 201
+    assert run["checkpoint_sha256"] == "f" * 64
+    assert len(run["checkpoint_contract_sha256"]) == 64
+
+
 def test_resume_rechecks_hash_before_skipping(tmp_path):
     runs = expand_runs(_manifest(), [11], ["tuned_fixed"])
     _write_campaign(tmp_path, runs)
@@ -92,6 +152,57 @@ def test_resume_rechecks_hash_before_skipping(tmp_path):
     metrics_path.write_text("corrupt")
     with pytest.raises(ValueError, match="hash mismatch"):
         run_pending(tmp_path, _executor)
+
+
+def test_resume_and_verify_reject_relabelled_complete_run(tmp_path):
+    runs = expand_runs(_manifest(), [11], ["tuned_fixed"])
+    _write_campaign(tmp_path, runs)
+    assert run_pending(tmp_path, _executor)["completed"] == 2
+
+    runs[0]["demand_sha256"] = "9" * 64
+    runs[0]["simulator_seed"] = 999
+    _write_campaign(tmp_path, runs)
+
+    with pytest.raises(ValueError, match="run spec"):
+        run_pending(tmp_path, _executor)
+    with pytest.raises(ValueError, match="run spec"):
+        verify_campaign(tmp_path)
+
+
+def test_incomplete_network_metric_schema_is_never_marked_complete(tmp_path):
+    run = expand_runs(_manifest(), [11], ["tuned_fixed"])[0]
+    _write_campaign(tmp_path, [run])
+
+    def incomplete_executor(run, run_dir):
+        return {
+            "resolved_config": run["resolved_config"],
+            "metrics": {
+                "case_id": run["case_id"],
+                "regime": run["regime"],
+                "controller_id": run["controller_id"],
+                "learning_seed": run["learning_seed"],
+                "demand_seed": run["demand_seed"],
+                "simulator_seed": run["simulator_seed"],
+                "network_sha256": run["network_sha256"],
+                "viewer_network_sha256": run["viewer_network_sha256"],
+                "demand_sha256": run["demand_sha256"],
+                "demand_path": run["demand_path"],
+                "runtime_digest": run["runtime_digest"],
+                "checkpoint_sha256": run.get("checkpoint_sha256"),
+                "checkpoint_contract_sha256": run.get(
+                    "checkpoint_contract_sha256"),
+                "completed_steps": run["horizon_steps"],
+                "fresh_evaluation": True,
+            },
+        }
+
+    result = run_pending(tmp_path, incomplete_executor)
+
+    assert result["failed"] == 1
+    status = json.loads(
+        (tmp_path / "runs" / run["run_id"] / "status.json").read_text())
+    assert status["status"] == "failed"
+    assert "network metric" in status["error"]
 
 
 def test_incomplete_run_is_rebuilt_and_only_then_marked_complete(tmp_path):

@@ -8,9 +8,19 @@ row, checkpoint or replay into this namespace.
 
 The foundation/model pipeline must first provide a tracked or checksum-verified canonical
 network manifest, a frozen 30-case split, CityFlow image digest and five validation-eligible
-checkpoint contracts for learning seeds 11--15. Record their exact paths and hashes in
+candidate checkpoints for learning seeds 11--15. Record their exact paths and hashes in
 `results/haichau_network_v2/final/frozen-protocol.json`. Do not create that file from
 placeholders.
+
+The frozen protocol also records the ordered 53 agent IDs, hashes for both the executable
+CityFlow roadnet and the viewer projection, the complete resolved config for every
+controller, and checkpoint contracts for both learned controllers at seeds 11--15. Each
+checkpoint contract contains the observation schema version, feature order, normalization,
+hidden size, action contract and compatible network hash. Its acceptance rules declare the
+same five seeds, all three regimes, at least two matched demand units per regime, bootstrap
+seed `20260908`, 10,000 samples, normal point limit 0, normal CI margin 5%, strict peak CI
+upper limit 0 and maximum completion degradation 2%. Every case has a `demand_path` whose
+bytes match its `demand_sha256`.
 
 Prepare the immutable run set from the frozen case manifest, then execute it. Every
 controller command in the case manifest must run a fresh evaluation and print its result
@@ -18,6 +28,7 @@ JSON on the final stdout line.
 
 ```sh
 PYTHONPATH=src python3 scripts/run_haichau_campaign.py \
+  --protocol results/haichau_network_v2/final/frozen-protocol.json \
   --manifest path/to/frozen-case-manifest.json --prepare-only
 PYTHONPATH=src python3 scripts/run_haichau_campaign.py
 PYTHONPATH=src python3 scripts/run_haichau_campaign.py --verify-only
@@ -30,7 +41,14 @@ summary and refuses unsupported claims. A negative acceptance result must remain
 ```sh
 PYTHONPATH=src python3 scripts/build_haichau_thesis_artifacts.py
 tectonic paper/thesis_danang.tex
+PYTHONPATH=src python3 scripts/build_haichau_thesis_artifacts.py \
+  --record-release-only
 ```
+
+The first artifact command replaces its generated directory, so a table from an older
+summary cannot survive. The final command records the hashes of the summary, generated
+manifest, thesis source and compiled PDF. Run the project verifier again after any source,
+figure, table or PDF change.
 
 Choose one matched tuned-fixed/DDQN pair for each of `normal`, `am_peak` and `pm_peak`.
 Export all six run IDs with fallbacks made from the same frozen evidence:
@@ -51,11 +69,17 @@ Open `http://127.0.0.1:8765/` with the network disabled. Confirm **Verified bund
 loaded**, then exercise play/pause, seek, all three regimes and node selection. The browser
 console must have no warning or error.
 
+Every selected replay contains the exact `0, 5, ..., horizon` time grid. The exporter binds
+the viewer network, campaign manifest and aggregate summary hashes; the final verifier
+parses each replay again and compares it with the immutable source run.
+
 Repeat the documented tests, paper build, demo launch and audit from a clean checkout that
 contains only tracked files plus the checksum-verified release inputs. Record the tested
 commit, commands, tool versions and wall time in
 `results/haichau_network_v2/verification/clean-checkout.json`; set `passed` to true only
-after those commands actually succeed. Then run:
+after those commands actually succeed. Its `artifact_sha256` map covers the frozen
+protocol, campaign manifest, summary, generated-artifact manifest, thesis release manifest,
+compiled PDF and demo manifest. Then run:
 
 ```sh
 make test
@@ -74,6 +98,14 @@ The extension is release-ready only when the final command exits zero and its re
 3. If the PDF viewer fails, open `fallbacks/network-overview.png`.
 
 All three files must appear in the demo manifest and pass its SHA-256 check.
+
+### Vehicle accounting shown in the demo and thesis
+
+`scheduled = inserted + pending`, and `inserted = arrived + running + removed`. Completion
+is `arrived / scheduled`; insertion is reported separately. Pending means scheduled demand
+that has not entered the network. Running and removed vehicles remain separate censored
+categories. The metric bundle also reports the pending-demand integral, so boundary blocking
+cannot disappear into the departure denominator.
 
 ## Legacy single-junction defense bundle
 

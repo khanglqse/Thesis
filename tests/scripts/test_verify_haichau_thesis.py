@@ -1,12 +1,21 @@
 import hashlib
 import json
 
+from scripts.export_haichau_replays import export_bundle
 from scripts.verify_haichau_thesis import audit_demo, verify_project
+from traffic_rl.eval.network_campaign import expand_runs, run_pending
+from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
+from traffic_rl.report.haichau_network import write_artifacts, write_release_manifest
 
 
 def _write(path, content):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
+
+
+def _write_bytes(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(content)
 
 
 def _digest(path):
@@ -18,7 +27,7 @@ def _json_digest(value):
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _write_complete_project(root):
+def _write_placeholder_project(root):
     final = root / "results/haichau_network_v2/final"
     network = {
         "controlled_signals": 53,
@@ -171,6 +180,288 @@ def _write_complete_project(root):
     }))
 
 
+def _checkpoint_contract(network_sha256):
+    return {
+        "obs_schema_version": 2,
+        "feature_order": ["phase_pressure", "neighbor_queue"],
+        "normalization": {"queue": 20.0},
+        "hidden_size": 64,
+        "action_contract": {"type": "phase_mask"},
+        "network_compatibility": {"network_sha256": network_sha256},
+    }
+
+
+def _write_bound_project(root):
+    final = root / "results/haichau_network_v2/final"
+    agent_ids = ["N%02d" % index for index in range(53)]
+    roadnet_path = root / "release/roadnet.json"
+    viewer_path = root / "release/viewer-network.json"
+    _write(roadnet_path, json.dumps({"intersections": agent_ids}))
+    viewer = {
+        "controlled_signals": 53,
+        "nodes": [{"id": node_id, "x": index, "y": index % 7}
+                  for index, node_id in enumerate(agent_ids)],
+        "links": [],
+    }
+    _write(viewer_path, json.dumps(viewer))
+    network_sha = _digest(roadnet_path)
+    viewer_sha = _digest(viewer_path)
+    network_manifest = {
+        "controlled_signals": 53,
+        "agent_ids": agent_ids,
+        "artifacts": {
+            "cityflow_roadnet": {
+                "path": str(roadnet_path.relative_to(root)), "sha256": network_sha,
+            },
+            "viewer_network": {
+                "path": str(viewer_path.relative_to(root)), "sha256": viewer_sha,
+            },
+        },
+    }
+    network_manifest_path = root / "release/network-manifest.json"
+    _write(network_manifest_path, json.dumps(network_manifest))
+
+    cases = []
+    for index in range(21):
+        demand_path = root / ("release/demand-train-%02d.json" % index)
+        _write(demand_path, "train-%02d" % index)
+        cases.append({
+            "case_id": "train-%02d" % index, "split": "train",
+            "demand_path": str(demand_path.relative_to(root)),
+            "demand_sha256": _digest(demand_path),
+        })
+    for index in range(3):
+        demand_path = root / ("release/demand-validation-%02d.json" % index)
+        _write(demand_path, "validation-%02d" % index)
+        cases.append({
+            "case_id": "validation-%02d" % index, "split": "validation",
+            "demand_path": str(demand_path.relative_to(root)),
+            "demand_sha256": _digest(demand_path),
+        })
+    for regime_index, regime in enumerate(("normal", "am_peak", "pm_peak")):
+        for demand_index in range(2):
+            demand_path = root / (
+                "release/demand-test-%s-%s.json" % (regime, demand_index))
+            _write(demand_path, "test-%s-%s" % (regime, demand_index))
+            cases.append({
+                "case_id": "test-%s-%s" % (regime, demand_index),
+                "split": "test", "regime": regime,
+                "demand_seed": 200 + regime_index * 10 + demand_index,
+                "simulator_seed": 300 + regime_index * 10 + demand_index,
+                "horizon_steps": 10,
+                "demand_path": str(demand_path.relative_to(root)),
+                "demand_sha256": _digest(demand_path),
+            })
+    case_manifest = {"protocol_version": 2, "cases": cases}
+    case_manifest_path = root / "release/case-manifest.json"
+    _write(case_manifest_path, json.dumps(case_manifest))
+
+    checkpoints = []
+    for controller in ("shared_ddqn_legacy", "neighbor_phase_ddqn"):
+        for seed in range(11, 16):
+            path = root / ("release/%s-%s.npz" % (controller, seed))
+            _write(path, "%s-%s" % (controller, seed))
+            contract = _checkpoint_contract(network_sha)
+            checkpoints.append({
+                "controller_id": controller,
+                "learning_seed": seed,
+                "path": str(path.relative_to(root)),
+                "sha256": _digest(path),
+                "validation_eligible": True,
+                "checkpoint_contract": contract,
+                "checkpoint_contract_sha256": _json_digest(contract),
+            })
+    controller_configs = {
+        controller: {"controller_version": 2}
+        for controller in (
+            "tuned_fixed", "max_pressure", "hysteretic_mp",
+            "shared_ddqn_legacy", "neighbor_phase_ddqn",
+        )
+    }
+    rules = {
+        "required_learning_seeds": [11, 12, 13, 14, 15],
+        "required_regimes": ["normal", "am_peak", "pm_peak"],
+        "minimum_learning_seeds": 5,
+        "minimum_demand_units": 2,
+        "bootstrap_seed": 20260908,
+        "bootstrap_samples": 10000,
+        "normal_point_limit": 0.0,
+        "normal_ci_margin_fraction": 0.05,
+        "peak_ci_upper_limit": 0.0,
+        "completion_degradation_limit": 0.02,
+    }
+    protocol = {
+        "network_manifest_path": str(network_manifest_path.relative_to(root)),
+        "network_manifest_sha256": _digest(network_manifest_path),
+        "case_manifest_path": str(case_manifest_path.relative_to(root)),
+        "case_manifest_sha256": _digest(case_manifest_path),
+        "network_sha256": network_sha,
+        "viewer_network_sha256": viewer_sha,
+        "runtime_digest": "sha256:" + "a" * 64,
+        "agent_ids": agent_ids,
+        "resolved_config": {"step_seconds": 1},
+        "controller_configs": controller_configs,
+        "checkpoints": checkpoints,
+        "acceptance_rules": rules,
+        "code_commit": "fixture-commit",
+    }
+    _write(final / "frozen-protocol.json", json.dumps(protocol))
+
+    expansion_manifest = dict(case_manifest)
+    expansion_manifest.update({
+        "network_sha256": network_sha,
+        "viewer_network_sha256": viewer_sha,
+        "runtime_digest": protocol["runtime_digest"],
+        "controlled_signals": 53,
+        "agent_ids": agent_ids,
+        "resolved_config": protocol["resolved_config"],
+        "controller_configs": controller_configs,
+        "checkpoints": checkpoints,
+    })
+    runs = expand_runs(
+        expansion_manifest, rules["required_learning_seeds"],
+        list(controller_configs))
+    _write(final / "campaign-manifest.json", json.dumps({
+        "campaign_version": 2,
+        "evidence_namespace": "haichau_network_v2",
+        "runs": runs,
+    }))
+
+    replay_nodes = dict((node_id, {"queue": 0, "phase": 0})
+                        for node_id in agent_ids)
+
+    def executor(run, run_dir):
+        base_queue = 100.0
+        if run["controller_id"] == "neighbor_phase_ddqn":
+            base_queue = 110.0 if run["regime"] == "normal" else 90.0
+        elif run["controller_id"] == "shared_ddqn_legacy":
+            base_queue = 98.0
+        elif run["controller_id"] in ("max_pressure", "hysteretic_mp"):
+            base_queue = 95.0
+        per_node = dict((node_id, 0.0) for node_id in agent_ids)
+        metrics = {
+            "case_id": run["case_id"], "regime": run["regime"],
+            "controller_id": run["controller_id"],
+            "learning_seed": run["learning_seed"],
+            "demand_seed": run["demand_seed"],
+            "simulator_seed": run["simulator_seed"],
+            "network_sha256": run["network_sha256"],
+            "viewer_network_sha256": run["viewer_network_sha256"],
+            "demand_sha256": run["demand_sha256"],
+            "demand_path": run["demand_path"],
+            "runtime_digest": run["runtime_digest"],
+            "checkpoint_sha256": run.get("checkpoint_sha256"),
+            "checkpoint_contract_sha256": run.get("checkpoint_contract_sha256"),
+            "completed_steps": 10, "observed_steps": 10, "observed_seconds": 10,
+            "queue_integral_vehicle_seconds": base_queue,
+            "queue_integral_vehicle_hours": base_queue / 3600,
+            "pending_integral_vehicle_seconds": 0.0,
+            "per_node_queue_integral_vehicle_seconds": per_node,
+            "per_node_max_queue": per_node,
+            "spillback_lane_seconds": {},
+            "scheduled": 10, "inserted": 10, "departed": 10,
+            "arrived": 10, "running": 0, "pending": 0, "removed": 0,
+            "censored_or_unfinished": 0,
+            "completion_denominator": "scheduled", "completion_rate": 1.0,
+            "insertion_rate": 1.0, "completed_travel_time_count": 10,
+            "phase_switches": 0, "intergreen_seconds": 0.0,
+            "max_red_seconds": 0.0, "travel_time_completed_mean": 10.0,
+            "travel_time_completed_median": 10.0,
+            "travel_time_completed_p95": 10.0, "fresh_evaluation": True,
+        }
+        return {
+            "resolved_config": run["resolved_config"], "metrics": metrics,
+            "replay": {
+                "sample_seconds": 5,
+                "frames": [
+                    {"t": time, "nodes": replay_nodes, "vehicles": []}
+                    for time in (0, 5, 10)
+                ],
+                "metrics": {
+                    "queue_integral_vehicle_seconds": base_queue,
+                    "completion_rate": 1.0, "arrived": 10,
+                    "running": 0, "pending": 0,
+                },
+            },
+            "stdout": "fixture", "stderr": "",
+        }
+
+    assert run_pending(final, executor)["failed"] == 0
+    rows = []
+    for run in runs:
+        row = dict(run)
+        row.update(json.loads(
+            (final / "runs" / run["run_id"] / "metrics.json").read_text()))
+        rows.append(row)
+    aggregate = aggregate_campaign(
+        rows, required_learning_seeds=rules["required_learning_seeds"],
+        required_regimes=rules["required_regimes"],
+        minimum_learning_seeds=rules["minimum_learning_seeds"],
+        minimum_demand_units=rules["minimum_demand_units"],
+        normal_point_limit=rules["normal_point_limit"],
+        normal_ci_margin_fraction=rules["normal_ci_margin_fraction"],
+        peak_ci_upper_limit=rules["peak_ci_upper_limit"],
+        completion_degradation_limit=rules["completion_degradation_limit"],
+    )
+    summary = {
+        "study_scope": {
+            "controlled_signals": 53,
+            "demand_label": "synthetic network demand constrained by Da Nang evidence",
+            "evidence_namespace": "haichau_network_v2",
+        },
+        "summary": aggregate,
+        "acceptance": evaluate_acceptance(aggregate),
+    }
+    _write(final / "summary.json", json.dumps(summary))
+
+    thesis_path = root / "paper/thesis_danang.tex"
+    pdf_path = root / "paper/thesis_danang.pdf"
+    artifact_dir = root / "paper/generated/haichau_network"
+    _write(thesis_path, "Frozen synthetic network demand result.")
+    write_artifacts(
+        summary, artifact_dir, "fixture-build", thesis_path=thesis_path)
+    _write_bytes(pdf_path, b"%PDF-1.4\n%%EOF\n")
+    write_release_manifest(
+        summary, artifact_dir, thesis_path, pdf_path, "fixture-release")
+
+    fallbacks_dir = root / "release/fallbacks"
+    _write_bytes(fallbacks_dir / "demo-walkthrough.mp4", b"\x00\x00\x00\x18ftypisom")
+    _write_bytes(fallbacks_dir / "result-summary.pdf", b"%PDF-1.4\n%%EOF\n")
+    _write_bytes(fallbacks_dir / "network-overview.png", b"\x89PNG\r\n\x1a\nfixture")
+    selected = []
+    for regime in ("normal", "am_peak", "pm_peak"):
+        selected.append(next(run["run_id"] for run in runs if (
+            run["regime"] == regime and run["controller_id"] == "tuned_fixed")))
+        selected.append(next(run["run_id"] for run in runs if (
+            run["regime"] == regime
+            and run["controller_id"] == "neighbor_phase_ddqn"
+            and run["learning_seed"] == 11)))
+    export_bundle(
+        final, root / "results/haichau_network_v2/demo", viewer_path, selected,
+        {
+            "demo-walkthrough.mp4": fallbacks_dir / "demo-walkthrough.mp4",
+            "result-summary.pdf": fallbacks_dir / "result-summary.pdf",
+            "network-overview.png": fallbacks_dir / "network-overview.png",
+        },
+    )
+
+    release_files = (
+        "results/haichau_network_v2/final/frozen-protocol.json",
+        "results/haichau_network_v2/final/campaign-manifest.json",
+        "results/haichau_network_v2/final/summary.json",
+        "paper/generated/haichau_network/artifact-manifest.json",
+        "paper/generated/haichau_network/thesis-release.json",
+        "paper/thesis_danang.pdf",
+        "results/haichau_network_v2/demo/manifest.json",
+    )
+    _write(root / "results/haichau_network_v2/verification/clean-checkout.json", json.dumps({
+        "passed": True, "commit": "fixture-commit", "commands": ["make test"],
+        "tool_versions": {"python": "fixture"}, "wall_time_seconds": 1,
+        "artifact_sha256": dict((name, _digest(root / name)) for name in release_files),
+    }))
+    return summary
+
+
 def test_final_verifier_lists_missing_requirements(tmp_path):
     report = verify_project(tmp_path)
     assert report["complete"] is False
@@ -179,35 +470,94 @@ def test_final_verifier_lists_missing_requirements(tmp_path):
     assert "network_53_signals" in report["failed_gates"]
 
 
-def test_final_verifier_accepts_complete_hash_valid_negative_result(tmp_path):
-    _write_complete_project(tmp_path)
+def test_final_verifier_rejects_disjoint_placeholder_evidence(tmp_path):
+    _write_placeholder_project(tmp_path)
+
+    report = verify_project(tmp_path)
+
+    assert report["complete"] is False
+    assert "fresh_matched_runs" in report["failed_gates"]
+    assert "hierarchical_statistics" in report["failed_gates"]
+    assert "thesis_artifacts" in report["failed_gates"]
+
+
+def test_hash_bound_negative_result_can_complete_every_release_gate(tmp_path):
+    summary = _write_bound_project(tmp_path)
 
     report = verify_project(tmp_path)
 
     assert report["complete"] is True
-    assert report["failed_gates"] == []
-    assert report["gates"]["acceptance_reported"]["evidence"]["accepted"] is False
-
-
-def test_negative_acceptance_result_is_complete_reporting_not_a_failed_gate(tmp_path):
-    _write(tmp_path / "results/haichau_network_v2/final/summary.json", json.dumps({
-        "study_scope": {
-            "controlled_signals": 53,
-            "demand_label": "synthetic network demand constrained by Da Nang evidence",
-        },
-        "summary": {},
-        "acceptance": {
-            "accepted": False,
-            "normal_point_noninferiority": False,
-            "normal_ci_noninferiority": False,
-            "peak_improvement": False,
-            "completion_preserved": True,
-            "five_learning_seeds": True,
-        },
-    }))
-    report = verify_project(tmp_path)
     assert report["gates"]["acceptance_reported"]["passed"] is True
     assert report["gates"]["acceptance_reported"]["evidence"]["accepted"] is False
+    assert summary["acceptance"]["accepted"] is False
+
+
+def test_mutating_self_declared_summary_cannot_change_frozen_result(tmp_path):
+    _write_bound_project(tmp_path)
+    path = tmp_path / "results/haichau_network_v2/final/summary.json"
+    summary = json.loads(path.read_text())
+    summary["acceptance"]["accepted"] = True
+    path.write_text(json.dumps(summary))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["hierarchical_statistics"]["passed"] is False
+    assert "recompute" in report["gates"]["hierarchical_statistics"]["detail"]
+
+
+def test_rehashed_demo_replay_still_must_match_verified_run(tmp_path):
+    _write_bound_project(tmp_path)
+    demo = tmp_path / "results/haichau_network_v2/demo"
+    manifest_path = demo / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    replay_path = demo / manifest["replays"][0]["path"]
+    replay = json.loads(replay_path.read_text())
+    replay["frames"][1]["nodes"]["N00"]["queue"] = 999
+    replay_path.write_text(json.dumps(replay))
+    manifest["files"][manifest["replays"][0]["path"]] = _digest(replay_path)
+    manifest_path.write_text(json.dumps(manifest))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["offline_demo"]["passed"] is False
+    assert "verified run" in report["gates"]["offline_demo"]["detail"]
+
+
+def test_tampered_thesis_artifact_fails_even_if_file_still_exists(tmp_path):
+    _write_bound_project(tmp_path)
+    table = tmp_path / "paper/generated/haichau_network/haichau_network_results.tex"
+    table.write_text("stale self-declared result")
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["thesis_artifacts"]["passed"] is False
+    assert "hash mismatch" in report["gates"]["thesis_artifacts"]["detail"]
+
+
+def test_malformed_checkpoint_contract_fails_gate_without_crashing(tmp_path):
+    _write_bound_project(tmp_path)
+    path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(path.read_text())
+    contract = protocol["checkpoints"][0]["checkpoint_contract"]
+    contract["hidden_size"] = "not-a-number"
+    protocol["checkpoints"][0]["checkpoint_contract_sha256"] = _json_digest(contract)
+    path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
+
+
+def test_non_object_checkpoint_entry_fails_gate_without_crashing(tmp_path):
+    _write_bound_project(tmp_path)
+    path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(path.read_text())
+    protocol["checkpoints"][0] = None
+    path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
 
 
 def test_offline_demo_rejects_remote_dependency_even_when_hashed(tmp_path):

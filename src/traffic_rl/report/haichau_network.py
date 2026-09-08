@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import shutil
 from pathlib import Path
 
 
@@ -10,6 +11,14 @@ _REGIME_LABELS = {
     "normal": "Normal",
     "am_peak": "AM peak",
     "pm_peak": "PM peak",
+}
+
+_CONTROLLER_LABELS = {
+    "tuned_fixed": "Tuned fixed",
+    "max_pressure": "Max-Pressure",
+    "hysteretic_mp": "Hysteretic Max-Pressure",
+    "shared_ddqn_legacy": "Shared DDQN legacy",
+    "neighbor_phase_ddqn": "Neighbor phase DDQN",
 }
 
 
@@ -64,7 +73,28 @@ def build_tables(summary):
             float(result["completion_rate"]["mean"]),
         ))
     lines.extend((r"\bottomrule", r"\end{tabular}", r"\end{table}"))
-    return {"network_results": "\n".join(lines) + "\n"}
+    comparison = [
+        r"\begin{table}[H]", r"\centering",
+        r"\caption{Complete matched controller comparison on the 53-signal network.}",
+        r"\label{tab:haichau-controller-comparison}",
+        r"\begin{tabular}{llrr}", r"\toprule",
+        r"Controller & Regime & Queue integral & Completion \\", r"\midrule",
+    ]
+    for controller_id in _CONTROLLER_LABELS:
+        for regime in ("normal", "am_peak", "pm_peak"):
+            result = document.get(controller_id, {}).get(regime)
+            if not result:
+                continue
+            comparison.append("%s & %s & %s & %.3f \\\\" % (
+                _CONTROLLER_LABELS[controller_id], _REGIME_LABELS[regime],
+                _format_number(result["queue"]["mean"]),
+                float(result["completion_rate"]["mean"]),
+            ))
+    comparison.extend((r"\bottomrule", r"\end{tabular}", r"\end{table}"))
+    return {
+        "network_results": "\n".join(lines) + "\n",
+        "controller_comparison": "\n".join(comparison) + "\n",
+    }
 
 
 def validate_claims(tex, summary):
@@ -158,24 +188,68 @@ def _write_figures(summary, output_dir, summary_sha256, command):
     for path in (queue_path, output_dir / "paired-queue-difference.pdf",
                  completion_path, output_dir / "completion-rate.pdf"):
         _write_sidecar(path, summary_sha256, command)
-    return [queue_path, completion_path]
+    return [
+        queue_path, output_dir / "paired-queue-difference.pdf",
+        completion_path, output_dir / "completion-rate.pdf",
+    ]
 
 
-def write_artifacts(summary, output_dir, command):
+def _sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def write_artifacts(summary, output_dir, command, thesis_path=None):
     _scope(summary)
     output_dir = Path(output_dir)
+    if output_dir.exists():
+        shutil.rmtree(str(output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
     summary_sha256 = _summary_hash(summary)
-    table_path = output_dir / "haichau_network_results.tex"
-    table_path.write_text(build_tables(summary)["network_results"])
-    _write_sidecar(table_path, summary_sha256, command)
-    figure_paths = _write_figures(
+    tables = build_tables(summary)
+    for key, filename in (
+            ("network_results", "haichau_network_results.tex"),
+            ("controller_comparison", "haichau_controller_comparison.tex")):
+        table_path = output_dir / filename
+        table_path.write_text(tables[key])
+        _write_sidecar(table_path, summary_sha256, command)
+    _write_figures(
         summary, output_dir, summary_sha256, command)
+    artifact_paths = sorted(
+        path for path in output_dir.iterdir() if path.is_file())
     manifest = {
         "summary_sha256": summary_sha256,
         "generation_command": command,
-        "artifacts": [table_path.name] + [path.name for path in figure_paths],
+        "thesis_source_sha256": (
+            _sha256(thesis_path) if thesis_path is not None else None),
+        "artifacts": dict((path.name, _sha256(path)) for path in artifact_paths),
     }
     (output_dir / "artifact-manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    return manifest
+
+
+def write_release_manifest(summary, output_dir, thesis_path, pdf_path, command):
+    """Bind the compiled PDF to the exact summary, source and generated set."""
+    output_dir = Path(output_dir)
+    artifact_manifest = output_dir / "artifact-manifest.json"
+    thesis_path = Path(thesis_path)
+    pdf_path = Path(pdf_path)
+    if not all(path.is_file() for path in (
+            artifact_manifest, thesis_path, pdf_path)):
+        raise ValueError("artifact manifest, thesis source and PDF are required")
+    if not pdf_path.read_bytes().startswith(b"%PDF-"):
+        raise ValueError("compiled thesis is not a PDF payload")
+    manifest = {
+        "summary_sha256": _summary_hash(summary),
+        "artifact_manifest_sha256": _sha256(artifact_manifest),
+        "thesis_source_sha256": _sha256(thesis_path),
+        "pdf_sha256": _sha256(pdf_path),
+        "generation_command": command,
+    }
+    (output_dir / "thesis-release.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return manifest

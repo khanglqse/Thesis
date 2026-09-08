@@ -51,3 +51,33 @@ RED and GREEN commands are recorded here as each task is implemented.
 - `make cf-test`: 1 CityFlow Docker integration test passed (115 deselected).
 - `tectonic paper/thesis_danang.tex`: succeeded; only the pre-existing underfull-box/object warnings remained. The generated PDF was restored after this repeat build because it differed only in generated binary metadata.
 - Current project verifier: exits 1 by design and records the 12 unresolved evidence gates; this is the dependency-safe result until the integrated frozen campaign exists.
+
+## Independent-review remediation
+
+All Critical and Important findings in `/tmp/review-haichau-evaluation-demo.md` are addressed without creating release evidence:
+
+- [x] C1: the verifier now reconstructs the run matrix from the hash-verified case manifest and frozen protocol, verifies runtime/network/checkpoint inputs, recomputes the numeric summary and acceptance decision, and content-hashes thesis/demo/fallback outputs end to end.
+- [x] C2: every completed run stores a canonical full-run-spec digest; resume and verification compare the current campaign entry, persisted run manifest, resolved configuration, metric provenance and checkpoint contract exactly.
+- [x] C3: gates require the exact declared seed set in every required regime, at least five independent learning seeds, declared minimum matched demand units, identical seed coverage and no duplicate seed/case cell.
+- [x] I1/I2: scheduled, inserted/departed, arrived, running, unreleased/pending and removed are explicit; conservation, finite values, all 53 node metrics and completed travel-time counts fail closed.
+- [x] I3: replay network bytes are bound to the frozen viewer hash; frames must be exactly `0,5,...,horizon`; paired grids match; final audit reparses every replay and compares it with its hash-verified source run.
+- [x] I4/M1: artifact generation cleans the output directory and hashes both complete tables, figures, sidecars, source and PDF; the comparison table contains all five controllers.
+
+### Review TDD log
+
+- Metrics RED: 7 failures covered NaN, missing completed travel times, contradictory accounting and conservation. Additional duration RED: 3 failures showed NaN/positive infinity were accepted and negative infinity had the incomplete diagnostic. GREEN: `tests/eval/test_network_metrics.py` — 19 passed.
+- Campaign RED: 3 failures covered missing resolved configuration, stale completed-run relabeling and incomplete network metric schema. GREEN: the campaign suite passes with exact run-spec/resolved-config/metric identity checks.
+- Statistics RED: 5 failures covered non-finite inputs, missing per-regime seeds, unequal seed coverage, duplicate seed/case cells and insufficient demand units. GREEN: gates consume the frozen minimum seed/unit declarations.
+- Replay RED: 2 failures covered an unrelated 53-node topology and a one-frame replay. GREEN: shared exporter/verifier replay validation requires the frozen network and full sampling grid.
+- Reporting RED: 3 failures covered omitted controllers, unhashed artifacts and stale generated files. GREEN: generation replaces a summary-addressed output set and records every artifact hash.
+- Verifier RED: disconnected placeholder evidence was accepted; later adversarial tests exposed summary replay/artifact self-relabeling and a malformed checkpoint entry crash. GREEN: a coherent hash-bound numeric fixture completes with an honestly negative decision, while all mutations fail their gate without crashing.
+
+### Review verification
+
+- Host focused Python suite: 61 passed before the final malformed-entry regression; final rerun recorded below.
+- Live offline UI: a coherent synthetic test fixture at `/tmp/haichau-review-ui` was served on `127.0.0.1:8767` and opened in Chrome. The browser reported `Verified bundle loaded`, 53 controlled signals, and switched from normal to PM peak while loading the corresponding local paired replay files and changing the aggregate result from +10% to -10%. The visual map, controls, selected-node rail and frozen-evidence panel rendered without clipping. HTTP logs contained only localhost assets; the server was stopped afterward.
+- Citation/offline review: the independent review found no citation defect; Tectonic resolved the added primary-source keys. The viewer has no remote import/CDN, and the final manifest must enumerate every local payload.
+- Current project audit remains `complete=false` with all 12 gates blocked by absent integrated frozen artifacts. This is intentional and is not acceptance evidence.
+- Final focused rerun: 68 Python tests passed; focused offline viewer core: 4 Node tests passed.
+- Python 3.6.5 CityFlow container focused compatibility: 52 tests passed; `make cf-test` equivalent: 1 passed, 144 deselected.
+- Final `make test`: 172 passed, 1 failed, 1 deselected. The only failure remains `test_upstream_neighbors_on_haichau`, whose Git-ignored `data/danang/roadnet_haichau.json` input is absent.

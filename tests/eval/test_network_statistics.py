@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from traffic_rl.eval.network_statistics import (
@@ -59,6 +61,11 @@ def test_paired_bootstrap_is_deterministic_and_reports_ordered_bounds():
     assert first[0] <= first[1]
 
 
+def test_paired_bootstrap_rejects_non_finite_data():
+    with pytest.raises(ValueError, match="finite"):
+        paired_bootstrap([1.0, math.nan])
+
+
 def test_peak_gate_requires_ci_below_zero():
     summary = aggregate_campaign(_rows(
         learning_seeds=(11, 12, 13, 14, 15),
@@ -101,3 +108,64 @@ def test_five_seed_gate_counts_candidate_seeds_only():
         row["controller_id"] = "shared_ddqn_legacy"
     result = evaluate_acceptance(aggregate_campaign(rows + learned))
     assert result["five_learning_seeds"] is False
+
+
+def test_each_gated_regime_requires_the_declared_learning_seed_set():
+    rows = _rows(
+        learning_seeds=(11, 12, 13, 14, 15),
+        regimes=("normal", "pm_peak"),
+    )
+    rows = [row for row in rows if not (
+        row["regime"] == "pm_peak"
+        and row["controller_id"] == "neighbor_phase_ddqn"
+        and row["learning_seed"] != 11
+    )]
+
+    result = evaluate_acceptance(aggregate_campaign(
+        rows, required_learning_seeds=(11, 12, 13, 14, 15),
+        required_regimes=("normal", "pm_peak"),
+    ))
+
+    assert result["five_learning_seeds"] is False
+    assert result["peak_improvement"] is False
+    assert result["accepted"] is False
+
+
+def test_learning_seed_case_coverage_must_be_identical():
+    rows = _rows(learning_seeds=(11, 12), demands=(101, 102))
+    rows = [row for row in rows if not (
+        row["controller_id"] == "neighbor_phase_ddqn"
+        and row["learning_seed"] == 12
+        and row["demand_seed"] == 102
+    )]
+
+    with pytest.raises(ValueError, match="identical matched-case coverage"):
+        aggregate_campaign(rows)
+
+
+def test_duplicate_learning_seed_case_cell_is_rejected():
+    rows = _rows(learning_seeds=(11, 12), demands=(101,))
+    duplicate = dict(next(row for row in rows if (
+        row["controller_id"] == "neighbor_phase_ddqn"
+        and row["learning_seed"] == 11
+    )))
+
+    with pytest.raises(ValueError, match="duplicate learning seed/case"):
+        aggregate_campaign(rows + [duplicate])
+
+
+def test_declared_minimum_demand_units_is_an_acceptance_gate():
+    summary = aggregate_campaign(
+        _rows(
+            learning_seeds=(11, 12, 13, 14, 15),
+            regimes=("normal", "am_peak", "pm_peak"),
+            demands=(101,),
+        ),
+        required_learning_seeds=(11, 12, 13, 14, 15),
+        minimum_demand_units=2,
+    )
+
+    result = evaluate_acceptance(summary)
+
+    assert result["minimum_independent_units_met"] is False
+    assert result["accepted"] is False

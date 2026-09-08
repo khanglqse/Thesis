@@ -160,6 +160,12 @@ It writes `results/haichau_network_v2/verification/final-report.json` and exits 
 until the network, split, five checkpoints, fresh matched runs, statistics, paper, offline
 demo and clean-checkout record are all hash-valid.
 
+The verifier recomputes the numeric summary and acceptance decision from the hash-verified
+run metrics. It also requires exact frozen run identity (flow hash, simulator seed,
+checkpoint and resolved config), at least five learning seeds and two matched demand units
+in every gated regime, content hashes for paper/demo artifacts, and full-horizon offline
+replays.
+
 ## Scope: validated vs proposed
 
 The thesis specifies an ambitious **coordination-aware multi-agent RL framework**; what is
