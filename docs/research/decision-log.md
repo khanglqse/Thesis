@@ -267,3 +267,13 @@ Consequence: scale 1.0 may remain only as an explicitly oversaturated stress
 diagnostic. The thesis network experiment continues to represent synthetic
 Hai Chau scalability; capacity calibration does not convert its demand into
 observed district-wide traffic counts.
+
+Implementation rule: a passing `stage-d` summary does not authorize a manual
+YAML edit. `scripts/apply_haichau_capacity_decision.py` must recompute every
+run and scale gate from the completed hash-bound diagnostic artifacts, require
+the exact validation/controller matrix, and apply the highest passing registered
+candidate. It records `72 / scale` as both an exact fraction and deterministic
+decimal. Application requires an explicit `--new-version` and a clean checkout;
+the network preparer runs in a temporary tree before the generator config,
+regenerated cases, manifest, and immutable decision are installed together. The
+bridge may verify its bound validation flows but may not open a test flow.

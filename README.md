@@ -217,6 +217,30 @@ filters the case manifest to the six validation records before opening flows; it
 the test flow paths. Passing calibration authorizes a later pre-final scale decision, not a
 thesis result by itself.
 
+Promote a completed Stage-D campaign through the fail-closed bridge. First validate without
+changing the checkout, then commit the diagnostic evidence so the application command starts
+from a clean tree. Replace the Stage-D path with the completed campaign directory:
+
+```sh
+PYTHONPATH=src python3 scripts/apply_haichau_capacity_decision.py \
+  --stage-d results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030 \
+  --validate-only
+git add results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030
+git commit -m "data: record Hai Chau Stage-D capacity evidence"
+PYTHONPATH=src python3 scripts/apply_haichau_capacity_decision.py \
+  --stage-d results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030 \
+  --new-version
+```
+
+The bridge verifies the exact six validation cases, both seeds and both controllers for every
+registered Stage-D candidate. It recomputes individual and aggregate gates from hash-bound
+results and selects the highest passing candidate. It records the exact rational value of
+`72 / scale`, stages `prepare_haichau_network_v2 --new-version` in a temporary tree, and only
+then installs the updated generator config, regenerated manifest/flows and immutable decision.
+It refuses a dirty checkout, changed evidence or inputs, incomplete matrices, non-diagnostic
+provenance, missing `--new-version`, and an existing decision path. Validation opens only the
+bound validation flows; the source test-flow contents remain sealed.
+
 The verifier recomputes the numeric summary and acceptance decision from the hash-verified
 run metrics. It also requires exact frozen run identity (flow hash, simulator seed,
 checkpoint, code commit, inspected Docker image and resolved config). Each learned family
