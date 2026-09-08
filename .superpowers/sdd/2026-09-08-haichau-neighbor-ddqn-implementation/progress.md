@@ -20,6 +20,8 @@
 - [x] Review I2-I5/M2 code gates: validation grid tuning, mandatory foundation
   verifier, deterministic negative-result checkpoint, audit/status artifacts, and
   smoke optimizer-update assertion
+- [x] Review R2: maximum-red early scheduling/episode peak and end-to-end
+  tuning-inclusive wall-time/profile projection
 
 ## RED/GREEN evidence
 
@@ -60,6 +62,15 @@
   pre-foundation neighbor test reads an ignored local file).
 - Final Python 3.6.5 verification: `44 passed`, with only the known pytest
   `pythonpath` config warning.
+- R2 maximum-red RED reproduced the hidden 198-second peak behind a reported
+  20 seconds on a declared 18-second path. GREEN: early deadline reservation,
+  decision-granularity feasibility, and episode peak tracking pass two- and
+  three-green adversarial tests. A read-only 53-signal/3600-step contract run
+  reports a true peak of 178 seconds against the 180-second bound.
+- R2 timing RED showed tuning time absent from `wall_time_seconds`. GREEN:
+  focused host/Python 3.6 suites each pass 36 tests; summary records foundation,
+  baseline-tuning, training/validation, and measured end-to-end time, while the
+  five-seed profile projects from end-to-end elapsed.
 
 ## Runtime evidence
 
