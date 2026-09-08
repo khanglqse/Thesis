@@ -16,8 +16,9 @@ def _net(tmp_path):
                            "laneLinks": [{"startLaneIndex": 1, "endLaneIndex": 0}]}],
             "trafficLight": {"lightphases": [
                 {"time": 39, "availableRoadLinks": [0]},
-                {"time": 6, "availableRoadLinks": []},
-                {"time": 39, "availableRoadLinks": [1]}]},
+                {"time": 1, "availableRoadLinks": []},
+                {"time": 39, "availableRoadLinks": [1]},
+                {"time": 1, "availableRoadLinks": []}]},
         }],
         "roads": [{"id": "rin", "startIntersection": "X", "endIntersection": "A", "lanes": [{}, {}]},
                   {"id": "rout", "startIntersection": "A", "endIntersection": "Y", "lanes": [{}]}],

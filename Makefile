@@ -46,5 +46,29 @@ haichau-smoke: haichau-image
 		-e HAICHAU_DOCKERFILE_SHA256="$$dockerfile_sha" \
 		-e HAICHAU_IMAGE_PLATFORM="$(HAICHAU_PLATFORM)" \
 		$(HAICHAU_IMAGE) python3 scripts/verify_haichau_foundation.py --engine-smoke
+LEARNING_SEED ?=
 
-.PHONY: cf-run test cf-test cf-smoke haichau-image haichau-smoke
+haichau-foundation-verify: haichau-image
+	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/verify_haichau_foundation.py
+
+haichau-train-smoke: haichau-foundation-verify
+	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
+	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
+		--mode smoke --learning-seed $(LEARNING_SEED)
+
+haichau-train-pilot: haichau-foundation-verify
+	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
+	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
+		--mode pilot --learning-seed $(LEARNING_SEED)
+
+haichau-train-final: haichau-foundation-verify
+	@test -n "$(LEARNING_SEED)" || { echo 'LEARNING_SEED is required'; exit 1; }
+	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
+		--mode final --learning-seed $(LEARNING_SEED)
+
+.PHONY: cf-run test cf-test cf-smoke haichau-image haichau-smoke \
+	haichau-foundation-verify haichau-train-smoke haichau-train-pilot haichau-train-final

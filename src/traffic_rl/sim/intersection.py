@@ -103,3 +103,8 @@ def make_reward(reward_type="pressure"):
     except KeyError:
         raise ValueError("unknown reward_type %r; choose from %s"
                          % (reward_type, sorted(_REWARDS)))
+
+
+def apply_switch_penalty(reward, switched, penalty):
+    """Charge one fixed cost for an accepted phase switch."""
+    return float(reward) - (float(penalty) if switched else 0.0)
