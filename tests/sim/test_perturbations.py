@@ -65,6 +65,15 @@ def test_delegates_lifecycle():
     assert inner.phase["A"] == 2
 
 
+def test_delegates_vehicle_ids_for_ground_truth_accounting():
+    class VehicleEngine(FakeEngine):
+        def vehicle_ids(self):
+            return ["v0", "v1"]
+
+    pe = PerturbedEngine(VehicleEngine(), noise_std=0.5, seed=3)
+    assert pe.vehicle_ids() == ["v0", "v1"]
+
+
 def test_incident_forces_block_phase_in_window():
     inner = FakeEngine()
     pe = PerturbedEngine(inner, incident=("X", 2, 5, 0))

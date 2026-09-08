@@ -42,6 +42,25 @@ retained container's image ID/reference, command, working directory, disabled ne
 project mount and exit state, then requires its stdout JSON to equal the hashed config,
 metrics and replay artifacts. Keep these containers until the final audit succeeds.
 
+Use the freeze CLI only after the ten learned training runs are complete and
+validation-eligible. It accepts an index with exactly the two learned controller IDs and
+the five string seeds `11` through `15`, each mapped to a final-run directory. The
+controller configuration JSON contains `resolved_config`, `controller_configs`, and
+`controller_commands`, with entries for all five controllers. The command reads only
+training/validation evidence, verifies the selected checkpoint bundle, and creates the
+network manifest, case manifest, and protocol together. It refuses an existing final
+directory, hash drift, a non-final/short run, or any test-case reference in selection
+evidence.
+
+```sh
+PYTHONPATH=src python3 scripts/freeze_haichau_protocol.py \
+  --manifest results/haichau_network_v2/experiment-manifest.json \
+  --viewer-network path/to/verified-53-signal-viewer-network.json \
+  --controller-configs path/to/final-controller-configs.json \
+  --training-index path/to/final-training-index.json \
+  --runtime-image registry.example/traffic-rl@sha256:IMMUTABLE_IMAGE_DIGEST
+```
+
 Prepare the immutable run set from the frozen case manifest, then execute it. Every
 controller command in the case manifest must run a fresh evaluation and print its result
 JSON on the final stdout line.

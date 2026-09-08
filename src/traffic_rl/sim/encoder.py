@@ -32,6 +32,10 @@ class ObservationEncoder:
             self.obs_dim = 2 * self.max_in + self.max_out + self.max_green
         elif state_mode == "basic":
             self.obs_dim = self.max_in + self.max_out + self.max_green
+            self.feature_order = (
+                ["incoming_lane_count_%d" % index for index in range(self.max_in)]
+                + ["outgoing_lane_count_%d" % index for index in range(self.max_out)]
+                + ["green_phase_%d" % index for index in range(self.max_green)])
         elif state_mode == "neighbor":
             # basic + 2 mean-pooled upstream-neighbour features (CoLight-lite).
             self.obs_dim = self.max_in + self.max_out + self.max_green + 2

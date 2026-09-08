@@ -5,6 +5,7 @@ import argparse
 import datetime
 import hashlib
 import json
+import math
 import re
 import subprocess
 from pathlib import Path
@@ -20,6 +21,9 @@ from traffic_rl.eval.release_attestation import validate_attestation
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
+from traffic_rl.agents.dqn import SharedDQN
+from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
+from traffic_rl.sim.phase_encoder import FEATURES
 
 
 DEMAND_LABEL = "synthetic network demand constrained by Da Nang evidence"
@@ -39,7 +43,20 @@ REQUIRED_FRONTEND = {
 }
 CHECKPOINT_CONTRACT_FIELDS = {
     "obs_schema_version", "feature_order", "normalization", "hidden_size",
-    "action_contract", "network_compatibility",
+    "action_contract", "network_compatibility", "controller_family",
+}
+ACTION_CONTRACTS = {
+    "neighbor_phase_ddqn": {
+        "type": "phase_rows", "version": 1,
+        "mask_type": "boolean_selectable_green_rows",
+        "padding_actions_selectable": False,
+    },
+    "shared_ddqn_legacy": {
+        "type": "fixed_vector", "version": 1,
+        "mask_type": "boolean_phase_index",
+        "padding_actions_selectable": False,
+        "n_actions": 3,
+    },
 }
 THESIS_ARTIFACTS = {
     "haichau_network_results.tex", "haichau_controller_comparison.tex",
@@ -154,6 +171,10 @@ def _load_cases(root, protocol):
         demand_path = _inside(root, case.get("demand_path"))
         if not demand_path or not demand_path.is_file() or _sha256(demand_path) != demand_hash:
             raise ValueError("case demand artifact hash mismatch: %s" % case_id)
+        scheduled = case.get("scheduled_vehicles")
+        if isinstance(scheduled, bool) or not isinstance(scheduled, int) \
+                or scheduled <= 0:
+            raise ValueError("case scheduled_vehicles must be a positive integer")
         prior = demand_splits.setdefault(demand_hash, split)
         if prior != split:
             raise ValueError("demand artifact appears in multiple splits")
@@ -195,20 +216,55 @@ def _runtime_gate(root, protocol):
         return _gate(False, str(exc))
 
 
-def _checkpoint_contract_valid(contract, protocol):
+def _checkpoint_contract_valid(contract, protocol, controller):
     if not isinstance(contract, dict) or not CHECKPOINT_CONTRACT_FIELDS.issubset(contract):
         return False
     try:
-        return bool(
-            isinstance(contract["feature_order"], list) and contract["feature_order"]
-            and isinstance(contract["normalization"], dict) and contract["normalization"]
-            and int(contract["hidden_size"]) > 0
-            and isinstance(contract["action_contract"], dict)
-            and contract["action_contract"]
-            and isinstance(contract["network_compatibility"], dict)
-            and contract["network_compatibility"].get("network_sha256")
-            == (protocol or {}).get("network_sha256"))
-    except (TypeError, ValueError):
+        features = contract["feature_order"]
+        normalization = contract["normalization"]
+        compatibility = contract["network_compatibility"]
+        compatibility_fields = {
+            "network_sha256": "network_sha256",
+            "phase_contract_sha256": "phase_contract_sha256",
+            "generator_config_sha256": "generator_config_sha256",
+            "manifest_sha256": "experiment_manifest_sha256",
+        }
+        hidden = contract["hidden_size"]
+        if isinstance(hidden, bool) or not isinstance(hidden, int) or hidden <= 0:
+            return False
+        if contract["obs_schema_version"] != 2 \
+                or contract["controller_family"] != controller:
+            return False
+        if (not isinstance(features, list) or not features
+                or any(not isinstance(item, str) or not item for item in features)
+                or len(set(features)) != len(features)):
+            return False
+        if (not isinstance(normalization, dict)
+                or normalization != (protocol or {}).get("normalization")
+                or any(isinstance(value, bool) or not math.isfinite(float(value))
+                       or float(value) <= 0 for value in normalization.values())):
+            return False
+        if controller == "neighbor_phase_ddqn" and features != list(FEATURES):
+            return False
+        if contract["action_contract"] != ACTION_CONTRACTS.get(controller):
+            return False
+        if not isinstance(compatibility, dict) \
+                or set(compatibility) != set(compatibility_fields):
+            return False
+        for contract_field, protocol_field in compatibility_fields.items():
+            value = compatibility.get(contract_field)
+            if (not re.fullmatch(r"[0-9a-f]{64}", str(value or ""))
+                    or value != (protocol or {}).get(protocol_field)):
+                return False
+        aliases = {
+            "hidden": hidden,
+            "count_norm": normalization["count_norm"],
+            "capacity_norm": normalization["capacity_norm"],
+            "network_sha256": compatibility["network_sha256"],
+        }
+        return all(name not in contract or contract[name] == value
+                   for name, value in aliases.items())
+    except (TypeError, ValueError, OverflowError):
         return False
 
 
@@ -229,12 +285,36 @@ def _checkpoint_gate(root, protocol):
         path = _inside(root, entry.get("path"))
         expected = entry.get("sha256")
         contract = entry.get("checkpoint_contract")
+        contract_path = _inside(root, entry.get("contract_path"))
+        contract_file_sha256 = entry.get("contract_file_sha256")
+        stored_contract = None
+        if contract_path and contract_path.is_file() \
+                and contract_file_sha256 \
+                and _sha256(contract_path) == contract_file_sha256:
+            try:
+                stored_contract = _json(contract_path)
+            except (OSError, ValueError):
+                stored_contract = None
+        bundle_valid = False
+        if path and path.is_file() and contract_path \
+                and path.parent == contract_path.parent:
+            try:
+                loaders = {
+                    "shared_ddqn_legacy": SharedDQN,
+                    "neighbor_phase_ddqn": PhaseScoringDDQN,
+                }
+                loaders[controller].load_bundle(str(path.parent), contract)
+                bundle_valid = True
+            except (KeyError, OSError, ValueError, TypeError):
+                bundle_valid = False
         okay = bool(
             controller in LEARNING_CONTROLLERS and seed in REQUIRED_SEEDS
             and cell not in cells and path and path.is_file() and expected
             and _sha256(path) == expected
             and entry.get("validation_eligible") is True
-            and _checkpoint_contract_valid(contract, protocol)
+            and stored_contract == contract
+            and bundle_valid
+            and _checkpoint_contract_valid(contract, protocol, controller)
             and entry.get("checkpoint_contract_sha256") == _canonical_hash(contract))
         valid = valid and okay
         cells.add(cell)

@@ -12,6 +12,11 @@ def test_dims_are_global_max():
     enc = ObservationEncoder(StubNet(), count_norm=10.0)
     assert enc.max_in == 2 and enc.max_out == 2 and enc.max_green == 3
     assert enc.obs_dim == 2 + 2 + 3  # incoming + outgoing + one-hot
+    assert enc.feature_order == [
+        "incoming_lane_count_0", "incoming_lane_count_1",
+        "outgoing_lane_count_0", "outgoing_lane_count_1",
+        "green_phase_0", "green_phase_1", "green_phase_2",
+    ]
 
 def test_encode_normalizes_pads_and_one_hots():
     enc = ObservationEncoder(StubNet(), count_norm=10.0)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from traffic_rl.train.network_replay import NetworkReplayBuffer
+from traffic_rl.train.network_replay import NetworkReplayBuffer, VectorNetworkReplayBuffer
 
 
 def _features(value=0.0):
@@ -29,3 +29,15 @@ def test_replay_overwrite_updates_coverage_and_sample_shapes():
     assert batch["next_masks"].shape == (2, 3)
     assert batch["case_regimes"].shape == (2,)
     assert len(replay) == 2
+
+
+def test_vector_replay_preserves_flat_observation_shape():
+    replay = VectorNetworkReplayBuffer(5, obs_dim=7, n_actions=3, seed=2)
+    mask = np.array([True, True, False])
+    replay.add(np.zeros(7, np.float32), 0, -1, np.ones(7, np.float32),
+               False, mask, "normal")
+
+    batch = replay.sample(1)
+
+    assert batch["features"].shape == (1, 7)
+    assert batch["next_masks"].shape == (1, 3)

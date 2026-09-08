@@ -8,13 +8,14 @@ import time
 
 import numpy as np
 
-from traffic_rl.agents.dqn import NStepAccumulator
+from traffic_rl.agents.dqn import NStepAccumulator, SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.eval.checkpoint_selection import (
     choose_checkpoint, choose_reporting_checkpoint, score_validation)
 from traffic_rl.sim.phase_encoder import FEATURES
 from traffic_rl.train.case_sampler import BalancedCaseSampler
-from traffic_rl.train.network_replay import NetworkReplayBuffer
+from traffic_rl.train.network_replay import (
+    NetworkReplayBuffer, VectorNetworkReplayBuffer)
 
 
 def _write_json(path, value):
@@ -231,23 +232,55 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
     return rows
 
 
-def _checkpoint_contract(manifest, config, max_green, tuning, verification):
+def _checkpoint_contract(manifest, config, max_green, tuning, verification,
+                         controller_family="neighbor_phase_ddqn",
+                         feature_order=None):
     preprocessing = manifest["preprocessing"]
     model = config["model"]
+    manifest_sha256 = canonical_json_sha256(manifest)
+    network_sha256 = manifest["network"]["sha256"]
+    phase_contract_sha256 = manifest["phase_contract"]["sha256"]
+    generator_config_sha256 = manifest["generator_config_sha256"]
+    order = list(FEATURES) if feature_order is None else list(feature_order)
+    action_contract = ({
+        "type": "phase_rows",
+        "version": 1,
+        "mask_type": "boolean_selectable_green_rows",
+        "padding_actions_selectable": False,
+    } if controller_family == "neighbor_phase_ddqn" else {
+        "type": "fixed_vector",
+        "version": 1,
+        "mask_type": "boolean_phase_index",
+        "padding_actions_selectable": False,
+        "n_actions": int(max_green),
+    })
     return {
+        "controller_family": controller_family,
         "obs_schema_version": 2,
-        "feature_order": list(FEATURES),
-        "feature_dim": int(model["feature_dim"]),
+        "feature_order": order,
+        "feature_dim": len(order),
+        "hidden_size": int(model["hidden"]),
+        "normalization": {
+            "count_norm": float(preprocessing["count_norm"]),
+            "capacity_norm": float(preprocessing["capacity_norm"]),
+        },
+        "action_contract": action_contract,
+        "network_compatibility": {
+            "network_sha256": network_sha256,
+            "phase_contract_sha256": phase_contract_sha256,
+            "generator_config_sha256": generator_config_sha256,
+            "manifest_sha256": manifest_sha256,
+        },
+        # Flat aliases remain for readers of pre-release training artifacts.
         "hidden": int(model["hidden"]),
         "count_norm": float(preprocessing["count_norm"]),
         "capacity_norm": float(preprocessing["capacity_norm"]),
         "max_green": int(max_green),
-        "action_contract": "phase_rows_with_boolean_mask_v1",
         "phase_contract_schema_version": 1,
-        "phase_contract_sha256": manifest["phase_contract"]["sha256"],
-        "network_sha256": manifest["network"]["sha256"],
-        "manifest_sha256": canonical_json_sha256(manifest),
-        "generator_config_sha256": manifest["generator_config_sha256"],
+        "phase_contract_sha256": phase_contract_sha256,
+        "network_sha256": network_sha256,
+        "manifest_sha256": manifest_sha256,
+        "generator_config_sha256": generator_config_sha256,
         "runtime": manifest["runtime"],
         "baseline_tuning_sha256": tuning["tuning_sha256"],
         "foundation_verification": verification,
@@ -256,7 +289,7 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification):
 
 def _train_network_impl(env_factory, manifest, config, output_dir,
                         foundation_root, verification, run_start_time,
-                        foundation_verification_seconds):
+                        foundation_verification_seconds, controller_family):
     """Train without opening the manifest's locked test split."""
     if manifest.get("protocol_version") != 2:
         raise ValueError("Hai Chau manifest protocol_version must be 2")
@@ -315,6 +348,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "manifest_sha256": manifest_sha256,
         "foundation_verification": verification,
         "code_commit": _git_sha(foundation_root),
+        "controller_id": controller_family,
+        "mode": config.get("mode"),
         "learning_seed": learning_seed,
     })
 
@@ -338,22 +373,53 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         try:
             observations = env.reset()
             first_agent = env.agent_ids[0]
-            max_green, feature_dim = observations[first_agent].shape
+            observation_shape = observations[first_agent].shape
+            max_green = len(env.action_masks()[first_agent])
+            if controller_family == "neighbor_phase_ddqn":
+                if len(observation_shape) != 2:
+                    raise ValueError("neighbor observation must be phase rows")
+                observed_max_green, feature_dim = observation_shape
+                if observed_max_green != max_green:
+                    raise ValueError("neighbor observation/action dimensions differ")
+            else:
+                if controller_family != "shared_ddqn_legacy" \
+                        or len(observation_shape) != 1:
+                    raise ValueError("legacy observation must be a flat vector")
+                feature_dim = observation_shape[0]
             if network is None:
-                if feature_dim != int(model_config["feature_dim"]):
+                if (controller_family == "neighbor_phase_ddqn"
+                        and feature_dim != int(model_config["feature_dim"])):
                     raise ValueError("environment feature_dim differs from config")
-                network = PhaseScoringDDQN(
-                    feature_dim, hidden=int(model_config["hidden"]),
-                    lr=float(model_config["lr"]), seed=learning_seed,
-                    grad_clip=optimizer.get("grad_clip"),
-                    huber_delta=optimizer.get("huber_delta", 1.0))
-                replay = NetworkReplayBuffer(
-                    int(optimizer["buffer_capacity"]), max_green, feature_dim,
-                    seed=learning_seed)
+                if controller_family == "neighbor_phase_ddqn":
+                    network = PhaseScoringDDQN(
+                        feature_dim, hidden=int(model_config["hidden"]),
+                        lr=float(model_config["lr"]), seed=learning_seed,
+                        grad_clip=optimizer.get("grad_clip"),
+                        huber_delta=optimizer.get("huber_delta", 1.0))
+                    replay = NetworkReplayBuffer(
+                        int(optimizer["buffer_capacity"]), max_green, feature_dim,
+                        seed=learning_seed)
+                    feature_order = list(FEATURES)
+                else:
+                    network = SharedDQN(
+                        feature_dim, max_green, hidden=int(model_config["hidden"]),
+                        lr=float(model_config["lr"]), seed=learning_seed,
+                        grad_clip=optimizer.get("grad_clip"),
+                        huber_delta=optimizer.get("huber_delta", 1.0), dueling=True)
+                    replay = VectorNetworkReplayBuffer(
+                        int(optimizer["buffer_capacity"]), feature_dim, max_green,
+                        seed=learning_seed)
+                    feature_order = getattr(env.encoder, "feature_order", None)
+                    if not feature_order or len(feature_order) != feature_dim:
+                        raise ValueError("legacy encoder feature order is missing")
                 contract = _checkpoint_contract(
-                    manifest, config, max_green, tuning, verification)
-            elif observations[first_agent].shape != (contract["max_green"],
-                                                       contract["feature_dim"]):
+                    manifest, config, max_green, tuning, verification,
+                    controller_family=controller_family,
+                    feature_order=feature_order)
+            elif observations[first_agent].shape != (
+                    ((contract["max_green"], contract["feature_dim"])
+                     if controller_family == "neighbor_phase_ddqn"
+                     else (contract["feature_dim"],))):
                 raise ValueError("environment observation shape drifted across cases")
             expected_agents = manifest["network"].get("controlled_signals")
             if expected_agents is not None and len(env.agent_ids) != int(expected_agents):
@@ -480,11 +546,13 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     except ValueError:
         selected = choose_reporting_checkpoint(scores)
         selection_status = "ineligible_negative_result"
-    final_network = PhaseScoringDDQN.load_bundle(
+    model_class = (PhaseScoringDDQN if controller_family == "neighbor_phase_ddqn"
+                   else SharedDQN)
+    final_network = model_class.load_bundle(
         os.path.join(checkpoints_dir, selected), contract)
     final_checkpoint = os.path.join(output_dir, "checkpoint")
     final_network.save_bundle(final_checkpoint, contract)
-    reloaded = PhaseScoringDDQN.load_bundle(final_checkpoint, contract)
+    reloaded = model_class.load_bundle(final_checkpoint, contract)
 
     reload_verification = None
     if validation_cases:
@@ -574,8 +642,11 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
 
 def train_network(env_factory, manifest, config, output_dir,
                   foundation_root=None, foundation_verifier=None,
-                  run_started_at=None):
+                  run_started_at=None,
+                  controller_family="neighbor_phase_ddqn"):
     """Verify the immutable foundation, then train without opening test cases."""
+    if controller_family not in ("neighbor_phase_ddqn", "shared_ddqn_legacy"):
+        raise ValueError("unknown learned controller family")
     run_start_time = (time.time() if run_started_at is None
                       else float(run_started_at))
     root = os.path.abspath(foundation_root or os.getcwd())
@@ -586,7 +657,7 @@ def train_network(env_factory, manifest, config, output_dir,
     try:
         return _train_network_impl(
             env_factory, manifest, config, output_dir, root, verification,
-            run_start_time, verification_seconds)
+            run_start_time, verification_seconds, controller_family)
     except Exception as exc:
         absolute_output = os.path.abspath(output_dir)
         if os.path.isdir(absolute_output):

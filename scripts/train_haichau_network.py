@@ -12,6 +12,7 @@ import yaml
 from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.engine import CityFlowEngine
 from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
+from traffic_rl.sim.encoder import ObservationEncoder
 from traffic_rl.sim.phase_encoder import PhaseFeatureEncoder
 from traffic_rl.train.network_trainer import resolve_training_config, train_network
 
@@ -24,7 +25,7 @@ def _write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
-def _make_env_factory(manifest, resolved, output_dir):
+def _make_env_factory(manifest, resolved, output_dir, controller_family):
     roadnet_path = ROOT / manifest["network"]["path"]
     phase_contract = manifest.get("phase_contract")
     if not isinstance(phase_contract, dict):
@@ -35,8 +36,12 @@ def _make_env_factory(manifest, resolved, output_dir):
         expected_phase_contract_sha256=phase_contract["sha256"])
     preprocessing = manifest["preprocessing"]
     simulation = manifest["simulation"]
-    encoder = PhaseFeatureEncoder(
-        roadnet, preprocessing["count_norm"], preprocessing["capacity_norm"])
+    if controller_family == "neighbor_phase_ddqn":
+        encoder = PhaseFeatureEncoder(
+            roadnet, preprocessing["count_norm"], preprocessing["capacity_norm"])
+    else:
+        encoder = ObservationEncoder(
+            roadnet, count_norm=preprocessing["count_norm"], state_mode="basic")
     runtime_dir = output_dir / "runtime-configs"
 
     def factory(case, horizon_seconds):
@@ -61,6 +66,7 @@ def _make_env_factory(manifest, resolved, output_dir):
             min_green=int(simulation["min_green"]),
             maximum_red=int(simulation["maximum_red"]),
             encoder=encoder, reward_type="queue_norm",
+            state_mode="basic",
             queue_weight=float(reward["queue_weight"]),
             downstream_block_weight=float(reward["downstream_block_weight"]),
             switch_penalty=float(reward["switch_penalty"]))
@@ -90,6 +96,8 @@ def main(argv=None):
     parser.add_argument("--mode", required=True,
                         choices=("smoke", "pilot", "final"))
     parser.add_argument("--learning-seed", required=True, type=int)
+    parser.add_argument("--controller-family", default="neighbor_phase_ddqn",
+                        choices=("neighbor_phase_ddqn", "shared_ddqn_legacy"))
     parser.add_argument("--manifest",
                         default="results/haichau_network_v2/experiment-manifest.json")
     parser.add_argument("--config", default="configs/haichau_training_v2.yaml")
@@ -104,13 +112,15 @@ def main(argv=None):
     resolved["simulation"] = manifest["simulation"]
     output_dir = (Path(args.output) if args.output else
                   ROOT / "results" / "haichau_network_v2" / "training" /
-                  ("%s-seed%d" % (args.mode, args.learning_seed)))
+                  (("%s-seed%d" if args.controller_family == "neighbor_phase_ddqn"
+                    else "legacy-%s-seed%d") % (args.mode, args.learning_seed)))
     if not output_dir.is_absolute():
         output_dir = ROOT / output_dir
-    env_factory = _make_env_factory(manifest, resolved, output_dir)
+    env_factory = _make_env_factory(
+        manifest, resolved, output_dir, args.controller_family)
     summary = train_network(
         env_factory, manifest, resolved, str(output_dir), foundation_root=str(ROOT),
-        run_started_at=command_start)
+        run_started_at=command_start, controller_family=args.controller_family)
 
     if args.mode == "pilot":
         peak_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
@@ -118,7 +128,9 @@ def main(argv=None):
             summary, args.learning_seed, peak_rss,
             str(output_dir / "summary.json"))
         _write_json(ROOT / "results" / "haichau_network_v2" / "profiling" /
-                    ("pilot-seed%d.json" % args.learning_seed), profile)
+                    (("pilot-seed%d.json" if args.controller_family
+                      == "neighbor_phase_ddqn" else "legacy-pilot-seed%d.json")
+                     % args.learning_seed), profile)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 

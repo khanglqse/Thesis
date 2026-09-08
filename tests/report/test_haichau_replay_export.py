@@ -4,7 +4,7 @@ import json
 import pytest
 
 from scripts.export_haichau_replays import export_bundle
-from traffic_rl.eval.network_campaign import expand_runs, run_pending
+from traffic_rl.eval.network_campaign import CONTROLLERS, expand_runs, run_pending
 from traffic_rl.eval.network_replay import validate_network
 
 
@@ -36,6 +36,8 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
         "protocol_version": 2,
         "network_sha256": network_sha256,
         "viewer_network_sha256": network_sha256,
+        "phase_contract_sha256": "e" * 64,
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
         "runtime_digest": "sha256:" + "b" * 64,
         "runtime_image": "cityflowproject/cityflow@sha256:" + "b" * 64,
         "runtime_image_id": "sha256:" + "b" * 64,
@@ -45,9 +47,36 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
         "controlled_signals": 53,
         "agent_ids": agent_ids,
         "default_horizon_steps": 10,
+        "resolved_config": {
+            "network_path": "roadnet.json",
+            "phase_contract_path": "phase-contract.json",
+            "phase_contract_sha256": "e" * 64,
+            "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
+            "simulation": {
+                "action_interval": 10, "yellow_time": 3,
+                "min_green": 20, "maximum_red": 180,
+            },
+            "reward": {
+                "queue_weight": 1.0, "downstream_block_weight": 0.1,
+                "switch_penalty": 0.05,
+            },
+        },
+        "controller_configs": {
+            "tuned_fixed": {"green_duration": 30},
+            "max_pressure": {"controller_version": 2},
+            "hysteretic_mp": {
+                "min_hold_decisions": 3, "switch_threshold": 2.5,
+            },
+            "shared_ddqn_legacy": {"controller_version": 2},
+            "neighbor_phase_ddqn": {"controller_version": 2},
+        },
+        "controller_commands": dict(
+            (controller, ["python3", "scripts/evaluate_haichau_network.py"])
+            for controller in CONTROLLERS),
         "cases": [{
             "case_id": "test-normal-101", "split": "test", "regime": "normal",
             "demand_seed": 101, "simulator_seed": 201,
+            "scheduled_vehicles": 1000,
             "demand_sha256": "c" * 64,
         }],
     }
@@ -74,6 +103,7 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
                 "learning_seed": run["learning_seed"],
                 "demand_seed": run["demand_seed"],
                 "simulator_seed": run["simulator_seed"],
+                "scheduled_vehicles": run["scheduled_vehicles"],
                 "network_sha256": run["network_sha256"],
                 "viewer_network_sha256": run["viewer_network_sha256"],
                 "demand_sha256": run["demand_sha256"],
@@ -96,12 +126,14 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
                 "per_node_queue_integral_vehicle_seconds": per_node,
                 "per_node_max_queue": per_node,
                 "spillback_lane_seconds": {},
-                "scheduled": 0, "inserted": 0, "departed": 0,
-                "arrived": 0, "running": 0, "pending": 0, "removed": 0,
-                "censored_or_unfinished": 0,
+                "scheduled": run["scheduled_vehicles"],
+                "inserted": 0, "departed": 0,
+                "arrived": 0, "running": 0,
+                "pending": run["scheduled_vehicles"], "removed": 0,
+                "censored_or_unfinished": run["scheduled_vehicles"],
                 "completion_denominator": "scheduled",
-                "completion_rate": None,
-                "insertion_rate": None,
+                "completion_rate": 0.0,
+                "insertion_rate": 0.0,
                 "completed_travel_time_count": 0,
                 "phase_switches": 0,
                 "intergreen_seconds": 0.0,
@@ -122,10 +154,10 @@ def _campaign(tmp_path, network_sha256, wrong_replay_metric=False,
                 ],
                 "metrics": {
                     "queue_integral_vehicle_seconds": replay_queue,
-                    "completion_rate": None,
+                    "completion_rate": 0.0,
                     "arrived": 0,
                     "running": 0,
-                    "pending": 0,
+                    "pending": run["scheduled_vehicles"],
                 },
             },
             "stdout": "",

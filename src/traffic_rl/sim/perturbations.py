@@ -72,6 +72,9 @@ class PerturbedEngine(object):
     def average_travel_time(self):
         return self._inner.average_travel_time()
 
+    def vehicle_ids(self):
+        return self._inner.vehicle_ids()
+
     # --- perturbed observations ---
     def _perturb(self, counts):
         if self.noise_std <= 0.0:

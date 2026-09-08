@@ -2,7 +2,8 @@ import math
 
 import pytest
 
-from traffic_rl.eval.network_metrics import NetworkMetricAccumulator
+from traffic_rl.eval.network_metrics import (
+    NetworkMetricAccumulator, NetworkMetricsObserver)
 from traffic_rl.eval.runner import run_episode
 from traffic_rl.sim.engine import CityFlowEngine
 
@@ -214,6 +215,22 @@ def test_engine_snapshot_accepts_environment_vehicle_accounting():
     assert result["running"] == 3
 
 
+def test_cityflow_vehicle_ids_exclude_vehicles_waiting_to_enter():
+    class NativeEngine(object):
+        def __init__(self):
+            self.include_waiting = None
+
+        def get_vehicles(self, include_waiting):
+            self.include_waiting = include_waiting
+            return ["inserted"]
+
+    engine = CityFlowEngine.__new__(CityFlowEngine)
+    engine._eng = NativeEngine()
+
+    assert engine.vehicle_ids() == ["inserted"]
+    assert engine._eng.include_waiting is False
+
+
 def test_runner_preserves_complete_network_metric_contract():
     final_metrics = {
         "observed_steps": 2,
@@ -257,3 +274,67 @@ def test_runner_preserves_complete_network_metric_contract():
     assert result["queue_integral_vehicle_seconds"] == 12.0
     assert result["travel_time_completed_mean"] == 42.0
     assert result["completion_rate"] == 0.75
+
+
+def test_observer_accounts_vehicles_and_samples_ground_truth_every_step():
+    observer = NetworkMetricsObserver(
+        scheduled_vehicles=3,
+        step_seconds=1,
+        lane_to_node={"in_0": "A"},
+        spillback_thresholds={"in_0": 2},
+    )
+    observer.reset(active_vehicle_ids=["v0"])
+
+    observer.observe(
+        waiting_counts={"in_0": 2, "boundary_0": 1},
+        active_vehicle_ids=["v0", "v1"],
+        phase_switches=1,
+        intergreen_seconds=1,
+        max_red_seconds=4,
+    )
+    observer.observe(
+        waiting_counts={"in_0": 1, "boundary_0": 0},
+        active_vehicle_ids=["v1"],
+        phase_switches=1,
+        intergreen_seconds=1,
+        max_red_seconds=5,
+    )
+
+    result = observer.finalize()
+
+    assert result["observed_steps"] == 2
+    assert result["queue_integral_vehicle_seconds"] == 4
+    assert result["per_node_queue_integral_vehicle_seconds"] == {"A": 3.0}
+    assert result["spillback_lane_seconds"] == {"in_0": 1.0}
+    assert result["scheduled"] == 3
+    assert result["inserted"] == 2
+    assert result["arrived"] == 1
+    assert result["running"] == 1
+    assert result["pending"] == 1
+    assert result["removed"] == 0
+    assert result["completed_travel_time_count"] == 1
+    assert result["travel_time_completed_mean"] == 2
+
+
+def test_observer_reset_clears_prior_episode_and_reappearing_ids_fail_closed():
+    observer = NetworkMetricsObserver(scheduled_vehicles=1, step_seconds=1)
+    observer.reset(active_vehicle_ids=["v0"])
+    observer.observe(waiting_counts={}, active_vehicle_ids=[])
+    with pytest.raises(ValueError, match="reappeared"):
+        observer.observe(waiting_counts={}, active_vehicle_ids=["v0"])
+
+    observer.reset(active_vehicle_ids=[])
+    observer.observe(waiting_counts={}, active_vehicle_ids=[])
+
+    result = observer.finalize()
+    assert result["observed_steps"] == 1
+    assert result["inserted"] == 0
+    assert result["arrived"] == 0
+    assert result["travel_time_completed_mean"] is None
+
+
+def test_observer_rejects_more_insertions_than_scheduled():
+    observer = NetworkMetricsObserver(scheduled_vehicles=1, step_seconds=1)
+    observer.reset(active_vehicle_ids=[])
+    with pytest.raises(ValueError, match="scheduled"):
+        observer.observe(waiting_counts={}, active_vehicle_ids=["v0", "v1"])

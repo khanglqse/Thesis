@@ -21,7 +21,7 @@ class MultiAgentTrafficEnv:
                  reward_type="pressure", state_mode="basic",
                  sim_step_seconds=1.0, maximum_red=180,
                  switch_penalty=0.05, encoder=None, queue_weight=1.0,
-                 downstream_block_weight=0.0):
+                 downstream_block_weight=0.0, network_metric_observer=None):
         self.roadnet = roadnet
         self.engine = engine
         self.action_interval = action_interval
@@ -32,6 +32,7 @@ class MultiAgentTrafficEnv:
         self.switch_penalty = float(switch_penalty)
         self.queue_weight = float(queue_weight)
         self.downstream_block_weight = float(downstream_block_weight)
+        self.network_metric_observer = network_metric_observer
         self.reward_type = reward_type
         self.state_mode = state_mode
         self.sim_step_seconds = float(sim_step_seconds)
@@ -197,6 +198,12 @@ class MultiAgentTrafficEnv:
         else:
             self._active_vehicle_ids = None
             self._seen_vehicle_ids = None
+        if self.network_metric_observer is not None:
+            if self._active_vehicle_ids is None:
+                raise ValueError(
+                    "network_metric_observer requires engine.vehicle_ids()")
+            self.network_metric_observer.reset(
+                active_vehicle_ids=self._active_vehicle_ids)
         self._t = 0
         self._queue_integral_vehicle_seconds = 0.0
         self._episode_max_red_seconds = 0.0
@@ -261,6 +268,14 @@ class MultiAgentTrafficEnv:
                        else self.engine.lane_waiting_counts())
             self._queue_integral_vehicle_seconds += (
                 float(sum(waiting.values())) * self.sim_step_seconds)
+            if self.network_metric_observer is not None:
+                self.network_metric_observer.observe(
+                    waiting_counts=waiting,
+                    active_vehicle_ids=self._active_vehicle_ids,
+                    phase_switches=self._phase_switches,
+                    intergreen_seconds=self._intergreen_vehicle_seconds,
+                    max_red_seconds=self._episode_max_red_seconds,
+                )
         for a in self.agent_ids:
             self._since_switch[a] += n * self.sim_step_seconds
 
@@ -356,6 +371,12 @@ class MultiAgentTrafficEnv:
         completion_rate = None
         if arrived is not None and active_vehicles + arrived > 0:
             completion_rate = float(arrived) / (active_vehicles + arrived)
+        network_metrics = None
+        if self.network_metric_observer is not None:
+            network_metrics = self.network_metric_observer.finalize()
+            active_vehicles = network_metrics["running"]
+            arrived = network_metrics["arrived"]
+            completion_rate = network_metrics["completion_rate"]
         info = {
             "average_travel_time": self.engine.average_travel_time(),
             "vehicle_count": active_vehicles,
@@ -374,4 +395,9 @@ class MultiAgentTrafficEnv:
             "maximum_red_trigger_seconds": dict(self._maximum_red_trigger),
             "per_agent_queue": per_agent_queue,
         }
+        if network_metrics is not None:
+            info["network_metrics"] = network_metrics
+            for field in ("scheduled", "inserted", "departed", "arrived",
+                          "running", "pending", "removed", "completion_rate"):
+                info[field] = network_metrics[field]
         return self._observations(), rewards, done, info
