@@ -127,6 +127,28 @@ def test_run_precompute_shards_merges_durations_in_full_configured_order(tmp_pat
     assert shard_config.stat().st_mode & 0o222 == 0
 
 
+def test_run_precompute_shards_persists_running_state_before_starting_shard(tmp_path):
+    manifest, config = _write_inputs(tmp_path)
+    artifact = tmp_path / "final-baseline-tuning.json"
+    status_path = (tmp_path / ".baseline-tuning-shards" /
+                   "final-baseline-tuning" / "status.json")
+    observed_states = []
+    complete_runner = _runner(tmp_path)
+
+    def runner(command, cwd=None, stdout=None, stderr=None):
+        config_arg = command[command.index("--config") + 1]
+        shard_index = int(config_arg.split("/")[-2])
+        status = json.loads(status_path.read_text())
+        observed_states.append(status["jobs"][shard_index]["state"])
+        return complete_runner(command, cwd=cwd, stdout=stdout, stderr=stderr)
+
+    run_haichau_baseline_shards.run_precompute_shards(
+        tmp_path, manifest, config, artifact, max_concurrency=1,
+        durations_per_shard=2, runner=runner)
+
+    assert observed_states == ["running", "running"]
+
+
 def test_run_precompute_shards_rejects_existing_artifact_or_partial_workdir(tmp_path):
     manifest, config = _write_inputs(tmp_path)
     artifact = tmp_path / "final-baseline-tuning.json"

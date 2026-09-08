@@ -229,6 +229,7 @@ def _run_shards(root, shards, records, max_concurrency, runner, status_path,
             except StopIteration:
                 break
             record["state"] = "running"
+            _write_json(status_path, status)
             active[executor.submit(_execute_shard, root, shard, runner)] = record
         while active:
             done, unused = wait(active, return_when=FIRST_COMPLETED)
@@ -249,6 +250,7 @@ def _run_shards(root, shards, records, max_concurrency, runner, status_path,
                 except StopIteration:
                     break
                 record["state"] = "running"
+                _write_json(status_path, status)
                 active[executor.submit(_execute_shard, root, shard, runner)] = record
     if failed:
         raise ValueError("one or more baseline tuning shards failed; inspect shard logs")
