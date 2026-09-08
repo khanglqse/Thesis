@@ -316,3 +316,34 @@ derivation. The foundation verifier rejects any manifest adjacency or canonical
 adjacency hash that differs from the roadnet. Existing network learning results
 and checkpoints predate this graph and must not be reused as evidence for the
 corrected neighbor-DDQN implementation.
+
+## 2026-09-08 — Require demand coverage at every controlled signal
+
+Decision: replace road-count shortest paths with deterministic physical-distance
+shortest boundary-to-boundary paths and add only the coverage routes required to
+activate the declared controlled area. The canonical contract requires all 53
+signals in the route catalog, in each disjoint train/validation/test route-family
+partition, and in every generated case. Each signal must occur in at least three
+route families so that the three partitions can remain disjoint. A supplemental
+route must be a valid, simple boundary-to-boundary path through its target signal,
+must not repeat a road or intersection, and may be at most 1.25 times the metric
+shortest path for the same origin and destination.
+
+Partitioning and case sampling use deterministic set cover on signal identities
+before filling remaining capacity with the existing seeded selection. The
+manifest records exact active/inactive signal IDs, route derivation, physical
+length, stretch, OD diversity, and coverage for every split and case. Generation
+may write the sealed test flows, but calibration, model selection, and training
+must not open their contents; final evaluation remains their first use.
+
+Reason: the former single road-hop-shortest route per OD permanently bypassed
+four controlled signals in all 30 cases. Calling those nodes active would make a
+53-signal control claim false and would give them no traffic-learning signal.
+Metric distance also avoids preferring a physically long road merely because OSM
+represented it with fewer segments. These rules are fixed before rerunning
+capacity calibration or any corrected-network learning experiment.
+
+Consequence: all scale-1, ladder, baseline, pilot, checkpoint, and campaign
+artifacts generated with the former route catalog remain diagnostic or
+superseded. Capacity calibration restarts on the regenerated foundation before
+any final training is authorized.
