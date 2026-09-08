@@ -49,20 +49,25 @@ project mount and exit state, then requires its stdout JSON to equal the hashed 
 metrics and replay artifacts. Keep these containers until the final audit succeeds.
 
 Use the freeze CLI only after the ten learned training runs are complete and
-validation-eligible. Train both controller families for each required seed, then create
-the release inputs and verified viewer geometry. The input scripts refuse an incomplete,
-ineligible, drifted, or mixed-duration training set. The resulting index has exactly the
-two learned controller IDs and seeds `11` through `15`; the controller configuration has
-the resolved evaluator config and entries for all five controllers.
+validation-eligible. First precompute one shared, validation-only fixed-time tuning
+artifact; the launcher hash-binds it to every final run. Then launch both controller
+families for seeds `11` through `15`. Its default concurrency is two and it resumes a
+campaign by skipping only fully verified completed jobs; it refuses partial, ineligible,
+or hash-drifted outputs. The input scripts refuse an incomplete, ineligible, drifted, or
+mixed-duration training set. The resulting index has exactly the two learned controller
+IDs and seeds `11` through `15`; the controller configuration has the resolved evaluator
+config and entries for all five controllers.
 
 ```sh
-for seed in 11 12 13 14 15; do
-  make haichau-train-final LEARNING_SEED="$seed"
-  make haichau-train-legacy-final LEARNING_SEED="$seed"
-done
+make haichau-precompute-final-baseline
+make haichau-train-final-campaign
 python3 scripts/prepare_haichau_release_inputs.py
 python3 scripts/prepare_haichau_viewer_network.py
 ```
+
+To select a different campaign parallelism, set `HAICHAU_FINAL_CONCURRENCY`; leave it at
+the default `2` for the release path. The focused launcher test is available as
+`make haichau-final-training-test`.
 
 The freeze command reads only training/validation evidence, verifies the selected
 checkpoint bundle, and creates the network manifest, case manifest, and protocol together.
@@ -174,8 +179,10 @@ nonzero pages, dimensions or duration as appropriate.
 
 ### Vehicle accounting shown in the demo and thesis
 
-`scheduled = due + unreleased`, `due = inserted + pending`, and
-`inserted = arrived + running + removed`. Completion
+The fixed-time tuning artifact records queue-objective schema `2`: network queue is
+per-step waiting, entry pending is due-but-not-inserted, and future departures are
+unreleased and excluded. Its vehicle accounting is `scheduled = due + unreleased`,
+`due = inserted + pending`, and `inserted = arrived + running + removed`. Completion
 is `arrived / scheduled`; insertion is reported separately. Pending means scheduled demand
 that has not entered the network. Running and removed vehicles remain separate censored
 categories. Only due vehicles held outside an entry lane count as pending; future

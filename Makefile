@@ -47,6 +47,8 @@ haichau-smoke: haichau-image
 		-e HAICHAU_IMAGE_PLATFORM="$(HAICHAU_PLATFORM)" \
 		$(HAICHAU_IMAGE) python3 scripts/verify_haichau_foundation.py --engine-smoke
 LEARNING_SEED ?=
+HAICHAU_BASELINE_TUNING_ARTIFACT ?= results/haichau_network_v2/training/final-baseline-tuning.json
+HAICHAU_FINAL_CONCURRENCY ?= 2
 
 haichau-foundation-verify: haichau-image
 	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
@@ -91,6 +93,25 @@ haichau-train-legacy-final: haichau-foundation-verify
 		--controller-family shared_ddqn_legacy \
 		--mode final --learning-seed $(LEARNING_SEED)
 
+# Produce the single validation-only tuning artifact consumed by all final runs.
+haichau-precompute-final-baseline: haichau-foundation-verify
+	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR)":/work -w /work \
+		$(HAICHAU_IMAGE) python3 scripts/train_haichau_network.py \
+		--mode final --learning-seed 11 \
+		--precompute-baseline-tuning $(HAICHAU_BASELINE_TUNING_ARTIFACT)
+
+# Launch both learned-controller final families for seeds 11--15; verified jobs are skipped.
+haichau-train-final-campaign: haichau-foundation-verify
+	@test -f "$(HAICHAU_BASELINE_TUNING_ARTIFACT)" || { echo 'Run make haichau-precompute-final-baseline first'; exit 1; }
+	python3 scripts/run_haichau_final_training.py \
+		--baseline-tuning-artifact $(HAICHAU_BASELINE_TUNING_ARTIFACT) \
+		--max-concurrency $(HAICHAU_FINAL_CONCURRENCY)
+
+haichau-final-training-test:
+	SUMO_HOME=$(SUMO_HOME) python3 -m pytest tests/scripts/test_run_haichau_final_training.py -v
+
 .PHONY: cf-run test cf-test cf-smoke haichau-image haichau-smoke \
 	haichau-foundation-verify haichau-train-smoke haichau-train-pilot haichau-train-final \
-	haichau-train-legacy-smoke haichau-train-legacy-pilot haichau-train-legacy-final
+	haichau-train-legacy-smoke haichau-train-legacy-pilot haichau-train-legacy-final \
+	haichau-precompute-final-baseline haichau-train-final-campaign \
+	haichau-final-training-test
