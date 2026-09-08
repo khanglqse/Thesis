@@ -1,5 +1,6 @@
 import json
 import hashlib
+from pathlib import Path
 
 from traffic_rl.report.haichau_network import (
     build_tables,
@@ -83,6 +84,20 @@ def test_network_table_labels_demand_synthetic():
     assert "synthetic" in table.lower()
     assert "53" in table
     assert "PM peak" in table
+    assert "n=5 independent training seeds" in table
+    assert "five matched demand/simulator cases" in table
+    assert "pointwise two-sided percentile bootstrap" in table
+    assert "10,000 resamples" in table
+    assert "lower queue is better" in table
+
+
+def test_thesis_states_pointwise_network_ci_limitation():
+    thesis = Path(__file__).resolve().parents[2] / "paper/thesis_danang.tex"
+    text = thesis.read_text()
+    assert "pointwise" in text
+    assert "no multiplicity correction" in text
+    assert "either-peak" in text
+    assert "frozen matched demand/simulator cases" in text
 
 
 def test_claim_validator_rejects_citywide_observed_claim():

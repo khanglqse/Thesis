@@ -72,7 +72,18 @@ def build_tables(summary):
             _format_number(ci[0]), _format_number(ci[1]),
             float(result["completion_rate"]["mean"]),
         ))
-    lines.extend((r"\bottomrule", r"\end{tabular}", r"\end{table}"))
+    lines.extend((
+        r"\bottomrule",
+        r"\end{tabular}",
+        r"\end{table}",
+        r"\par\smallskip",
+        r"\noindent\footnotesize\textit{Inference note.} Demand is synthetic; "
+        r"lower queue is better. The frozen comparison uses n=5 independent "
+        r"training seeds, each averaged over five matched demand/simulator cases. "
+        r"Intervals are pointwise two-sided percentile bootstrap intervals from "
+        r"10,000 resamples, conditional on the frozen matched cases; the "
+        r"either-peak gate has no multiplicity correction.",
+    ))
     comparison = [
         r"\begin{table}[H]", r"\centering",
         r"\caption{Complete matched controller comparison on the 53-signal network.}",
