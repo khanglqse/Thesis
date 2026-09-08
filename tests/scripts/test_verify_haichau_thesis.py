@@ -317,7 +317,6 @@ def _write_bound_project(root):
                 "split": "test", "regime": regime,
                 "demand_seed": 200 + regime_index * 10 + demand_index,
                 "simulator_seed": 300 + regime_index * 10 + demand_index,
-                "scheduled_vehicles": 1000 + regime_index * 100 + demand_index,
                 "horizon_steps": 10,
                 "scheduled_vehicles": 3000 + regime_index * 10 + demand_index,
                 "demand_path": str(demand_path.relative_to(root)),
