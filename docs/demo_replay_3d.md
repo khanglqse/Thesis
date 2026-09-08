@@ -1,5 +1,9 @@
 # Demo 3D A/B: Fixed-Time vs DQN (deck.gl)
 
+> **ARCHIVED LEGACY DEMO — KHÔNG PHẢI BẰNG CHỨNG THESIS V2.** Đây là replay CityFlow
+> synthetic trên topology OSM-derived 53 nút. Không dùng tỷ lệ xe, demand hoặc hiệu năng bên
+> dưới như số liệu quan sát/hiệu chuẩn cho Hải Châu; đường demo v2 là `docs/defense/demo-runbook.md`.
+
 Trang: `frontend/replay_3d.html` — chạy cùng server với bản 2D:
 
     python3 scripts/serve_replay.py --no-browser
@@ -9,9 +13,9 @@ Trang: `frontend/replay_3d.html` — chạy cùng server với bản 2D:
 
 - Hai khung 3D **khoá cùng camera và cùng thời điểm**: trái mặc định Cố định
   (Fixed-Time), phải mặc định DQN; đổi được từng bên (Max-Pressure, Ngẫu nhiên).
-- **Replay CityFlow thật** (120 khung × 1 s — ~2 phút đầu của episode) trên mạng Hải Châu 53 nút đèn —
-  không phải suy luận trực tiếp (live inference). Số liệu bảng điểm đọc từ
-  `results/<kịch bản>/comparison.json` (số thật của Chương 4).
+- **Replay CityFlow đã ghi** (120 khung × 1 s — ~2 phút đầu của episode) trên topology OSM-derived 53 nút —
+  không phải suy luận trực tiếp (live inference). Số liệu bảng điểm đọc từ các output legacy
+  `results/<kịch bản>/comparison.json`, không phải kết quả Chapter 4/v2 hiện hành.
 - **Đèn theo từng làn:** thanh đứng màu xanh/đỏ tại vạch dừng của mỗi làn
   (ký tự `g/r/i` per-lane trong replay; `i` = làn không có đèn — không vẽ).
   Đây là điểm bản 2D không thể hiện được (bản 2D gộp mỗi đường 1 chấm).
@@ -24,7 +28,8 @@ Trang: `frontend/replay_3d.html` — chạy cùng server với bản 2D:
   ghi-đông + 2 bánh; ô tô thành thân + ca-bin + 4 bánh. **Không phóng đại kích thước**: mesh
   đúng bằng template, dựng tại (x, y) với hướng đúng góc `a` trong replay (đã kiểm: 96% xe
   đang chạy có `a` trùng hướng dịch chuyển thực tế giữa 2 khung).
-  Xe máy dùng tông pastel ấm, ô tô tông lạnh → **nhìn là thấy ngay tỉ lệ ~90/10** của Đà Nẵng.
+  Xe máy dùng tông pastel ấm, ô tô tông lạnh → nhìn thấy tỷ lệ template ~90/10 của replay,
+  là một giả định legacy chứ không phải tỷ lệ được quan sát ở Đà Nẵng.
   Hình học thuần ở `vehicleMesh()` (`replay_3d_core.js`), có test kiểm bounding box đúng
   bằng template. Hiệu năng: ~1.200 xe/khung × 2 panel ≈ **10 ms/bước (~94 fps)**.
 

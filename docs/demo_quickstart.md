@@ -1,5 +1,10 @@
 # Quick-start demo + cheat-sheet số liệu (1 trang, cầm đi họp)
 
+> **ARCHIVED LEGACY DEMO — KHÔNG PHẢI BẰNG CHỨNG THESIS V2.** Các replay và số liệu bên
+> dưới là kết quả CityFlow tổng hợp trước đây trên topology OSM-derived với demand synthetic.
+> Không gọi là xe/nhu cầu quan sát hoặc hiệu năng Hải Châu đã hiệu chuẩn, và không dùng để kết
+> luận khi bảo vệ. Dùng `docs/defense/demo-runbook.md` sau khi verifier v2 đạt `"complete": true`.
+
 > Cập nhật 2026-07-30. Số trong trang này lấy trực tiếp từ `results/multiseed/*.json`,
 > `results/*/agreement/agreement.json`, `results/*/robustness/*.json`.
 > Kiểm chứng cùng ngày: **85 pytest** + **14 node test** pass; cả 2 trang demo đã mở
@@ -70,7 +75,7 @@ Tái lập: mở bản 3D → bấm 🔍 Điểm đông → tua tới t ≈ 100s
 
 | Kịch bản | Xe đồng thời | Hàng chờ đỉnh | % dừng | Chế độ |
 |----------|-----------:|-----------:|------:|--------|
-| `rush` | 2 900 | 1 210 | 42% | cao điểm thực (leverage lớn nhất) |
+| `rush` | 2 900 | 1 210 | 42% | tải synthetic legacy |
 | `calib` | 4 680 | 2 370 | 51% | khá nặng |
 | `haichau` | 11 370 | 7 340 | 65% | quá tải nặng |
 | `peak` | 12 570 | 8 530 | 68% | đợt tăng quá tải |

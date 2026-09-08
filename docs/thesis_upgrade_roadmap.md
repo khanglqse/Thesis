@@ -1,5 +1,9 @@
 # Thesis Upgrade Roadmap — Traffic RL (Hải Châu / CityFlow)
 
+> **ARCHIVED PLANNING SNAPSHOT.** This July 2026 roadmap predates the current evidence-tier
+> and release-gated v2 protocol. Historical claims and task states below are not current thesis
+> evidence; use `paper/thesis_danang.tex`, `README.md`, and `docs/defense/demo-runbook.md`.
+
 > **NOTE (2026-07-15):** "+30.8%" below is the old single-seed rush number. Final multi-seed
 > headline = **+37.1% ± 3.9** (rush, Student-t); dense −39.9%. Canonical: [scenario_regimes.md](scenario_regimes.md).
 

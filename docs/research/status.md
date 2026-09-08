@@ -1,5 +1,9 @@
 # Research execution status
 
+> **HISTORICAL STATUS SNAPSHOT (2026-09-07).** This records the empirical-anchor handoff,
+> not release completion for the current 53-signal v2 study. For current release status, run
+> `scripts/verify_haichau_thesis.py`; a v2 performance or demo claim requires `"complete": true`.
+
 Updated: 2026-09-07 22:55 (Asia/Ho_Chi_Minh)
 
 Active branch: `thesis/end-to-end` in `.worktrees/thesis-end-to-end`.

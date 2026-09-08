@@ -45,9 +45,10 @@ Two robust, honestly-reported conclusions:
 2. Under **gross oversaturation** the local value-based controller **degrades below Fixed-Time**
    — reported as a limitation, not hidden.
 
-Exact multi-seed means ± 95% CI are in `paper/chapter4_experiments_results.tex`
-(`tab:waiting`, `tab:queue`). Those historical runs did not implement neighbor-aware
-coordination. The `haichau_network_v2` extension now implements a mean-pooled neighbor
+Archived legacy multi-seed means ± 95% CI remain in
+`paper/chapter4_experiments_results.tex` (`tab:waiting`, `tab:queue`); that file is
+explicitly legacy material and is not the current thesis or v2 evidence. Those historical
+runs did not implement neighbor-aware coordination. The `haichau_network_v2` extension now implements a mean-pooled neighbor
 phase-scoring DDQN as a separate candidate; it does not implement learned graph attention,
 and it has no releasable performance claim until the final verifier passes.
 
@@ -65,7 +66,7 @@ scripts/               entry points (train, eval, aggregate, batch experiments, 
 data/danang/           roadnets + flow scenarios (haichau_rush, _calib, _peak, haichau, ...)
 results/<scenario>/    comparison.json, training curves, demo replays, exp_* variant runs
 frontend/              browser demo (CityFlow viewer + preset launcher + HUD)
-paper/                 LaTeX thesis (trafic_rf.tex) + chapter4 + references.bib
+paper/                 current LaTeX thesis (thesis_danang.tex); archived legacy sources and references
 docs/                  results write-ups, ablation, scenario framing, analysis
 configs/               network.yaml, training.yaml
 tests/                 33 test files (host + container-marked)

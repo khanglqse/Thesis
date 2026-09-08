@@ -1,8 +1,12 @@
 # Demand-scenario regimes — load-based framing (why `rush` is the headline)
 
+> **ARCHIVED LEGACY RESULTS — NOT V2 THESIS EVIDENCE.** All demand regimes and performance
+> values here belong to the earlier synthetic CityFlow protocol. They are retained for audit,
+> not as observed/calibrated Hai Chau traffic or a current thesis result.
+
 **Purpose.** Resolve the "Hải Châu peak" question: the honest way to present the four
-scenarios is a *saturation spectrum*, not a cherry-pick. `haichau_rush` (~50k trips) IS the
-"reduce Hải Châu to ~50k vehicles" fix the project wanted — it is a genuinely loaded peak
+scenarios is a *legacy synthetic saturation spectrum*, not a cherry-pick. `haichau_rush` (~50k
+scheduled trips) is a loaded simulator regime
 where RL beats Fixed-Time, whereas the dense `haichau` baseline is grossly oversaturated and
 RL degrades there. Both are kept and reported.
 
@@ -15,7 +19,7 @@ series (`max(queue_series)`); `% stopped` = peak queue / concurrent (approx. sat
 
 | Scenario        | Trips injected | Concurrent | Peak queue | % stopped | Regime |
 |-----------------|---------------:|-----------:|-----------:|----------:|--------|
-| `haichau_rush`  |         50,500 |      2,900 |      1,210 |       42% | **realistic arterial peak (HEADLINE)** |
+| `haichau_rush`  |         50,500 |      2,900 |      1,210 |       42% | legacy synthetic load |
 | `haichau_calib` |         75,500 |      4,680 |      2,370 |       51% | moderately heavy |
 | `haichau`       |      1,200,500 |     11,370 |      7,340 |       65% | grossly oversaturated (stress limit) |
 | `haichau_peak`  |        310,900 |     12,570 |      8,530 |       68% | oversaturated surge |
@@ -27,11 +31,11 @@ raw `haichau` baseline (1.2M trips spread over the horizon).
 
 ## Why `rush` = the fix, not a cherry-pick
 
-- 50,500 trips ≈ the "~50k xe" target. ~2,900 concurrent with ~1,210 queued (42%) is a
+- 50,500 scheduled trips (with documented endpoint ambiguity) and ~2,900 concurrent with ~1,210 queued (42%) form a
   **loaded but not gridlocked** network — queues form, so signal timing has leverage, but a
   good policy can still clear them. That is the operating point where adaptive control wins.
-- Little's Law sanity check: 42% of present vehicles stopped at peak ⇒ real queuing, i.e.
-  *not* free-flow. So "realistic peak" is a defensible label (not a light/empty regime).
+- This demonstrates simulated queuing rather than free flow. It does not establish a real or
+  calibrated peak for Hai Chau.
 
 ## RL performance across the spectrum (multi-seed, post horizon-fix)
 
@@ -52,7 +56,7 @@ Multi-seed (K=5) means from the re-run with the checkpoint horizon-bug fix
 > — **all four keep their sign** (none crosses 0). The pre-2026-07-22 CIs (±2.5/±18.3/±22.3/±7.9) used
 > a too-narrow normal-approx (z=1.96, ddof=0) and are superseded.
 
-**The spectrum:** the control gap is largest at the realistic peak (`rush`), shrinks as the
+**The legacy spectrum:** the control gap is largest in `rush`, shrinks as the
 network saturates (`calib` → `peak`), and **reverses to a loss under gross oversaturation**
 (`haichau`, −39.9%). This is the honest story: a purely *local* value-based controller helps
 when queues form but can still be cleared, and degrades when no local policy can drain a
@@ -60,8 +64,8 @@ gridlocked network. We report the dense failure rather than hide it.
 
 ## Demo vs results (two different "vehicle numbers")
 
-- **Results/thesis** use `rush` (50k trips, ~2,900 concurrent) — the realistic peak where RL
-  wins. This is what the number tables and CI report.
+- **Legacy results only** use `rush` (50k scheduled trips, ~2,900 concurrent). These values do
+  not enter the current v2 thesis conclusion.
 - **Visual demo** uses `danang_peak` (`data/danang/flow_danang_peak.json`, ~70% motorbike,
   saturated-window clip ~6,900 on screen) for a *busy-looking* projection. See
   [danang_peak_demo_scenario.md](danang_peak_demo_scenario.md). Do not conflate the demo's

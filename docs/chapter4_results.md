@@ -1,5 +1,9 @@
 # Chapter 4 — Experiments and Results
 
+> **ARCHIVED LEGACY RESULTS — NOT V2 THESIS EVIDENCE.** This short 800-step CityFlow report
+> predates the evidence-tier protocol. Its synthetic demand, controller outputs, and metrics
+> must not be used as observed/calibrated Hai Chau performance or current thesis evidence.
+
 ## 4.1 Experimental Setup
 
 We evaluate the proposed multi-agent reinforcement-learning (MARL) traffic-signal

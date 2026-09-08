@@ -1,5 +1,9 @@
 # Model / Reward Ablation — DQN Variants vs Strong Baselines
 
+> **ARCHIVED LEGACY RESULTS — NOT V2 THESIS EVIDENCE.** This analysis predates the frozen
+> v2 protocol and contains synthetic CityFlow outputs only. Do not use its values for observed
+> or calibrated Hai Chau claims, or as current thesis-defense results.
+
 *Experiments run after the initial results to test whether a different reward,
 a different architecture, or a stronger baseline change the conclusions. The
 original results are frozen in `results/references/`; every variant here is

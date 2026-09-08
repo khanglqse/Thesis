@@ -1,5 +1,9 @@
 # Honest ablation re-point (option A) — CI-triaged, minimal compute
 
+> **ARCHIVED LEGACY RESULTS — NOT V2 THESIS EVIDENCE.** The sweeps and values in this
+> document belong to the earlier synthetic CityFlow protocol. They remain useful for audit
+> history but must not be presented as current Hai Chau evidence or v2 controller performance.
+
 **Context.** `tab:ablation`'s "Normal" (=dense) rows used the buggy checkpoint selection
 (greedy-eval at the *training* horizon 800, reported at 1000). The honest multi-seed dense
 result is DQN −39.9% (loses to Fixed), so the old "+6.5% best-learned on Normal" ranking is an

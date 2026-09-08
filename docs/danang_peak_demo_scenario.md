@@ -1,4 +1,9 @@
-# Demo scenario `danang_peak` — grounded in real Da Nang traffic
+# Demo scenario `danang_peak` — archived synthetic CityFlow scenario
+
+> **ARCHIVED LEGACY DEMO — NOT V2 THESIS EVIDENCE.** The topology is OSM-derived and
+> this scenario's flows, vehicle mix, and volume are synthetic assumptions. Planning figures
+> may provide context, but they do not calibrate this Hai Chau demand. Do not present these
+> counts as observed or as a validated district slice.
 
 ## The three different "vehicle numbers" (do not conflate them)
 

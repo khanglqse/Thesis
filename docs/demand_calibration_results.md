@@ -1,8 +1,8 @@
 # Reaching a Realistic Improvement — Demand Calibration + DQN Tuning
 
-> **SUPERSEDED (2026-07-15):** the +30.8% here is the original *single-seed* rush result. The
-> final **multi-seed (5-seed) rush headline is +37.1% ± 3.9 veh-h** (Student-t) vs Fixed-Time; dense −39.9%.
-> See [scenario_regimes.md](scenario_regimes.md) for the canonical final numbers.
+> **ARCHIVED LEGACY RESULTS — NOT V2 THESIS EVIDENCE.** The +30.8% here is an original
+> single-seed synthetic CityFlow result; the +37.1% multi-seed value is also legacy protocol
+> evidence only. Neither is an observed/calibrated Hai Chau result or a current thesis headline.
 
 *Why the early DQN gains looked small (~6–9%) and how a corrected demand regime
 plus tuning brought the learned controller to **+30.8%** waiting-time reduction.
@@ -55,7 +55,7 @@ old hyperparameters (tuned for the dense regime) had to change:
 the 25 % goal, while Max-Pressure reaches 40.1 %. The DQN also clearly beats
 Random (−9.5 %, i.e. worse than Fixed-Time).
 
-## 4. Honest framing for the thesis
+## 4. Historical framing
 
 The improvement % is a function of saturation — small under oversaturation (every
 controller gridlocks) and under free flow (nothing to gain), largest near the
