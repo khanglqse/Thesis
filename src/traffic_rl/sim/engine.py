@@ -47,3 +47,28 @@ class CityFlowEngine(object):
     def average_travel_time(self):
         # type: () -> float
         return float(self._eng.get_average_travel_time())
+
+    def network_metric_snapshot(self, lane_to_node=None, spillback_lanes=None,
+                                phase_switches=0, intergreen_seconds=0,
+                                max_red_seconds=0, travel_times=None):
+        """Return plain metric inputs without advancing or mutating CityFlow."""
+        waiting = self.lane_waiting_counts()
+        per_node = {}
+        for lane_id, node_id in (lane_to_node or {}).items():
+            per_node[node_id] = per_node.get(node_id, 0.0) + float(
+                waiting.get(lane_id, 0))
+        running = self.vehicle_count()
+        get_finished = getattr(self._eng, "get_finished_vehicle_count", None)
+        arrived = int(get_finished()) if get_finished is not None else 0
+        return {
+            "queued": float(sum(waiting.values())),
+            "running": running,
+            "departed": running + arrived,
+            "arrived": arrived,
+            "travel_times": list(travel_times or []),
+            "per_node_queue": per_node,
+            "spillback_lanes": sorted(spillback_lanes or []),
+            "phase_switches": int(phase_switches),
+            "intergreen_seconds": float(intergreen_seconds),
+            "max_red_seconds": float(max_red_seconds),
+        }
