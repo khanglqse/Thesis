@@ -62,7 +62,7 @@ def _tracked_tree_attestation(root):
             ["git", "rev-parse", "--verify", "HEAD"], cwd=root,
             stderr=subprocess.STDOUT).decode("ascii").strip()
         status = subprocess.check_output(
-            ["git", "status", "--porcelain=v1", "--untracked-files=no"],
+            ["git", "status", "--porcelain", "--untracked-files=no"],
             cwd=root, stderr=subprocess.STDOUT).decode("utf-8")
     except (OSError, subprocess.CalledProcessError) as exc:
         raise ValueError("training requires an available Git checkout: %s" % exc)

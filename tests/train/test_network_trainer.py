@@ -306,6 +306,25 @@ def test_training_rejects_dirty_tracked_or_index_tree_before_artifacts(
     assert not output.exists()
 
 
+def test_tracked_tree_attestation_uses_git_2_7_compatible_porcelain(monkeypatch):
+    calls = []
+
+    def check_output(argv, cwd=None, stderr=None):
+        calls.append(argv)
+        if argv[:2] == ["git", "rev-parse"]:
+            return b"abc123\n"
+        if "--porcelain=v1" in argv:
+            raise subprocess.CalledProcessError(129, argv)
+        return b""
+
+    monkeypatch.setattr(network_trainer.subprocess, "check_output", check_output)
+
+    attestation = REAL_TRACKED_TREE_ATTESTATION("/repo")
+
+    assert attestation["git_commit"] == "abc123"
+    assert ["git", "status", "--porcelain", "--untracked-files=no"] in calls
+
+
 def _verified(root, manifest):
     return {
         "status": "verified",
