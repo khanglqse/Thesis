@@ -471,6 +471,8 @@ def _write_bound_project(root):
             "per_node_max_queue": per_node,
             "spillback_lane_seconds": {},
             "scheduled": run["scheduled_vehicles"],
+            "due": run["scheduled_vehicles"],
+            "unreleased": 0,
             "inserted": run["scheduled_vehicles"],
             "departed": run["scheduled_vehicles"],
             "arrived": run["scheduled_vehicles"],
