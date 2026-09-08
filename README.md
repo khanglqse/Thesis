@@ -1,14 +1,14 @@
 # RL for Multi-Intersection Traffic Signal Control — Hải Châu, Đà Nẵng
 
-A master's-thesis study of **reinforcement learning for urban traffic signal control**,
-evaluated on a **real arterial network of Hải Châu district, Đà Nẵng** (53 signalized
-intersections) modeled in the [CityFlow](https://cityflow-project.github.io/) microscopic
-simulator. A single **parameter-shared Deep Q-Network** (implemented from scratch in NumPy)
-controls all intersections and is compared against tuned **Fixed-Time**, **Max-Pressure**,
-and **Random** baselines across a spectrum of demand regimes.
+A master's-thesis study of **reinforcement learning for urban traffic signal control**.
+The empirical study reconstructs one published Da Nang intersection in SUMO. The spatial
+extension evaluates 53 signals on an **OpenStreetMap-derived Hải Châu topology** in
+[CityFlow](https://cityflow-project.github.io/) with synthetic demand constrained by the
+available Da Nang evidence. It does not claim observed district-wide flows or signal plans.
 
-> **Full write-up:** `paper/trafic_rf.tex` (Chapter 4 = experiments & results).
-> **Scenario framing & honest numbers:** `docs/scenario_regimes.md`.
+> **Current thesis:** `paper/thesis_danang.tex`.
+> **Evidence limits:** `docs/research/foundation-handoff.md` and
+> `docs/research/legacy-claims-audit.md`.
 
 ## Evidence namespaces
 
@@ -33,13 +33,13 @@ spectrum rather than a single flattering point:
 
 | Regime (measured load) | DQN vs tuned Fixed-Time | Reading |
 |---|---|---|
-| `haichau_rush` — realistic arterial peak (~50k trips, ~2.9k concurrent, 42% stopped) | **best improvement** (headline) | queues form but clear — control has leverage |
+| `haichau_rush` — legacy synthetic load (~50k scheduled departures, ~2.9k concurrent, 42% stopped) | **best legacy improvement** | historical result; not empirical calibration |
 | `haichau_calib` — moderately heavy (51% stopped) | positive | |
 | `haichau_peak` / `haichau` — (grossly) oversaturated (65–68% stopped) | **degrades, can lose to Fixed** | no local policy can drain a gridlocked network |
 
 Two robust, honestly-reported conclusions:
-1. The DQN **clears Fixed-Time and Random and converges to roughly Max-Pressure-level
-   performance at realistic demand — but never beats Max-Pressure** on this small arterial
+1. The legacy DQN **clears Fixed-Time and Random and converges to roughly Max-Pressure-level
+   performance at one synthetic load — but never beats Max-Pressure** on this arterial
    network, where local pressure is nearly sufficient (Max-Pressure is throughput-optimal on
    the local information a single agent sees).
 2. Under **gross oversaturation** the local value-based controller **degrades below Fixed-Time**
@@ -138,10 +138,11 @@ with an always-on projector-legible HUD and a cumulative-waiting scoreboard.
 # serve the repo root; demo at http://localhost:8080/frontend/index.html
 nohup python3 -m http.server 8080 --directory "$PWD" >/tmp/demo.log 2>&1 &
 ```
-Pick a preset (e.g. *Hải Châu — cao điểm thực tế ~50k xe*) and a controller; the view
+Pick a legacy preset and a controller; the view
 auto-zooms to the busiest signalized junction so moving vehicles and switching lights are
-visible. Preset/HUD logic: `frontend/demo-presets.js`. Grounding of the on-screen vehicle
-count vs the real Đà Nẵng fleet: `docs/danang_peak_demo_scenario.md`.
+visible. Preset/HUD logic: `frontend/demo-presets.js`. Treat the displayed demand as a
+synthetic simulator scenario; scheduled departures, concurrent vehicles, and completed
+vehicles are separate quantities.
 
 ## Tests
 
