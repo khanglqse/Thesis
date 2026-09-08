@@ -1,0 +1,10 @@
+{
+  "dir": "/work/",
+  "flowFile": "results/haichau_network_v2/demands/validation_pm_peak_demand32.json",
+  "interval": 1.0,
+  "laneChange": false,
+  "rlTrafficLight": true,
+  "roadnetFile": "datasets/haichau_network_v2/roadnet.json",
+  "saveReplay": false,
+  "seed": 132
+}

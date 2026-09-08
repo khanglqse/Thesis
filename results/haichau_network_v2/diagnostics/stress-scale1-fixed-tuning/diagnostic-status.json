@@ -1,0 +1,52 @@
+{
+  "baseline_artifact": "baseline-tuning.json",
+  "baseline_artifact_sha256": "5c81b9b9cbad126b9bcd69209c3d8f8f3b49d42c05604bde56d3aaf6b52d77a2",
+  "classification": "oversaturated_stress_only",
+  "eligible_for_final_training": false,
+  "eligible_for_release": false,
+  "reason": "validation mean completion is too low for a normal-profile main benchmark; absolute scale is synthetic and capacity-uncalibrated",
+  "schema_version": 1,
+  "selected_fixed_green_duration": 50,
+  "selected_mean_completion_rate": 0.13835409337423474,
+  "selected_mean_queue_integral_vehicle_seconds": 35299765.333333336,
+  "status": "diagnostic_complete",
+  "tuning_sha256": "5284d432201c3da2ccb5fd579661dc1f8293355baa952b622bbc691645cc18b7",
+  "validation_cases": [
+    {
+      "case_id": "validation_normal_demand31",
+      "completion_rate": 0.15318740245708112,
+      "queue_integral_vehicle_seconds": 32643322.0,
+      "scenario": "normal"
+    },
+    {
+      "case_id": "validation_am_peak_demand31",
+      "completion_rate": 0.1560758868749559,
+      "queue_integral_vehicle_seconds": 31006841.0,
+      "scenario": "am_peak"
+    },
+    {
+      "case_id": "validation_pm_peak_demand31",
+      "completion_rate": 0.11102421503881357,
+      "queue_integral_vehicle_seconds": 42025996.0,
+      "scenario": "pm_peak"
+    },
+    {
+      "case_id": "validation_normal_demand32",
+      "completion_rate": 0.160714999800056,
+      "queue_integral_vehicle_seconds": 32226935.0,
+      "scenario": "normal"
+    },
+    {
+      "case_id": "validation_am_peak_demand32",
+      "completion_rate": 0.14294785860438863,
+      "queue_integral_vehicle_seconds": 31662497.0,
+      "scenario": "am_peak"
+    },
+    {
+      "case_id": "validation_pm_peak_demand32",
+      "completion_rate": 0.10617419747011318,
+      "queue_integral_vehicle_seconds": 42233001.0,
+      "scenario": "pm_peak"
+    }
+  ]
+}

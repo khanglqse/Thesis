@@ -1,0 +1,10 @@
+{
+  "durations": [
+    60
+  ],
+  "index": 7,
+  "manifest_sha256": "9c5a6ae1c451c6e1673722177d4d25e7394474637cbc03a60246898ea58ccc9d",
+  "schema_version": 1,
+  "shard_config_sha256": "573e04c5022b7f5c0e1a45a3855f6553f92df0f3a334c0a367a1e43e26e14baf",
+  "source_config_sha256": "25d69765a5fc44e6d60a28037bf6f8429e931502275a6d65bb697c10eb470e3d"
+}
