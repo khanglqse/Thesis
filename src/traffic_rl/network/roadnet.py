@@ -224,6 +224,9 @@ class RoadNet:
         errors = []
         if data.get("schema_version") != 1:
             errors.append("phase contract schema_version must be 1")
+        min_green = data.get("derivation", {}).get("min_green_seconds")
+        if not isinstance(min_green, (int, float)) or min_green <= 0:
+            errors.append("phase contract derivation min_green_seconds is invalid")
         agents = data.get("agents", {})
         expected_agents = set(self.signalized_ids())
         actual_agents = set(agents)
@@ -246,6 +249,12 @@ class RoadNet:
                     or not self.phase_movement_pairs(inter_id, phase_index):
                 errors.append("intersection {} selectable phase {} is invalid".format(
                     inter_id, phase_index))
+            elif isinstance(min_green, (int, float)) \
+                    and float(self._lightphases(inter_id)[phase_index].get(
+                        "time", 0)) < float(min_green):
+                errors.append(
+                    "intersection {} selectable phase {} is shorter than min_green".format(
+                        inter_id, phase_index))
         mapping = record.get("transitions", {})
         normalized = {}
         for source in selectable:

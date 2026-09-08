@@ -97,6 +97,14 @@ def _close(env):
         env.close()
 
 
+def _assert_rollout_complete(info, horizon_seconds, label):
+    if int(info.get("step", -1)) != int(horizon_seconds):
+        raise ValueError("%s did not complete required horizon" % label)
+    queue_integral = info.get("queue_integral_vehicle_seconds")
+    if queue_integral is None or not np.isfinite(float(queue_integral)):
+        raise ValueError("%s has invalid queue integral" % label)
+
+
 def _rollout(env, net, fixed_green_duration=None, action_interval=10):
     observations = env.reset()
     done = False
@@ -144,6 +152,8 @@ def _tune_fixed_time(env_factory, cases, horizon_seconds, config, binding):
                                 action_interval=action_interval)
             finally:
                 _close(env)
+            _assert_rollout_complete(
+                info, horizon_seconds, "fixed-time tuning %s" % case["case_id"])
             rows.append({
                 "case_id": case["case_id"],
                 "scenario": case["scenario"],
@@ -183,6 +193,8 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
                                  action_interval=action_interval)
         finally:
             _close(candidate_env)
+        _assert_rollout_complete(
+            candidate, horizon_seconds, "candidate validation %s" % case["case_id"])
         baseline_env = env_factory(case, horizon_seconds)
         try:
             baseline = _rollout(
@@ -190,6 +202,8 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
                 action_interval=action_interval)
         finally:
             _close(baseline_env)
+        _assert_rollout_complete(
+            baseline, horizon_seconds, "baseline validation %s" % case["case_id"])
         row = {
             "case_id": case["case_id"],
             "scenario": case["scenario"],
@@ -386,6 +400,9 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                     updates += 1
                     if updates % int(optimizer["target_sync"]) == 0:
                         network.sync_target()
+            _assert_rollout_complete(
+                info, int(run["horizon_seconds"]),
+                "training episode %d" % (episode + 1))
             simulated_seconds += float(info.get("step", run["horizon_seconds"]))
             episode_log.append({
                 "episode": episode + 1,
@@ -471,6 +488,9 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                 "queue_integral_vehicle_seconds": reload_info.get(
                     "queue_integral_vehicle_seconds"),
             }
+            _assert_rollout_complete(
+                reload_info, int(run["horizon_seconds"]),
+                "checkpoint reload")
         finally:
             _close(env)
 

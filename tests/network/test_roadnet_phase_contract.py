@@ -104,6 +104,7 @@ def test_explicit_contract_is_hash_bound_and_controls_roles(tmp_path):
         "schema_version": 1,
         "dataset_id": "fixture",
         "roadnet_sha256": hashlib.sha256(roadnet_path.read_bytes()).hexdigest(),
+        "derivation": {"min_green_seconds": 20},
         "agents": {"A": {
             "selectable_phases": [0, 2],
             "transition_phases": [1, 3],

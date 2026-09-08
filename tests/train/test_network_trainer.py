@@ -212,3 +212,19 @@ def test_required_optimizer_update_failure_is_persisted(tmp_path):
 
     status = json.loads((output / "status.json").read_text())
     assert status["status"] == "failed"
+
+
+def test_incomplete_rollout_fails_run_status(tmp_path):
+    class EarlyEnv(FakeNetworkEnv):
+        def step(self, actions):
+            observations, rewards, _, info = super(EarlyEnv, self).step(actions)
+            return observations, rewards, True, info
+
+    output = tmp_path / "partial-horizon"
+    with np.testing.assert_raises_regex(ValueError, "horizon"):
+        train_network(lambda case, horizon: EarlyEnv(case, horizon),
+                      _manifest(), _config(), str(output),
+                      foundation_root=str(tmp_path),
+                      foundation_verifier=_verified)
+
+    assert json.loads((output / "status.json").read_text())["status"] == "failed"
