@@ -1,6 +1,8 @@
 import copy
 import csv
 import json
+from pathlib import Path
+import re
 
 import pytest
 import yaml
@@ -256,3 +258,34 @@ def test_runtime_attestation_rejects_unbound_derived_image(valid_foundation):
     }
     with pytest.raises(ValueError, match="derived image identity"):
         verify_runtime_attestation(manifest, environment)
+
+
+def test_committed_clean_checkout_foundation_evidence():
+    root = Path(__file__).resolve().parents[2]
+    evidence_path = root / "results/haichau_network_v2/verification/foundation.json"
+    evidence = json.loads(evidence_path.read_text())
+
+    assert evidence["schema_version"] == 1
+    assert evidence["dataset_id"] == "haichau_network_v2"
+    assert re.match(r"^[0-9a-f]{40}$", evidence["verified_commit"])
+    assert evidence["checkout"]["status_before"] == "clean"
+    assert evidence["checkout"]["ignored_source_present"] is False
+    assert evidence["wall_time_seconds"] > 0
+
+    commands = {record["command"]: record for record in evidence["commands"]}
+    assert set(commands) == {
+        "make test",
+        "PYTHONPATH=src python3 scripts/verify_haichau_foundation.py",
+        "make haichau-smoke",
+    }
+    assert all(record["exit_code"] == 0 for record in commands.values())
+    assert "153 passed, 1 deselected" in commands["make test"]["output_summary"]
+    assert commands[
+        "PYTHONPATH=src python3 scripts/verify_haichau_foundation.py"
+    ]["output"]["status"] == "verified"
+    assert commands["make haichau-smoke"]["output"]["status"] == "engine-smoke-passed"
+
+    runtime = evidence["runtime_identity"]
+    assert re.match(r"^sha256:[0-9a-f]{64}$", runtime["derived_image_id"])
+    assert runtime["base_image_digest"] == BASE_DIGEST
+    assert runtime["platform"] == "linux/amd64"
