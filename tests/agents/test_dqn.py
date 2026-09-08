@@ -15,6 +15,16 @@ def test_greedy_respects_mask():
     mask = np.array([False, False, True])     # only action 2 valid
     assert net.greedy_action(obs, mask) == 2
 
+
+def test_qvalues_accepts_batched_action_mask_for_network_trainer():
+    net = SharedDQN(obs_dim=5, n_actions=3, hidden=8, seed=0)
+    values = net.q_values(
+        np.zeros((2, 5), dtype=np.float32),
+        np.array([[True, False, True], [False, True, False]]))
+    assert values.shape == (2, 3)
+    assert values[0, 1] < -1e8
+    assert values[1, 0] < -1e8 and values[1, 2] < -1e8
+
 def test_train_step_reduces_loss_on_fixed_batch():
     net = SharedDQN(obs_dim=4, n_actions=2, hidden=16, seed=1, lr=1e-2)
     rng = np.random.RandomState(0)

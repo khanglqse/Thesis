@@ -3,6 +3,7 @@ import json
 import numpy as np
 import traffic_rl.train.network_trainer as network_trainer
 
+from traffic_rl.agents.dqn import SharedDQN
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.train.network_trainer import (
     _default_foundation_verifier, canonical_json_sha256,
@@ -51,6 +52,18 @@ class FakeNetworkEnv(object):
         }
         rewards = {agent: -1.0 for agent in self.agent_ids}
         return self._observations(), rewards, done, info
+
+
+class FakeVectorNetworkEnv(FakeNetworkEnv):
+    class Encoder(object):
+        feature_order = ["incoming_0", "outgoing_0", "green_0", "green_1"]
+
+    encoder = Encoder()
+
+    def _observations(self):
+        value = float(self._step) / 10.0
+        return {agent: np.full(4, value, np.float32)
+                for agent in self.agent_ids}
 
 
 def _manifest():
@@ -190,6 +203,31 @@ def test_training_visits_all_regimes_and_saves_resolved_contract(tmp_path):
     assert status["status"] in ("complete", "ineligible")
     assert status["artifact_sha256"]
     assert summary["updates"] > 0
+
+
+def test_legacy_vector_family_trains_and_saves_distinct_bundle(tmp_path):
+    output = tmp_path / "legacy-run"
+    config = _config()
+    summary = train_network(
+        lambda case, horizon: FakeVectorNetworkEnv(case, horizon),
+        _manifest(), config, str(output), foundation_root=str(tmp_path),
+        foundation_verifier=_verified,
+        controller_family="shared_ddqn_legacy")
+
+    contract = json.loads((output / "checkpoint/contract.json").read_text())
+    assert contract["controller_family"] == "shared_ddqn_legacy"
+    assert contract["feature_order"] == FakeVectorNetworkEnv.Encoder.feature_order
+    assert contract["action_contract"] == {
+        "type": "fixed_vector", "version": 1,
+        "mask_type": "boolean_phase_index",
+        "padding_actions_selectable": False,
+        "n_actions": 2,
+    }
+    loaded = SharedDQN.load_bundle(str(output / "checkpoint"), contract)
+    assert loaded.obs_dim == 4 and loaded.n_actions == 2
+    run_manifest = json.loads((output / "run-manifest.json").read_text())
+    assert run_manifest["controller_id"] == "shared_ddqn_legacy"
+    assert set(summary["episode_regimes"]) == {"normal", "am_peak", "pm_peak"}
 
 
 def test_trainer_never_opens_test_split(tmp_path):

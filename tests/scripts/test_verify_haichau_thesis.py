@@ -6,6 +6,8 @@ import subprocess
 import pytest
 
 import traffic_rl.eval.release_identity as release_identity
+from traffic_rl.agents.dqn import SharedDQN
+from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from scripts.export_haichau_replays import export_bundle
 from scripts.verify_haichau_thesis import (
     _checkpoint_contract_valid, audit_demo, verify_project)
@@ -327,12 +329,17 @@ def _write_bound_project(root):
     checkpoints = []
     for controller in ("shared_ddqn_legacy", "neighbor_phase_ddqn"):
         for seed in range(11, 16):
-            path = root / ("release/%s-%s.npz" % (controller, seed))
-            _write(path, "%s-%s" % (controller, seed))
             contract = _checkpoint_contract(
                 network_sha, controller, phase_sha, generator_sha, experiment_sha)
-            contract_path = root / ("release/%s-%s-contract.json" % (controller, seed))
-            _write(contract_path, json.dumps(contract, indent=2, sort_keys=True) + "\n")
+            bundle = root / ("release/%s-%s" % (controller, seed))
+            if controller == "shared_ddqn_legacy":
+                model = SharedDQN(1, 3, hidden=64, seed=seed, dueling=True)
+            else:
+                model = PhaseScoringDDQN(
+                    len(FEATURES), hidden=64, lr=1e-3, seed=seed)
+            model.save_bundle(str(bundle), contract)
+            path = bundle / "weights.npz"
+            contract_path = bundle / "contract.json"
             checkpoints.append({
                 "controller_id": controller,
                 "learning_seed": seed,
@@ -731,6 +738,21 @@ def test_checkpoint_gate_binds_protocol_contract_to_contract_file(tmp_path):
     contract_path = tmp_path / entry["contract_path"]
     contract_path.write_text(json.dumps({"controller_family": "forged"}))
     entry["contract_file_sha256"] = _digest(contract_path)
+    protocol_path.write_text(json.dumps(protocol))
+
+    report = verify_project(tmp_path)
+
+    assert report["gates"]["five_learning_seeds"]["passed"] is False
+
+
+def test_checkpoint_gate_rejects_non_npz_weights_even_when_hash_bound(tmp_path):
+    _write_bound_project(tmp_path)
+    protocol_path = tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    protocol = json.loads(protocol_path.read_text())
+    entry = protocol["checkpoints"][0]
+    weights_path = tmp_path / entry["path"]
+    weights_path.write_text("not a NumPy checkpoint")
+    entry["sha256"] = _digest(weights_path)
     protocol_path.write_text(json.dumps(protocol))
 
     report = verify_project(tmp_path)

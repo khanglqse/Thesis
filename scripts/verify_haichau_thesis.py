@@ -21,6 +21,8 @@ from traffic_rl.eval.release_attestation import validate_attestation
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
 from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
+from traffic_rl.agents.dqn import SharedDQN
+from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.sim.phase_encoder import FEATURES
 
 
@@ -289,12 +291,25 @@ def _checkpoint_gate(root, protocol):
                 stored_contract = _json(contract_path)
             except (OSError, ValueError):
                 stored_contract = None
+        bundle_valid = False
+        if path and path.is_file() and contract_path \
+                and path.parent == contract_path.parent:
+            try:
+                loaders = {
+                    "shared_ddqn_legacy": SharedDQN,
+                    "neighbor_phase_ddqn": PhaseScoringDDQN,
+                }
+                loaders[controller].load_bundle(str(path.parent), contract)
+                bundle_valid = True
+            except (KeyError, OSError, ValueError, TypeError):
+                bundle_valid = False
         okay = bool(
             controller in LEARNING_CONTROLLERS and seed in REQUIRED_SEEDS
             and cell not in cells and path and path.is_file() and expected
             and _sha256(path) == expected
             and entry.get("validation_eligible") is True
             and stored_contract == contract
+            and bundle_valid
             and _checkpoint_contract_valid(contract, protocol, controller)
             and entry.get("checkpoint_contract_sha256") == _canonical_hash(contract))
         valid = valid and okay

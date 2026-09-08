@@ -63,3 +63,23 @@ class NetworkReplayBuffer(object):
 
     def __len__(self):
         return self._size
+
+
+class VectorNetworkReplayBuffer(NetworkReplayBuffer):
+    """Regime-audited replay for fixed-width vector observations."""
+    def __init__(self, capacity, obs_dim, n_actions, seed):
+        self.capacity = int(capacity)
+        self.features = np.zeros(
+            (self.capacity, int(obs_dim)), dtype=np.float32)
+        self.next_features = np.zeros_like(self.features)
+        self.actions = np.zeros(self.capacity, dtype=np.int64)
+        self.rewards = np.zeros(self.capacity, dtype=np.float32)
+        self.dones = np.zeros(self.capacity, dtype=np.float32)
+        self.next_masks = np.zeros(
+            (self.capacity, int(n_actions)), dtype=np.bool_)
+        self.case_regimes = np.full(self.capacity, -1, dtype=np.int16)
+        self._regime_to_id = {}
+        self._id_to_regime = {}
+        self._rng = np.random.RandomState(seed)
+        self._size = 0
+        self._index = 0

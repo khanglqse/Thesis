@@ -102,9 +102,17 @@ class SharedDQN(object):
     def _target(self):
         return {p: getattr(self, "t" + p) for p in self.params}
 
-    def q_values(self, X):
+    def q_values(self, X, mask=None):
         X = np.atleast_2d(X).astype(np.float32)
-        return self._forward(X, self._online())[0]
+        values = self._forward(X, self._online())[0]
+        if mask is not None:
+            valid = np.asarray(mask, dtype=np.bool_)
+            if valid.ndim == 1:
+                valid = valid[None, :]
+            if valid.shape != values.shape:
+                raise ValueError("mask shape does not match Q values")
+            values = np.where(valid, values, NEG)
+        return values
 
     def _target_q(self, X):
         return self._forward(X, self._target())[0]

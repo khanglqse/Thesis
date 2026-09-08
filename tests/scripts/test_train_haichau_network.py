@@ -6,6 +6,8 @@ def test_makefile_exposes_all_pinned_training_modes():
     for mode in ("smoke", "pilot", "final"):
         assert "haichau-train-%s: haichau-foundation-verify" % mode in makefile
         assert "--mode %s --learning-seed $(LEARNING_SEED)" % mode in makefile
+        assert "haichau-train-legacy-%s: haichau-foundation-verify" % mode in makefile
+    assert "--controller-family shared_ddqn_legacy" in makefile
 
 
 def test_five_seed_projection_uses_end_to_end_wall_time():
