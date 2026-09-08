@@ -98,4 +98,3 @@ def test_padded_phase_rows_are_zero_and_masked(tmp_path):
     assert features.shape == (3, 12)
     assert mask.tolist() == [True, False, False]
     np.testing.assert_array_equal(features[1:], np.zeros((2, 12), np.float32))
-

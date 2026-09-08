@@ -27,4 +27,3 @@ def test_sampler_is_deterministic_and_exhausts_regime_cases():
 
     assert ids_a == ids_b
     assert set(ids_a) == {case["case_id"] for case in _cases()}
-

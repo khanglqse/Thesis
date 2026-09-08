@@ -87,4 +87,3 @@ def test_synthetic_updates_remain_finite_and_reduce_loss():
 
     assert np.isfinite(last)
     assert last < first
-
