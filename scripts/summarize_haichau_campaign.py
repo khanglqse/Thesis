@@ -48,7 +48,16 @@ def main(argv=None):
     args = parser.parse_args(argv)
     campaign_dir = Path(args.campaign_dir)
     summary = aggregate_campaign(_load_runs(campaign_dir))
-    document = {"summary": summary, "acceptance": evaluate_acceptance(summary)}
+    document = {
+        "study_scope": {
+            "controlled_signals": 53,
+            "demand_label": (
+                "synthetic network demand constrained by Da Nang evidence"),
+            "evidence_namespace": "haichau_network_v2",
+        },
+        "summary": summary,
+        "acceptance": evaluate_acceptance(summary),
+    }
     (campaign_dir / "summary.json").write_text(
         json.dumps(document, indent=2, sort_keys=True) + "\n")
     fieldnames = [
