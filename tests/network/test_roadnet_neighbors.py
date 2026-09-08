@@ -6,7 +6,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 
 def test_upstream_neighbors_on_haichau():
-    rn = RoadNet.load(os.path.join(ROOT, "data/danang/roadnet_haichau.json"))
+    rn = RoadNet.load(
+        os.path.join(ROOT, "datasets/haichau_network_v2/roadnet.json")
+    )
     sig = set(rn.signalized_ids())
     assert len(sig) == 53                       # sanity: the evaluated network
     with_nbr = 0

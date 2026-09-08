@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "dataset_id": "haichau_network_v2",
+  "verification_scope": "clean_checkout",
+  "verified_commit": "80306efbbda780819c85ea1748f7ac08e7dfdcc3",
+  "started_at_utc": "2026-09-08T07:04:06Z",
+  "finished_at_utc": "2026-09-08T07:07:45Z",
+  "wall_time_seconds": 219,
+  "checkout": {
+    "command": "git worktree add --detach /Users/khanglq1/workplace/Thesis/traffic-rl/.worktrees/haichau-data-r3-verify 80306ef",
+    "method": "detached_git_worktree",
+    "wall_time_seconds": 2,
+    "status_before": "clean",
+    "status_after": "clean",
+    "ignored_source_present": false
+  },
+  "commands": [
+    {
+      "command": "make test",
+      "started_at_utc": "2026-09-08T07:04:06Z",
+      "finished_at_utc": "2026-09-08T07:04:17Z",
+      "wall_time_seconds": 11,
+      "exit_code": 0,
+      "output_summary": "174 passed, 1 deselected in 10.83s"
+    },
+    {
+      "command": "PYTHONPATH=src python3 scripts/verify_haichau_foundation.py",
+      "started_at_utc": "2026-09-08T07:04:21Z",
+      "finished_at_utc": "2026-09-08T07:04:27Z",
+      "wall_time_seconds": 5,
+      "exit_code": 0,
+      "output": {
+        "cases": 30,
+        "controlled_signals": 53,
+        "generator_config_sha256": "95af5107f528705f52787d2930671932f0241a448f694ab36c7f639d6943f559",
+        "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+        "protocol_version": 2,
+        "route_families": 1418,
+        "runtime_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+        "selectable_green_phases": 107,
+        "split_counts": {
+          "test": 15,
+          "train": 9,
+          "validation": 6
+        },
+        "status": "verified",
+        "transition_phases": 127
+      }
+    },
+    {
+      "command": "make haichau-smoke",
+      "started_at_utc": "2026-09-08T07:04:32Z",
+      "finished_at_utc": "2026-09-08T07:07:45Z",
+      "wall_time_seconds": 193,
+      "exit_code": 0,
+      "build_output_summary": "Successfully built 8a946185be9d and tagged traffic-rl-cityflow-research:v2",
+      "output": {
+        "average_travel_time": 30.896,
+        "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+        "case_id": "train_normal_demand11",
+        "controlled_signals": 53,
+        "controller": "FixedTime",
+        "derived_image_id": "sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517",
+        "dockerfile_sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf",
+        "platform": "linux/amd64",
+        "queue_integral_vehicle_seconds": 627.0,
+        "status": "engine-smoke-passed",
+        "steps": 60,
+        "vehicle_count": 485
+      }
+    }
+  ],
+  "verified_artifacts": {
+    "configs/haichau_network_v2.yaml": "95af5107f528705f52787d2930671932f0241a448f694ab36c7f639d6943f559",
+    "datasets/haichau_network_v2/phase-contract.json": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae",
+    "datasets/haichau_network_v2/provenance.json": "a922a79f032eaab96c204b7696703022424ade809bf9fe8aa1452fc9fc6db409",
+    "datasets/haichau_network_v2/roadnet.json": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+    "datasets/haichau_network_v2/source/danang_haichau.net.xml": "0b4e0750134697de1a9d5c7d19fb71bc6cbade58506a7fd816410a487ee3faba",
+    "datasets/haichau_network_v2/source/danang_haichau.osm": "0e71b672e12fb9c6601750be554abd560737a62e8557df3c5cf7f116403d26f1",
+    "datasets/haichau_network_v2/source/danang_haichau.osm.pbf": "cc091baf523d0fa7a8be0b32a62d5e4bccc4d6452e51b38c1b1a88ffc518a331",
+    "datasets/haichau_network_v2/source/roadnet_haichau_rush.json": "cddce1090b214fd8250303a28b51e4a460f4af04dde87cafad9dabd58f2ac040",
+    "docker/cityflow-research/Dockerfile": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf",
+    "results/haichau_network_v2/experiment-manifest.json": "c6c657239cc106a7300b2aee146178e33d0d7d0946da02eca34388ae1a221d21"
+  },
+  "runtime_identity": {
+    "base_image": "cityflowproject/cityflow",
+    "base_image_digest": "sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32",
+    "derived_image_tag": "traffic-rl-cityflow-research:v2",
+    "derived_image_id": "sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517",
+    "dockerfile_sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf",
+    "platform": "linux/amd64"
+  },
+  "environment": {
+    "host_python": "Python 3.13.7",
+    "runtime_python": "Python 3.6.5 :: Anaconda, Inc.",
+    "docker_server": "29.2.1"
+  }
+}
