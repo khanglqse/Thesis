@@ -7,4 +7,4 @@ baseline: {controller: validation_tuned_fixed, search_green_durations: [20, 25, 
 tiers:
   smoke: {episodes: 3, horizon_seconds: 120, eval_every: 3, train_start: 512, require_optimizer_updates: true}
   pilot: {episodes: 12, horizon_seconds: 3600, eval_every: 4}
-  final: {episodes: 80, horizon_seconds: 3600, eval_every: 5}
+  final: {episodes: 80, horizon_seconds: 3600, eval_every: 20}

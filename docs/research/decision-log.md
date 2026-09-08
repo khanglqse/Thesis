@@ -71,3 +71,23 @@ and the full five-seed training/test protocol was rerun with new demand hashes.
 - **Reason:** The selection rule is independent of the DDQN test advantage and prevents cherry-picking a visually favorable episode.
 - **Demo:** Export PM and normal cases at five-second resolution, reproduce the exact frozen metrics, and package a localhost viewer with H.264, PDF, and image fallbacks.
 - **Consequence:** The demo illustrates individual runs and labels them as such. Only the five-seed aggregate table supports the main conclusion.
+
+## 2026-09-08 — Reduce final validation frequency before held-out testing
+
+Decision: keep the predeclared 80 training episodes, but run validation at
+episodes 20, 40, 60, and 80 instead of every five episodes. The best checkpoint
+is still selected only by the frozen validation set, and the held-out test set
+remains unseen until selection is complete.
+
+Reason: the first full-network pilot measured about three minutes per training
+episode and about 36 minutes for one validation checkpoint. Validation every
+five episodes would spend roughly ten hours per seed re-evaluating nearby
+checkpoints, before any final test runs, while epsilon remains above its floor
+for roughly the first 28 episodes. Four spaced checkpoints preserve a learning
+curve across the exploratory and converged portions of training and make the
+ten-seed protocol executable on the available machine.
+
+Consequence: all final seeds and both learned controller families use the same
+four checkpoint episodes. This change was recorded before final training and
+before examining any held-out test result; pilot data cannot enter the thesis
+comparison.
