@@ -133,6 +133,12 @@ def _precomputed_tuning(manifest, config):
             case["case_id"]: case["flow_sha256"] for case in validation_cases},
         "horizon_seconds": config["run"]["horizon_seconds"],
         "action_interval": config.get("simulation", {}).get("action_interval", 10),
+        "queue_objective": {
+            "schema_version": 2,
+            "network_queue": "per_step_waiting",
+            "entry_pending": "due_not_inserted",
+            "future_departures": "unreleased_excluded",
+        },
     }
     return network_trainer._tune_fixed_time(
         lambda case, horizon: FakeNetworkEnv(case, horizon), validation_cases,

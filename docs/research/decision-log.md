@@ -91,3 +91,23 @@ Consequence: all final seeds and both learned controller families use the same
 four checkpoint episodes. This change was recorded before final training and
 before examining any held-out test result; pilot data cannot enter the thesis
 comparison.
+
+## 2026-09-08 — Correct entry-pending time and unify fixed-time execution
+
+Decision: count outside-network delay only after a vehicle's requested
+departure time. Track future vehicles separately as `unreleased`, with the
+identities `scheduled = due + unreleased`, `due = inserted + pending`, and
+`inserted = arrived + running + removed`. Use the same nominal-duration
+fixed-time controller in tuning, validation, and final evaluation.
+
+Reason: the first implementation treated the whole one-hour demand as pending
+at second zero, adding roughly 42--67 million controller-independent
+vehicle-seconds per validation case. It also rounded non-multiple fixed-time
+durations differently between tuning and production evaluation. A CityFlow
+probe confirmed that `get_vehicles(True)` contains vehicles whose departure is
+due, including those waiting outside an entry lane, while excluding future
+departures.
+
+Consequence: the aborted baseline cache and the earlier pilot are diagnostic
+only. Baseline tuning and all final learned runs must be regenerated with queue
+objective schema 2 before any thesis claim is released.

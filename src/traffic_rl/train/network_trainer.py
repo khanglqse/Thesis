@@ -202,6 +202,12 @@ def _tuning_binding(manifest, validation_cases, horizon_seconds, config):
         "horizon_seconds": int(horizon_seconds),
         "action_interval": int(config.get("simulation", {}).get(
             "action_interval", 10)),
+        "queue_objective": {
+            "schema_version": 2,
+            "network_queue": "per_step_waiting",
+            "entry_pending": "due_not_inserted",
+            "future_departures": "unreleased_excluded",
+        },
     }
 
 
@@ -255,7 +261,7 @@ def _validate_precomputed_tuning(tuning, binding, config, validation_cases):
         raise ValueError("precomputed baseline tuning binding is invalid")
     for field in ("manifest_sha256", "network_sha256", "runtime",
                   "validation_case_hashes", "horizon_seconds",
-                  "action_interval"):
+                  "action_interval", "queue_objective"):
         if artifact_binding.get(field) != binding[field]:
             raise ValueError("precomputed baseline tuning %s drift" % field)
     if artifact_binding != binding:

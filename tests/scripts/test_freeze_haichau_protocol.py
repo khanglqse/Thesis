@@ -292,6 +292,12 @@ def _add_precomputed_tuning_provenance(root, relative):
                 for case in validation_cases),
             "horizon_seconds": 3600,
             "action_interval": 10,
+            "queue_objective": {
+                "schema_version": 2,
+                "network_queue": "per_step_waiting",
+                "entry_pending": "due_not_inserted",
+                "future_departures": "unreleased_excluded",
+            },
         },
     }
     tuning["tuning_sha256"] = _canonical_hash(tuning)

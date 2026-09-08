@@ -174,10 +174,12 @@ nonzero pages, dimensions or duration as appropriate.
 
 ### Vehicle accounting shown in the demo and thesis
 
-`scheduled = inserted + pending`, and `inserted = arrived + running + removed`. Completion
+`scheduled = due + unreleased`, `due = inserted + pending`, and
+`inserted = arrived + running + removed`. Completion
 is `arrived / scheduled`; insertion is reported separately. Pending means scheduled demand
 that has not entered the network. Running and removed vehicles remain separate censored
-categories. The metric bundle also reports the pending-demand integral, so boundary blocking
+categories. Only due vehicles held outside an entry lane count as pending; future
+departures are unreleased. The metric bundle reports the pending-demand integral, so boundary blocking
 cannot disappear into the departure denominator.
 
 ## Legacy single-junction defense bundle

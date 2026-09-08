@@ -1,7 +1,9 @@
 """Network-level metrics sampled at every simulator step.
 
 Travel-time statistics describe completed vehicles only and are deliberately
-reported beside scheduled/inserted/arrived/running/pending/removed counts.
+reported beside scheduled/due/unreleased/inserted/arrived/running/pending/
+removed counts. ``pending`` means due to depart but not inserted; future
+departures remain ``unreleased`` and do not accrue queue delay.
 """
 
 import math
@@ -152,8 +154,8 @@ class NetworkMetricsObserver(object):
 
     Vehicle IDs are sampled after each engine step.  A newly visible ID is an
     inserted vehicle; an ID that disappears is completed.  ``scheduled_vehicles``
-    remains the denominator, so demand that has not entered the network is kept
-    separate from traffic still running at the horizon.
+    remains the denominator. Due vehicles held outside entry lanes are pending;
+    future departures are unreleased and do not accrue queue delay.
     """
 
     def __init__(self, scheduled_vehicles, step_seconds=1.0,
