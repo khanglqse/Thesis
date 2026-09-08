@@ -72,9 +72,8 @@ class RoadNet:
         return self._by_id[inter_id]["trafficLight"]["lightphases"]
 
     def green_phases(self, inter_id: str) -> List[int]:
-        """Lightphase indices that actually let traffic move (non-empty availableRoadLinks)."""
-        return [idx for idx, ph in enumerate(self._lightphases(inter_id))
-                if ph.get("availableRoadLinks")]
+        """Policy-selectable green phases from the explicit phase-role contract."""
+        return self.phase_contract(inter_id)["selectable_phases"]
 
     def all_red_phase(self, inter_id: str):
         """First all-red / yellow lightphase index (empty availableRoadLinks), or None."""
@@ -99,6 +98,122 @@ class RoadNet:
                 if ol not in out:
                     out.append(ol)
         return inc, out
+
+    def phase_movement_pairs(self, inter_id: str, phase_idx: int):
+        """Deduplicated lane-to-lane movement pairs served by a phase."""
+        inter = self._by_id[inter_id]
+        phase = self._lightphases(inter_id)[phase_idx]
+        pairs = []
+        for road_link_index in phase.get("availableRoadLinks", []):
+            road_link = inter["roadLinks"][road_link_index]
+            for lane_link in road_link.get("laneLinks", []):
+                pair = (
+                    "{}_{}".format(road_link["startRoad"],
+                                   lane_link["startLaneIndex"]),
+                    "{}_{}".format(road_link["endRoad"],
+                                   lane_link["endLaneIndex"]),
+                )
+                if pair not in pairs:
+                    pairs.append(pair)
+        return pairs
+
+    def phase_contract(self, inter_id: str, transition_max_seconds=6.0):
+        """Classify selectable greens and the transition after each green.
+
+        Converter-generated yellow phases may retain a short subset (or duplicate)
+        of the preceding/next green's movements. Empty phases are transitions too.
+        A non-empty short phase is classified as a transition only when its
+        movements are a subset of an adjacent long green, so a short but distinct
+        traffic movement is never silently re-labelled.
+        """
+        phases = self._lightphases(inter_id)
+        movements = [set(self.phase_movement_pairs(inter_id, index))
+                     for index in range(len(phases))]
+        long_greens = [index for index, phase in enumerate(phases)
+                       if movements[index]
+                       and float(phase.get("time", 0)) > transition_max_seconds]
+        transition_phases = []
+        for index, phase in enumerate(phases):
+            if not movements[index]:
+                transition_phases.append(index)
+                continue
+            duration = float(phase.get("time", 0))
+            if duration > transition_max_seconds:
+                continue
+            adjacent = ((index - 1) % len(phases), (index + 1) % len(phases))
+            if any(neighbor in long_greens
+                   and movements[index].issubset(movements[neighbor])
+                   for neighbor in adjacent):
+                transition_phases.append(index)
+
+        selectable = [index for index in range(len(phases))
+                      if movements[index] and index not in transition_phases]
+        errors = []
+        if len(selectable) < 2:
+            errors.append("intersection {} has fewer than two selectable greens".format(
+                inter_id))
+        transitions_after = {}
+        selectable_set = set(selectable)
+        transition_set = set(transition_phases)
+        for source in selectable:
+            sequence = []
+            cursor = (source + 1) % len(phases)
+            while cursor != source and cursor not in selectable_set:
+                if cursor not in transition_set:
+                    break
+                duration = phases[cursor].get("time")
+                if not isinstance(duration, (int, float)) or duration <= 0 \
+                        or int(duration) != duration:
+                    errors.append(
+                        "intersection {} transition phase {} has invalid duration".format(
+                            inter_id, cursor))
+                    break
+                sequence.append((cursor, int(duration)))
+                cursor = (cursor + 1) % len(phases)
+            if not sequence:
+                errors.append(
+                    "intersection {} selectable phase {} has no transition path".format(
+                        inter_id, source))
+            transitions_after[str(source)] = sequence
+        return {
+            "schema_version": 1,
+            "selectable_phases": selectable,
+            "transition_phases": sorted(transition_phases),
+            "transitions_after": transitions_after,
+            "errors": sorted(set(errors)),
+        }
+
+    def transition_sequence(self, inter_id, from_phase, to_phase):
+        contract = self.phase_contract(inter_id)
+        if contract["errors"]:
+            raise ValueError("; ".join(contract["errors"]))
+        if from_phase not in contract["selectable_phases"] \
+                or to_phase not in contract["selectable_phases"]:
+            raise ValueError("transition endpoints must be selectable greens")
+        if from_phase == to_phase:
+            return []
+        return list(contract["transitions_after"][str(from_phase)])
+
+    def phase_contract_audit(self):
+        """Return a stable, serializable summary for foundation verification."""
+        contracts = {inter_id: self.phase_contract(inter_id)
+                     for inter_id in self.signalized_ids()}
+        return {
+            "schema_version": 1,
+            "signal_count": len(contracts),
+            "selectable_phases": {
+                inter_id: contract["selectable_phases"]
+                for inter_id, contract in contracts.items()},
+            "transition_phases": {
+                inter_id: contract["transition_phases"]
+                for inter_id, contract in contracts.items()},
+            "transitions_after": {
+                inter_id: contract["transitions_after"]
+                for inter_id, contract in contracts.items()},
+            "errors": {inter_id: contract["errors"]
+                       for inter_id, contract in contracts.items()
+                       if contract["errors"]},
+        }
 
     def entry_roads(self) -> List[str]:
         """Roads starting at a virtual (boundary) intersection — flow spawn points."""

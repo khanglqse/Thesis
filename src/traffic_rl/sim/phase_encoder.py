@@ -27,6 +27,11 @@ class PhaseFeatureEncoder:
         if self.count_norm <= 0 or self.capacity_norm <= 0:
             raise ValueError("normalization constants must be positive")
         self._ids = roadnet.signalized_ids()
+        errors = []
+        for inter_id in self._ids:
+            errors.extend(roadnet.phase_contract(inter_id)["errors"])
+        if errors:
+            raise ValueError("invalid phase-role contract: %s" % "; ".join(errors))
         self._greens = {inter_id: roadnet.green_phases(inter_id)
                         for inter_id in self._ids}
         inferred = max(len(greens) for greens in self._greens.values())
@@ -52,6 +57,7 @@ class PhaseFeatureEncoder:
 
         for phase_row, phase_idx in enumerate(greens):
             incoming, outgoing = self.roadnet.phase_movements(inter_id, phase_idx)
+            movement_pairs = self.roadnet.phase_movement_pairs(inter_id, phase_idx)
             incoming_queue = [float(waiting_counts.get(lane, 0.0))
                               for lane in incoming]
             incoming_running = [max(0.0, float(vehicle_counts.get(lane, 0.0))
@@ -78,7 +84,7 @@ class PhaseFeatureEncoder:
                 upstream_queue / self.count_norm,
                 downstream_queue / self.count_norm,
                 float(since_service) / self.count_norm,
-                float(len(incoming)) / self.count_norm,
+                float(len(movement_pairs)) / self.count_norm,
             ], dtype=np.float32)
             mask[phase_row] = True
         return features, mask

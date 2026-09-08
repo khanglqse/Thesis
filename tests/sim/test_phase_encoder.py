@@ -25,8 +25,10 @@ def _single_signal_roadnet(tmp_path, name, served_lane):
              "laneLinks": [{"startLaneIndex": other_lane, "endLaneIndex": 1}]},
         ],
         "trafficLight": {"lightphases": [
-            {"availableRoadLinks": [0]},
-            {"availableRoadLinks": []},
+            {"time": 40, "availableRoadLinks": [0]},
+            {"time": 5, "availableRoadLinks": []},
+            {"time": 40, "availableRoadLinks": [1]},
+            {"time": 5, "availableRoadLinks": []},
         ]},
     }]
     roads = [
@@ -52,7 +54,7 @@ def test_phase_features_follow_served_movements_not_lane_position(tmp_path):
         {"B_in_1": 6, "B_out_0": 2}, 0, 20, [30])
 
     np.testing.assert_allclose(features_a[0, :6], features_b[0, :6])
-    assert mask_a.tolist() == mask_b.tolist() == [True]
+    assert mask_a.tolist() == mask_b.tolist() == [True, True]
 
 
 def test_neighbor_features_include_upstream_and_downstream(tmp_path):
@@ -75,7 +77,10 @@ def test_neighbor_features_include_upstream_and_downstream(tmp_path):
                 "laneLinks": [{"startLaneIndex": 0, "endLaneIndex": 0}],
             }],
             "trafficLight": {"lightphases": [
-                {"availableRoadLinks": [0]}, {"availableRoadLinks": []},
+                {"time": 40, "availableRoadLinks": [0]},
+                {"time": 5, "availableRoadLinks": []},
+                {"time": 40, "availableRoadLinks": [0]},
+                {"time": 5, "availableRoadLinks": []},
             ]},
         })
     roadnet = _write_roadnet(tmp_path, "chain", intersections, roads)
@@ -96,5 +101,16 @@ def test_padded_phase_rows_are_zero_and_masked(tmp_path):
     features, mask = encoder.encode_all("A", {}, {}, 0, 0, [0])
 
     assert features.shape == (3, 12)
-    assert mask.tolist() == [True, False, False]
-    np.testing.assert_array_equal(features[1:], np.zeros((2, 12), np.float32))
+    assert mask.tolist() == [True, True, False]
+    np.testing.assert_array_equal(features[2:], np.zeros((1, 12), np.float32))
+
+
+def test_movement_count_uses_lane_link_pairs(tmp_path):
+    roadnet = _single_signal_roadnet(tmp_path, "A", served_lane=0)
+    roadnet._by_id["A"]["roadLinks"][0]["laneLinks"].append(
+        {"startLaneIndex": 0, "endLaneIndex": 1})
+    encoder = PhaseFeatureEncoder(roadnet, 20.0, 40.0)
+
+    features, _ = encoder.encode_all("A", {}, {}, 0, 0, [0, 0])
+
+    assert np.isclose(features[0, 11], 2.0 / 20.0)

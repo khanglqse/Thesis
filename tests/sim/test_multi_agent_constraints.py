@@ -19,8 +19,10 @@ def _roadnet(tmp_path):
                  "laneLinks": [{"startLaneIndex": 1, "endLaneIndex": 0}]},
             ],
             "trafficLight": {"lightphases": [
-                {"availableRoadLinks": [0]}, {"availableRoadLinks": []},
-                {"availableRoadLinks": [1]},
+                {"time": 40, "availableRoadLinks": [0]},
+                {"time": 3, "availableRoadLinks": []},
+                {"time": 40, "availableRoadLinks": [1]},
+                {"time": 3, "availableRoadLinks": []},
             ]},
         }],
         "roads": [
@@ -89,7 +91,7 @@ def test_injected_phase_encoder_produces_phase_rows(tmp_path):
     roadnet = _roadnet(tmp_path)
     encoder = PhaseFeatureEncoder(roadnet, count_norm=20.0, capacity_norm=40.0)
     env = MultiAgentTrafficEnv(roadnet, FakeEngine(), encoder=encoder,
-                               action_interval=1, min_green=0)
+                               action_interval=10, min_green=0)
 
     observations = env.reset()
 
@@ -103,7 +105,7 @@ def test_reward_weights_local_queue_and_downstream_blocking(tmp_path):
         vehicle_counts={"rin_0": 3, "rin_1": 2, "rout_0": 4},
         waiting_counts={"rin_0": 3, "rin_1": 2, "rout_0": 4})
     env = MultiAgentTrafficEnv(
-        roadnet, engine, action_interval=1, min_green=0,
+        roadnet, engine, action_interval=10, min_green=0,
         reward_type="queue_norm", queue_weight=1.0,
         downstream_block_weight=0.2, switch_penalty=0.0)
     env.reset()
@@ -114,7 +116,7 @@ def test_reward_weights_local_queue_and_downstream_blocking(tmp_path):
 
 
 def test_info_reports_completion_from_active_and_finished_vehicles(tmp_path):
-    env = _env(tmp_path, action_interval=1)
+    env = _env(tmp_path, action_interval=10)
     env.engine.finished_vehicle_count = lambda: 6
     env.reset()
 
@@ -126,7 +128,7 @@ def test_info_reports_completion_from_active_and_finished_vehicles(tmp_path):
 
 
 def test_info_tracks_completed_vehicle_ids_when_engine_has_no_counter(tmp_path):
-    env = _env(tmp_path, action_interval=1)
+    env = _env(tmp_path, action_interval=10)
     env.engine.vehicle_ids = lambda: (
         ["finished", "active"] if env.engine._t == 0 else ["active"])
     env.reset()
@@ -136,3 +138,37 @@ def test_info_tracks_completed_vehicle_ids_when_engine_has_no_counter(tmp_path):
     assert info["arrived"] == 1
     assert info["active_vehicles"] == 1
     assert info["completion_rate"] == 0.5
+
+
+def test_minimum_green_wins_after_max_red_forced_switch(tmp_path):
+    env = _env(tmp_path, min_green=20, maximum_red=180)
+    env.reset()
+    env._elapsed_green["A"] = 20
+    env._time_since_service["A"] = [0, 181]
+    env.step({"A": 1})
+    env._time_since_service["A"][0] = 181
+
+    assert env._elapsed_green["A"] == 7.0
+    assert env.action_masks()["A"].tolist() == [False, True]
+
+
+def test_infeasible_maximum_red_configuration_fails_closed(tmp_path):
+    with np.testing.assert_raises_regex(ValueError, "maximum_red"):
+        _env(tmp_path, min_green=20, maximum_red=10)
+
+
+def test_switch_executes_nonempty_transition_without_exposing_it_as_action(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
+    phases[1] = {"time": 5, "availableRoadLinks": [0]}
+    engine = FakeEngine()
+    env = MultiAgentTrafficEnv(roadnet, engine, action_interval=10,
+                               min_green=0, maximum_red=180)
+    env.reset()
+
+    _, _, _, info = env.step({"A": 1})
+
+    assert env.num_actions == {"A": 2}
+    assert ("set", "A", 1) in engine.calls
+    assert len(engine.steps_of("step")) == 10
+    assert info["intergreen_vehicle_seconds"] == 5.0

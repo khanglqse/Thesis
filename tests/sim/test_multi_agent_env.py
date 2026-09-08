@@ -18,6 +18,7 @@ def _net(tmp_path):
                 {"time": 39, "availableRoadLinks": [0]},   # green idx 0 -> phase 0
                 {"time": 6,  "availableRoadLinks": []},     # all-red -> phase 1
                 {"time": 39, "availableRoadLinks": [1]},   # green idx 1 -> phase 2
+                {"time": 6,  "availableRoadLinks": []},     # return transition
             ]},
         }],
         "roads": [
@@ -61,7 +62,7 @@ def test_min_green_blocks_early_switch(tmp_path):
 
 def test_info_has_total_queue(tmp_path):
     eng = FakeEngine(waiting_counts={"rin_0": 2, "rin_1": 1, "rout_0": 0})
-    env = MultiAgentTrafficEnv(_net(tmp_path), eng, action_interval=2, yellow_time=1, min_green=0)
+    env = MultiAgentTrafficEnv(_net(tmp_path), eng, action_interval=10, yellow_time=1, min_green=0)
     env.reset()
     _, rewards, _, info = env.step({"A": 0})
     assert info["total_queue"] == 3      # sum of all waiting lanes

@@ -1,8 +1,9 @@
 """Multi-agent traffic-signal env over a duck-typed engine.
 
-Actions are GREEN-phase choices (0..G_i-1). The env maps each to the real
-lightphase index, enforces min-green, and inserts the all-red phase for
-yellow_time engine-steps on a switch. Reward is signed max-pressure.
+Actions are selectable GREEN-phase choices (0..G_i-1). The env maps each to
+the real lightphase index, enforces min-green, and executes the roadnet's
+declared transition phases for their declared durations. Reward is signed
+max-pressure.
 
 3.6-safe: no `from __future__ import annotations`.
 """
@@ -38,7 +39,19 @@ class MultiAgentTrafficEnv:
                         ObservationEncoder(roadnet, count_norm=count_norm,
                                            state_mode=state_mode))
         self._green_phases = {a: roadnet.green_phases(a) for a in self.agent_ids}
-        self._all_red = {a: roadnet.all_red_phase(a) for a in self.agent_ids}
+        self._phase_contracts = {a: roadnet.phase_contract(a) for a in self.agent_ids}
+        contract_errors = []
+        for contract in self._phase_contracts.values():
+            contract_errors.extend(contract["errors"])
+        if contract_errors:
+            raise ValueError("invalid phase-role contract: %s" %
+                             "; ".join(contract_errors))
+        self._transition_paths = {}
+        for a in self.agent_ids:
+            for source_index, source_phase in enumerate(self._green_phases[a]):
+                for target_index, target_phase in enumerate(self._green_phases[a]):
+                    self._transition_paths[(a, source_index, target_index)] = (
+                        roadnet.transition_sequence(a, source_phase, target_phase))
         self.states = {
             a: IntersectionState(a, roadnet.incoming_lanes(a),
                                  roadnet.outgoing_lanes(a),
@@ -46,6 +59,23 @@ class MultiAgentTrafficEnv:
             for a in self.agent_ids
         }
         self.num_actions = {a: len(self._green_phases[a]) for a in self.agent_ids}
+        for a in self.agent_ids:
+            transition_total = sum(
+                sum(duration for _, duration in
+                    self._transition_paths[(a, source, (source + 1) % self.num_actions[a])])
+                for source in range(self.num_actions[a]))
+            required_red = ((self.num_actions[a] - 1) * float(self.min_green)
+                            + transition_total)
+            if self.maximum_red is not None \
+                    and float(self.maximum_red) < required_red:
+                raise ValueError(
+                    "maximum_red is infeasible for {}: {} < {}".format(
+                        a, self.maximum_red, required_red))
+            longest_path = max(
+                sum(duration for _, duration in path)
+                for key, path in self._transition_paths.items() if key[0] == a)
+            if longest_path > self.action_interval:
+                raise ValueError("transition path exceeds action_interval for %s" % a)
         self.obs_dim = getattr(self.encoder, "obs_dim", 12)
         self._green = {a: 0 for a in self.agent_ids}       # current green INDEX
         self._since_switch = {a: 0 for a in self.agent_ids}
@@ -68,19 +98,20 @@ class MultiAgentTrafficEnv:
             if not self._has_reset:
                 masks[a] = mask
                 continue
-            overdue = []
-            if self.maximum_red is not None:
-                overdue = [idx for idx, elapsed in
-                           enumerate(self._time_since_service[a])
-                           if elapsed >= float(self.maximum_red)]
-            if overdue:
-                forced = max(overdue,
-                             key=lambda idx: self._time_since_service[a][idx])
-                mask[:] = False
-                mask[forced] = True
-            elif self._elapsed_green[a] < float(self.min_green):
+            if self._elapsed_green[a] < float(self.min_green):
                 mask[:] = False
                 mask[self._green[a]] = True
+            else:
+                overdue = []
+                if self.maximum_red is not None:
+                    overdue = [idx for idx, elapsed in
+                               enumerate(self._time_since_service[a])
+                               if elapsed >= float(self.maximum_red)]
+                if overdue:
+                    forced = max(overdue,
+                                 key=lambda idx: self._time_since_service[a][idx])
+                    mask[:] = False
+                    mask[forced] = True
             masks[a] = mask
         return masks
 
@@ -167,22 +198,47 @@ class MultiAgentTrafficEnv:
                     and choice != self._green[a]:
                 switching[a] = choice
 
-        # yellow / all-red transition for switching agents
-        if switching and self.yellow_time > 0:
-            for a in switching:
-                ar = self._all_red[a]
-                if ar is not None:
-                    self.engine.set_tl_phase(a, ar)
-                self._elapsed_green[a] = 0.0
-            self._engine_steps(self.yellow_time, clearing=switching)
-            green_steps = self.action_interval - self.yellow_time
-        else:
-            green_steps = self.action_interval
-
-        # commit new greens
+        # Execute each signal's declared transition sequence for its exact
+        # duration. Signals with shorter paths enter their target green while
+        # other signals finish; transition phases are never held as actions.
+        path_totals = {}
+        schedules = {}
         for a, choice in switching.items():
-            self._green[a] = choice
-            self._since_switch[a] = 0
+            path = self._transition_paths[(a, self._green[a], choice)]
+            schedules[a] = path
+            path_totals[a] = sum(duration for _, duration in path)
+            self._elapsed_green[a] = 0.0
+        transition_steps = max(list(path_totals.values()) or [0])
+        committed = set()
+        for transition_step in range(transition_steps):
+            clearing = set()
+            for a, choice in switching.items():
+                elapsed = 0
+                active_phase = None
+                for phase_index, duration in schedules[a]:
+                    if elapsed <= transition_step < elapsed + duration:
+                        active_phase = phase_index
+                        break
+                    elapsed += duration
+                if active_phase is None:
+                    if a not in committed:
+                        self._green[a] = choice
+                        self._since_switch[a] = 0
+                        self.engine.set_tl_phase(
+                            a, self._green_phases[a][choice])
+                        committed.add(a)
+                else:
+                    clearing.add(a)
+                    if transition_step == elapsed:
+                        self.engine.set_tl_phase(a, active_phase)
+            self._engine_steps(1, clearing=clearing)
+        for a, choice in switching.items():
+            if a not in committed:
+                self._green[a] = choice
+                self._since_switch[a] = 0
+                self.engine.set_tl_phase(a, self._green_phases[a][choice])
+        green_steps = self.action_interval - transition_steps
+
         self._phase_switches += len(switching)
         for a in self.agent_ids:
             self.engine.set_tl_phase(a, self._green_phases[a][self._green[a]])
