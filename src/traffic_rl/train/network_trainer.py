@@ -15,7 +15,7 @@ from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.eval.checkpoint_selection import (
     CHECKPOINT_ELIGIBILITY_POLICY, choose_checkpoint,
     choose_reporting_checkpoint, score_validation)
-from traffic_rl.sim.phase_encoder import FEATURES
+from traffic_rl.sim.phase_encoder import FEATURES, SCHEDULE_CONTEXT_FEATURES
 from traffic_rl.train.case_sampler import BalancedCaseSampler
 from traffic_rl.train.network_replay import (
     NetworkReplayBuffer, VectorNetworkReplayBuffer)
@@ -53,6 +53,31 @@ def _git_sha(root):
             stderr=subprocess.STDOUT).decode("ascii").strip()
     except (OSError, subprocess.CalledProcessError):
         return None
+
+
+def _tracked_tree_attestation(root):
+    """Require clean tracked/index state while allowing untracked run output."""
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "--verify", "HEAD"], cwd=root,
+            stderr=subprocess.STDOUT).decode("ascii").strip()
+        status = subprocess.check_output(
+            ["git", "status", "--porcelain=v1", "--untracked-files=no"],
+            cwd=root, stderr=subprocess.STDOUT).decode("utf-8")
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ValueError("training requires an available Git checkout: %s" % exc)
+    lines = [line for line in status.splitlines() if line]
+    if any(len(line) >= 1 and line[0] != " " for line in lines):
+        raise ValueError("training Git index is dirty")
+    if any(len(line) >= 2 and line[1] != " " for line in lines):
+        raise ValueError("training tracked worktree is dirty")
+    return {
+        "schema_version": 1,
+        "git_commit": commit,
+        "tracked_worktree": "clean",
+        "index": "clean",
+        "untracked_files_policy": "allowed",
+    }
 
 
 def _default_foundation_verifier(root, manifest):
@@ -134,18 +159,104 @@ def _validated_behavior_prior(config):
     if not 0.0 <= minimum <= 1.0:
         raise ValueError(
             "behavior prior reference disagreement rate must be within [0, 1]")
+    rehearsal = prior.get("rehearsal")
+    if rehearsal is not None:
+        if not isinstance(rehearsal.get("enabled"), bool):
+            raise ValueError("behavior rehearsal enabled must be boolean")
+        if rehearsal.get("type") != "behavior_clone":
+            raise ValueError("behavior rehearsal type must be behavior_clone")
+        for field in ("every_td_updates", "batch_size"):
+            value = rehearsal.get(field)
+            if (isinstance(value, bool) or not isinstance(value, int)
+                    or value <= 0):
+                raise ValueError("behavior rehearsal %s must be positive integer" % field)
+    if ("pre_rl_validation" in prior
+            and not isinstance(prior["pre_rl_validation"], bool)):
+        raise ValueError("behavior prior pre_rl_validation must be boolean")
     return prior
 
 
+def _validated_observation(config, selected_fixed_duration=None):
+    observation = config.get("observation")
+    if observation is None:
+        return None
+    expected = {
+        "schema_version": 3,
+        "type": "phase_rows_fixed_schedule_context",
+        "phase_row_identity": "cycle_fraction",
+    }
+    if any(observation.get(key) != value for key, value in expected.items()):
+        raise ValueError("v3 observation contract is invalid")
+    cycle = observation.get("global_cycle")
+    if (not isinstance(cycle, dict)
+            or cycle.get("encoding") != "sin_cos"
+            or cycle.get("period") !=
+            "green_duration_times_selectable_green_count"):
+        raise ValueError("v3 observation global cycle contract is invalid")
+    duration = cycle.get("green_duration_seconds")
+    if (isinstance(duration, bool) or not isinstance(duration, (int, float))
+            or not math.isfinite(float(duration)) or float(duration) <= 0):
+        raise ValueError("v3 observation green duration must be positive")
+    if (selected_fixed_duration is not None
+            and float(duration) != float(selected_fixed_duration)):
+        raise ValueError(
+            "v3 observation green duration differs from tuned fixed baseline")
+    return observation
+
+
+class _BehaviorExamples(object):
+    """In-memory, train-only switch-decision examples for BC rehearsal."""
+
+    def __init__(self, seed):
+        self._features = []
+        self._actions = []
+        self._masks = []
+        self._rng = np.random.RandomState(int(seed) + 7919)
+        self._stacked = None
+
+    def add(self, features, actions, masks):
+        valid = np.asarray(masks, dtype=np.bool_)
+        eligible = valid.sum(axis=1) > 1
+        if not eligible.any():
+            return 0
+        self._features.append(np.asarray(features, dtype=np.float32)[eligible].copy())
+        self._actions.append(np.asarray(actions, dtype=np.int64)[eligible].copy())
+        self._masks.append(valid[eligible].copy())
+        self._stacked = None
+        return int(eligible.sum())
+
+    def __len__(self):
+        return sum(value.shape[0] for value in self._actions)
+
+    def sample(self, batch_size):
+        if not self._actions:
+            raise ValueError("behavior rehearsal has no switch-eligible examples")
+        if self._stacked is None:
+            self._stacked = (
+                np.concatenate(self._features, axis=0),
+                np.concatenate(self._actions, axis=0),
+                np.concatenate(self._masks, axis=0),
+            )
+        features, actions, masks = self._stacked
+        indices = self._rng.randint(0, len(actions), size=int(batch_size))
+        return features[indices], actions[indices], masks[indices]
+
+
 def _behavior_clone_pretrain(env_factory, train_cases, horizon_seconds, network,
-                             fixed_duration, action_interval, prior):
-    losses = []
+                             fixed_duration, action_interval, prior,
+                             learning_seed=0):
+    weighted_losses = []
+    weighted_agreements = []
+    examples = _BehaviorExamples(learning_seed)
+    updates = 0
+    total_teacher_labels = 0
+    switch_eligible_labels = 0
     case_rows = []
     for case in train_cases:
         case_rows.append({
             "case_id": case["case_id"], "scenario": case["scenario"],
             "flow_sha256": case.get("flow_sha256"), "decisions": 0,
-            "labels": 0,
+            "labels": 0, "teacher_labels": 0, "forced_labels_excluded": 0,
         })
     by_case = dict((row["case_id"], row) for row in case_rows)
     for _ in range(int(prior["bc_epochs"])):
@@ -167,28 +278,57 @@ def _behavior_clone_pretrain(env_factory, train_cases, horizon_seconds, network,
                     labels = np.asarray(
                         [reference[agent_id] for agent_id in env.agent_ids],
                         dtype=np.int64)
-                    losses.append(float(network.behavior_clone_step(
-                        features, labels, mask_batch)))
+                    total_teacher_labels += len(env.agent_ids)
+                    eligible_count = examples.add(
+                        features, labels, mask_batch)
+                    switch_eligible_labels += eligible_count
+                    metrics = network.behavior_clone_step(
+                        features, labels, mask_batch, return_metrics=True)
+                    if metrics["update_applied"]:
+                        updates += 1
+                        weighted_losses.append(
+                            metrics["conditional_cross_entropy"]
+                            * metrics["switch_eligible_labels"])
+                        weighted_agreements.append(
+                            metrics["top1_agreement"]
+                            * metrics["switch_eligible_labels"])
                     observations, _, done, info = env.step(reference)
                     by_case[case["case_id"]]["decisions"] += 1
-                    by_case[case["case_id"]]["labels"] += len(env.agent_ids)
+                    by_case[case["case_id"]]["teacher_labels"] += len(env.agent_ids)
+                    by_case[case["case_id"]]["labels"] += eligible_count
+                    by_case[case["case_id"]]["forced_labels_excluded"] += (
+                        len(env.agent_ids) - eligible_count)
                 _assert_rollout_complete(
                     info, horizon_seconds,
                     "behavior cloning %s" % case["case_id"])
             finally:
                 _close(env)
-    return {
-        "schema_version": 1,
+    evidence = {
+        "schema_version": 2,
         "teacher": "validation_tuned_fixed",
         "fixed_green_duration": int(fixed_duration),
         "bc_epochs": int(prior["bc_epochs"]),
-        "updates": len(losses),
-        "labels": sum(row["labels"] for row in case_rows),
-        "mean_loss": float(np.mean(losses)) if losses else None,
+        "loss_name": "conditional_cross_entropy",
+        "updates": updates,
+        "teacher_labels": total_teacher_labels,
+        "labels": switch_eligible_labels,
+        "switch_eligible_labels": switch_eligible_labels,
+        "forced_labels_excluded": total_teacher_labels - switch_eligible_labels,
+        "conditional_cross_entropy": (
+            float(sum(weighted_losses)) / switch_eligible_labels
+            if switch_eligible_labels else None),
+        "mean_loss": (float(sum(weighted_losses)) / switch_eligible_labels
+                      if switch_eligible_labels else None),
+        "top1_agreement": (
+            float(sum(weighted_agreements)) / switch_eligible_labels
+            if switch_eligible_labels else None),
         "source_split": "train",
         "source_case_ids": [row["case_id"] for row in case_rows],
         "train_cases": case_rows,
     }
+    if switch_eligible_labels <= 0:
+        raise ValueError("behavior prior has no switch-eligible train labels")
+    return evidence, examples
 
 
 def _close(env):
@@ -219,6 +359,8 @@ def _rollout(env, net, fixed_green_duration=None, action_interval=10,
                                             action_interval))
     audit_total = 0
     audit_disagreements = 0
+    audit_switch_eligible = 0
+    audit_switch_disagreements = 0
     while not done:
         masks = env.action_masks()
         actions = {}
@@ -236,6 +378,11 @@ def _rollout(env, net, fixed_green_duration=None, action_interval=10,
                 audit_disagreements += sum(
                     actions[agent_id] != reference[agent_id]
                     for agent_id in env.agent_ids)
+                for agent_id in env.agent_ids:
+                    if int(np.count_nonzero(masks[agent_id])) > 1:
+                        audit_switch_eligible += 1
+                        audit_switch_disagreements += int(
+                            actions[agent_id] != reference[agent_id])
         else:
             actions = fixed_controller.act({"action_masks": masks})
         observations, _, done, info = env.step(actions)
@@ -249,6 +396,12 @@ def _rollout(env, net, fixed_green_duration=None, action_interval=10,
             "reference_disagreement_rate": (
                 float(audit_disagreements) / audit_total
                 if audit_total else 0.0),
+            "switch_eligible_decisions": audit_switch_eligible,
+            "switch_eligible_reference_disagreements": (
+                audit_switch_disagreements),
+            "switch_eligible_reference_disagreement_rate": (
+                float(audit_switch_disagreements) / audit_switch_eligible
+                if audit_switch_eligible else 0.0),
         }
     return info
 
@@ -510,7 +663,8 @@ def _validation_rows(env_factory, cases, horizon_seconds, net, config,
 def _checkpoint_contract(manifest, config, max_green, tuning, verification,
                          controller_family="neighbor_phase_ddqn",
                          feature_order=None,
-                         baseline_tuning_provenance=None):
+                         baseline_tuning_provenance=None,
+                         source_tree_attestation=None):
     preprocessing = manifest["preprocessing"]
     model = config["model"]
     manifest_sha256 = canonical_json_sha256(manifest)
@@ -530,9 +684,12 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
         "padding_actions_selectable": False,
         "n_actions": int(max_green),
     })
+    observation = _validated_observation(
+        config, tuning["selected"]["fixed_green_duration"])
     contract = {
         "controller_family": controller_family,
-        "obs_schema_version": 2,
+        "obs_schema_version": (2 if observation is None else
+                               int(observation["schema_version"])),
         "feature_order": order,
         "feature_dim": len(order),
         "hidden_size": int(model["hidden"]),
@@ -559,6 +716,7 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
         "generator_config_sha256": generator_config_sha256,
         "runtime": manifest["runtime"],
         "baseline_tuning_sha256": tuning["tuning_sha256"],
+        "training_config_sha256": canonical_json_sha256(config),
         "foundation_verification": verification,
         "checkpoint_eligibility_policy": dict(CHECKPOINT_ELIGIBILITY_POLICY),
         "training_objective": {
@@ -566,6 +724,11 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
             "temporal_aggregation": "mean_over_simulator_steps_in_action_interval",
         },
     }
+    if observation is not None:
+        contract["observation"] = json.loads(json.dumps(observation))
+    if source_tree_attestation is not None:
+        contract["source_tree"] = json.loads(json.dumps(
+            source_tree_attestation))
     if config.get("behavior_prior") is not None:
         contract["behavior_prior"] = json.loads(json.dumps(
             config["behavior_prior"]))
@@ -580,7 +743,7 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
 def _train_network_impl(env_factory, manifest, config, output_dir,
                         foundation_root, verification, run_start_time,
                         foundation_verification_seconds, controller_family,
-                        baseline_tuning_artifact):
+                        baseline_tuning_artifact, source_tree_attestation):
     """Train without opening the manifest's locked test split."""
     if manifest.get("protocol_version") != 2:
         raise ValueError("Hai Chau manifest protocol_version must be 2")
@@ -634,6 +797,7 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         precomputed_baseline_rows = _selected_baseline_rows(
             tuning, validation_cases)
     fixed_duration = tuning["selected"]["fixed_green_duration"]
+    observation_contract = _validated_observation(config, fixed_duration)
     tuning_path = os.path.join(output_dir, "baseline-tuning.json")
     _write_json(tuning_path, tuning)
     if source_provenance is not None:
@@ -658,6 +822,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     resolved["generator_config_sha256"] = manifest["generator_config_sha256"]
     resolved["runtime"] = manifest["runtime"]
     resolved["baseline_tuning_sha256"] = tuning["tuning_sha256"]
+    resolved["training_config_sha256"] = canonical_json_sha256(config)
+    resolved["source_tree"] = json.loads(json.dumps(source_tree_attestation))
     if precomputed_provenance is not None:
         resolved["baseline_tuning"] = {
             "mode": "precomputed",
@@ -670,7 +836,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "manifest": manifest,
         "manifest_sha256": manifest_sha256,
         "foundation_verification": verification,
-        "code_commit": _git_sha(foundation_root),
+        "code_commit": source_tree_attestation["git_commit"],
+        "source_tree": json.loads(json.dumps(source_tree_attestation)),
         "controller_id": controller_family,
         "mode": config.get("mode"),
         "learning_seed": learning_seed,
@@ -692,6 +859,7 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     network = None
     replay = None
     contract = None
+    checkpoint_contracts = {}
     decisions = 0
     updates = 0
     simulated_seconds = 0.0
@@ -700,12 +868,19 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     validation_seconds = 0.0
     behavior_prior = _validated_behavior_prior(config)
     behavior_pretraining = None
+    behavior_examples = None
+    rehearsal_losses = []
+    rehearsal_agreements = []
+    rehearsal_updates = 0
+    rehearsal_labels = 0
     training_policy_audit = {
         "eligible_decisions": 0,
+        "switch_eligible_decisions": 0,
         "reference_actions_executed": 0,
         "random_actions_executed": 0,
         "learned_actions_executed": 0,
         "learned_reference_disagreements": 0,
+        "switch_eligible_learned_reference_disagreements": 0,
         "executed_interventions": 0,
     }
     action_interval = int(config.get("simulation", {}).get(
@@ -748,7 +923,9 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                     replay = NetworkReplayBuffer(
                         int(optimizer["buffer_capacity"]), max_green, feature_dim,
                         seed=learning_seed)
-                    feature_order = list(FEATURES)
+                    feature_order = list(
+                        SCHEDULE_CONTEXT_FEATURES
+                        if observation_contract is not None else FEATURES)
                 else:
                     network = SharedDQN(
                         feature_dim, max_green, hidden=int(model_config["hidden"]),
@@ -765,18 +942,42 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                     manifest, config, max_green, tuning, verification,
                     controller_family=controller_family,
                     feature_order=feature_order,
-                    baseline_tuning_provenance=precomputed_provenance)
+                    baseline_tuning_provenance=precomputed_provenance,
+                    source_tree_attestation=source_tree_attestation)
                 if behavior_prior is not None:
                     if controller_family != "neighbor_phase_ddqn":
                         raise ValueError(
                             "behavior prior requires neighbor_phase_ddqn")
-                    behavior_pretraining = _behavior_clone_pretrain(
+                    behavior_pretraining, behavior_examples = _behavior_clone_pretrain(
                         env_factory, train_cases, horizon_seconds, network,
-                        fixed_duration, action_interval, behavior_prior)
+                        fixed_duration, action_interval, behavior_prior,
+                        learning_seed=learning_seed)
+                    behavior_pretraining["rehearsal"] = json.loads(json.dumps(
+                        behavior_prior.get("rehearsal")))
+                    behavior_pretraining[
+                        "rehearsal_pool_switch_eligible_labels"] = len(
+                            behavior_examples)
                     network.sync_target()
                     _write_json(os.path.join(
                         output_dir, "behavior-prior.json"),
                         behavior_pretraining)
+                    if behavior_prior.get("pre_rl_validation", False):
+                        validation_start = time.time()
+                        rows = _validation_rows(
+                            env_factory, validation_cases, horizon_seconds,
+                            network, config, fixed_duration,
+                            precomputed_baseline_rows)
+                        validation_seconds += time.time() - validation_start
+                        score = score_validation(rows)
+                        score["training_step"] = 0
+                        validation_log["step-0"] = {
+                            "diagnostic_only": True,
+                            "selectable": False,
+                            "rows": rows,
+                            "score": score,
+                        }
+                        _write_json(os.path.join(
+                            output_dir, "validation.json"), validation_log)
             elif observations[first_agent].shape != (
                     ((contract["max_green"], contract["feature_dim"])
                      if controller_family == "neighbor_phase_ddqn"
@@ -847,6 +1048,12 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                         training_policy_audit[
                             "learned_reference_disagreements"] += int(
                                 int(greedy[agent_index]) != reference[agent_id])
+                        if len(valid) > 1:
+                            training_policy_audit[
+                                "switch_eligible_decisions"] += 1
+                            training_policy_audit[
+                                "switch_eligible_learned_reference_disagreements"] += int(
+                                    int(greedy[agent_index]) != reference[agent_id])
                         training_policy_audit["executed_interventions"] += int(
                             action != reference[agent_id])
                 next_observations, rewards, done, info = env.step(actions)
@@ -873,6 +1080,24 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
                         ** int(model_config.get("n_step", 1)))
                     losses.append(loss)
                     updates += 1
+                    rehearsal = (behavior_prior or {}).get("rehearsal")
+                    if (rehearsal is not None and rehearsal["enabled"]
+                            and updates % int(rehearsal["every_td_updates"]) == 0):
+                        rehearsal_batch = behavior_examples.sample(
+                            int(rehearsal["batch_size"]))
+                        rehearsal_metrics = network.behavior_clone_step(
+                            rehearsal_batch[0], rehearsal_batch[1],
+                            rehearsal_batch[2], return_metrics=True)
+                        if not rehearsal_metrics["update_applied"]:
+                            raise ValueError(
+                                "behavior rehearsal sampled no switch-eligible labels")
+                        count = rehearsal_metrics["switch_eligible_labels"]
+                        rehearsal_updates += 1
+                        rehearsal_labels += count
+                        rehearsal_losses.append(
+                            rehearsal_metrics["conditional_cross_entropy"] * count)
+                        rehearsal_agreements.append(
+                            rehearsal_metrics["top1_agreement"] * count)
                     if updates % int(optimizer["target_sync"]) == 0:
                         network.sync_target()
             _assert_rollout_complete(
@@ -923,7 +1148,10 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         if (episode + 1) % int(run["eval_every"]) == 0:
             checkpoint_id = "step-%d" % (episode + 1)
             checkpoint_dir = os.path.join(checkpoints_dir, checkpoint_id)
-            network.save_bundle(checkpoint_dir, contract)
+            checkpoint_contract = json.loads(json.dumps(contract))
+            checkpoint_contract["training_step"] = episode + 1
+            checkpoint_contracts[checkpoint_id] = checkpoint_contract
+            network.save_bundle(checkpoint_dir, checkpoint_contract)
             validation_start = time.time()
             rows = _validation_rows(
                 env_factory, validation_cases, horizon_seconds,
@@ -937,7 +1165,8 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
     if network is None:
         raise ValueError("training produced no episodes")
     scores = {checkpoint_id: value["score"]
-              for checkpoint_id, value in validation_log.items()}
+              for checkpoint_id, value in validation_log.items()
+              if value.get("selectable", True)}
     try:
         selected = choose_checkpoint(scores)
         selection_status = "eligible"
@@ -946,11 +1175,12 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         selection_status = "ineligible_negative_result"
     model_class = (PhaseScoringDDQN if controller_family == "neighbor_phase_ddqn"
                    else SharedDQN)
+    selected_contract = checkpoint_contracts[selected]
     final_network = model_class.load_bundle(
-        os.path.join(checkpoints_dir, selected), contract)
+        os.path.join(checkpoints_dir, selected), selected_contract)
     final_checkpoint = os.path.join(output_dir, "checkpoint")
-    final_network.save_bundle(final_checkpoint, contract)
-    reloaded = model_class.load_bundle(final_checkpoint, contract)
+    final_network.save_bundle(final_checkpoint, selected_contract)
+    reloaded = model_class.load_bundle(final_checkpoint, selected_contract)
 
     reload_verification = None
     if validation_cases:
@@ -1006,6 +1236,24 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
             if eligible else 0.0)
         summary["training_policy_audit"] = training_policy_audit
         summary["behavior_pretraining"] = behavior_pretraining
+        rehearsal = behavior_prior.get("rehearsal")
+        if rehearsal is not None:
+            summary["behavior_rehearsal"] = {
+                "enabled": rehearsal["enabled"],
+                "type": rehearsal["type"],
+                "every_td_updates": rehearsal["every_td_updates"],
+                "batch_size": rehearsal["batch_size"],
+                "source_split": "train",
+                "pool_switch_eligible_labels": len(behavior_examples),
+                "updates": rehearsal_updates,
+                "switch_eligible_labels_sampled": rehearsal_labels,
+                "conditional_cross_entropy": (
+                    float(sum(rehearsal_losses)) / rehearsal_labels
+                    if rehearsal_labels else None),
+                "top1_agreement": (
+                    float(sum(rehearsal_agreements)) / rehearsal_labels
+                    if rehearsal_labels else None),
+            }
     if run.get("require_optimizer_updates") and updates <= 0:
         raise ValueError("run requires at least one optimizer update")
     _write_json(os.path.join(output_dir, "train-log.json"), episode_log)
@@ -1025,6 +1273,11 @@ def _train_network_impl(env_factory, manifest, config, output_dir,
         "selection.json", "summary.json", "checkpoint/contract.json",
         "checkpoint/weights.npz",
     ]
+    for checkpoint_id in sorted(checkpoint_contracts):
+        artifact_paths.extend([
+            "checkpoints/%s/contract.json" % checkpoint_id,
+            "checkpoints/%s/weights.npz" % checkpoint_id,
+        ])
     if behavior_prior is not None:
         artifact_paths.append("behavior-prior.json")
     if precomputed_provenance is not None:
@@ -1064,6 +1317,7 @@ def train_network(env_factory, manifest, config, output_dir,
     run_start_time = (time.time() if run_started_at is None
                       else float(run_started_at))
     root = os.path.abspath(foundation_root or os.getcwd())
+    source_tree_attestation = _tracked_tree_attestation(root)
     verifier = foundation_verifier or _default_foundation_verifier
     verification_start = time.time()
     verification = _verify_training_foundation(root, manifest, verifier)
@@ -1072,7 +1326,7 @@ def train_network(env_factory, manifest, config, output_dir,
         return _train_network_impl(
             env_factory, manifest, config, output_dir, root, verification,
             run_start_time, verification_seconds, controller_family,
-            baseline_tuning_artifact)
+            baseline_tuning_artifact, source_tree_attestation)
     except Exception as exc:
         absolute_output = os.path.abspath(output_dir)
         if os.path.isdir(absolute_output):

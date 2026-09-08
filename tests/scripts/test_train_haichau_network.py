@@ -58,6 +58,45 @@ def test_env_factory_wires_fresh_network_metrics_observer(monkeypatch, tmp_path)
         "lane-a0": 12.0, "lane-a1": 12.0, "lane-b0": 12.0}
 
 
+def test_env_factory_wires_v3_fixed_schedule_encoder(monkeypatch, tmp_path):
+    class FakeRoadNet(object):
+        def signalized_ids(self): return ["A"]
+        def incoming_lanes(self, node_id): return []
+
+    captured = {}
+    monkeypatch.setattr(train_haichau_network.RoadNet, "load",
+                        lambda *args, **kwargs: FakeRoadNet())
+
+    def encoder(*args, **kwargs):
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr(train_haichau_network, "PhaseFeatureEncoder", encoder)
+    manifest = {
+        "network": {"path": "network.json"},
+        "phase_contract": {"path": "phases.json", "sha256": "a" * 64},
+        "preprocessing": {"count_norm": 20, "capacity_norm": 12},
+        "simulation": {"action_interval": 10, "yellow_time": 3,
+                       "min_green": 10, "maximum_red": 120},
+    }
+    resolved = {
+        "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.2,
+                   "switch_penalty": 0.05},
+        "observation": {
+            "schema_version": 3,
+            "type": "phase_rows_fixed_schedule_context",
+            "phase_row_identity": "cycle_fraction",
+            "global_cycle": {
+                "encoding": "sin_cos", "green_duration_seconds": 25,
+                "period": "green_duration_times_selectable_green_count"}},
+    }
+
+    train_haichau_network._make_env_factory(
+        manifest, resolved, tmp_path, "neighbor_phase_ddqn")
+
+    assert captured["schedule_green_duration"] == 25.0
+
+
 def test_makefile_exposes_all_pinned_training_modes():
     makefile = open("Makefile").read()
     for mode in ("smoke", "pilot", "final"):

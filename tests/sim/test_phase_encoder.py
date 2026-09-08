@@ -3,6 +3,7 @@ import json
 import numpy as np
 
 from traffic_rl.network.roadnet import RoadNet
+import traffic_rl.sim.phase_encoder as phase_encoder
 from traffic_rl.sim.phase_encoder import PhaseFeatureEncoder
 
 
@@ -114,3 +115,30 @@ def test_movement_count_uses_lane_link_pairs(tmp_path):
     features, _ = encoder.encode_all("A", {}, {}, 0, 0, [0, 0])
 
     assert np.isclose(features[0, 11], 2.0 / 20.0)
+
+
+def test_schedule_context_identifies_rows_and_uses_three_green_75s_cycle(tmp_path):
+    roadnet = _single_signal_roadnet(tmp_path, "A", served_lane=0)
+    phases = roadnet._by_id["A"]["trafficLight"]["lightphases"]
+    phases.extend([
+        {"time": 40, "availableRoadLinks": [0, 1]},
+        {"time": 5, "availableRoadLinks": []},
+    ])
+    encoder = PhaseFeatureEncoder(
+        roadnet, 20.0, 40.0, schedule_green_duration=25)
+
+    at_zero, mask = encoder.encode_all(
+        "A", {}, {}, 0, 0, [0, 0, 0], elapsed_seconds=0)
+    at_25, _ = encoder.encode_all(
+        "A", {}, {}, 0, 0, [0, 0, 0], elapsed_seconds=25)
+    at_75, _ = encoder.encode_all(
+        "A", {}, {}, 0, 0, [0, 0, 0], elapsed_seconds=75)
+
+    assert encoder.feature_order[-3:] == list(phase_encoder.SCHEDULE_FEATURES)
+    assert at_zero.shape == (3, 15)
+    assert mask.tolist() == [True, True, True]
+    np.testing.assert_allclose(at_zero[:, 12], [0.0, 1.0 / 3.0, 2.0 / 3.0])
+    np.testing.assert_allclose(at_zero[0, 13:], [0.0, 1.0], atol=1e-6)
+    np.testing.assert_allclose(
+        at_25[0, 13:], [np.sqrt(3.0) / 2.0, -0.5], atol=1e-6)
+    np.testing.assert_allclose(at_75[:, 13:], at_zero[:, 13:], atol=1e-6)

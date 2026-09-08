@@ -248,6 +248,40 @@ def test_loads_neighbor_ddqn_with_phase_encoder(tmp_path, monkeypatch):
     assert isinstance(controller.net, PhaseScoringDDQN)
 
 
+def test_loads_v3_neighbor_checkpoint_with_bound_schedule_context(
+        tmp_path, monkeypatch):
+    from traffic_rl.sim.phase_encoder import SCHEDULE_CONTEXT_FEATURES
+    checkpoint_dir = tmp_path / "neighbor-v3"
+    observation = {
+        "schema_version": 3,
+        "type": "phase_rows_fixed_schedule_context",
+        "phase_row_identity": "cycle_fraction",
+        "global_cycle": {
+            "encoding": "sin_cos", "green_duration_seconds": 25,
+            "period": "green_duration_times_selectable_green_count"},
+    }
+    contract = {
+        "controller_family": "neighbor_phase_ddqn",
+        "obs_schema_version": 3,
+        "feature_dim": len(SCHEDULE_CONTEXT_FEATURES),
+        "feature_order": list(SCHEDULE_CONTEXT_FEATURES),
+        "hidden_size": 4, "observation": observation,
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
+    }
+    PhaseScoringDDQN(
+        len(SCHEDULE_CONTEXT_FEATURES), 4, 1e-3, seed=1).save_bundle(
+            str(checkpoint_dir), contract)
+    run = _run(tmp_path, "neighbor_phase_ddqn",
+               checkpoint_dir / "weights.npz", contract)
+
+    env, controller = build_controller_runtime(
+        tmp_path, run, tmp_path / "runtime", **_dependencies(monkeypatch))
+
+    assert env.encoder.feature_order == list(SCHEDULE_CONTEXT_FEATURES)
+    assert env.encoder.schedule_green_duration == 25.0
+    assert controller.net.feature_dim == len(SCHEDULE_CONTEXT_FEATURES)
+
+
 def test_rejects_changed_demand_before_engine_creation(tmp_path, monkeypatch):
     run = _run(tmp_path, "tuned_fixed")
     (tmp_path / "demand.json").write_text("changed")

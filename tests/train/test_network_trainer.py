@@ -1,6 +1,8 @@
 import json
+import subprocess
 
 import numpy as np
+import pytest
 import traffic_rl.train.network_trainer as network_trainer
 
 from traffic_rl.agents.dqn import SharedDQN
@@ -8,6 +10,19 @@ from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
 from traffic_rl.train.network_trainer import (
     _default_foundation_verifier, canonical_json_sha256,
     precompute_baseline_tuning, resolve_training_config, train_network)
+
+
+REAL_TRACKED_TREE_ATTESTATION = getattr(
+    network_trainer, "_tracked_tree_attestation", None)
+
+
+@pytest.fixture(autouse=True)
+def _unit_clean_tree(monkeypatch):
+    monkeypatch.setattr(network_trainer, "_tracked_tree_attestation", lambda root: {
+        "schema_version": 1, "git_commit": "f" * 40,
+        "tracked_worktree": "clean", "index": "clean",
+        "untracked_files_policy": "allowed",
+    }, raising=False)
 
 
 class FakeNetworkEnv(object):
@@ -127,6 +142,41 @@ def _bc_config():
     return config
 
 
+def _v3_bc_config(rehearsal_enabled=True):
+    config = _bc_config()
+    config["baseline"]["search_green_durations"] = [25]
+    config["model"]["feature_dim"] = 15
+    config["observation"] = {
+        "schema_version": 3,
+        "type": "phase_rows_fixed_schedule_context",
+        "phase_row_identity": "cycle_fraction",
+        "global_cycle": {
+            "encoding": "sin_cos",
+            "green_duration_seconds": 25,
+            "period": "green_duration_times_selectable_green_count",
+        },
+    }
+    config["behavior_prior"]["rehearsal"] = {
+        "enabled": rehearsal_enabled,
+        "type": "behavior_clone",
+        "every_td_updates": 1,
+        "batch_size": 2,
+    }
+    config["behavior_prior"]["pre_rl_validation"] = True
+    return config
+
+
+class FakeV3NetworkEnv(FakeNetworkEnv):
+    def _observations(self):
+        value = float(self._step) / 10.0
+        features = np.full((2, 15), value, np.float32)
+        features[:, 6] = [1.0, 0.0]
+        features[:, 12] = [0.0, 0.5]
+        features[:, 13] = 0.0
+        features[:, 14] = 1.0
+        return {agent: features.copy() for agent in self.agent_ids}
+
+
 def test_behavior_prior_uses_only_train_cases_and_audits_raw_validation(tmp_path):
     created = []
 
@@ -164,6 +214,96 @@ def test_behavior_prior_uses_only_train_cases_and_audits_raw_validation(tmp_path
     assert contract["behavior_prior"]["type"] == "fixed_time_behavior_cloning"
     status = json.loads((output / "status.json").read_text())
     assert "behavior-prior.json" in status["artifact_sha256"]
+
+
+def test_v3_behavior_prior_reports_conditional_bc_and_rehearses_train_only_labels(
+        tmp_path):
+    output = tmp_path / "v3-run"
+    manifest = _manifest()
+    config = _v3_bc_config()
+    tuning = _precomputed_tuning(manifest, config)
+    tuning_path = tmp_path / "baseline-v3.json"
+    tuning_path.write_text(json.dumps(tuning))
+
+    summary = train_network(
+        lambda case, horizon: FakeV3NetworkEnv(case, horizon),
+        manifest, config, str(output), foundation_root=str(tmp_path),
+        foundation_verifier=_verified,
+        baseline_tuning_artifact=str(tuning_path))
+
+    prior = json.loads((output / "behavior-prior.json").read_text())
+    assert prior["schema_version"] == 2
+    assert prior["loss_name"] == "conditional_cross_entropy"
+    assert prior["switch_eligible_labels"] == prior["labels"] > 0
+    assert 0.0 <= prior["top1_agreement"] <= 1.0
+    assert prior["forced_labels_excluded"] == 0
+    rehearsal = summary["behavior_rehearsal"]
+    assert rehearsal["source_split"] == "train"
+    assert rehearsal["updates"] == summary["updates"] > 0
+    assert rehearsal["switch_eligible_labels_sampled"] > 0
+    assert rehearsal["conditional_cross_entropy"] is not None
+    contract = json.loads((output / "checkpoint/contract.json").read_text())
+    assert contract["obs_schema_version"] == 3
+    assert contract["observation"] == config["observation"]
+    assert contract["behavior_prior"]["rehearsal"] == \
+        config["behavior_prior"]["rehearsal"]
+    assert contract["training_step"] == 3
+    assert contract["training_config_sha256"] == canonical_json_sha256(config)
+    checkpoint_contract = json.loads((
+        output / "checkpoints/step-3/contract.json").read_text())
+    assert checkpoint_contract["training_step"] == 3
+    status = json.loads((output / "status.json").read_text())
+    assert "checkpoints/step-3/contract.json" in status["artifact_sha256"]
+    assert "checkpoints/step-3/weights.npz" in status["artifact_sha256"]
+    rows = json.loads((output / "validation.json").read_text())[
+        "step-3"]["rows"]
+    for row in rows:
+        audit = row["policy_audit"]
+        assert audit["switch_eligible_decisions"] > 0
+        assert audit["switch_eligible_reference_disagreement_rate"] == \
+            float(audit["switch_eligible_reference_disagreements"]) / \
+            audit["switch_eligible_decisions"]
+    step_zero = json.loads((output / "validation.json").read_text())["step-0"]
+    assert step_zero["diagnostic_only"] is True
+    assert step_zero["selectable"] is False
+    assert step_zero["score"]["training_step"] == 0
+    assert summary["selected_checkpoint"] == "step-3"
+
+
+@pytest.mark.parametrize("dirty_kind", ["tracked", "staged"])
+def test_training_rejects_dirty_tracked_or_index_tree_before_artifacts(
+        tmp_path, monkeypatch, dirty_kind):
+    subprocess.check_call(["git", "init", "-q"], cwd=str(tmp_path))
+    subprocess.check_call(
+        ["git", "config", "user.email", "test@example.invalid"],
+        cwd=str(tmp_path))
+    subprocess.check_call(
+        ["git", "config", "user.name", "Test"], cwd=str(tmp_path))
+    tracked = tmp_path / "tracked.txt"
+    tracked.write_text("clean\n")
+    subprocess.check_call(["git", "add", "tracked.txt"], cwd=str(tmp_path))
+    subprocess.check_call(
+        ["git", "commit", "-qm", "fixture"], cwd=str(tmp_path))
+    if dirty_kind == "tracked":
+        tracked.write_text("dirty\n")
+        message = "tracked worktree"
+    else:
+        staged = tmp_path / "staged.txt"
+        staged.write_text("staged\n")
+        subprocess.check_call(["git", "add", "staged.txt"], cwd=str(tmp_path))
+        message = "index"
+    monkeypatch.setattr(
+        network_trainer, "_tracked_tree_attestation",
+        REAL_TRACKED_TREE_ATTESTATION)
+    output = tmp_path / "run"
+
+    with pytest.raises(ValueError, match=message):
+        train_network(
+            lambda case, horizon: FakeNetworkEnv(case, horizon),
+            _manifest(), _config(), str(output), foundation_root=str(tmp_path),
+            foundation_verifier=_verified)
+
+    assert not output.exists()
 
 
 def _verified(root, manifest):

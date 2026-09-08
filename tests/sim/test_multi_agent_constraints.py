@@ -101,6 +101,24 @@ def test_injected_phase_encoder_produces_phase_rows(tmp_path):
     np.testing.assert_array_equal(env.action_masks()["A"], [True, True])
 
 
+def test_schedule_context_uses_elapsed_seconds_not_engine_step_count(tmp_path):
+    roadnet = _roadnet(tmp_path)
+    encoder = PhaseFeatureEncoder(
+        roadnet, count_norm=20.0, capacity_norm=40.0,
+        schedule_green_duration=25)
+    env = MultiAgentTrafficEnv(
+        roadnet, FakeEngine(), encoder=encoder, action_interval=10,
+        min_green=0, sim_step_seconds=0.5)
+    env.reset()
+
+    observations, _, _, _ = env.step({"A": 0})
+
+    angle = 2.0 * np.pi * 5.0 / 50.0
+    np.testing.assert_allclose(
+        observations["A"][0, 13:], [np.sin(angle), np.cos(angle)],
+        atol=1e-6)
+
+
 def test_reward_weights_local_queue_and_downstream_blocking(tmp_path):
     roadnet = _roadnet(tmp_path)
     engine = FakeEngine(

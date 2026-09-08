@@ -122,7 +122,8 @@ class PhaseScoringDDQN(object):
         self._adam_step(self._backprop(score_gradient.reshape(-1, 1), cache))
         return loss
 
-    def behavior_clone_step(self, features, reference_actions, masks):
+    def behavior_clone_step(self, features, reference_actions, masks,
+                            return_metrics=False):
         """Fit the online phase scorer to valid reference phase choices.
 
         The policy distribution is a softmax over only valid phase rows.  This
@@ -153,6 +154,22 @@ class PhaseScoringDDQN(object):
         if not np.all(valid[indices, actions]):
             raise ValueError("reference action is masked")
 
+        eligible = valid.sum(axis=1) > 1
+        eligible_count = int(eligible.sum())
+        if eligible_count == 0:
+            metrics = {
+                "conditional_cross_entropy": None,
+                "switch_eligible_labels": 0,
+                "top1_agreement": None,
+                "update_applied": False,
+            }
+            return metrics if return_metrics else None
+        features = features[eligible]
+        actions = actions[eligible]
+        valid = valid[eligible]
+        batch = eligible_count
+        indices = np.arange(batch)
+
         scores, cache = self._scores(features, self._online())
         if not np.all(np.isfinite(scores)):
             raise ValueError("behavior cloning scores must be finite")
@@ -175,6 +192,14 @@ class PhaseScoringDDQN(object):
         score_gradient /= float(batch)
         self._adam_step(self._backprop(score_gradient.astype(np.float32)
                                        .reshape(-1, 1), cache))
+        if return_metrics:
+            return {
+                "conditional_cross_entropy": loss,
+                "switch_eligible_labels": eligible_count,
+                "top1_agreement": float(np.mean(
+                    np.argmax(np.where(valid, scores, NEG), axis=1) == actions)),
+                "update_applied": True,
+            }
         return loss
 
     def _backprop(self, score_gradient, cache):

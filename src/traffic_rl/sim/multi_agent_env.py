@@ -258,7 +258,9 @@ class MultiAgentTrafficEnv:
         if hasattr(self.encoder, "encode_all"):
             return {a: self.encoder.encode_all(
                 a, counts, waiting, self._green[a], self._elapsed_green[a],
-                self._time_since_service[a])[0] for a in self.agent_ids}
+                self._time_since_service[a],
+                elapsed_seconds=self._t * self.sim_step_seconds)[0]
+                    for a in self.agent_ids}
         # ats state needs queued counts too (running = all - queued).
         waiting = waiting if self.state_mode == "ats" else None
         return {a: self.encoder.encode(a, counts, self._green[a], waiting)

@@ -1,0 +1,19 @@
+# Immutable before-pilot v3-A selection contract. Step-0 is required as a
+# non-selectable representation diagnostic; selection uses only 4/8/12.
+schema_version: 1
+decision_type: haichau_pilot_schedule_rehearsal_selection
+learning_seed: 11
+mode: pilot
+manifest: results/haichau_network_v2/experiment-manifest.json
+baseline_tuning_artifact: results/haichau_network_v2/training/final-baseline-tuning.json
+diagnostic_checkpoint: step-0
+validation_checkpoints: [step-4, step-8, step-12]
+arms:
+  schedule_bc_rehearsal:
+    config: configs/haichau_training_v3_schedule_rehearsal.yaml
+    run_dir: results/haichau_network_v2/training/pilot-v3-schedule-rehearsal-seed11
+  schedule_bc_no_rehearsal:
+    config: configs/haichau_training_v3_schedule_no_rehearsal.yaml
+    run_dir: results/haichau_network_v2/training/pilot-v3-schedule-no-rehearsal-seed11
+decision_output: results/haichau_network_v2/training/pilot-v3-schedule-selection.json
+selected_config_output: configs/haichau_training_v3_final_selected.yaml

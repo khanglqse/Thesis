@@ -181,6 +181,50 @@ def test_behavior_cloning_reports_masked_softmax_cross_entropy():
     assert loss == pytest.approx((np.log(2.0) + np.log(3.0)) / 2.0)
 
 
+def test_behavior_cloning_ignores_forced_rows_and_reports_conditional_metrics():
+    net = PhaseScoringDDQN(1, hidden=2, lr=1e-3, seed=1)
+    eligible_only = PhaseScoringDDQN(1, hidden=2, lr=1e-3, seed=1)
+    features = np.array([[[4.0], [0.0], [0.0]],
+                         [[0.0], [4.0], [0.0]],
+                         [[0.0], [0.0], [4.0]]], dtype=np.float32)
+
+    metrics = net.behavior_clone_step(
+        features, np.array([0, 1, 2]),
+        np.array([[True, False, False],
+                  [True, True, False],
+                  [False, False, True]]), return_metrics=True)
+    expected = eligible_only.behavior_clone_step(
+        features[1:2], np.array([1]),
+        np.array([[True, True, False]]), return_metrics=True)
+
+    assert metrics["switch_eligible_labels"] == 1
+    assert metrics["conditional_cross_entropy"] == pytest.approx(
+        expected["conditional_cross_entropy"])
+    assert metrics["top1_agreement"] == expected["top1_agreement"]
+    assert metrics["update_applied"] is True
+    for name in net.params:
+        np.testing.assert_array_equal(
+            getattr(net, name), getattr(eligible_only, name))
+
+
+def test_behavior_cloning_skips_update_when_every_action_is_forced():
+    net = PhaseScoringDDQN(1, hidden=2, lr=1e-3, seed=1)
+    before = [getattr(net, name).copy() for name in net.params]
+
+    metrics = net.behavior_clone_step(
+        np.zeros((2, 2, 1), np.float32), np.array([0, 1]),
+        np.array([[True, False], [False, True]]), return_metrics=True)
+
+    assert metrics == {
+        "conditional_cross_entropy": None,
+        "switch_eligible_labels": 0,
+        "top1_agreement": None,
+        "update_applied": False,
+    }
+    assert all(np.array_equal(old, getattr(net, name))
+               for old, name in zip(before, net.params))
+
+
 @pytest.mark.parametrize("features, actions, masks, message", [
     (np.zeros((2, 3, 4), np.float32), np.array([0]),
      np.ones((2, 3), bool), "reference_actions shape"),

@@ -17,7 +17,8 @@ from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
 from traffic_rl.sim.encoder import ObservationEncoder
 from traffic_rl.sim.phase_encoder import PhaseFeatureEncoder
 from traffic_rl.train.network_trainer import (
-    precompute_baseline_tuning, resolve_training_config, train_network)
+    _validated_observation, precompute_baseline_tuning,
+    resolve_training_config, train_network)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -40,8 +41,12 @@ def _make_env_factory(manifest, resolved, output_dir, controller_family):
     preprocessing = manifest["preprocessing"]
     simulation = manifest["simulation"]
     if controller_family == "neighbor_phase_ddqn":
+        observation = _validated_observation(resolved)
         encoder = PhaseFeatureEncoder(
-            roadnet, preprocessing["count_norm"], preprocessing["capacity_norm"])
+            roadnet, preprocessing["count_norm"], preprocessing["capacity_norm"],
+            schedule_green_duration=(
+                observation["global_cycle"]["green_duration_seconds"]
+                if observation is not None else None))
     else:
         encoder = ObservationEncoder(
             roadnet, count_norm=preprocessing["count_norm"], state_mode="basic")

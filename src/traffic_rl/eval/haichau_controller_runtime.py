@@ -25,7 +25,8 @@ from traffic_rl.network.roadnet import RoadNet
 from traffic_rl.sim.encoder import ObservationEncoder
 from traffic_rl.sim.engine import CityFlowEngine
 from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
-from traffic_rl.sim.phase_encoder import FEATURES, PhaseFeatureEncoder
+from traffic_rl.sim.phase_encoder import (
+    FEATURES, SCHEDULE_CONTEXT_FEATURES, PhaseFeatureEncoder)
 
 
 LEARNED_CONTROLLERS = frozenset((
@@ -137,14 +138,36 @@ def _learned_runtime(project_root, run, roadnet, normalization):
         }
         if contract.get("normalization") != expected_normalization:
             raise ValueError("checkpoint normalization differs from runtime")
-        if list(contract.get("feature_order", ())) != list(FEATURES):
+        observation = contract.get("observation")
+        if observation is None:
+            feature_order = FEATURES
+            schedule_duration = None
+            if contract.get("obs_schema_version", 2) != 2:
+                raise ValueError("neighbor checkpoint observation schema mismatch")
+        else:
+            cycle = observation.get("global_cycle", {})
+            if (contract.get("obs_schema_version") != 3
+                    or observation.get("schema_version") != 3
+                    or observation.get("type") !=
+                    "phase_rows_fixed_schedule_context"
+                    or observation.get("phase_row_identity") != "cycle_fraction"
+                    or cycle.get("encoding") != "sin_cos"
+                    or cycle.get("period") !=
+                    "green_duration_times_selectable_green_count"):
+                raise ValueError("neighbor checkpoint observation contract mismatch")
+            schedule_duration = _positive(
+                cycle.get("green_duration_seconds"),
+                "neighbor schedule green duration")
+            feature_order = SCHEDULE_CONTEXT_FEATURES
+        if list(contract.get("feature_order", ())) != list(feature_order):
             raise ValueError("neighbor checkpoint feature order mismatch")
         encoder = PhaseFeatureEncoder(
             roadnet, expected_normalization["count_norm"],
-            expected_normalization["capacity_norm"])
+            expected_normalization["capacity_norm"],
+            schedule_green_duration=schedule_duration)
         network = PhaseScoringDDQN.load_bundle(
             str(checkpoint_dir), contract)
-        if network.feature_dim != len(FEATURES):
+        if network.feature_dim != len(feature_order):
             raise ValueError("neighbor checkpoint feature dimension mismatch")
     else:
         encoder = ObservationEncoder(
