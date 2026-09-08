@@ -111,3 +111,20 @@ departures.
 Consequence: the aborted baseline cache and the earlier pilot are diagnostic
 only. Baseline tuning and all final learned runs must be regenerated with queue
 objective schema 2 before any thesis claim is released.
+
+## 2026-09-08 — Align decision rewards with the one-second queue metric
+
+Decision: compute each DDQN transition reward from the mean local and
+downstream queue across every simulator second in its ten-second action
+interval. Keep the existing per-lane normalization and switch penalty.
+
+Reason: the previous reward sampled only the final second of each interval, so
+two actions with different queue histories could receive the same learning
+signal. The primary outcome is sampled every second. Interval averaging gives
+the learner the same temporal coverage without multiplying reward scale by ten.
+Outside-entry pending remains an evaluation and checkpoint-selection outcome;
+it is not assigned to an arbitrary individual signal as a local reward.
+
+Consequence: old pilot checkpoints are incompatible with the final training
+objective. Checkpoint contracts now record the reward weights and temporal
+aggregation, and all final policies must be trained from scratch.

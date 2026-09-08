@@ -117,6 +117,26 @@ def test_reward_weights_local_queue_and_downstream_blocking(tmp_path):
     assert rewards["A"] == -3.3  # -mean(3,2) - 0.2 * mean(4)
 
 
+def test_reward_averages_queue_over_every_simulator_step(tmp_path):
+    class TimelineEngine(FakeEngine):
+        def step(self):
+            FakeEngine.step(self)
+            self.waiting_counts = ({"rin_0": 2, "rin_1": 0, "rout_0": 0}
+                                   if self._t == 1 else
+                                   {"rin_0": 0, "rin_1": 0, "rout_0": 0})
+
+    env = MultiAgentTrafficEnv(
+        _roadnet(tmp_path), TimelineEngine(), action_interval=2, min_green=0,
+        reward_type="queue_norm", downstream_block_weight=0,
+        switch_penalty=0)
+    env.reset()
+
+    _, rewards, _, _ = env.step({"A": 0})
+
+    # Incoming per-lane queue is 1.0 then 0.0, so interval mean is 0.5.
+    assert rewards["A"] == -0.5
+
+
 def test_info_reports_completion_from_active_and_finished_vehicles(tmp_path):
     env = _env(tmp_path, action_interval=10)
     env.engine.finished_vehicle_count = lambda: 6

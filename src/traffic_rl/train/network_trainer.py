@@ -428,6 +428,10 @@ def _checkpoint_contract(manifest, config, max_green, tuning, verification,
         "runtime": manifest["runtime"],
         "baseline_tuning_sha256": tuning["tuning_sha256"],
         "foundation_verification": verification,
+        "training_objective": {
+            "reward": json.loads(json.dumps(config["reward"])),
+            "temporal_aggregation": "mean_over_simulator_steps_in_action_interval",
+        },
     }
     if baseline_tuning_provenance is not None:
         contract["baseline_tuning_provenance_sha256"] = (

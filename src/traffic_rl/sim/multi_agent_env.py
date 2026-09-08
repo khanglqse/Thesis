@@ -267,6 +267,7 @@ class MultiAgentTrafficEnv:
     def _engine_steps(self, n, clearing=None, transitioning=None):
         clearing = set(clearing or [])
         transitioning = set(transitioning or [])
+        reward_waiting = {}
         for _ in range(n):
             self.engine.step()
             self._t += 1
@@ -299,9 +300,13 @@ class MultiAgentTrafficEnv:
                 max([max(values.values()) for values in
                      self._movement_time_since_service.values()
                      if values] or [0.0]))
+            sensor_waiting = self.engine.lane_waiting_counts()
+            for lane_id, count in sensor_waiting.items():
+                reward_waiting[lane_id] = (
+                    reward_waiting.get(lane_id, 0.0) + float(count))
             waiting = (self.engine.true_lane_waiting_counts()
                        if hasattr(self.engine, "true_lane_waiting_counts")
-                       else self.engine.lane_waiting_counts())
+                       else sensor_waiting)
             network_queue = float(sum(waiting.values()))
             pending = 0
             if self.scheduled_vehicles is not None:
@@ -332,6 +337,7 @@ class MultiAgentTrafficEnv:
                     phases=self._active_lightphase)
         for a in self.agent_ids:
             self._since_switch[a] += n * self.sim_step_seconds
+        return reward_waiting
 
     def step(self, actions):
         # decide switches (respecting min-green + validity)
@@ -360,6 +366,7 @@ class MultiAgentTrafficEnv:
 
         self._phase_switches += len(switching)
         steps = min(int(self.action_interval), max(0, self.max_steps - self._t))
+        reward_waiting_integral = {}
         for _ in range(steps):
             clearing = set()
             transitioning = set()
@@ -375,8 +382,11 @@ class MultiAgentTrafficEnv:
                 role = self._phase_roles[a][self._active_lightphase[a]]
                 if role in ("clearance_yellow", "all_red"):
                     clearing.add(a)
-            self._engine_steps(1, clearing=clearing,
-                               transitioning=transitioning)
+            step_waiting = self._engine_steps(
+                1, clearing=clearing, transitioning=transitioning)
+            for lane_id, count in step_waiting.items():
+                reward_waiting_integral[lane_id] = (
+                    reward_waiting_integral.get(lane_id, 0.0) + float(count))
             for a in list(transitioning):
                 pending = self._pending_transitions[a]
                 pending["remaining"] -= 1
@@ -394,7 +404,8 @@ class MultiAgentTrafficEnv:
                 self._set_phase(a, self._green_phases[a][choice])
                 self._pending_transitions[a] = None
 
-        waiting = self.engine.lane_waiting_counts()
+        waiting = dict((lane_id, total / max(steps, 1))
+                       for lane_id, total in reward_waiting_integral.items())
         rewards = {}
         for a in self.agent_ids:
             outgoing = self.states[a].outgoing_lanes
