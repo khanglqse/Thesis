@@ -1,0 +1,217 @@
+"""Hierarchical matched-case statistics for the Hai Chau campaign."""
+
+import statistics
+
+import numpy as np
+
+
+DETERMINISTIC_CONTROLLERS = frozenset((
+    "tuned_fixed", "max_pressure", "hysteretic_mp",
+))
+
+
+def paired_bootstrap(differences, seed=20260908, samples=10000):
+    values = np.asarray([float(value) for value in differences], dtype=float)
+    if not len(values):
+        raise ValueError("paired bootstrap requires at least one difference")
+    if int(samples) <= 0:
+        raise ValueError("bootstrap samples must be positive")
+    if len(values) == 1:
+        return float(values[0]), float(values[0])
+    rng = np.random.RandomState(int(seed))
+    indexes = rng.randint(0, len(values), size=(int(samples), len(values)))
+    means = values[indexes].mean(axis=1)
+    low, high = np.percentile(means, [2.5, 97.5])
+    return float(low), float(high)
+
+
+def _summary(values):
+    values = [float(value) for value in values]
+    if not values:
+        raise ValueError("cannot summarize an empty statistical unit")
+    low, high = paired_bootstrap(values)
+    return {
+        "n_independent": len(values),
+        "mean": float(statistics.mean(values)),
+        "median": float(statistics.median(values)),
+        "standard_deviation": (
+            float(statistics.stdev(values)) if len(values) > 1 else 0.0),
+        "bootstrap_ci95": [low, high],
+        "independent_values": values,
+    }
+
+
+def _row(run):
+    metrics = run.get("metrics")
+    if not isinstance(metrics, dict):
+        return dict(run)
+    flattened = dict(run)
+    flattened.pop("metrics", None)
+    flattened.update(metrics)
+    return flattened
+
+
+def _match_key(row):
+    return (
+        row.get("regime"), row.get("case_id"), row.get("demand_seed"),
+        row.get("simulator_seed"),
+    )
+
+
+def _independent(rows, metric, learning):
+    if learning:
+        grouped = {}
+        for row in rows:
+            seed = row.get("learning_seed")
+            if seed is None:
+                raise ValueError("learning controller row is missing learning_seed")
+            grouped.setdefault(int(seed), []).append(float(row[metric]))
+        return [statistics.mean(grouped[seed]) for seed in sorted(grouped)]
+    return [float(row[metric]) for row in sorted(rows, key=_match_key)]
+
+
+def aggregate_campaign(runs):
+    """Aggregate demand cases inside learning seeds before inference."""
+    rows = [_row(run) for run in runs]
+    required = (
+        "controller_id", "case_id", "regime", "demand_seed",
+        "simulator_seed", "queue_integral_vehicle_seconds", "completion_rate",
+    )
+    for row in rows:
+        missing = [field for field in required if row.get(field) is None]
+        if missing:
+            raise ValueError("campaign row requires %s" % ", ".join(missing))
+
+    baseline_rows = [row for row in rows
+                     if row["controller_id"] == "tuned_fixed"]
+    baseline = {}
+    for row in baseline_rows:
+        key = _match_key(row)
+        if key in baseline:
+            raise ValueError("deterministic tuned_fixed baseline is duplicated")
+        baseline[key] = row
+    if any(row["controller_id"] != "tuned_fixed" for row in rows) \
+            and not baseline:
+        raise ValueError("matched tuned_fixed baseline is required")
+
+    grouped = {}
+    for row in rows:
+        grouped.setdefault(row["controller_id"], {}).setdefault(
+            row["regime"], []).append(row)
+    summary = {}
+    all_learning_seeds = set()
+    for controller_id in sorted(grouped):
+        summary[controller_id] = {}
+        for regime in sorted(grouped[controller_id]):
+            group = grouped[controller_id][regime]
+            learning = controller_id not in DETERMINISTIC_CONTROLLERS
+            if learning:
+                all_learning_seeds.update(int(row["learning_seed"]) for row in group)
+            queue_values = _independent(
+                group, "queue_integral_vehicle_seconds", learning)
+            result = {
+                "n_independent": len(queue_values),
+                "statistical_unit": (
+                    "learning_seed_after_matched_case_mean" if learning
+                    else "matched_demand_simulator_case"),
+                "queue": _summary(queue_values),
+                "completion_rate": _summary(_independent(
+                    group, "completion_rate", learning)),
+                "raw_rows": group,
+            }
+            if controller_id != "tuned_fixed":
+                differences = []
+                completion_degradations = []
+                for row in group:
+                    base = baseline.get(_match_key(row))
+                    if base is None:
+                        raise ValueError(
+                            "matched tuned_fixed row is missing for %s" %
+                            (row["case_id"],))
+                    differences.append(dict(
+                        row,
+                        _queue_difference=(
+                            float(row["queue_integral_vehicle_seconds"])
+                            - float(base["queue_integral_vehicle_seconds"])),
+                        _completion_degradation=(
+                            float(base["completion_rate"])
+                            - float(row["completion_rate"])),
+                    ))
+                difference_values = _independent(
+                    differences, "_queue_difference", learning)
+                difference_summary = _summary(difference_values)
+                baseline_mean = statistics.mean(
+                    float(baseline[_match_key(row)][
+                        "queue_integral_vehicle_seconds"])
+                    for row in group)
+                difference_summary["baseline_mean"] = float(baseline_mean)
+                difference_summary["relative_change_percent"] = (
+                    100.0 * difference_summary["mean"] / baseline_mean
+                    if baseline_mean else None)
+                result["queue_difference_vs_tuned_fixed"] = difference_summary
+                completion_degradations = [
+                    value["_completion_degradation"] for value in differences]
+                result["completion_degradation_vs_tuned_fixed"] = {
+                    "max": max(completion_degradations),
+                    "raw_values": completion_degradations,
+                }
+            summary[controller_id][regime] = result
+    summary["_metadata"] = {
+        "bootstrap_seed": 20260908,
+        "bootstrap_samples": 10000,
+        "learning_seeds": sorted(all_learning_seeds),
+        "queue_metric": "queue_integral_vehicle_seconds",
+        "baseline_controller": "tuned_fixed",
+    }
+    return summary
+
+
+def evaluate_acceptance(summary):
+    candidate = summary.get("neighbor_phase_ddqn", {})
+    normal = candidate.get("normal")
+    if not normal or "queue_difference_vs_tuned_fixed" not in normal:
+        return {
+            "normal_point_noninferiority": False,
+            "normal_ci_noninferiority": False,
+            "peak_improvement": False,
+            "completion_preserved": False,
+            "completion_degradation_max": None,
+            "five_learning_seeds": False,
+            "accepted": False,
+        }
+
+    normal_effect = normal["queue_difference_vs_tuned_fixed"]
+    normal_point = normal_effect["mean"] <= 0
+    normal_ci = normal_effect["bootstrap_ci95"][1] <= (
+        0.05 * normal_effect["baseline_mean"])
+    peaks = []
+    for regime in ("am_peak", "pm_peak"):
+        value = candidate.get(regime, {}).get("queue_difference_vs_tuned_fixed")
+        if value:
+            peaks.append(value["bootstrap_ci95"][1] < 0)
+    peak_improvement = any(peaks)
+    degradations = [
+        result["completion_degradation_vs_tuned_fixed"]["max"]
+        for regime, result in candidate.items()
+        if isinstance(result, dict)
+        and "completion_degradation_vs_tuned_fixed" in result
+    ]
+    worst_degradation = max(degradations) if degradations else None
+    completion_preserved = (
+        worst_degradation is not None and worst_degradation <= 0.02)
+    seeds = set()
+    for result in candidate.values():
+        if isinstance(result, dict):
+            seeds.update(row.get("learning_seed") for row in result.get("raw_rows", [])
+                         if row.get("learning_seed") is not None)
+    five_seeds = len(seeds) >= 5
+    return {
+        "normal_point_noninferiority": bool(normal_point),
+        "normal_ci_noninferiority": bool(normal_ci),
+        "peak_improvement": bool(peak_improvement),
+        "completion_preserved": bool(completion_preserved),
+        "completion_degradation_max": worst_degradation,
+        "five_learning_seeds": five_seeds,
+        "accepted": bool(normal_point and normal_ci and peak_improvement
+                         and completion_preserved and five_seeds),
+    }
