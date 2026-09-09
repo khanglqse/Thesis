@@ -1,0 +1,32 @@
+# Mechanism smoke: train AM/PM, then normal/AM/PM validation for 600s each.
+# Forced macro0 is compared with fresh FixedTimeController runs on all three.
+schema_version: 1
+controller_family: schedule_residual_ddqn
+macro: {duration_seconds: 300, shift_seconds: 10, baseline_green_seconds: 25}
+operational_mode:
+  input: declared_time_of_day
+  normal: exact_executed_fixed25_from_reset
+  peaks: raw_greedy_prevalidated_macro
+  forbidden_features: [case_id, learning_seed, demand_seed, simulator_seed, filename, future_flow]
+model: {feature_dim: 27, hidden: 64, lr: 0.0003, gamma_per_macro: 0.99}
+optimizer:
+  batch_size: 128
+  buffer_capacity: 20000
+  train_start: 53
+  updates_per_macro: 8
+  target_sync: 64
+  grad_clip: 10.0
+  huber_delta: 1.0
+exploration: {epsilon: 0.15}
+reward: {type: negative_network_queue_plus_pending_integral}
+critic_units:
+  vehicle_seconds_per_unit: 100000.0
+  sign: negative_cost
+  raw_objective: queue_integral_vehicle_seconds
+  components: [network_queue_integral_vehicle_seconds, pending_integral_vehicle_seconds]
+  excluded: [future_unreleased_vehicles]
+baseline:
+  controller: validation_tuned_fixed
+  search_green_durations: [20, 25, 30, 35, 40, 45, 50, 60]
+tiers:
+  smoke: {episodes: 2, horizon_seconds: 600, eval_every: 2}

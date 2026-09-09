@@ -17,6 +17,7 @@ def _relu(value):
 
 
 class PhaseScoringDDQN(object):
+    controller_family = "neighbor_phase_ddqn"
     def __init__(self, feature_dim, hidden, lr, seed, grad_clip=None,
                  huber_delta=1.0):
         self.feature_dim = int(feature_dim)
@@ -271,8 +272,8 @@ class PhaseScoringDDQN(object):
         feature_dim = int(data["meta_feature_dim"])
         hidden = int(data["meta_hidden"])
         family = expected_contract.get("controller_family")
-        if family is not None and family != "neighbor_phase_ddqn":
-            raise ValueError("checkpoint controller_family is not neighbor_phase_ddqn")
+        if family is not None and family != cls.controller_family:
+            raise ValueError("checkpoint controller_family is not " + cls.controller_family)
         if ("feature_dim" in expected_contract
                 and int(expected_contract["feature_dim"]) != feature_dim):
             raise ValueError("checkpoint feature_dim differs from weights")

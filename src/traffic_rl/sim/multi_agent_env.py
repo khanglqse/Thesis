@@ -22,7 +22,8 @@ class MultiAgentTrafficEnv:
                  sim_step_seconds=1.0, maximum_red=180,
                  switch_penalty=0.05, encoder=None, queue_weight=1.0,
                  downstream_block_weight=0.0, network_metric_observer=None,
-                 network_replay_observer=None, scheduled_vehicles=None):
+                 network_replay_observer=None, scheduled_vehicles=None,
+                 signal_observer=None):
         self.roadnet = roadnet
         self.engine = engine
         self.action_interval = action_interval
@@ -35,6 +36,7 @@ class MultiAgentTrafficEnv:
         self.downstream_block_weight = float(downstream_block_weight)
         self.network_metric_observer = network_metric_observer
         self.network_replay_observer = network_replay_observer
+        self.signal_observer = signal_observer
         if scheduled_vehicles is not None and (
                 isinstance(scheduled_vehicles, bool)
                 or int(scheduled_vehicles) != scheduled_vehicles
@@ -384,6 +386,10 @@ class MultiAgentTrafficEnv:
                 role = self._phase_roles[a][self._active_lightphase[a]]
                 if role in ("clearance_yellow", "all_red"):
                     clearing.add(a)
+            if self.signal_observer is not None:
+                # The lightphase actually exposed during this simulator step
+                # can differ from the post-step state when a transition ends.
+                self._last_step_lightphases = dict(self._active_lightphase)
             step_waiting = self._engine_steps(
                 1, clearing=clearing, transitioning=transitioning)
             for lane_id, count in step_waiting.items():
@@ -405,6 +411,9 @@ class MultiAgentTrafficEnv:
                 self._since_switch[a] = 0
                 self._set_phase(a, self._green_phases[a][choice])
                 self._pending_transitions[a] = None
+
+            if self.signal_observer is not None:
+                self.signal_observer(self)
 
         waiting = dict((lane_id, total / max(steps, 1))
                        for lane_id, total in reward_waiting_integral.items())
