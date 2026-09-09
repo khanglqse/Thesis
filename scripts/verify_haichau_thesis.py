@@ -26,7 +26,8 @@ from traffic_rl.eval.checkpoint_selection import CHECKPOINT_ELIGIBILITY_POLICY
 from traffic_rl.research.pilot_schedule_selector import (
     CONFIRMATORY_LEARNING_SEEDS, FINAL_CHECKPOINTS, FINAL_TIER,
     PRIMARY_LEARNED_CONTROLLER, validate_final_checkpoint_selection,
-    validate_final_resolved_config, validate_frozen_schedule_selection)
+    validate_final_checkpoint_schedule_contract, validate_final_resolved_config,
+    validate_frozen_schedule_selection)
 from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.haichau_demo_fallbacks import validate_fallbacks
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
@@ -293,7 +294,7 @@ def _pilot_schedule_selection_gate(root, protocol):
         return _gate(False, str(exc))
 
 
-def _checkpoint_contract_valid(contract, protocol, controller):
+def _checkpoint_contract_valid(contract, protocol, controller, selected_config=None):
     if not isinstance(contract, dict) or not CHECKPOINT_CONTRACT_FIELDS.issubset(contract):
         return False
     try:
@@ -341,6 +342,8 @@ def _checkpoint_contract_valid(contract, protocol, controller):
         if contract["checkpoint_eligibility_policy"] != \
                 CHECKPOINT_ELIGIBILITY_POLICY:
             return False
+        if selected_config is not None:
+            validate_final_checkpoint_schedule_contract(contract, selected_config)
         if not isinstance(compatibility, dict) \
                 or set(compatibility) != set(compatibility_fields):
             return False
@@ -402,7 +405,7 @@ def _source_selection_valid(validation, selection, tuning, validation_ids):
 
 
 def _source_checkpoint_valid(root, entry, protocol, controller, seed,
-                             validation_ids):
+                             validation_ids, selected_config):
     source_relative = entry.get("source_run_dir")
     if not isinstance(source_relative, str) or not source_relative:
         raise ValueError("checkpoint source run directory is missing")
@@ -473,7 +476,7 @@ def _source_checkpoint_valid(root, entry, protocol, controller, seed,
         expected_step = int(checkpoint.split("-")[1])
         if (checkpoint_contract.get("training_step") != expected_step
                 or not _checkpoint_contract_valid(
-                    checkpoint_contract, protocol, controller)):
+                    checkpoint_contract, protocol, controller, selected_config)):
             raise ValueError(
                 "%s source contract training_step/config drift" % checkpoint)
         PhaseScoringDDQN.load_bundle(
@@ -496,6 +499,9 @@ def _source_checkpoint_valid(root, entry, protocol, controller, seed,
     if contract.get("training_step") != int(selected.split("-")[1]):
         raise ValueError(
             "final source contract training_step differs from selected checkpoint")
+    if not _checkpoint_contract_valid(
+            contract, protocol, controller, selected_config):
+        raise ValueError("final source checkpoint schedule contract drift")
 
 
 def _checkpoint_gate(root, protocol):
@@ -509,6 +515,11 @@ def _checkpoint_gate(root, protocol):
             if case.get("split") == "validation")
     except (KeyError, OSError, ValueError, TypeError):
         validation_ids = None
+    try:
+        selected_config = validate_frozen_schedule_selection(
+            root, (protocol or {}).get("selection"))["selected_config"]["config"]
+    except (KeyError, OSError, ValueError, TypeError):
+        selected_config = None
     cells, valid, evidence = set(), True, []
     for entry in entries:
         if not isinstance(entry, dict):
@@ -546,7 +557,8 @@ def _checkpoint_gate(root, protocol):
         if validation_ids is not None:
             try:
                 _source_checkpoint_valid(
-                    root, entry, protocol, controller, seed, validation_ids)
+                    root, entry, protocol, controller, seed, validation_ids,
+                    selected_config)
                 source_valid = True
             except (KeyError, OSError, ValueError, TypeError, OverflowError):
                 source_valid = False
@@ -558,7 +570,9 @@ def _checkpoint_gate(root, protocol):
             and stored_contract == contract
             and bundle_valid
             and source_valid
-            and _checkpoint_contract_valid(contract, protocol, controller)
+            and selected_config is not None
+            and _checkpoint_contract_valid(
+                contract, protocol, controller, selected_config)
             and entry.get("checkpoint_contract_sha256") == _canonical_hash(contract))
         valid = valid and okay
         cells.add(cell)

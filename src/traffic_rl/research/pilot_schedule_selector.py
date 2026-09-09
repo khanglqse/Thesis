@@ -864,6 +864,16 @@ def validate_final_checkpoint_selection(
     return selected
 
 
+def validate_final_checkpoint_schedule_contract(contract, selected_config):
+    """Bind each final checkpoint's schedule features to the selected V3 YAML."""
+    if not isinstance(contract, dict) or not isinstance(selected_config, dict):
+        raise ValueError("final checkpoint schedule contract is invalid")
+    for field in ("observation", "behavior_prior"):
+        expected = selected_config.get(field)
+        if not isinstance(expected, dict) or contract.get(field) != expected:
+            raise ValueError("final checkpoint schedule contract drift: %s" % field)
+
+
 def validate_final_resolved_config(resolved, selected_config, learning_seed):
     """Require a final run to use the exact V3 config and a confirmation seed."""
     if not isinstance(resolved, dict) or not isinstance(selected_config, dict):

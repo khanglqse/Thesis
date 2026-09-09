@@ -4,7 +4,13 @@
 import argparse
 import json
 import shutil
+import sys
 from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.haichau_demo_launcher import PORTABLE_MANIFEST, _sha256, validate_bundle
 from scripts.serve_haichau_demo import DEMO_RELATIVE, ROOT, validate_demo_bundle

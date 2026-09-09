@@ -93,6 +93,8 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
     contract = _contract(
         network_sha, phase_contract_sha, generator_config_sha, manifest_sha,
         controller)
+    contract["observation"] = selected_config["observation"]
+    contract["behavior_prior"] = selected_config["behavior_prior"]
     model = PhaseScoringDDQN(
         len(SCHEDULE_CONTEXT_FEATURES), hidden=128, lr=0.001, seed=seed)
     model.save_bundle(str(run_dir / "checkpoint"), contract)
@@ -162,6 +164,64 @@ def _training_artifact(root, controller, seed, network_sha, phase_contract_sha,
         "artifact_sha256": artifacts,
     })
     return relative
+
+
+def _rewrite_hashed_contract(run_dir, relative, mutate):
+    path = run_dir / relative
+    contract = json.loads(path.read_text())
+    mutate(contract)
+    _write(path, contract)
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"][relative] = _sha256(path)
+    _write(status_path, status)
+
+
+@pytest.mark.parametrize("checkpoint", ("step-4", "step-8", "step-12", "selected"))
+def test_freeze_rejects_schedule_context_drift_in_every_checkpoint_bundle(
+        tmp_path, checkpoint):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["neighbor_phase_ddqn"]["12"]
+    targets = ["checkpoints/%s/contract.json" % checkpoint]
+    if checkpoint in ("step-12", "selected"):
+        targets = ["checkpoint/contract.json", "checkpoints/step-12/contract.json"]
+    for relative in targets:
+        _rewrite_hashed_contract(
+            run_dir, relative,
+            lambda contract: contract["observation"]["global_cycle"].update(
+                {"green_duration_seconds": 30}))
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "mutate checkpoint schedule context")
+
+    with pytest.raises(ValueError, match="schedule contract"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
+
+
+@pytest.mark.parametrize("mutate", (
+    lambda contract: contract["observation"].pop("global_cycle"),
+    lambda contract: contract["observation"].update(
+        {"type": "phase_rows_without_schedule_context"}),
+    lambda contract: contract["behavior_prior"]["rehearsal"].update(
+        {"enabled": False}),
+))
+def test_freeze_rejects_absent_or_mutated_selected_schedule_contract(tmp_path, mutate):
+    fixture = _fixture(tmp_path)
+    index = json.loads(fixture["index"].read_text())
+    run_dir = tmp_path / index["neighbor_phase_ddqn"]["12"]
+    for relative in ("checkpoint/contract.json", "checkpoints/step-12/contract.json"):
+        _rewrite_hashed_contract(run_dir, relative, mutate)
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-qm", "mutate selected schedule contract")
+
+    with pytest.raises(ValueError, match="schedule contract"):
+        freeze_protocol(
+            tmp_path, fixture["manifest"], fixture["viewer"], fixture["config"],
+            fixture["index"], RUNTIME_IMAGE, fixture["dockerfile"],
+            runtime_inspector=_runtime)
 
 
 def _pilot_selection(root, manifest_path):

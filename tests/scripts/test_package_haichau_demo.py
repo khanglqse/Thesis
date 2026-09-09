@@ -1,8 +1,54 @@
 import hashlib
 import json
 import os
+import subprocess
+from pathlib import Path
 
 import pytest
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+@pytest.mark.parametrize("script", (
+    "package_haichau_demo.py", "serve_haichau_demo.py",
+))
+def test_direct_cli_help_bootstraps_the_repository_root(script):
+    completed = subprocess.run(
+        ["sh", "-c", "PYTHONPATH=src python3 scripts/%s --help" % script],
+        cwd=str(PROJECT_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        universal_newlines=True)
+
+    assert completed.returncode == 0, completed.stderr
+    assert "usage:" in completed.stdout
+
+
+def test_server_script_bootstrap_allows_canonical_verifier_import(tmp_path):
+    script = PROJECT_ROOT / "scripts/serve_haichau_demo.py"
+    source = PROJECT_ROOT / "src"
+    code = """
+import pathlib
+import runpy
+import tempfile
+
+module = runpy.run_path(%r)
+root = pathlib.Path(tempfile.mkdtemp())
+(root / 'results/haichau_network_v2/demo').mkdir(parents=True)
+try:
+    module['validate_demo_bundle'](root)
+except ValueError as exc:
+    assert 'complete project verification' in str(exc), exc
+else:
+    raise AssertionError('fixture must not pass final verification')
+""" % str(script)
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(source)
+
+    completed = subprocess.run(
+        ["python3", "-c", code], cwd=str(tmp_path), env=environment,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    assert completed.returncode == 0, completed.stderr
 
 
 def _write_bundle(path):

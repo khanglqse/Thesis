@@ -351,6 +351,8 @@ def _write_bound_project(root):
         for seed in range(12, 17):
             contract = _checkpoint_contract(
                 network_sha, controller, phase_sha, generator_sha, experiment_sha)
+            contract["observation"] = selected_config["observation"]
+            contract["behavior_prior"] = selected_config["behavior_prior"]
             bundle = root / ("release/%s-%s" % (controller, seed))
             model = PhaseScoringDDQN(
                 len(SCHEDULE_CONTEXT_FEATURES), hidden=64, lr=1e-3, seed=seed)
@@ -1040,6 +1042,63 @@ def test_checkpoint_gate_rejects_sparse_v3_validation_schedule(tmp_path):
     gate = _checkpoint_gate(tmp_path, protocol)
 
     assert gate["passed"] is False
+
+
+def _rewrite_protocol_source_contract(root, entry, relative, mutate):
+    run_dir = root / entry["source_run_dir"]
+    path = run_dir / relative
+    contract = json.loads(path.read_text())
+    mutate(contract)
+    _write(path, json.dumps(contract))
+    status_path = run_dir / "status.json"
+    status = json.loads(status_path.read_text())
+    status["artifact_sha256"][relative] = _digest(path)
+    _write(status_path, json.dumps(status))
+    entry["source_artifacts"][relative] = _digest(path)
+    entry["source_status_sha256"] = _digest(status_path)
+    if relative == "checkpoint/contract.json":
+        entry["checkpoint_contract"] = contract
+        entry["checkpoint_contract_sha256"] = _json_digest(contract)
+        entry["contract_file_sha256"] = _digest(path)
+
+
+@pytest.mark.parametrize("checkpoint", ("step-4", "step-8", "step-12", "selected"))
+def test_checkpoint_gate_rejects_schedule_duration_drift_in_every_bundle(
+        tmp_path, checkpoint):
+    _write_bound_project(tmp_path)
+    protocol = json.loads((
+        tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    ).read_text())
+    entry = protocol["checkpoints"][0]
+    targets = ["checkpoints/%s/contract.json" % checkpoint]
+    if checkpoint in ("step-12", "selected"):
+        targets = ["checkpoint/contract.json", "checkpoints/step-12/contract.json"]
+    for relative in targets:
+        _rewrite_protocol_source_contract(
+            tmp_path, entry, relative,
+            lambda contract: contract["observation"]["global_cycle"].update(
+                {"green_duration_seconds": 30}))
+
+    assert _checkpoint_gate(tmp_path, protocol)["passed"] is False
+
+
+@pytest.mark.parametrize("mutate", (
+    lambda contract: contract["observation"].pop("global_cycle"),
+    lambda contract: contract["observation"].update(
+        {"type": "phase_rows_without_schedule_context"}),
+    lambda contract: contract["behavior_prior"]["rehearsal"].update(
+        {"enabled": False}),
+))
+def test_checkpoint_gate_rejects_absent_or_mutated_schedule_contract(tmp_path, mutate):
+    _write_bound_project(tmp_path)
+    protocol = json.loads((
+        tmp_path / "results/haichau_network_v2/final/frozen-protocol.json"
+    ).read_text())
+    entry = protocol["checkpoints"][0]
+    _rewrite_protocol_source_contract(
+        tmp_path, entry, "checkpoints/step-8/contract.json", mutate)
+
+    assert _checkpoint_gate(tmp_path, protocol)["passed"] is False
 
 
 @pytest.mark.parametrize("mutate", [

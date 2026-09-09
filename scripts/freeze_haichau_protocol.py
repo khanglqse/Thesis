@@ -25,7 +25,8 @@ from traffic_rl.eval.checkpoint_selection import CHECKPOINT_ELIGIBILITY_POLICY
 from traffic_rl.research.pilot_schedule_selector import (
     CONFIRMATORY_LEARNING_SEEDS, FINAL_CHECKPOINTS, FINAL_TIER,
     PRIMARY_LEARNED_CONTROLLER, validate_final_checkpoint_selection,
-    validate_final_resolved_config, validate_frozen_schedule_selection)
+    validate_final_checkpoint_schedule_contract, validate_final_resolved_config,
+    validate_frozen_schedule_selection)
 from traffic_rl.sim.phase_encoder import SCHEDULE_CONTEXT_FEATURES
 from traffic_rl.train.network_trainer import (
     _tuning_binding, _validate_precomputed_tuning)
@@ -464,6 +465,7 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
         validation, selection, tuning, validation_ids)
     contract = _json(run_dir / "checkpoint/contract.json", "checkpoint contract")
     _checkpoint_contract(contract, controller, compatibility, normalization)
+    validate_final_checkpoint_schedule_contract(contract, selected_config)
     selected_step = int(selected.split("-")[1])
     if contract.get("training_step") != selected_step:
         raise ValueError(
@@ -486,6 +488,8 @@ def _checkpoint_entry(root, controller, seed, run_relative, compatibility,
             checkpoint_dir / "contract.json", "%s checkpoint contract" % checkpoint)
         _checkpoint_contract(
             checkpoint_contract, controller, compatibility, normalization)
+        validate_final_checkpoint_schedule_contract(
+            checkpoint_contract, selected_config)
         if checkpoint_contract.get("training_step") != int(checkpoint.split("-")[1]):
             raise ValueError(
                 "%s contract training_step differs from checkpoint" % checkpoint)
