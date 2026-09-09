@@ -1,0 +1,40 @@
+# Preregistered final per-seed validation checkpoint selection.
+schema_version: 1
+decision_type: haichau_residual_final_per_seed_selection
+controller_family: schedule_residual_ddqn
+mode: final
+learning_seeds: [12, 13, 14, 15, 16]
+validation_checkpoints: [step-4, step-8, step-12]
+ranking:
+  - mean_peak_queue_regret_percent_ascending
+  - training_step_ascending
+no_eligible: fail_closed
+gates:
+  normal_exact_fixed_per_case: true
+  normal_timeline_zero:
+    - phase_divergence_seconds
+    - service_divergence_seconds
+    - state_divergence_seconds
+    - nonzero_macros
+    - illegal_requests
+    - anchor_violations
+    - unlogged_divergence_seconds
+  peak_regime_mean_queue_regret_percent_max: 0.0
+  mean_peak_queue_regret_percent_max: -1.0
+  per_case_completion_loss_max: 0.02
+  per_case_insertion_loss_max: 0.02
+  learned_macros_required_regimes: [am_peak, pm_peak]
+  minimum_distinct_nonzero_macro_nodes: 2
+  peak_timeline_zero:
+    - illegal_requests
+    - anchor_violations
+    - unlogged_divergence_seconds
+  forced_macro0_counterfactual_exact_fixed25: true
+  checkpoint_traffic_feature_response_required: true
+manifest: results/haichau_network_v2/experiment-manifest.json
+baseline_tuning_artifact: results/haichau_network_v2/training/final-baseline-tuning.json
+pilot_selector_spec: configs/haichau_residual_pilot_selection_v1.yaml
+selected_config: results/haichau_network_v2/training/haichau-v3b-residual-selected.yaml
+run_dir_template: results/haichau_network_v2/training/final-seed{seed}
+selection_filename: selection.json
+validation_rerun_filename: validation-rerun.json
