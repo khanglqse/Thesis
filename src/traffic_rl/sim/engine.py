@@ -70,6 +70,15 @@ class CityFlowEngine(object):
         """
         return list(self._eng.get_vehicles(True))
 
+    def lane_vehicle_ids(self):
+        """Return current vehicle IDs grouped by CityFlow lane ID."""
+        return dict((lane_id, list(vehicle_ids)) for lane_id, vehicle_ids in
+                    self._eng.get_lane_vehicles().items())
+
+    def set_vehicle_speed(self, vehicle_id, speed):
+        """Apply an operational lane-incident speed constraint."""
+        self._eng.set_vehicle_speed(vehicle_id, float(speed))
+
     def network_metric_snapshot(self, lane_to_node=None, spillback_lanes=None,
                                 phase_switches=0, intergreen_seconds=0,
                                 max_red_seconds=0, travel_times=None,

@@ -1,0 +1,25 @@
+schema_version: 1
+study_role: exploratory_appendix
+controllers:
+  - tuned_fixed
+  - max_pressure
+  - neighbor_phase_ddqn
+conditions:
+  demand_plus20:
+    kind: demand_scale
+    multiplier: 1.20
+  sensor_gaussian:
+    kind: sensor_gaussian
+    sigma: 0.15
+  sensor_dropout:
+    kind: sensor_dropout
+    probability: 0.10
+  incident_lane_reduction50:
+    kind: lane_capacity_incident
+    fraction: 0.50
+    start_step: 1200
+    end_step: 2400
+    target_rule: topology_max_incoming_lanes_then_ids
+bootstrap:
+  samples: 10000
+  seed: 20260908

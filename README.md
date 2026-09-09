@@ -26,6 +26,31 @@ be supplied by the foundation/model pipeline before that verifier can pass.
 The exact campaign, thesis, offline-demo and clean-checkout procedure is in
 `docs/defense/demo-runbook.md`.
 
+### Preregistered V3 robustness appendix
+
+After the primary 53-signal protocol, campaign, and summary are complete and committed, the
+exploratory appendix freezes four additional conditions: a 20% demand-rate increase,
+Gaussian sensor noise ($\sigma=0.15$), keyed 10% sensor dropout, and a topology-selected
+50% lane-capacity incident from simulation seconds 1200--2400. It evaluates tuned fixed-time,
+Max-Pressure, and the already selected `neighbor_phase_ddqn` checkpoints. Seeds are derived
+from the primary frozen protocol and must be exactly 12--16; seed 11 and all CLI overrides
+are rejected. The matrix contains exactly 420 fresh one-hour episodes in the separate
+`results/haichau_network_v2/robustness` namespace. Primary results receive zero fresh-episode
+credit and serve only as a hash-bound reference.
+
+```sh
+PYTHONPATH=src python3 scripts/freeze_haichau_robustness.py
+PYTHONPATH=src python3 scripts/run_haichau_robustness.py --prepare-only
+PYTHONPATH=src python3 scripts/run_haichau_robustness.py
+PYTHONPATH=src python3 scripts/run_haichau_robustness.py --verify-only
+PYTHONPATH=src python3 scripts/summarize_haichau_robustness.py
+```
+
+The appendix is descriptive and has no pass/fail or model-selection role. Its two-sided 95%
+intervals use 10,000 paired bootstrap resamples with seed 20260908. For the learned policy,
+matched cases are averaged within each learning seed before the five seed-level effects are
+resampled. The legacy `scripts/run_robustness.py` cannot produce V3 evidence.
+
 ## Legacy-study headline finding
 
 The learned controller's advantage tracks **network saturation**, and we report the whole

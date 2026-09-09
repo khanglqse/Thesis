@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""C3: robustness of each controller under sensor noise (and demand shift).
+"""LEGACY C3 robustness for the pre-V3 single-scenario study.
+
+This command is not valid for the 53-signal V3 evidence namespace. The V3
+appendix uses freeze_haichau_robustness.py, run_haichau_robustness.py, and
+summarize_haichau_robustness.py with a hash-frozen 420-episode protocol.
 
 mode=noise : sweep observation-noise levels; wrap the engine in PerturbedEngine so
              DQN + Max-Pressure see corrupted counts (Fixed-Time/Random are immune),
@@ -64,6 +68,10 @@ def _dqn_meta(ckpt_dir, area):
 def main():
     os.chdir(str(ROOT))
     area = sys.argv[1] if len(sys.argv) > 1 else "haichau_rush"
+    if area == "haichau_network_v2" or area.startswith("haichau_network_v2/"):
+        raise SystemExit(
+            "legacy run_robustness.py is forbidden for V3; use "
+            "scripts/run_haichau_robustness.py")
     mode = sys.argv[2] if len(sys.argv) > 2 else "noise"
     base = ROOT / "results" / area
     out_dir = base / "robustness"
