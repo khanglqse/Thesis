@@ -372,7 +372,10 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
             "episodes": len(episodes), "optimizer_updates": updates[0],
             "replay_coverage": replay.coverage(), "checkpoints": checkpoint_records,
             "mean_training_loss": float(np.mean(losses)), "wall_time_seconds": time.time() - started,
-            "test_split_accessed": False, "selection": "requires_preregistered_residual_selector"}
+            "test_split_accessed": False,
+            "selection": ("requires_preregistered_final_residual_selector"
+                          if config["mode"] == "final" else
+                          "requires_preregistered_residual_selector")}
         _write_json(os.path.join(output_dir, "summary.json"), summary)
         hashes = {}
         for parent, _, files in os.walk(output_dir):
@@ -380,9 +383,15 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
                 path = os.path.join(parent, name)
                 if name != "status.json" and "runtime-configs" not in path:
                     hashes[os.path.relpath(path, output_dir)] = _file_sha256(path)
-        _write_json(status_path, {"status": "complete", "source_tree": attestation,
-                                  "artifact_sha256": hashes, "eligible_for_final": False,
-                                  "reason": "pilot must pass preregistered selector"})
+        status = {"status": "complete", "source_tree": attestation,
+                  "artifact_sha256": hashes}
+        if config["mode"] == "final":
+            status.update({"eligible_for_test_evaluation": False,
+                           "reason": "final must pass preregistered per-seed selector"})
+        else:
+            status.update({"eligible_for_final": False,
+                           "reason": "pilot must pass preregistered selector"})
+        _write_json(status_path, status)
         return summary
     except Exception as exc:
         _write_json(status_path, {"status": "failed", "reason": str(exc), "source_tree": attestation})
