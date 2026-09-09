@@ -1,0 +1,96 @@
+{
+  "baseline": {
+    "controller": "validation_tuned_fixed",
+    "search_green_durations": [
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      60
+    ]
+  },
+  "baseline_tuning_sha256": "ecab4a43546650fb50c51cac1124aa2c855095d015aa1cc4911ee47ff6686312",
+  "controller_family": "schedule_residual_ddqn",
+  "critic_units": {
+    "components": [
+      "network_queue_integral_vehicle_seconds",
+      "pending_integral_vehicle_seconds"
+    ],
+    "excluded": [
+      "future_unreleased_vehicles"
+    ],
+    "raw_objective": "queue_integral_vehicle_seconds",
+    "sign": "negative_cost",
+    "vehicle_seconds_per_unit": 100000.0
+  },
+  "exploration": {
+    "epsilon": 0.15
+  },
+  "learning_seed": 11,
+  "macro": {
+    "baseline_green_seconds": 25,
+    "duration_seconds": 300,
+    "shift_seconds": 10
+  },
+  "manifest_sha256": "c286ea57f67c3a6d4ec3b309ec99c86cab12aa2f73b050e6b2f829cd002bd999",
+  "mode": "pilot",
+  "model": {
+    "feature_dim": 27,
+    "gamma_per_macro": 0.99,
+    "hidden": 64,
+    "lr": 0.0003
+  },
+  "operational_mode": {
+    "forbidden_features": [
+      "case_id",
+      "learning_seed",
+      "demand_seed",
+      "simulator_seed",
+      "filename",
+      "future_flow"
+    ],
+    "input": "declared_time_of_day",
+    "normal": "exact_executed_fixed25_from_reset",
+    "peaks": "raw_greedy_prevalidated_macro"
+  },
+  "optimizer": {
+    "batch_size": 128,
+    "buffer_capacity": 20000,
+    "grad_clip": 10.0,
+    "huber_delta": 1.0,
+    "target_sync": 64,
+    "train_start": 53,
+    "updates_per_macro": 8
+  },
+  "reward": {
+    "type": "negative_network_queue_plus_pending_integral"
+  },
+  "run": {
+    "episodes": 4,
+    "eval_every": 2,
+    "horizon_seconds": 3600
+  },
+  "schema_version": 1,
+  "source_tree": {
+    "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+    "index": "clean",
+    "schema_version": 1,
+    "tracked_worktree": "clean",
+    "untracked_files_policy": "allowed"
+  },
+  "tiers": {
+    "pilot": {
+      "episodes": 4,
+      "eval_every": 2,
+      "horizon_seconds": 3600
+    },
+    "smoke": {
+      "episodes": 2,
+      "eval_every": 2,
+      "horizon_seconds": 600
+    }
+  }
+}

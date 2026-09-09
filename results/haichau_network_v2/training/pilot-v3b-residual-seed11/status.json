@@ -1,0 +1,25 @@
+{
+  "artifact_sha256": {
+    "baseline-tuning.json": "d7ed9659dc4a1907a01a554b050dd87bf82903083924873894ecd4f20e25b43d",
+    "checkpoints/step-0002/contract.json": "f48d9497c12ecdc1e138fcbe344d46e4d7194fa1ac96b2e62410b970ef16ad37",
+    "checkpoints/step-0002/weights.npz": "c8c4878babb8e282cd4b9fa7df949de4277e95fffc0708e4721bec3f45947dff",
+    "checkpoints/step-0004/contract.json": "255c5b8e6392a060ac157664fb5ba84a75bf5ba29d9f1bc5dd4f1314acfdfe1e",
+    "checkpoints/step-0004/weights.npz": "1f6f9735e419298cac1eb37172d750f484422e4b7bb8da2b4b8372527ad8c6bf",
+    "learning-curve.json": "de8cd09f3ebc6f6d4350fb470688c1ad540d7242b97f1d7e87cc38d2939e50ce",
+    "resolved-config.json": "a1adc32f0b168a436b088b4ad2ca26c0dc3a379e441ba25eaed753723f1d3806",
+    "run-manifest.json": "ed4d4969a6fcb29c74575580940a20669bbcf8f96246ecd9482cfb2f88abcbb6",
+    "summary.json": "0af8b1769118476091612372f0755def790fa26e67e1cf231e73104765867dd9",
+    "validation-step-0002.json": "5da2398226dcb2bb2448e837ced2d0a6e4d2a343f842210ce439107995665406",
+    "validation-step-0004.json": "f0dcd57067c1d01c43680030dc996b3723e178cd464705a2efdf3fba71cb3758"
+  },
+  "eligible_for_final": false,
+  "reason": "pilot must pass preregistered selector",
+  "source_tree": {
+    "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+    "index": "clean",
+    "schema_version": 1,
+    "tracked_worktree": "clean",
+    "untracked_files_policy": "allowed"
+  },
+  "status": "complete"
+}

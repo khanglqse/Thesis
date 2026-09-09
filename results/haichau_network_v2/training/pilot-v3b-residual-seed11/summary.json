@@ -1,0 +1,38 @@
+{
+  "checkpoints": [
+    {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0002/contract.json",
+        "contract_sha256": "f48d9497c12ecdc1e138fcbe344d46e4d7194fa1ac96b2e62410b970ef16ad37",
+        "weights_path": "checkpoints/step-0002/weights.npz",
+        "weights_sha256": "c8c4878babb8e282cd4b9fa7df949de4277e95fffc0708e4721bec3f45947dff"
+      },
+      "training_step": 2,
+      "validation_path": "validation-step-0002.json"
+    },
+    {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0004/contract.json",
+        "contract_sha256": "255c5b8e6392a060ac157664fb5ba84a75bf5ba29d9f1bc5dd4f1314acfdfe1e",
+        "weights_path": "checkpoints/step-0004/weights.npz",
+        "weights_sha256": "1f6f9735e419298cac1eb37172d750f484422e4b7bb8da2b4b8372527ad8c6bf"
+      },
+      "training_step": 4,
+      "validation_path": "validation-step-0004.json"
+    }
+  ],
+  "controller_family": "schedule_residual_ddqn",
+  "episodes": 4,
+  "learning_seed": 11,
+  "mean_training_loss": 0.8105034869263014,
+  "mode": "pilot",
+  "optimizer_updates": 384,
+  "replay_coverage": {
+    "am_peak": 1272,
+    "pm_peak": 1272
+  },
+  "schema_version": 1,
+  "selection": "requires_preregistered_residual_selector",
+  "test_split_accessed": false,
+  "wall_time_seconds": 8567.960625171661
+}

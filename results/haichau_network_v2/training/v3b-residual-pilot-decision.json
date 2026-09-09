@@ -1,0 +1,398 @@
+{
+  "baseline_tuning": {
+    "path": "results/haichau_network_v2/training/final-baseline-tuning.json",
+    "sha256": "d7ed9659dc4a1907a01a554b050dd87bf82903083924873894ecd4f20e25b43d"
+  },
+  "checkpoints": {
+    "step-2": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0002/contract.json",
+        "contract_sha256": "f48d9497c12ecdc1e138fcbe344d46e4d7194fa1ac96b2e62410b970ef16ad37",
+        "weights_path": "checkpoints/step-0002/weights.npz",
+        "weights_sha256": "c8c4878babb8e282cd4b9fa7df949de4277e95fffc0708e4721bec3f45947dff"
+      },
+      "distinct_nonzero_macro_nodes": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335"
+      ],
+      "eligible": false,
+      "gates": {
+        "checkpoint_traffic_feature_response": true,
+        "forced_macro0_counterfactual_exact_fixed25": true,
+        "learned_macros_in_both_peak_regimes": true,
+        "mean_peak_queue_improvement": true,
+        "minimum_distinct_nonzero_macro_nodes": true,
+        "normal_exact_fixed_per_case": true,
+        "normal_timeline_zero": true,
+        "peak_regime_queue_noninferiority": false,
+        "peak_timeline_zero": true,
+        "per_case_completion_safety": false,
+        "per_case_insertion_safety": true
+      },
+      "learned_macro_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "maximum_completion_loss": 0.021568817100299897,
+      "maximum_insertion_loss": 0.009381951832865831,
+      "mean_peak_queue_regret_percent": -3.593463377164941,
+      "mean_queue_regret_percent_by_peak_regime": {
+        "am_peak": -9.77783059972356,
+        "pm_peak": 2.590903845393677
+      },
+      "normal_exact_case_ids": [
+        "validation_normal_demand31",
+        "validation_normal_demand32"
+      ],
+      "traffic_feature_response": {
+        "maximum_absolute_score_response": 0.9981241226196289,
+        "responsive_feature_count": 16,
+        "responsive_features": [
+          "source_incoming_queue_mean",
+          "source_incoming_queue_max",
+          "source_incoming_running_mean",
+          "source_outgoing_queue_mean",
+          "source_outgoing_remaining_capacity_mean",
+          "source_pressure",
+          "source_upstream_queue_mean",
+          "source_downstream_queue_mean",
+          "target_incoming_queue_mean",
+          "target_incoming_queue_max",
+          "target_incoming_running_mean",
+          "target_outgoing_queue_mean",
+          "target_outgoing_remaining_capacity_mean",
+          "target_pressure",
+          "target_upstream_queue_mean",
+          "target_downstream_queue_mean"
+        ]
+      },
+      "training_step": 2,
+      "validation": {
+        "path": "results/haichau_network_v2/training/pilot-v3b-residual-seed11/validation-step-0002.json",
+        "sha256": "5da2398226dcb2bb2448e837ced2d0a6e4d2a343f842210ce439107995665406"
+      }
+    },
+    "step-4": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0004/contract.json",
+        "contract_sha256": "255c5b8e6392a060ac157664fb5ba84a75bf5ba29d9f1bc5dd4f1314acfdfe1e",
+        "weights_path": "checkpoints/step-0004/weights.npz",
+        "weights_sha256": "1f6f9735e419298cac1eb37172d750f484422e4b7bb8da2b4b8372527ad8c6bf"
+      },
+      "distinct_nonzero_macro_nodes": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249146",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_10925625407_3070396769_3070396791",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335",
+        "cluster_6521341372_6521341373_6521341380"
+      ],
+      "eligible": true,
+      "gates": {
+        "checkpoint_traffic_feature_response": true,
+        "forced_macro0_counterfactual_exact_fixed25": true,
+        "learned_macros_in_both_peak_regimes": true,
+        "mean_peak_queue_improvement": true,
+        "minimum_distinct_nonzero_macro_nodes": true,
+        "normal_exact_fixed_per_case": true,
+        "normal_timeline_zero": true,
+        "peak_regime_queue_noninferiority": true,
+        "peak_timeline_zero": true,
+        "per_case_completion_safety": true,
+        "per_case_insertion_safety": true
+      },
+      "learned_macro_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "maximum_completion_loss": 0.00628687493954927,
+      "maximum_insertion_loss": 0.007931134539123641,
+      "mean_peak_queue_regret_percent": -5.195558536156279,
+      "mean_queue_regret_percent_by_peak_regime": {
+        "am_peak": -8.505514397122617,
+        "pm_peak": -1.885602675189939
+      },
+      "normal_exact_case_ids": [
+        "validation_normal_demand31",
+        "validation_normal_demand32"
+      ],
+      "traffic_feature_response": {
+        "maximum_absolute_score_response": 2.248375415802002,
+        "responsive_feature_count": 16,
+        "responsive_features": [
+          "source_incoming_queue_mean",
+          "source_incoming_queue_max",
+          "source_incoming_running_mean",
+          "source_outgoing_queue_mean",
+          "source_outgoing_remaining_capacity_mean",
+          "source_pressure",
+          "source_upstream_queue_mean",
+          "source_downstream_queue_mean",
+          "target_incoming_queue_mean",
+          "target_incoming_queue_max",
+          "target_incoming_running_mean",
+          "target_outgoing_queue_mean",
+          "target_outgoing_remaining_capacity_mean",
+          "target_pressure",
+          "target_upstream_queue_mean",
+          "target_downstream_queue_mean"
+        ]
+      },
+      "training_step": 4,
+      "validation": {
+        "path": "results/haichau_network_v2/training/pilot-v3b-residual-seed11/validation-step-0004.json",
+        "sha256": "f0dcd57067c1d01c43680030dc996b3723e178cd464705a2efdf3fba71cb3758"
+      }
+    }
+  },
+  "committed_config": {
+    "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+    "path": "configs/haichau_training_v3b_residual.yaml",
+    "sha256": "8195782b5d099bd7a04de03bfebfd5206957e7d76ada354047c971cbb3d6e75a"
+  },
+  "config": {
+    "path": "configs/haichau_training_v3b_residual.yaml",
+    "sha256": "8195782b5d099bd7a04de03bfebfd5206957e7d76ada354047c971cbb3d6e75a"
+  },
+  "decision_type": "haichau_residual_pilot_selection",
+  "frozen_source_inputs": {
+    "baseline_tuning": {
+      "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+      "path": "results/haichau_network_v2/training/final-baseline-tuning.json",
+      "sha256": "d7ed9659dc4a1907a01a554b050dd87bf82903083924873894ecd4f20e25b43d"
+    },
+    "manifest": {
+      "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+      "path": "results/haichau_network_v2/experiment-manifest.json",
+      "sha256": "c3aa508483364b200145246042d9bd482d2f43408eb9ff48ca0bd985db6f7b7b"
+    },
+    "selector_spec": {
+      "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+      "path": "configs/haichau_residual_pilot_selection_v1.yaml",
+      "sha256": "537eb7a89f9bd82a4f08b28a6d7ca6c0cc6c90bbb8687bba3e2f3ad0cd23a849"
+    },
+    "simulation_inputs": {
+      "network": {
+        "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+        "path": "datasets/haichau_network_v2/roadnet.json",
+        "sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1"
+      },
+      "phase_contract": {
+        "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+        "path": "datasets/haichau_network_v2/phase-contract.json",
+        "sha256": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae"
+      },
+      "validation_flows": [
+        {
+          "case_id": "validation_normal_demand31",
+          "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+          "path": "results/haichau_network_v2/demands/validation_normal_demand31.json",
+          "sha256": "f69b0e960e61f7eb4f064d229a0e7cafcd2333642b483d6d3bb78d2ba7b4d363"
+        },
+        {
+          "case_id": "validation_am_peak_demand31",
+          "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+          "path": "results/haichau_network_v2/demands/validation_am_peak_demand31.json",
+          "sha256": "367cbf6e93b3643459e856a00a25d10762b9f029eae5e128f6a9e9cca76ff8ec"
+        },
+        {
+          "case_id": "validation_pm_peak_demand31",
+          "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+          "path": "results/haichau_network_v2/demands/validation_pm_peak_demand31.json",
+          "sha256": "713f05afb6d8f6836e1e52cfeb939f553ddf4ebc83f53c68c86399ccd069ed0d"
+        },
+        {
+          "case_id": "validation_normal_demand32",
+          "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+          "path": "results/haichau_network_v2/demands/validation_normal_demand32.json",
+          "sha256": "110a2f6e7bbdd3d3036f550314c3cb518bf2df0d710b42f4cba0e66fed2b44bc"
+        },
+        {
+          "case_id": "validation_am_peak_demand32",
+          "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+          "path": "results/haichau_network_v2/demands/validation_am_peak_demand32.json",
+          "sha256": "31dc30feb950c80eb8e76412a1f28d79104d87d38926cf5f669062cf44cca103"
+        },
+        {
+          "case_id": "validation_pm_peak_demand32",
+          "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+          "path": "results/haichau_network_v2/demands/validation_pm_peak_demand32.json",
+          "sha256": "63c83913fd0be0933e937d810043bc64f88cc25aa8c23c048c8c24d6832e1975"
+        }
+      ]
+    }
+  },
+  "gates": {
+    "checkpoint_traffic_feature_response_required": true,
+    "forced_macro0_counterfactual_exact_fixed25": true,
+    "learned_macros_required_regimes": [
+      "am_peak",
+      "pm_peak"
+    ],
+    "mean_peak_queue_regret_percent_max": -1.0,
+    "minimum_distinct_nonzero_macro_nodes": 2,
+    "normal_exact_fixed_per_case": true,
+    "normal_timeline_zero": [
+      "phase_divergence_seconds",
+      "service_divergence_seconds",
+      "state_divergence_seconds",
+      "nonzero_macros",
+      "illegal_requests",
+      "anchor_violations",
+      "unlogged_divergence_seconds"
+    ],
+    "peak_regime_mean_queue_regret_percent_max": 0.0,
+    "peak_timeline_zero": [
+      "illegal_requests",
+      "anchor_violations",
+      "unlogged_divergence_seconds"
+    ],
+    "per_case_completion_loss_max": 0.02,
+    "per_case_insertion_loss_max": 0.02
+  },
+  "manifest": {
+    "path": "results/haichau_network_v2/experiment-manifest.json",
+    "sha256": "c3aa508483364b200145246042d9bd482d2f43408eb9ff48ca0bd985db6f7b7b"
+  },
+  "pilot_status": {
+    "path": "results/haichau_network_v2/training/pilot-v3b-residual-seed11/status.json",
+    "sha256": "de7ad40b8c15842c89020d89b602ca74897d953cc54c2e17c296d219ef9efb6d"
+  },
+  "ranking": [
+    "mean_peak_queue_regret_percent_ascending",
+    "training_step_ascending"
+  ],
+  "schema_version": 1,
+  "selected_config": {
+    "path": "results/haichau_network_v2/training/haichau-v3b-residual-selected.yaml",
+    "sha256": "9bce49f14d2cb7ff3eb5b32b3a6b570fb3db251b10a2a66528ec2db320cbbea6"
+  },
+  "selector_spec": {
+    "path": "configs/haichau_residual_pilot_selection_v1.yaml",
+    "sha256": "537eb7a89f9bd82a4f08b28a6d7ca6c0cc6c90bbb8687bba3e2f3ad0cd23a849"
+  },
+  "source_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+  "source_tree": {
+    "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+    "index": "clean",
+    "schema_version": 1,
+    "tracked_worktree": "clean",
+    "untracked_files_policy": "allowed"
+  },
+  "status": "selected",
+  "test_split_accessed": false,
+  "validation_rerun": {
+    "path": "results/haichau_network_v2/training/v3b-residual-pilot-rerun.json",
+    "sha256": "1d66f8a18ce4b7933c362fe31f57f3d4c5fa4759d5ac19c1108bca72bab294ef"
+  },
+  "winner": {
+    "checkpoint": "step-4",
+    "checkpoint_artifacts": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0004/contract.json",
+        "contract_sha256": "255c5b8e6392a060ac157664fb5ba84a75bf5ba29d9f1bc5dd4f1314acfdfe1e",
+        "weights_path": "checkpoints/step-0004/weights.npz",
+        "weights_sha256": "1f6f9735e419298cac1eb37172d750f484422e4b7bb8da2b4b8372527ad8c6bf"
+      },
+      "validation": {
+        "path": "results/haichau_network_v2/training/pilot-v3b-residual-seed11/validation-step-0004.json",
+        "sha256": "f0dcd57067c1d01c43680030dc996b3723e178cd464705a2efdf3fba71cb3758"
+      }
+    },
+    "mean_peak_queue_regret_percent": -5.195558536156279,
+    "training_step": 4
+  }
+}
