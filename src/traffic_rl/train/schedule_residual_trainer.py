@@ -56,7 +56,34 @@ def validate_config(config):
         if run != {"episodes": 2, "horizon_seconds": 600, "eval_every": 2}:
             raise ValueError("smoke protocol requires 2 episodes of600s,eval2")
     elif mode == "final":
-        raise ValueError("final residual training requires a selected, frozen pilot protocol")
+        if (run != {"episodes": 12, "horizon_seconds": 3600, "eval_every": 4}
+                or config.get("learning_seed") not in (12, 13, 14, 15, 16)):
+            raise ValueError("final residual protocol requires seeds12-16,12 full-hour episodes,eval4/8/12")
+        pilot = config.get("pilot_selection")
+        release = config.get("final_release")
+        binding = release.get("selection") if isinstance(release, dict) else None
+        if (not isinstance(pilot, dict) or not isinstance(binding, dict)
+                or binding.get("schema_version") != 1
+                or binding.get("decision_type") != "haichau_residual_pilot_selection"
+                or binding.get("controller_family") != "schedule_residual_ddqn"
+                or binding.get("test_split_accessed") is not False
+                or pilot.get("decision_type") != binding["decision_type"]
+                or pilot.get("selected_checkpoint") != binding.get("selected_checkpoint")
+                or pilot.get("training_step") != binding.get("training_step")
+                or pilot.get("test_split_accessed") is not False):
+            raise ValueError("final residual selection binding is invalid")
+        selected = binding.get("selected_config")
+        artifacts = binding.get("checkpoint_artifacts")
+        if (not isinstance(selected, dict) or not isinstance(selected.get("path"), str)
+                or not isinstance(selected.get("sha256"), str)
+                or len(selected["sha256"]) != 64
+                or not isinstance(artifacts, dict)
+                or not isinstance(artifacts.get("weights_sha256"), str)
+                or len(artifacts["weights_sha256"]) != 64
+                or not isinstance(binding.get("training_step"), int)
+                or binding["training_step"] <= 0
+                or not isinstance(binding.get("selected_checkpoint"), str)):
+            raise ValueError("final residual selection binding is incomplete")
     else:
         raise ValueError("unknown residual mode")
 

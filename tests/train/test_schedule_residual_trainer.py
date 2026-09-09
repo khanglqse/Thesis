@@ -193,3 +193,31 @@ def test_release_replay_runner_hashes_full_exact_signal_timeline(network):
     assert candidate["timeline"] == forced["timeline"] == fixed["timeline"]
     assert candidate["timeline"]["observed_node_seconds"] == 3600
     assert len(candidate["timeline"]["sha256"]) == 64
+
+
+def test_final_config_requires_bound_selected_pilot_and_fixed_final_tier():
+    selection = {
+        "schema_version": 1,
+        "decision_type": "haichau_residual_pilot_selection",
+        "controller_family": "schedule_residual_ddqn",
+        "selected_config": {"path": "results/selected.yaml", "sha256": "a" * 64},
+        "selected_checkpoint": "step-4", "training_step": 4,
+        "checkpoint_artifacts": {"weights_sha256": "b" * 64},
+        "test_split_accessed": False,
+    }
+    config = {"schema_version": 1, "controller_family": "schedule_residual_ddqn",
+              "macro": {"duration_seconds": 300, "shift_seconds": 10,
+                        "baseline_green_seconds": 25},
+              "mode": "final", "learning_seed": 12,
+              "operational_mode": OPERATIONAL_MODE,
+              "critic_units": CRITIC_UNITS,
+              "run": {"episodes": 12, "horizon_seconds": 3600, "eval_every": 4},
+              "reward": {"type": "negative_network_queue_plus_pending_integral"},
+              "pilot_selection": {"decision_type": "haichau_residual_pilot_selection",
+                                  "selected_checkpoint": "step-4", "training_step": 4,
+                                  "test_split_accessed": False},
+              "final_release": {"selection": selection}}
+    validate_config(config)
+    config["final_release"]["selection"]["training_step"] = 2
+    with pytest.raises(ValueError, match="selection"):
+        validate_config(config)
