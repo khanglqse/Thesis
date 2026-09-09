@@ -104,25 +104,22 @@ class KeyedSensorEngine(_DelegatingEngine):
         return self._perturb(self._inner.lane_waiting_counts(), "waiting")
 
 
-class LaneCapacityIncidentEngine(_DelegatingEngine):
-    """Close a frozen subset of lanes by stopping vehicles in that lane group."""
+class LaneRestrictionIncidentEngine(_DelegatingEngine):
+    """Restrict a frozen subset of lanes during the active time window."""
 
     def __init__(self, inner, closed_lanes, start_step, end_step,
-                 closed_speed=0.0, recovery_speed=13.89):
-        super(LaneCapacityIncidentEngine, self).__init__(inner)
+                 closed_speed=0.0):
+        super(LaneRestrictionIncidentEngine, self).__init__(inner)
         self.closed_lanes = tuple(sorted(closed_lanes))
         self.start_step = int(start_step)
         self.end_step = int(end_step)
         self.closed_speed = float(closed_speed)
-        self.recovery_speed = float(recovery_speed)
         if not self.closed_lanes or not 0 <= self.start_step < self.end_step:
             raise ValueError("lane incident requires lanes and a valid time window")
         self._step = 0
-        self._held = set()
 
     def reset(self):
         self._step = 0
-        self._held = set()
         return self._inner.reset()
 
     def _vehicles_on_closed_lanes(self):
@@ -137,16 +134,11 @@ class LaneCapacityIncidentEngine(_DelegatingEngine):
             current = self._vehicles_on_closed_lanes()
             for vehicle_id in sorted(current):
                 self._inner.set_vehicle_speed(vehicle_id, self.closed_speed)
-            self._held.update(current)
-        elif self._step == self.end_step:
-            for vehicle_id in sorted(self._held):
-                self._inner.set_vehicle_speed(vehicle_id, self.recovery_speed)
-            self._held = set()
         return result
 
 
 def select_topology_incident(roadnet_document, controlled_signal_ids=None):
-    """Select a 50% closable incoming road using topology only."""
+    """Select an incoming road where exactly half the lanes can be restricted."""
     intersections = dict((item["id"], item)
                          for item in roadnet_document.get("intersections", ()))
     controlled = (set(controlled_signal_ids)
@@ -161,7 +153,7 @@ def select_topology_incident(roadnet_document, controlled_signal_ids=None):
                 and (controlled is None or end_id in controlled)):
             candidates.append((-lane_count, str(road.get("id")), str(end_id), road))
     if not candidates:
-        raise ValueError("roadnet has no incoming road with an even multi-lane capacity")
+        raise ValueError("roadnet has no incoming road with an even multi-lane count")
     unused_count, road_id, intersection_id, road = sorted(candidates)[0]
     lane_count = len(road["lanes"])
     open_count = lane_count // 2
@@ -173,5 +165,5 @@ def select_topology_incident(roadnet_document, controlled_signal_ids=None):
                             for index in range(open_count, lane_count)],
         "open_lane_ids": ["%s_%d" % (road_id, index)
                           for index in range(open_count)],
-        "capacity_reduction_fraction": 0.5,
+        "restricted_lane_fraction": 0.5,
     }

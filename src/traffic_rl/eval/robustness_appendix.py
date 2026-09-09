@@ -15,6 +15,7 @@ import yaml
 
 from traffic_rl.eval.network_campaign import canonical_sha256
 from traffic_rl.eval.network_statistics import paired_bootstrap
+from traffic_rl.eval.primary_v3_validation import validate_primary_v3_reference
 from traffic_rl.eval.robustness_runtime import (
     materialize_demand_plus20, scheduled_departures,
 )
@@ -121,7 +122,8 @@ def _validate_config(config):
         "sensor_gaussian": {"kind": "sensor_gaussian", "sigma": 0.15},
         "sensor_dropout": {"kind": "sensor_dropout", "probability": 0.10},
         "incident_lane_reduction50": {
-            "kind": "lane_capacity_incident", "fraction": 0.50,
+            "kind": "lane_restriction_incident",
+            "restricted_lane_fraction": 0.50,
             "start_step": 1200, "end_step": 2400,
             "target_rule": "topology_max_incoming_lanes_then_ids",
         },
@@ -204,6 +206,8 @@ def _checkpoint_bindings(root, primary):
         if len(matches) != 1:
             raise ValueError("primary protocol requires one checkpoint per seed 12--16")
         item = matches[0]
+        if item.get("validation_eligible") is not True:
+            raise ValueError("primary checkpoint is not validation-eligible")
         path = _verified_file(
             root, item.get("path"), item.get("sha256"), "checkpoint")
         contract = item.get("checkpoint_contract")
@@ -215,6 +219,7 @@ def _checkpoint_bindings(root, primary):
             "learning_seed": seed,
             "path": str(path.relative_to(Path(root).resolve())),
             "sha256": item["sha256"],
+            "validation_eligible": True,
             "checkpoint_contract": contract,
             "checkpoint_contract_sha256": canonical_sha256(contract),
         })
@@ -234,12 +239,11 @@ def freeze_robustness_protocol(root, primary_protocol_path, config_path,
     primary_path = _project_path(root, primary_protocol_path, "primary protocol")
     config_file = _project_path(root, config_path, "robustness config")
     primary = _json(primary_path, "primary protocol")
-    primary_campaign = _project_path(
-        root, primary_path.parent / "campaign-manifest.json",
-        "primary campaign manifest")
-    primary_summary = _project_path(
-        root, primary_path.parent / "summary.json", "primary summary")
     config = _validate_config(yaml.safe_load(config_file.read_text()))
+    primary_reference = validate_primary_v3_reference(
+        root, primary_path, primary=primary)
+    primary_campaign = primary_reference["campaign_manifest_path"]
+    primary_summary = primary_reference["summary_path"]
     seeds = tuple(primary.get("confirmatory_learning_seeds", ()))
     rule_seeds = tuple(primary.get("acceptance_rules", {}).get(
         "required_learning_seeds", ()))
@@ -260,14 +264,8 @@ def freeze_robustness_protocol(root, primary_protocol_path, config_path,
     checkpoints = _checkpoint_bindings(root, primary)
     target = select_topology_incident(
         roadnet, controlled_signal_ids=primary.get("agent_ids", ()))
-    target_road = next(road for road in roadnet["roads"]
-                       if road["id"] == target["road_id"])
-    open_speeds = [float(target_road["lanes"][int(lane.rsplit("_", 1)[1])]
-                         .get("maxSpeed", 13.89))
-                   for lane in target["open_lane_ids"]]
     conditions = json.loads(json.dumps(config["conditions"]))
     conditions["incident_lane_reduction50"]["target"] = target
-    conditions["incident_lane_reduction50"]["recovery_speed"] = min(open_speeds)
     code_commit = robustness_code_commit or _current_commit(root)
     if not re.fullmatch(r"[0-9a-f]{40}", str(code_commit)):
         raise ValueError("robustness source commit must be a full Git SHA")
@@ -381,6 +379,8 @@ def _verify_frozen_inputs(root, protocol):
         protocol["phase_contract_sha256"], "phase contract")
     primary = _json(primary_path, "primary protocol")
     config = _validate_config(yaml.safe_load(config_path.read_text()))
+    primary_reference = validate_primary_v3_reference(
+        root, primary_path, primary=primary)
     if (tuple(primary.get("confirmatory_learning_seeds", ())) != LEARNING_SEEDS
             or tuple(primary.get("acceptance_rules", {}).get(
                 "required_learning_seeds", ())) != LEARNING_SEEDS
@@ -416,12 +416,7 @@ def _verify_frozen_inputs(root, protocol):
     expected_conditions = json.loads(json.dumps(config["conditions"]))
     target = select_topology_incident(
         roadnet, controlled_signal_ids=protocol.get("agent_ids", ()))
-    target_road = next(road for road in roadnet["roads"]
-                       if road["id"] == target["road_id"])
-    speeds = [float(target_road["lanes"][int(lane.rsplit("_", 1)[1])]
-                    .get("maxSpeed", 13.89)) for lane in target["open_lane_ids"]]
     expected_conditions["incident_lane_reduction50"]["target"] = target
-    expected_conditions["incident_lane_reduction50"]["recovery_speed"] = min(speeds)
     if protocol.get("conditions") != expected_conditions:
         raise ValueError("robustness condition differs from preregistration")
     expected_configs = dict(
@@ -441,11 +436,22 @@ def _verify_frozen_inputs(root, protocol):
     if reference.get("usage") != "reference_only" \
             or reference.get("fresh_episode_credit") != 0:
         raise ValueError("primary results may be used only as a zero-credit reference")
-    _verified_file(root, reference.get("campaign_manifest_path"),
-                   reference.get("campaign_manifest_sha256"),
-                   "primary campaign manifest")
-    _verified_file(root, reference.get("summary_path"),
-                   reference.get("summary_sha256"), "primary summary")
+    reference_campaign = _verified_file(
+        root, reference.get("campaign_manifest_path"),
+        reference.get("campaign_manifest_sha256"),
+        "primary campaign manifest")
+    reference_summary = _verified_file(
+        root, reference.get("summary_path"),
+        reference.get("summary_sha256"), "primary summary")
+    if (reference_campaign
+            != primary_reference["campaign_manifest_path"].resolve()
+            or reference.get("campaign_manifest_sha256")
+            != primary_reference["campaign_manifest_sha256"]
+            or reference_summary
+            != primary_reference["summary_path"].resolve()
+            or reference.get("summary_sha256")
+            != primary_reference["summary_sha256"]):
+        raise ValueError("primary verified release reference differs")
     for checkpoint in protocol.get("checkpoint_bindings", ()):
         _verified_file(root, checkpoint["path"], checkpoint["sha256"], "checkpoint")
     for binding in protocol.get("demand_plus20_bindings", {}).values():

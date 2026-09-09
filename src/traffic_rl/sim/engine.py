@@ -76,7 +76,7 @@ class CityFlowEngine(object):
                     self._eng.get_lane_vehicles().items())
 
     def set_vehicle_speed(self, vehicle_id, speed):
-        """Apply an operational lane-incident speed constraint."""
+        """Apply the active operational lane-restriction speed constraint."""
         self._eng.set_vehicle_speed(vehicle_id, float(speed))
 
     def network_metric_snapshot(self, lane_to_node=None, spillback_lanes=None,

@@ -3,6 +3,7 @@ import json
 
 import pytest
 
+import traffic_rl.eval.robustness_appendix as robustness_appendix
 from traffic_rl.eval.robustness_appendix import (
     CONDITIONS,
     LEARNING_SEEDS,
@@ -13,6 +14,23 @@ from traffic_rl.eval.robustness_appendix import (
     summarize_robustness,
     validate_robustness_directory,
 )
+
+
+@pytest.fixture(autouse=True)
+def _stub_completed_primary_release(monkeypatch):
+    """The appendix tests isolate appendix behavior from the primary verifier."""
+    def validate(root, path, primary=None):
+        campaign = path.parent / "campaign-manifest.json"
+        summary = path.parent / "summary.json"
+        return {
+            "campaign_manifest_path": campaign.resolve(),
+            "campaign_manifest_sha256": _sha(campaign),
+            "summary_path": summary.resolve(),
+            "summary_sha256": _sha(summary),
+        }
+    monkeypatch.setattr(
+        robustness_appendix, "validate_primary_v3_reference",
+        validate)
 
 
 def _sha(path):
@@ -89,6 +107,7 @@ def _fixture(tmp_path):
             "learning_seed": seed,
             "path": str(weights.relative_to(root)),
             "sha256": _sha(weights),
+            "validation_eligible": True,
             "checkpoint_contract": {"controller_family": "neighbor_phase_ddqn",
                                     "training_step": 12},
         })
@@ -145,7 +164,8 @@ def _fixture(tmp_path):
             "sensor_gaussian": {"kind": "sensor_gaussian", "sigma": 0.15},
             "sensor_dropout": {"kind": "sensor_dropout", "probability": 0.10},
             "incident_lane_reduction50": {
-                "kind": "lane_capacity_incident", "fraction": 0.50,
+                "kind": "lane_restriction_incident",
+                "restricted_lane_fraction": 0.50,
                 "start_step": 1200, "end_step": 2400,
                 "target_rule": "topology_max_incoming_lanes_then_ids",
             },
@@ -180,6 +200,29 @@ def test_freeze_binds_primary_artifacts_and_writes_only_robustness_namespace(tmp
     with pytest.raises(ValueError, match="already exists"):
         freeze_robustness_protocol(
             root, primary, config, output, robustness_code_commit="6" * 40)
+
+
+def test_freeze_validates_primary_before_reading_or_materializing_test_flows(
+        tmp_path, monkeypatch):
+    root, primary, config = _fixture(tmp_path)
+    flow = root / "flows/test-00.json"
+    flow.unlink()
+    monkeypatch.setattr(
+        robustness_appendix, "validate_primary_v3_reference",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("primary checkpoint eligible:false")))
+    monkeypatch.setattr(
+        robustness_appendix, "_case_bindings",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("test flow was opened before primary validation")))
+
+    with pytest.raises(ValueError, match="eligible:false"):
+        freeze_robustness_protocol(
+            root, primary, config,
+            root / "results/haichau_network_v2/robustness",
+            robustness_code_commit="6" * 40)
+
+    assert not (root / "results/haichau_network_v2/robustness").exists()
 
 
 @pytest.mark.parametrize("mutation,error", [
@@ -250,6 +293,20 @@ def test_expansion_is_exactly_420_fresh_episodes_and_never_reuses_primary_runs(t
                 by_case.setdefault(run["case_id"], set()).add(
                     run["perturbation_seed"])
         assert all(len(seeds) == 1 for seeds in by_case.values())
+
+
+def test_expansion_revalidates_completed_primary_release(tmp_path, monkeypatch):
+    root, primary, config = _fixture(tmp_path)
+    output = root / "results/haichau_network_v2/robustness"
+    frozen = freeze_robustness_protocol(
+        root, primary, config, output, robustness_code_commit="6" * 40)
+    monkeypatch.setattr(
+        robustness_appendix, "validate_primary_v3_reference",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            ValueError("primary campaign is incomplete")))
+
+    with pytest.raises(ValueError, match="incomplete"):
+        expand_robustness_runs(root, frozen)
 
 
 @pytest.mark.parametrize("mutation,error", [

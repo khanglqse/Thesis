@@ -8,7 +8,7 @@ from pathlib import Path
 from traffic_rl.eval.haichau_controller_runtime import evaluate_run
 from traffic_rl.sim.engine import CityFlowEngine
 from traffic_rl.sim.robustness_perturbations import (
-    KeyedSensorEngine, LaneCapacityIncidentEngine,
+    KeyedSensorEngine, LaneRestrictionIncidentEngine,
 )
 
 
@@ -69,11 +69,11 @@ def evaluate_robustness_run(project_root, run, runtime_dir,
             return KeyedSensorEngine(
                 inner, "dropout", condition["probability"],
                 run["perturbation_seed"])
-        if kind == "lane_capacity_incident":
+        if kind == "lane_restriction_incident":
             target = condition["target"]
-            return LaneCapacityIncidentEngine(
+            return LaneRestrictionIncidentEngine(
                 inner, target["closed_lane_ids"], condition["start_step"],
-                condition["end_step"], recovery_speed=condition["recovery_speed"])
+                condition["end_step"])
         return inner
 
     result = evaluate_run(

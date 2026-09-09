@@ -15,8 +15,8 @@ conditions:
     kind: sensor_dropout
     probability: 0.10
   incident_lane_reduction50:
-    kind: lane_capacity_incident
-    fraction: 0.50
+    kind: lane_restriction_incident
+    restricted_lane_fraction: 0.50
     start_step: 1200
     end_step: 2400
     target_rule: topology_max_incoming_lanes_then_ids

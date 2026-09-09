@@ -31,12 +31,17 @@ The exact campaign, thesis, offline-demo and clean-checkout procedure is in
 After the primary 53-signal protocol, campaign, and summary are complete and committed, the
 exploratory appendix freezes four additional conditions: a 20% demand-rate increase,
 Gaussian sensor noise ($\sigma=0.15$), keyed 10% sensor dropout, and a topology-selected
-50% lane-capacity incident from simulation seconds 1200--2400. It evaluates tuned fixed-time,
+restriction of 50% of the selected road's lanes from simulation seconds 1200--2400. This is
+an operational lane restriction and does not claim an exact 50% reduction in macroscopic
+road capacity. It evaluates tuned fixed-time,
 Max-Pressure, and the already selected `neighbor_phase_ddqn` checkpoints. Seeds are derived
 from the primary frozen protocol and must be exactly 12--16; seed 11 and all CLI overrides
 are rejected. The matrix contains exactly 420 fresh one-hour episodes in the separate
 `results/haichau_network_v2/robustness` namespace. Primary results receive zero fresh-episode
 credit and serve only as a hash-bound reference.
+Freezing and every later campaign expansion revalidate the primary V3 schedule selection,
+all validation-eligible checkpoints, the exact completed 120-run primary campaign, and its
+recomputed summary before any appendix test flow is read or materialized.
 
 ```sh
 PYTHONPATH=src python3 scripts/freeze_haichau_robustness.py

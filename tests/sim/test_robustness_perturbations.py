@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from traffic_rl.sim.robustness_perturbations import (
     KeyedSensorEngine,
-    LaneCapacityIncidentEngine,
+    LaneRestrictionIncidentEngine,
     select_topology_incident,
 )
 
@@ -84,9 +84,9 @@ def test_sensor_dropout_is_keyed_and_true_metrics_are_never_corrupted():
 
 def test_lane_incident_closes_half_lanes_only_during_fixed_window():
     inner = Engine()
-    wrapped = LaneCapacityIncidentEngine(
+    wrapped = LaneRestrictionIncidentEngine(
         inner, closed_lanes=["lane_a"], start_step=2, end_step=4,
-        closed_speed=0.0, recovery_speed=11.0)
+        closed_speed=0.0)
 
     wrapped.step()
     assert inner.speeds == []
@@ -95,11 +95,40 @@ def test_lane_incident_closes_half_lanes_only_during_fixed_window():
     wrapped.step()
     assert inner.speeds[-1] == ("v1", 0.0)
     wrapped.step()
-    assert inner.speeds[-1] == ("v1", 11.0)
+    assert inner.speeds == [("v1", 0.0), ("v1", 0.0)]
     assert wrapped.true_lane_waiting_counts() == dict(inner.waiting)
 
 
-def test_topology_only_incident_target_is_stable_and_reduces_exactly_half():
+def test_lane_incident_never_recovers_a_vehicle_that_has_left_the_network():
+    class ExitingEngine(Engine):
+        def __init__(self):
+            super(ExitingEngine, self).__init__()
+            self.present = True
+
+        def step(self):
+            super(ExitingEngine, self).step()
+            if len([call for call in self.calls if call == "step"]) == 2:
+                self.present = False
+
+        def lane_vehicle_ids(self):
+            return {"lane_a": ["departing"] if self.present else []}
+
+        def set_vehicle_speed(self, vehicle_id, speed):
+            if not self.present:
+                raise RuntimeError("vehicle no longer exists")
+            super(ExitingEngine, self).set_vehicle_speed(vehicle_id, speed)
+
+    inner = ExitingEngine()
+    wrapped = LaneRestrictionIncidentEngine(
+        inner, closed_lanes=["lane_a"], start_step=1, end_step=2)
+
+    wrapped.step()
+    wrapped.step()
+
+    assert inner.speeds == [("departing", 0.0)]
+
+
+def test_topology_only_incident_target_is_stable_and_restricts_half_the_lanes():
     roadnet = {
         "roads": [
             {"id": "r_b", "endIntersection": "N1", "lanes": [{}, {}, {}, {}]},
@@ -116,7 +145,7 @@ def test_topology_only_incident_target_is_stable_and_reduces_exactly_half():
     assert target == {
         "road_id": "r_a", "intersection_id": "N2", "original_lane_count": 4,
         "closed_lane_ids": ["r_a_2", "r_a_3"], "open_lane_ids": ["r_a_0", "r_a_1"],
-        "capacity_reduction_fraction": 0.5,
+        "restricted_lane_fraction": 0.5,
     }
 
 
