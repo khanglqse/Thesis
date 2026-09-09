@@ -335,3 +335,86 @@ def test_evaluate_run_binds_metrics_to_run_identity(tmp_path, monkeypatch):
         assert result["metrics"].get(field) == run.get(field)
     assert result["metrics"]["fresh_evaluation"] is True
     assert [frame["t"] for frame in result["replay"]["frames"]] == [0, 5, 10]
+
+
+def test_loads_schedule_residual_checkpoint_with_frozen_regime(
+        tmp_path, monkeypatch):
+    """The campaign runtime must use the selected macro policy, never DDQN."""
+    from traffic_rl.agents.schedule_residual import (
+        CRITIC_UNITS, MACRO_FEATURES, MAX_MACROS, POLICY_INPUT_SCHEMA,
+        ResidualDDQN)
+
+    checkpoint_dir = tmp_path / "residual"
+    contract = {
+        "schema_version": 1,
+        "controller_family": "schedule_residual_ddqn",
+        "feature_dim": len(MACRO_FEATURES),
+        "feature_order": list(MACRO_FEATURES),
+        "hidden_size": 4,
+        "max_macros": MAX_MACROS,
+        "macro": {"duration_seconds": 300, "shift_seconds": 10,
+                    "baseline_green_seconds": 25},
+        "normal_policy": "exact_executed_fixed25_from_reset",
+        "peak_policy": "raw_greedy_prevalidated_macro_with_baseline_tie_break",
+        "critic_units": CRITIC_UNITS,
+        "policy_input_schema": POLICY_INPUT_SCHEMA,
+        "network_sha256": "network-bound",
+        "phase_contract_sha256": "phase-bound",
+        "simulation": {"action_interval": 10, "yellow_time": 3,
+                       "min_green": 20, "maximum_red": 180},
+        "normalization": {"count_norm": 20.0, "capacity_norm": 40.0},
+        "code_commit": "a" * 40,
+        "training_step": 4,
+        "learning_seed": 12,
+        "mode": "final",
+        "training_config_sha256": "b" * 64,
+        "baseline_tuning_sha256": "c" * 64,
+    }
+    ResidualDDQN(len(MACRO_FEATURES), 4, 1e-3, seed=12).save_bundle(
+        str(checkpoint_dir), contract)
+    run = _run(tmp_path, "schedule_residual_ddqn",
+               checkpoint_dir / "weights.npz", contract)
+    run["learning_seed"] = 12
+    run["regime"] = "pm_peak"
+    run["network_sha256"] = _digest(tmp_path / "roadnet.json")
+    contract["network_sha256"] = run["network_sha256"]
+    run["resolved_config"].update({
+        "macro": contract["macro"],
+        "operational_mode": {
+            "input": "declared_time_of_day",
+            "normal": "exact_executed_fixed25_from_reset",
+            "peaks": "raw_greedy_prevalidated_macro",
+            "forbidden_features": ["case_id", "learning_seed", "demand_seed",
+                                   "simulator_seed", "filename", "future_flow"],
+        },
+        "critic_units": CRITIC_UNITS,
+        "phase_contract_sha256": "phase-bound",
+    })
+    # The fixture's phase artifact represents the hash asserted by this
+    # selected residual checkpoint.
+    run["resolved_config"]["phase_contract_sha256"] = _digest(tmp_path / "phase-contract.json")
+    contract["phase_contract_sha256"] = run["resolved_config"]["phase_contract_sha256"]
+    run["checkpoint_contract"] = contract
+    run["checkpoint_contract_sha256"] = canonical_sha256(contract)
+    (checkpoint_dir / "contract.json").write_text(json.dumps(contract))
+
+    received = {}
+
+    class CapturingResidual(object):
+        def __init__(self, env, network, time_of_day, epsilon=0.0, seed=0):
+            received.update({"env": env, "network": network,
+                             "time_of_day": time_of_day,
+                             "epsilon": epsilon, "seed": seed})
+
+    monkeypatch.setattr(
+        "traffic_rl.eval.haichau_controller_runtime.ScheduleResidualController",
+        CapturingResidual)
+    env, controller = build_controller_runtime(
+        tmp_path, run, tmp_path / "runtime", **_dependencies(monkeypatch))
+
+    assert isinstance(controller, CapturingResidual)
+    assert isinstance(received["network"], ResidualDDQN)
+    assert received["time_of_day"] == "pm_peak"
+    assert received["epsilon"] == 0.0
+    assert received["seed"] == 12
+    assert isinstance(env.encoder, PhaseFeatureEncoder)

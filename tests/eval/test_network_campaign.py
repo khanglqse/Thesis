@@ -55,6 +55,24 @@ def _manifest():
             },
             "shared_ddqn_legacy": {"controller_version": 2},
             "neighbor_phase_ddqn": {"controller_version": 2},
+            "schedule_residual_ddqn": {
+                "macro": {"duration_seconds": 300, "shift_seconds": 10,
+                          "baseline_green_seconds": 25},
+                "operational_mode": {
+                    "input": "declared_time_of_day",
+                    "normal": "exact_executed_fixed25_from_reset",
+                    "peaks": "raw_greedy_prevalidated_macro",
+                    "forbidden_features": ["case_id", "learning_seed", "demand_seed",
+                                           "simulator_seed", "filename", "future_flow"],
+                },
+                "critic_units": {
+                    "vehicle_seconds_per_unit": 100000.0,
+                    "sign": "negative_cost",
+                    "raw_objective": "queue_integral_vehicle_seconds",
+                    "components": ["network_queue_integral_vehicle_seconds", "pending_integral_vehicle_seconds"],
+                    "excluded": ["future_unreleased_vehicles"],
+                },
+            },
         },
         "controller_commands": dict(
             (controller, ["python3", "scripts/evaluate_haichau_network.py"])
@@ -716,3 +734,46 @@ def test_executor_replay_is_part_of_the_immutable_hash_set(tmp_path):
     status = json.loads((run_dir / "status.json").read_text())
     assert "replay.json" in status["artifact_sha256"]
     assert (run_dir / "replay.json").is_file()
+
+
+def test_campaign_expands_schedule_residual_as_a_seeded_learned_controller():
+    from traffic_rl.agents.schedule_residual import CRITIC_UNITS
+
+    manifest = _manifest()
+    manifest["controller_configs"]["schedule_residual_ddqn"] = {
+        "macro": {"duration_seconds": 300, "shift_seconds": 10,
+                  "baseline_green_seconds": 25},
+        "operational_mode": {
+            "input": "declared_time_of_day",
+            "normal": "exact_executed_fixed25_from_reset",
+            "peaks": "raw_greedy_prevalidated_macro",
+            "forbidden_features": ["case_id", "learning_seed", "demand_seed",
+                                   "simulator_seed", "filename", "future_flow"],
+        },
+        "critic_units": CRITIC_UNITS,
+    }
+    manifest["checkpoints"] = [{
+        "controller_id": "schedule_residual_ddqn", "learning_seed": 12,
+        "path": "results/training/final-seed12/checkpoints/step-0004/weights.npz",
+        "sha256": "f" * 64,
+        "checkpoint_contract": {"controller_family": "schedule_residual_ddqn"},
+    }]
+
+    runs = expand_runs(manifest, [12], ["schedule_residual_ddqn"])
+
+    assert len(runs) == 2
+    assert {run["learning_seed"] for run in runs} == {12}
+    assert all(run["resolved_config"]["macro"]["baseline_green_seconds"] == 25
+               for run in runs)
+    assert all(run["checkpoint_sha256"] == "f" * 64 for run in runs)
+
+
+def test_campaign_rejects_residual_policy_contract_drift():
+    manifest = _manifest()
+    manifest["controller_configs"]["schedule_residual_ddqn"] = {
+        "macro": {"duration_seconds": 300, "shift_seconds": 20,
+                  "baseline_green_seconds": 25},
+    }
+
+    with pytest.raises(ValueError, match="residual policy contract"):
+        expand_runs(manifest, [12], ["schedule_residual_ddqn"])

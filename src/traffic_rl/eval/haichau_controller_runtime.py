@@ -17,6 +17,10 @@ from traffic_rl.agents.max_pressure import (
     HystereticMaxPressureController, MaxPressureController,
 )
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
+from traffic_rl.agents.schedule_residual import (
+    CRITIC_UNITS, MACRO_FEATURES, MAX_MACROS, POLICY_INPUT_SCHEMA,
+    ResidualDDQN, ScheduleResidualController,
+)
 from traffic_rl.eval.network_campaign import CONTROLLERS, canonical_sha256
 from traffic_rl.eval.network_metrics import NetworkMetricsObserver
 from traffic_rl.eval.network_replay import NetworkReplayObserver
@@ -30,7 +34,7 @@ from traffic_rl.sim.phase_encoder import (
 
 
 LEARNED_CONTROLLERS = frozenset((
-    "shared_ddqn_legacy", "neighbor_phase_ddqn",
+    "shared_ddqn_legacy", "neighbor_phase_ddqn", "schedule_residual_ddqn",
 ))
 
 
@@ -128,10 +132,61 @@ def _checkpoint(project_root, run, controller_id):
     return path.parent, contract
 
 
+def _validate_residual_contract(contract, run, normalization):
+    """Fail closed on the final residual checkpoint/runtime contract."""
+    expected_macro = {"duration_seconds": 300, "shift_seconds": 10,
+                      "baseline_green_seconds": 25}
+    expected_mode = {
+        "input": "declared_time_of_day",
+        "normal": "exact_executed_fixed25_from_reset",
+        "peaks": "raw_greedy_prevalidated_macro",
+        "forbidden_features": ["case_id", "learning_seed", "demand_seed",
+                               "simulator_seed", "filename", "future_flow"],
+    }
+    if (contract.get("schema_version") != 1
+            or contract.get("controller_family") != "schedule_residual_ddqn"
+            or contract.get("feature_dim") != len(MACRO_FEATURES)
+            or list(contract.get("feature_order", ())) != list(MACRO_FEATURES)
+            or contract.get("max_macros") != MAX_MACROS
+            or contract.get("macro") != expected_macro
+            or contract.get("normal_policy") != "exact_executed_fixed25_from_reset"
+            or contract.get("peak_policy") != "raw_greedy_prevalidated_macro_with_baseline_tie_break"
+            or contract.get("critic_units") != CRITIC_UNITS
+            or contract.get("policy_input_schema") != POLICY_INPUT_SCHEMA
+            or contract.get("mode") != "final"):
+        raise ValueError("residual checkpoint contract mismatch")
+    if (contract.get("network_sha256") != run.get("network_sha256")
+            or contract.get("phase_contract_sha256")
+            != run.get("resolved_config", {}).get("phase_contract_sha256")
+            or contract.get("normalization") != normalization
+            or contract.get("simulation")
+            != run.get("resolved_config", {}).get("simulation")):
+        raise ValueError("residual checkpoint compatibility differs from runtime")
+    if (contract.get("learning_seed") != run.get("learning_seed")
+            or type(contract.get("training_step")) is not int
+            or contract["training_step"] not in (4, 8, 12)):
+        raise ValueError("residual checkpoint identity mismatch")
+    config = run.get("resolved_config", {})
+    if (config.get("macro") != expected_macro
+            or config.get("operational_mode") != expected_mode
+            or config.get("critic_units") != CRITIC_UNITS):
+        raise ValueError("residual runtime configuration mismatch")
+    if run.get("regime") not in ("normal", "am_peak", "pm_peak"):
+        raise ValueError("residual run regime is invalid")
+
+
 def _learned_runtime(project_root, run, roadnet, normalization):
     controller_id = run["controller_id"]
     checkpoint_dir, contract = _checkpoint(project_root, run, controller_id)
-    if controller_id == "neighbor_phase_ddqn":
+    if controller_id == "schedule_residual_ddqn":
+        _validate_residual_contract(contract, run, normalization)
+        encoder = PhaseFeatureEncoder(
+            roadnet, float(normalization["count_norm"]),
+            float(normalization["capacity_norm"]))
+        network = ResidualDDQN.load_bundle(str(checkpoint_dir), contract)
+        if network.feature_dim != len(MACRO_FEATURES):
+            raise ValueError("residual checkpoint feature dimension mismatch")
+    elif controller_id == "neighbor_phase_ddqn":
         expected_normalization = {
             "count_norm": float(normalization["count_norm"]),
             "capacity_norm": float(normalization["capacity_norm"]),
@@ -282,6 +337,12 @@ def build_controller_runtime(project_root, run, runtime_dir,
             min_hold_decisions=int(_positive(
                 config.get("min_hold_decisions"), "min_hold_decisions")),
             switch_threshold=float(config.get("switch_threshold", 0.0)))
+    elif controller_id == "schedule_residual_ddqn":
+        # The declared frozen regime is the only operation context supplied to
+        # this policy.  Evaluation is greedy and deterministic per seed.
+        controller = ScheduleResidualController(
+            env, network, str(run.get("regime")), epsilon=0.0,
+            seed=int(run.get("learning_seed")))
     else:
         controller = DQNController(network, env.agent_ids)
     return env, controller
