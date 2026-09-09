@@ -1,0 +1,30 @@
+{
+  "baseline_tuning_wall_time_seconds": 0.0,
+  "learning_seed": 11,
+  "measured_end_to_end_wall_time_seconds": 10190.793655872345,
+  "peak_rss_kb": 373100,
+  "projected_five_seed_campaign_seconds": 50953.968279361725,
+  "schema_version": 2,
+  "simulated_seconds_per_second": 4.239120274514284,
+  "source_artifacts": {
+    "baseline_tuning": {
+      "path": "results/haichau_network_v2/training/pilot-v3-schedule-no-rehearsal-seed11/baseline-tuning.json",
+      "sha256": "fec62a7421f2a7cf6512a74aff41dfb470c89eac354ea2f1e9efe793135d145e"
+    },
+    "resolved_config": {
+      "path": "results/haichau_network_v2/training/pilot-v3-schedule-no-rehearsal-seed11/resolved-config.json",
+      "sha256": "10cd12325e438b54f10bee771ed7d83c2cedd19d111013ea850390f5fd94c284"
+    },
+    "run_manifest": {
+      "path": "results/haichau_network_v2/training/pilot-v3-schedule-no-rehearsal-seed11/run-manifest.json",
+      "sha256": "df09162a97ed8dd029b72ab3d3ddafaa455f646e99bf194ef899bd8f75c0a487"
+    },
+    "summary": {
+      "path": "results/haichau_network_v2/training/pilot-v3-schedule-no-rehearsal-seed11/summary.json",
+      "sha256": "a68dfff2724992f7ed428dd5c8419e096290a1e3392d3d8483398d6ccf389e30"
+    }
+  },
+  "source_summary": "/work/results/haichau_network_v2/training/pilot-v3-schedule-no-rehearsal-seed11/summary.json",
+  "updates_per_second": 0.4200850438702697,
+  "validation_wall_time_seconds": 4917.113060474396
+}

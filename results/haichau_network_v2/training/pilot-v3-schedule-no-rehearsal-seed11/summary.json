@@ -1,0 +1,228 @@
+{
+  "baseline_tuning_wall_time_seconds": 0.0,
+  "behavior_pretraining": {
+    "bc_epochs": 1,
+    "conditional_cross_entropy": 0.05273758236996297,
+    "fixed_green_duration": 25,
+    "forced_labels_excluded": 92295,
+    "labels": 79425,
+    "loss_name": "conditional_cross_entropy",
+    "mean_loss": 0.05273758236996297,
+    "rehearsal": {
+      "batch_size": 128,
+      "enabled": false,
+      "every_td_updates": 1,
+      "type": "behavior_clone"
+    },
+    "rehearsal_pool_switch_eligible_labels": 79425,
+    "schema_version": 2,
+    "source_case_ids": [
+      "train_normal_demand11",
+      "train_am_peak_demand11",
+      "train_pm_peak_demand11",
+      "train_normal_demand12",
+      "train_am_peak_demand12",
+      "train_pm_peak_demand12",
+      "train_normal_demand13",
+      "train_am_peak_demand13",
+      "train_pm_peak_demand13"
+    ],
+    "source_split": "train",
+    "switch_eligible_labels": 79425,
+    "teacher": "validation_tuned_fixed",
+    "teacher_labels": 171720,
+    "top1_agreement": 0.9923827510229777,
+    "train_cases": [
+      {
+        "case_id": "train_normal_demand11",
+        "decisions": 360,
+        "flow_sha256": "4600e46c9e537f52b8ecaf88948cbc763f454b042c2e849fdc2ca4ea6197dfbf",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "normal",
+        "teacher_labels": 19080
+      },
+      {
+        "case_id": "train_am_peak_demand11",
+        "decisions": 360,
+        "flow_sha256": "9ad0f3e2fba89c2c9e7000b99b8ead02618addec82d773e490e5caaf760506f1",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "am_peak",
+        "teacher_labels": 19080
+      },
+      {
+        "case_id": "train_pm_peak_demand11",
+        "decisions": 360,
+        "flow_sha256": "a81138ce21137ed70fd4c8d98796cefa9375e0f22a802cb3016ecda7946f38d9",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "pm_peak",
+        "teacher_labels": 19080
+      },
+      {
+        "case_id": "train_normal_demand12",
+        "decisions": 360,
+        "flow_sha256": "56bce2d30d1ed27f5b6d01e0a2a24763086e2027afd28a94872ca929682522d9",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "normal",
+        "teacher_labels": 19080
+      },
+      {
+        "case_id": "train_am_peak_demand12",
+        "decisions": 360,
+        "flow_sha256": "b54c12791d4531b5a00ed07dc7f522cdf6d5ac19f6e28f2790b3a2384c5a98eb",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "am_peak",
+        "teacher_labels": 19080
+      },
+      {
+        "case_id": "train_pm_peak_demand12",
+        "decisions": 360,
+        "flow_sha256": "122bccaf2c059779aa6e83fd471fa7e816710dc37e325b4e613ed4d326cc6dce",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "pm_peak",
+        "teacher_labels": 19080
+      },
+      {
+        "case_id": "train_normal_demand13",
+        "decisions": 360,
+        "flow_sha256": "b3aedc4f7029497a21d70e464f1a27ad127901c35cc9ae8e6e3d0ba0f48db090",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "normal",
+        "teacher_labels": 19080
+      },
+      {
+        "case_id": "train_am_peak_demand13",
+        "decisions": 360,
+        "flow_sha256": "2697e2561fbdc004944e2c40aad6fab47548906511fce602301cc35dde6e2dd8",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "am_peak",
+        "teacher_labels": 19080
+      },
+      {
+        "case_id": "train_pm_peak_demand13",
+        "decisions": 360,
+        "flow_sha256": "8221c330c2c13510f08de8b328a801840d89959ed27a63ec72b4e73fd3444561",
+        "forced_labels_excluded": 10255,
+        "labels": 8825,
+        "scenario": "pm_peak",
+        "teacher_labels": 19080
+      }
+    ],
+    "updates": 2358
+  },
+  "behavior_rehearsal": {
+    "batch_size": 128,
+    "conditional_cross_entropy": null,
+    "enabled": false,
+    "every_td_updates": 1,
+    "pool_switch_eligible_labels": 79425,
+    "source_split": "train",
+    "switch_eligible_labels_sampled": 0,
+    "top1_agreement": null,
+    "type": "behavior_clone",
+    "updates": 0
+  },
+  "checkpoint_eligibility_policy": {
+    "comparison_unit": "matched_validation_case",
+    "maximum_completion_loss": 0.02,
+    "maximum_insertion_loss": 0.02,
+    "queue_regret_limit_per_regime": 0.0,
+    "required_regimes": [
+      "normal",
+      "am_peak",
+      "pm_peak"
+    ],
+    "schema_version": 2
+  },
+  "checkpoint_reload": {
+    "case_id": "validation_normal_demand31",
+    "completed_steps": 3600,
+    "queue_integral_vehicle_seconds": 2103981.0
+  },
+  "decisions": 4320,
+  "episode_agent_counts": [
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53,
+    53
+  ],
+  "episode_regimes": [
+    "normal",
+    "pm_peak",
+    "am_peak",
+    "normal",
+    "pm_peak",
+    "am_peak",
+    "pm_peak",
+    "am_peak",
+    "normal",
+    "normal",
+    "am_peak",
+    "pm_peak"
+  ],
+  "foundation_verification_wall_time_seconds": 115.69140124320984,
+  "measured_scope": "foundation_verification_through_artifact_verification",
+  "selected_checkpoint": "step-12",
+  "selected_validation_score": {
+    "completion_evidence_complete": true,
+    "eligibility_policy": {
+      "comparison_unit": "matched_validation_case",
+      "maximum_completion_loss": 0.02,
+      "maximum_insertion_loss": 0.02,
+      "queue_regret_limit_per_regime": 0.0,
+      "required_regimes": [
+        "normal",
+        "am_peak",
+        "pm_peak"
+      ],
+      "schema_version": 2
+    },
+    "eligible": false,
+    "insertion_evidence_complete": true,
+    "max_completion_degradation": 0.2159783344617468,
+    "max_insertion_degradation": 0.03288519199148854,
+    "mean_regret": 1.0078437309226926,
+    "normal_regret": 1.1110986401521894,
+    "scenario_regrets": {
+      "am_peak": 0.8460809858190751,
+      "normal": 1.1110986401521894,
+      "pm_peak": 1.0663515667968135
+    },
+    "training_step": 12,
+    "worst_regret": 1.1110986401521894
+  },
+  "selection_status": "ineligible_negative_result",
+  "simulated_seconds": 43200.0,
+  "simulated_seconds_per_second": 4.239120274514284,
+  "training_and_validation_wall_time_seconds": 10070.361848831177,
+  "training_policy_audit": {
+    "eligible_decisions": 228960,
+    "executed_intervention_rate": 0.1945317959468903,
+    "executed_interventions": 44540,
+    "learned_actions_executed": 215033,
+    "learned_reference_disagreements": 44312,
+    "random_actions_executed": 13927,
+    "reference_actions_executed": 0,
+    "switch_eligible_decisions": 93733,
+    "switch_eligible_learned_reference_disagreements": 44312
+  },
+  "updates": 4281,
+  "updates_per_second": 0.4200850438702697,
+  "validation_wall_time_seconds": 4917.113060474396,
+  "wall_time_seconds": 10190.793655872345
+}

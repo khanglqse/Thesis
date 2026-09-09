@@ -1,0 +1,24 @@
+{
+  "artifact_sha256": {
+    "baseline-tuning-provenance.json": "cfedf42d7c6f5af725d9c6a78aa098948d37cf4fb67c3ae78f75a0488ff75ea8",
+    "baseline-tuning.json": "fec62a7421f2a7cf6512a74aff41dfb470c89eac354ea2f1e9efe793135d145e",
+    "behavior-prior.json": "b46f22c5e624a79b6b5e0a36a5bdf2ecdccf05ddae1d6a9d449c79903f90b27a",
+    "checkpoint/contract.json": "94f1c3872fcfdf8c80bd5ec4a72e8cc386de9bab82e16f338fcfc5239e016686",
+    "checkpoint/weights.npz": "2d1d4ee37906e1c0d900cb6a2ffb166f994db1c9abde933134a76d6281eb5a28",
+    "checkpoints/step-12/contract.json": "94f1c3872fcfdf8c80bd5ec4a72e8cc386de9bab82e16f338fcfc5239e016686",
+    "checkpoints/step-12/weights.npz": "2d1d4ee37906e1c0d900cb6a2ffb166f994db1c9abde933134a76d6281eb5a28",
+    "checkpoints/step-4/contract.json": "3ae01d26e0759a16962b749a44c8a1bddb760ba3ba807b272e9e80d34ad21b55",
+    "checkpoints/step-4/weights.npz": "d05cbc355ae4436685b4b33a5b7db382f2a878f8e5b3a46386ca82ff32dc7739",
+    "checkpoints/step-8/contract.json": "67b3a7fc8a7fa81a9e2e36586f3a7dfc3259a7dd703ff8b4f5524aa38cfa1dbf",
+    "checkpoints/step-8/weights.npz": "ae0d56bbf2d5462781105de35ca93977f17869de0e61c2c3e941dcdcbe99b9b3",
+    "replay-coverage.json": "cc71ccbc4e673209ed48ee1abb4393f0397b9f0d2b25f8edcf017b7579d68437",
+    "resolved-config.json": "10cd12325e438b54f10bee771ed7d83c2cedd19d111013ea850390f5fd94c284",
+    "run-manifest.json": "df09162a97ed8dd029b72ab3d3ddafaa455f646e99bf194ef899bd8f75c0a487",
+    "selection.json": "013a869cc632a378059285acaadf0aa7c0ac678d450a56e62968f7d7580cee1d",
+    "summary.json": "a68dfff2724992f7ed428dd5c8419e096290a1e3392d3d8483398d6ccf389e30",
+    "train-log.json": "918ece6ea9fde176cdb2354923757f56d1819f67a9e20f35ece41d5df5bd6118",
+    "validation.json": "004f02679d9527ed9f304e25053e8d97dc2b4eaa8ac0828be016356f542e0a11"
+  },
+  "eligible_for_test_evaluation": false,
+  "status": "ineligible"
+}

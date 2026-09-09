@@ -400,3 +400,30 @@ Consequence: training or checkpoint artifacts without candidate and baseline
 insertion rates, without all six exact validation cases, or without policy
 schema version 2 are ineligible. Existing artifacts are not upgraded in place;
 they must be regenerated from validation-only evaluation under this contract.
+
+## 2026-09-09 — Reject both schedule-aware behavior-rehearsal pilots
+
+Decision: retain both V3-A schedule-aware behavior-rehearsal pilot directories
+as validation-only negative evidence and do not generate a final-training
+configuration. The pre-registered selector was run at source commit
+`2b4c31e` and failed closed because neither arm was validation-eligible.
+
+Evidence: the no-rehearsal arm selected its step-12 diagnostic checkpoint with
+mean queue regret 100.78\%, normal-regime queue regret 111.11\%, maximum
+completion degradation 21.60 percentage points, and maximum insertion loss
+3.29 percentage points. The rehearsal arm was materially less harmful but
+still ineligible at step 12: mean queue regret 20.27\%, normal-regime regret
+22.83\%, worst-regime regret 27.39\%, maximum completion degradation 6.34
+percentage points, and maximum insertion loss 0.53 percentage points. Both
+terminal `status.json` files record `eligible_for_test_evaluation: false`.
+
+Reason: the mandatory policy requires non-positive queue regret in each of
+normal, AM-peak, and PM-peak validation regimes, no more than two percentage
+points of matched completion loss, and no more than two percentage points of
+matched insertion loss. The selector intentionally writes no winner artifact
+when both arms fail; the immutable run artifacts, terminal statuses, profiling
+records, and this decision log preserve the negative result.
+
+Consequence: V3-A is not a candidate for final training, held-out evaluation,
+or the defense demo. The thesis may report it only as a rejected diagnostic
+that motivated the separately pre-registered bounded residual V3-B controller.
