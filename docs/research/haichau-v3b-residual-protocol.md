@@ -35,9 +35,10 @@ simulates every request on a cloned signal automaton and rejects illegal
 requests, changes with no executed effect, or any terminal state mismatch.
 Initial and later blocks are compiled from their actual reference anchor.
 All selected actions are checked again at runtime; unexpected illegal requests
-or anchor mismatch stop the run. Ties or nonfinite observations/scores select
-macro0 and record the reason. No traffic-dependent state is teleported at an
-anchor.
+or anchor mismatch stop the run. Macro0 wins any tie for the highest score
+that includes the baseline. Ties among nonbaseline macros use the lowest macro
+index deterministically. Nonfinite observations or scores select macro0 and
+record the reason. No traffic-dependent state is teleported at an anchor.
 
 ## Learning and reward
 
