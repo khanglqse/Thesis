@@ -128,6 +128,24 @@ def test_registered_final_selector_freezes_all_five_seeds_and_three_checkpoints(
     }
 
 
+def test_final_config_accepts_resolved_final_release_binding():
+    """The selector validates the resolved final protocol, not its raw pilot source."""
+    from traffic_rl.research import final_residual_selector as selector
+
+    root = Path(__file__).resolve().parents[2]
+    _, spec = selector._validate_spec(
+        root, root / "configs/haichau_residual_final_selection_v1.yaml")
+
+    config = selector._final_config(root, spec, 12)
+
+    assert config["mode"] == "final"
+    assert config["learning_seed"] == 12
+    assert config["run"] == {
+        "episodes": 12, "horizon_seconds": 3600, "eval_every": 4,
+    }
+    assert config["final_release"]["selection"]["training_step"] == 4
+
+
 def test_final_selector_failure_does_not_transition_status(tmp_path, monkeypatch):
     from traffic_rl.research import final_residual_selector as selector
 

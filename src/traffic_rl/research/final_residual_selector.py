@@ -21,8 +21,9 @@ from traffic_rl.research.residual_release import FINAL_SEEDS, resolve_frozen_fin
 from traffic_rl.research.pilot_residual_selector import (
     _GATES, _RANKING, _SHA256, _baseline_rows,
     _checkpoint_record, _manifest_cases, _quality, _replay_checkpoint,
-    _traffic_feature_response, _validate_config, _validate_loaded_network,
+    _traffic_feature_response, _validate_loaded_network,
     _validate_npz_fields)
+from traffic_rl.train.schedule_residual_trainer import validate_config as _validate_final_config
 from traffic_rl.train.network_trainer import (
     _tracked_tree_attestation, canonical_json_sha256)
 
@@ -173,7 +174,7 @@ def _validate_status(run_dir, source_tree, required):
 def _final_config(root, spec, seed):
     config, _ = resolve_frozen_final_residual_config(
         root, spec["pilot_selector_spec"], spec["selected_config"], seed)
-    _validate_config(config)
+    _validate_final_config(config)
     return config
 
 
