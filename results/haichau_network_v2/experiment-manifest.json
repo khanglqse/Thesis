@@ -64,6 +64,7 @@
       "flow_sha256": "4600e46c9e537f52b8ecaf88948cbc763f454b042c2e849fdc2ca4ea6197dfbf",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -1216,6 +1217,7 @@
       "flow_sha256": "9ad0f3e2fba89c2c9e7000b99b8ead02618addec82d773e490e5caaf760506f1",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -2368,6 +2370,7 @@
       "flow_sha256": "a81138ce21137ed70fd4c8d98796cefa9375e0f22a802cb3016ecda7946f38d9",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -3520,6 +3523,7 @@
       "flow_sha256": "56bce2d30d1ed27f5b6d01e0a2a24763086e2027afd28a94872ca929682522d9",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -4672,6 +4676,7 @@
       "flow_sha256": "b54c12791d4531b5a00ed07dc7f522cdf6d5ac19f6e28f2790b3a2384c5a98eb",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -5824,6 +5829,7 @@
       "flow_sha256": "122bccaf2c059779aa6e83fd471fa7e816710dc37e325b4e613ed4d326cc6dce",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -6976,6 +6982,7 @@
       "flow_sha256": "b3aedc4f7029497a21d70e464f1a27ad127901c35cc9ae8e6e3d0ba0f48db090",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -8128,6 +8135,7 @@
       "flow_sha256": "2697e2561fbdc004944e2c40aad6fab47548906511fce602301cc35dde6e2dd8",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -9280,6 +9288,7 @@
       "flow_sha256": "8221c330c2c13510f08de8b328a801840d89959ed27a63ec72b4e73fd3444561",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "000b793f041e0121605826423eade49e7e3edf7bf169319cabe57ad100825188",
         "004bbe39567f4141e3d10eb1eb6d6860a93726ef9d3abd1e4cd3016849d9af67",
@@ -10432,6 +10441,7 @@
       "flow_sha256": "f69b0e960e61f7eb4f064d229a0e7cafcd2333642b483d6d3bb78d2ba7b4d363",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "015dd5494b4e9c4b2e0eaa2846c18d03da0ae04581c80f2081cf4822d15daac0",
         "1dd2f1e8f7e1b9f4197c4400e4d606edec779909a364664856e9f275b59bee55",
@@ -11229,6 +11239,7 @@
       "flow_sha256": "367cbf6e93b3643459e856a00a25d10762b9f029eae5e128f6a9e9cca76ff8ec",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "015dd5494b4e9c4b2e0eaa2846c18d03da0ae04581c80f2081cf4822d15daac0",
         "1dd2f1e8f7e1b9f4197c4400e4d606edec779909a364664856e9f275b59bee55",
@@ -12026,6 +12037,7 @@
       "flow_sha256": "713f05afb6d8f6836e1e52cfeb939f553ddf4ebc83f53c68c86399ccd069ed0d",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "015dd5494b4e9c4b2e0eaa2846c18d03da0ae04581c80f2081cf4822d15daac0",
         "1dd2f1e8f7e1b9f4197c4400e4d606edec779909a364664856e9f275b59bee55",
@@ -12823,6 +12835,7 @@
       "flow_sha256": "110a2f6e7bbdd3d3036f550314c3cb518bf2df0d710b42f4cba0e66fed2b44bc",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "015dd5494b4e9c4b2e0eaa2846c18d03da0ae04581c80f2081cf4822d15daac0",
         "1dd2f1e8f7e1b9f4197c4400e4d606edec779909a364664856e9f275b59bee55",
@@ -13620,6 +13633,7 @@
       "flow_sha256": "31dc30feb950c80eb8e76412a1f28d79104d87d38926cf5f669062cf44cca103",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "015dd5494b4e9c4b2e0eaa2846c18d03da0ae04581c80f2081cf4822d15daac0",
         "1dd2f1e8f7e1b9f4197c4400e4d606edec779909a364664856e9f275b59bee55",
@@ -14417,6 +14431,7 @@
       "flow_sha256": "63c83913fd0be0933e937d810043bc64f88cc25aa8c23c048c8c24d6832e1975",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "015dd5494b4e9c4b2e0eaa2846c18d03da0ae04581c80f2081cf4822d15daac0",
         "1dd2f1e8f7e1b9f4197c4400e4d606edec779909a364664856e9f275b59bee55",
@@ -15214,6 +15229,7 @@
       "flow_sha256": "336863a49a643334d4c304287b0c898e6d2bb3b60ee2491909cf08adfec094d6",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -16011,6 +16027,7 @@
       "flow_sha256": "c18fb0dbffe6c7e8661be379aad2d93cc4c8f66bbb767a9355eaed0607aa3764",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -16808,6 +16825,7 @@
       "flow_sha256": "2983180d161dd505baf1ff86826da846022879d3b6203c963ee3d2c9ace99a06",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -17605,6 +17623,7 @@
       "flow_sha256": "00b0089c2da050a6840f2c1871e55f7a417dc485bb326309b21cbc3b9aa2e364",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -18402,6 +18421,7 @@
       "flow_sha256": "33c5ee9824ba0208411d84d857f099902d4c446217dc6389e4e91671ac9b2b8b",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -19199,6 +19219,7 @@
       "flow_sha256": "0a865cbe05c13c69435d7b92ee6628939196a15cf8adf3debcfc5949b870df34",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -19996,6 +20017,7 @@
       "flow_sha256": "614685b8837a8db0dbf65c68351233571220a69c43888c22d8e3e658571474f9",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -20793,6 +20815,7 @@
       "flow_sha256": "9273ef8c1378a0b464dea57e01ce24c2535ba907e8b9a513737022868457f202",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -21590,6 +21613,7 @@
       "flow_sha256": "d7d0cdad49ce35d7d095b982583892af871976678385f4ef97fd03f9f1ced6e0",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -22387,6 +22411,7 @@
       "flow_sha256": "0946ba40933081b4ff2404c79ddf58bddfdcc0703bc383bc64570fbfac694acd",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -23184,6 +23209,7 @@
       "flow_sha256": "2bfaa9634590a07b99a687fb42dea464a80000a376bc0407bbe216d62b360c90",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -23981,6 +24007,7 @@
       "flow_sha256": "e9f59ec21e0f6787ef11ffd9efb5ae57470d5ee187f6a7f41e68a018555b48d2",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -24778,6 +24805,7 @@
       "flow_sha256": "8b57a60a05d12fdc274d7bb186a35af90c55e1f2b5b2b937d49e146f9e84347d",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "normal",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -25575,6 +25603,7 @@
       "flow_sha256": "3739d5b0ee90cf2b37b26fb1d6e43d2e5686587fb3203f40e515f44e06394eef",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "am_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
@@ -26372,6 +26401,7 @@
       "flow_sha256": "8a90c6b51f8c68512f6df3fc0747b6c3007cfd57a5a482e860e2c0857ec128d9",
       "flow_streams": 1500,
       "inactive_controlled_signal_ids": [],
+      "operational_time_of_day": "pm_peak",
       "route_family_hashes": [
         "002a404c1b9a0734e5dc5f1cb12b5eddd00bb41bd1780faa86e5f735bd6af5d5",
         "196809c04427825e15b13cc0ca5c7f3bff9c17b1baad28423121ae34a49e9188",
