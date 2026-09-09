@@ -210,6 +210,12 @@ class ScheduleResidualController(object):
 
     def _start_block(self, observations):
         self._anchor_check()
+        if self.block_start is not None:
+            # The terminal anchor above is the last consumer that needs the
+            # completed trace.  Release its deepcopy and per-second timeline
+            # before replacing it with the next block's reference.
+            for node in self.env.agent_ids:
+                self.shadows[node].release_reference(self.block_start, 300)
         self.block_start = self.env._t
         for node in self.env.agent_ids:
             shadow = self.shadows[node]

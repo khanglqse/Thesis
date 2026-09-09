@@ -155,6 +155,10 @@ class ShadowSignal(object):
         self._references[key] = result
         return result
 
+    def release_reference(self, start, duration):
+        """Drop a completed cached trace after its terminal anchor was checked."""
+        self._references.pop((int(start), int(duration)), None)
+
     def execute(self, reference, commands):
         anchor = reference["anchor"]
         env = copy.deepcopy(anchor, {id(anchor.roadnet): anchor.roadnet,

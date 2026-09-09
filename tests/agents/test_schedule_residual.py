@@ -9,7 +9,8 @@ from traffic_rl.agents.schedule_residual import (
     macro_reward, select_macro, smdp_targets)
 from traffic_rl.sim.multi_agent_env import MultiAgentTrafficEnv
 from traffic_rl.sim.phase_encoder import PhaseFeatureEncoder
-from traffic_rl.sim.schedule_residual import EmptySignalEngine, signal_state
+from traffic_rl.sim.schedule_residual import (
+    EmptySignalEngine, _NodeRoadnet, signal_state)
 from tests.sim.test_schedule_residual import network
 
 
@@ -44,6 +45,35 @@ def test_normal_all_53_signals_exact_every_second_for_arbitrary_weights(network,
     assert audit["anchor_violations"] == 0
     assert len(audit["macro_events"]) == 53 * 2
     assert all(x["reason"] == "normal_exact_reference" for x in audit["macro_events"])
+
+
+def test_completed_macro_reference_is_evicted_after_terminal_resync(network):
+    """A long run retains only the current block's shadow trace and anchor.
+
+    Removing the completion eviction would retain one 300-second trace and
+    deepcopy anchor for every completed macro; this assertion fails at the
+    second 300-second boundary with the original controller.
+    """
+    node = network.signalized_ids()[0]
+    roadnet = _NodeRoadnet(network, node)
+    env = MultiAgentTrafficEnv(roadnet, EmptySignalEngine(), max_steps=1200,
+                               min_green=20)
+    controller = ScheduleResidualController(env, None, time_of_day="normal")
+    observations = env.reset()
+    cached_keys = []
+    done = False
+    while not done:
+        actions = controller.act({"observations": observations})
+        cached_keys.append(tuple(sorted(controller.shadows[node]._references)))
+        observations, _, done, _ = env.step(actions)
+    audit = controller.finalize()
+
+    assert audit["anchor_violations"] == 0
+    assert audit["resync_successes"] == 4
+    assert audit["unlogged_divergence_seconds"] == 0
+    assert all(len(keys) == 1 for keys in cached_keys)
+    assert set(cached_keys) == {((0, 300),), ((300, 300),),
+                                ((600, 300),), ((900, 300),)}
 
 
 def test_controller_rejects_undeclared_time_of_day(network):
