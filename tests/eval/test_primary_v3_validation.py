@@ -163,6 +163,52 @@ def test_primary_validator_rejects_complete_looking_noncanonical_copy(
             tmp_path, forged / "frozen-protocol.json")
 
 
+@pytest.mark.parametrize("filename", [
+    "frozen-protocol.json", "campaign-manifest.json", "summary.json",
+])
+def test_primary_validator_rejects_symlink_at_each_canonical_release_file(
+        tmp_path, monkeypatch, filename):
+    path, protocol = _protocol(tmp_path)
+    expected = _expected_runs(tmp_path, protocol)
+    _write(path.parent / "campaign-manifest.json", {
+        "campaign_version": 2,
+        "evidence_namespace": "haichau_network_v2",
+        "runs": expected,
+    })
+    summary = {
+        "study_scope": {
+            "controlled_signals": 53,
+            "demand_label": "synthetic network demand constrained by Da Nang evidence",
+            "evidence_namespace": "haichau_network_v2",
+        },
+        "summary": {"ok": True},
+        "acceptance": {"accepted": True},
+    }
+    _write(path.parent / "summary.json", summary)
+    monkeypatch.setattr(
+        primary_validation, "validate_frozen_schedule_selection",
+        lambda *args: {"winner": {"arm": "schedule_bc_rehearsal"}})
+    monkeypatch.setattr(
+        primary_validation, "verify_campaign",
+        lambda *args, **kwargs: {"complete": 120, "total": 120})
+    monkeypatch.setattr(primary_validation, "_load_verified_rows", lambda *args: [])
+    monkeypatch.setattr(
+        primary_validation, "aggregate_campaign",
+        lambda *args, **kwargs: {"ok": True})
+    monkeypatch.setattr(
+        primary_validation, "evaluate_acceptance",
+        lambda value: {"accepted": True})
+    canonical = path.parent / filename
+    copied = tmp_path / "copied-release" / filename
+    copied.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(str(canonical), str(copied))
+    canonical.unlink()
+    canonical.symlink_to(copied)
+
+    with pytest.raises(ValueError, match="symbolic link"):
+        validate_primary_v3_reference(tmp_path, path)
+
+
 @pytest.mark.parametrize("mutation,error", [
     ("ineligible", "validation-eligible"),
     ("missing", "checkpoint is missing"),

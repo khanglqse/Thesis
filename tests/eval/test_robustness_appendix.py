@@ -238,6 +238,21 @@ def test_freeze_rejects_copied_primary_release_outside_canonical_final(tmp_path)
             robustness_code_commit="6" * 40)
 
 
+def test_freeze_rejects_symlinked_canonical_primary_protocol(tmp_path):
+    root, primary, config = _fixture(tmp_path)
+    copied = root / "copied-primary/frozen-protocol.json"
+    copied.parent.mkdir(parents=True)
+    shutil.copyfile(str(primary), str(copied))
+    primary.unlink()
+    primary.symlink_to(copied)
+
+    with pytest.raises(ValueError, match="symbolic link"):
+        freeze_robustness_protocol(
+            root, primary, config,
+            root / "results/haichau_network_v2/robustness",
+            robustness_code_commit="6" * 40)
+
+
 @pytest.mark.parametrize("mutation,error", [
     (("confirmatory_learning_seeds", [11, 12, 13, 14, 15]), "12--16"),
     (("acceptance_rules", {"required_learning_seeds": [12]}), "12--16"),
@@ -337,7 +352,25 @@ def test_expansion_rejects_copied_campaign_and_summary_reference(tmp_path):
         "summary_path": str((copied / "summary.json").relative_to(root)),
     })
 
-    with pytest.raises(ValueError, match="verified release reference differs"):
+    with pytest.raises(ValueError, match="canonical lexical final path"):
+        expand_robustness_runs(root, frozen)
+
+
+@pytest.mark.parametrize("filename", ["campaign-manifest.json", "summary.json"])
+def test_expansion_rejects_symlinked_canonical_primary_reference(
+        tmp_path, filename):
+    root, primary, config = _fixture(tmp_path)
+    output = root / "results/haichau_network_v2/robustness"
+    frozen = freeze_robustness_protocol(
+        root, primary, config, output, robustness_code_commit="6" * 40)
+    canonical = primary.parent / filename
+    copied = root / "copied-primary" / filename
+    copied.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(str(canonical), str(copied))
+    canonical.unlink()
+    canonical.symlink_to(copied)
+
+    with pytest.raises(ValueError, match="symbolic link"):
         expand_robustness_runs(root, frozen)
 
 

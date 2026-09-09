@@ -2,7 +2,9 @@
 
 import hashlib
 import json
+import os
 import re
+import stat
 from pathlib import Path
 
 from traffic_rl.eval.network_campaign import (
@@ -20,8 +22,11 @@ PRIMARY_CONTROLLERS = (
     PRIMARY_LEARNED_CONTROLLER,
 )
 PRIMARY_RUN_COUNT = 120
-PRIMARY_RELATIVE = Path(
-    "results/haichau_network_v2/final/frozen-protocol.json")
+PRIMARY_FINAL_RELATIVE = Path("results/haichau_network_v2/final")
+PRIMARY_RELATIVE = PRIMARY_FINAL_RELATIVE / "frozen-protocol.json"
+_PRIMARY_FILENAMES = frozenset((
+    "frozen-protocol.json", "campaign-manifest.json", "summary.json",
+))
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REQUIRED_CHECKPOINT_ARTIFACTS = frozenset((
     "checkpoint/weights.npz", "checkpoint/contract.json", "validation.json",
@@ -62,17 +67,35 @@ def _inside_file(root, value, label):
     return path
 
 
-def canonical_primary_protocol_path(root, supplied=None):
-    """Return the sole primary protocol path accepted by the V3 verifier."""
+def canonical_primary_release_path(root, filename, supplied=None):
+    """Return one non-symlink regular file at its exact primary release path."""
+    if filename not in _PRIMARY_FILENAMES:
+        raise ValueError("unknown canonical primary release artifact")
     root = Path(root).resolve()
-    canonical = (root / PRIMARY_RELATIVE).resolve()
+    canonical = root / PRIMARY_FINAL_RELATIVE / filename
     if supplied is not None:
         candidate = Path(str(supplied))
         candidate = candidate if candidate.is_absolute() else root / candidate
-        if candidate.resolve() != canonical:
+        candidate = Path(os.path.abspath(str(candidate)))
+        if candidate != canonical:
             raise ValueError(
-                "primary V3 protocol must use the canonical final path")
-    return _inside_file(root, canonical, "canonical primary frozen protocol")
+                "primary V3 artifact must use its canonical lexical final path")
+    current = root
+    for component in (PRIMARY_FINAL_RELATIVE / filename).parts:
+        current = current / component
+        if current.is_symlink():
+            raise ValueError(
+                "canonical primary release artifact cannot be a symbolic link")
+    if not canonical.is_file() \
+            or not stat.S_ISREG(canonical.stat().st_mode):
+        raise ValueError("canonical primary release artifact is missing")
+    return canonical
+
+
+def canonical_primary_protocol_path(root, supplied=None):
+    """Return the sole primary protocol path accepted by the V3 verifier."""
+    return canonical_primary_release_path(
+        root, "frozen-protocol.json", supplied=supplied)
 
 
 def _hash_bound_file(root, value, expected, label):
@@ -245,8 +268,9 @@ def validate_primary_v3_reference(root, protocol_path, primary=None):
     if len(expected_runs) != PRIMARY_RUN_COUNT:
         raise ValueError("primary frozen protocol must expand to exactly 120 runs")
 
-    campaign_dir = validated["path"].parent
-    campaign_path = campaign_dir / "campaign-manifest.json"
+    campaign_path = canonical_primary_release_path(
+        root, "campaign-manifest.json")
+    campaign_dir = campaign_path.parent
     campaign = _json(campaign_path, "primary campaign manifest")
     expected_campaign = {
         "campaign_version": 2,
@@ -262,7 +286,7 @@ def validate_primary_v3_reference(root, protocol_path, primary=None):
 
     rows = _load_verified_rows(campaign_dir, expected_runs)
     expected_summary = _expected_summary(protocol, rows)
-    summary_path = campaign_dir / "summary.json"
+    summary_path = canonical_primary_release_path(root, "summary.json")
     if _json(summary_path, "primary summary") != expected_summary:
         raise ValueError("primary summary differs from verified campaign")
     return {

@@ -16,7 +16,8 @@ import yaml
 from traffic_rl.eval.network_campaign import canonical_sha256
 from traffic_rl.eval.network_statistics import paired_bootstrap
 from traffic_rl.eval.primary_v3_validation import (
-    canonical_primary_protocol_path, validate_primary_v3_reference,
+    canonical_primary_protocol_path, canonical_primary_release_path,
+    validate_primary_v3_reference,
 )
 from traffic_rl.eval.robustness_runtime import (
     materialize_demand_plus20, scheduled_departures,
@@ -440,12 +441,17 @@ def _verify_frozen_inputs(root, protocol):
     if reference.get("usage") != "reference_only" \
             or reference.get("fresh_episode_credit") != 0:
         raise ValueError("primary results may be used only as a zero-credit reference")
+    canonical_campaign = canonical_primary_release_path(
+        root, "campaign-manifest.json",
+        supplied=reference.get("campaign_manifest_path"))
+    canonical_summary = canonical_primary_release_path(
+        root, "summary.json", supplied=reference.get("summary_path"))
     reference_campaign = _verified_file(
-        root, reference.get("campaign_manifest_path"),
+        root, canonical_campaign,
         reference.get("campaign_manifest_sha256"),
         "primary campaign manifest")
     reference_summary = _verified_file(
-        root, reference.get("summary_path"),
+        root, canonical_summary,
         reference.get("summary_sha256"), "primary summary")
     if (reference_campaign
             != primary_reference["campaign_manifest_path"].resolve()
