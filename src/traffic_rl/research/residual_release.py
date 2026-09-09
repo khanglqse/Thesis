@@ -47,6 +47,20 @@ def _record(root, path):
     return {"path": str(path.relative_to(root)), "sha256": sha256_file(path)}
 
 
+def _winner_checkpoint_artifacts(winner):
+    """Normalize pilot winner's checkpoint record for the final trainer."""
+    artifacts = winner.get("checkpoint_artifacts") if isinstance(winner, dict) else None
+    if not isinstance(artifacts, dict):
+        raise ValueError("frozen pilot winner checkpoint artifacts are missing")
+    checkpoint = artifacts.get("checkpoint", artifacts)
+    if not isinstance(checkpoint, dict):
+        raise ValueError("frozen pilot winner checkpoint record is invalid")
+    for field in ("contract_path", "contract_sha256", "weights_path", "weights_sha256"):
+        if not isinstance(checkpoint.get(field), str):
+            raise ValueError("frozen pilot winner checkpoint record is incomplete")
+    return copy.deepcopy(checkpoint)
+
+
 def resolve_final_residual_config(root, selector_spec, selected_config, seed,
                                   validation_runner=None):
     """Return a final-only resolved config and compact selection binding.
@@ -91,7 +105,7 @@ def resolve_final_residual_config(root, selector_spec, selected_config, seed,
         "selected_config": actual,
         "selected_checkpoint": winner["checkpoint"],
         "training_step": winner["training_step"],
-        "checkpoint_artifacts": copy.deepcopy(winner.get("checkpoint_artifacts")),
+        "checkpoint_artifacts": _winner_checkpoint_artifacts(winner),
         "test_split_accessed": False,
     }
     config = copy.deepcopy(selected)
@@ -155,9 +169,6 @@ def resolve_frozen_final_residual_config(root, selector_spec, selected_config,
             or pilot.get("training_step") != winner.get("training_step")
             or pilot.get("test_split_accessed") is not False):
         raise ValueError("selected residual config does not bind frozen pilot decision")
-    artifacts = winner.get("checkpoint_artifacts")
-    if not isinstance(artifacts, dict):
-        raise ValueError("frozen pilot winner checkpoint artifacts are missing")
     binding = {
         "schema_version": 1,
         "decision_type": _SELECTION_TYPE,
@@ -167,7 +178,7 @@ def resolve_frozen_final_residual_config(root, selector_spec, selected_config,
         "selected_config": actual,
         "selected_checkpoint": winner["checkpoint"],
         "training_step": winner["training_step"],
-        "checkpoint_artifacts": copy.deepcopy(artifacts),
+        "checkpoint_artifacts": _winner_checkpoint_artifacts(winner),
         "test_split_accessed": False,
     }
     config = copy.deepcopy(selected)

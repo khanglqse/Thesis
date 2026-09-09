@@ -32,7 +32,7 @@ def _decision(path, root=None):
         "decision_type": "haichau_residual_pilot_selection",
         "status": "selected",
         "winner": {"checkpoint": "step-4", "training_step": 4,
-                   "checkpoint_artifacts": {"weights_sha256": "a" * 64}},
+                   "checkpoint_artifacts": {"checkpoint": {"contract_path": "c", "contract_sha256": "b" * 64, "weights_path": "w", "weights_sha256": "a" * 64}}},
         "selected_config": {"path": str(path.relative_to(root)) if root else str(path), "sha256": _sha(path)},
         "test_split_accessed": False,
     }
@@ -61,6 +61,7 @@ def test_final_config_binds_revalidated_selected_output(tmp_path, monkeypatch):
                               "eval_every": 4}
     assert config["final_release"]["selection"] == binding
     assert binding["selected_checkpoint"] == "step-4"
+    assert binding["checkpoint_artifacts"]["weights_sha256"] == "a" * 64
     assert binding["selected_config"]["sha256"] == _sha(selected)
     assert binding["test_split_accessed"] is False
 
