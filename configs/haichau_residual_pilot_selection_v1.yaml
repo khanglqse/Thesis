@@ -1,0 +1,40 @@
+# Preregistered before the V3-B seed-11 validation rows are observed.
+schema_version: 1
+decision_type: haichau_residual_pilot_selection
+controller_family: schedule_residual_ddqn
+mode: pilot
+learning_seed: 11
+validation_checkpoints: [step-2, step-4]
+ranking:
+  - mean_peak_queue_regret_percent_ascending
+  - training_step_ascending
+no_eligible: fail_closed
+gates:
+  normal_exact_fixed_per_case: true
+  normal_timeline_zero:
+    - phase_divergence_seconds
+    - service_divergence_seconds
+    - state_divergence_seconds
+    - nonzero_macros
+    - illegal_requests
+    - anchor_violations
+    - unlogged_divergence_seconds
+  peak_regime_mean_queue_regret_percent_max: 0.0
+  mean_peak_queue_regret_percent_max: -1.0
+  per_case_completion_loss_max: 0.02
+  per_case_insertion_loss_max: 0.02
+  learned_macros_required_regimes: [am_peak, pm_peak]
+  minimum_distinct_nonzero_macro_nodes: 2
+  peak_timeline_zero:
+    - illegal_requests
+    - anchor_violations
+    - unlogged_divergence_seconds
+  forced_macro0_counterfactual_exact_fixed25: true
+  checkpoint_traffic_feature_response_required: true
+manifest: results/haichau_network_v2/experiment-manifest.json
+baseline_tuning_artifact: results/haichau_network_v2/training/final-baseline-tuning.json
+arm:
+  config: configs/haichau_training_v3b_residual.yaml
+  run_dir: results/haichau_network_v2/training/pilot-v3b-residual-seed11
+decision_output: results/haichau_network_v2/training/v3b-residual-pilot-decision.json
+selected_config_output: results/haichau_network_v2/training/haichau-v3b-residual-selected.yaml
