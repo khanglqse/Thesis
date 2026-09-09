@@ -15,7 +15,9 @@ import yaml
 
 from traffic_rl.eval.network_campaign import canonical_sha256
 from traffic_rl.eval.network_statistics import paired_bootstrap
-from traffic_rl.eval.primary_v3_validation import validate_primary_v3_reference
+from traffic_rl.eval.primary_v3_validation import (
+    canonical_primary_protocol_path, validate_primary_v3_reference,
+)
 from traffic_rl.eval.robustness_runtime import (
     materialize_demand_plus20, scheduled_departures,
 )
@@ -236,7 +238,7 @@ def freeze_robustness_protocol(root, primary_protocol_path, config_path,
         raise ValueError("robustness output must use the separate robustness namespace")
     if output.exists():
         raise ValueError("robustness output already exists")
-    primary_path = _project_path(root, primary_protocol_path, "primary protocol")
+    primary_path = canonical_primary_protocol_path(root, primary_protocol_path)
     config_file = _project_path(root, config_path, "robustness config")
     primary = _json(primary_path, "primary protocol")
     config = _validate_config(yaml.safe_load(config_file.read_text()))
@@ -364,8 +366,10 @@ def _verify_frozen_inputs(root, protocol):
             or protocol.get("changes_to_training_selection_or_acceptance") is not False \
             or protocol.get("episode_count") != 420:
         raise ValueError("robustness protocol scope is invalid")
+    canonical_primary = canonical_primary_protocol_path(
+        root, protocol["primary_protocol_path"])
     primary_path = _verified_file(
-        root, protocol["primary_protocol_path"],
+        root, canonical_primary,
         protocol["primary_protocol_sha256"], "primary protocol")
     config_path = _verified_file(
         root, protocol["config_path"], protocol["config_sha256"], "config")

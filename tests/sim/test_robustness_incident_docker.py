@@ -57,7 +57,7 @@ def _write_cityflow_fixture(directory):
     return config_path
 
 
-@pytest.mark.docker
+@pytest.mark.docker_release
 def test_pinned_cityflow_vehicle_can_exit_during_incident_deceleration(tmp_path):
     engine = CityFlowEngine(str(_write_cityflow_fixture(tmp_path)))
     engine.reset()

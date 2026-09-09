@@ -1,5 +1,6 @@
 import hashlib
 import json
+import shutil
 
 import pytest
 
@@ -22,7 +23,7 @@ def _write(path, value):
 
 
 def _protocol(root):
-    case_path = root / "final/case-manifest.json"
+    case_path = root / "results/haichau_network_v2/final/case-manifest.json"
     cases = [{
         "case_id": "test_%02d" % index,
         "split": "test",
@@ -115,7 +116,7 @@ def _protocol(root):
             for controller in PRIMARY_CONTROLLERS),
         "checkpoints": checkpoints,
     }
-    path = root / "final/frozen-protocol.json"
+    path = root / "results/haichau_network_v2/final/frozen-protocol.json"
     _write(path, protocol)
     return path, protocol
 
@@ -139,6 +140,27 @@ def test_primary_protocol_invokes_authoritative_selection_validator_first(
 
     with pytest.raises(ValueError, match="eligible:false"):
         validate_primary_v3_protocol(tmp_path, path)
+
+
+def test_primary_validator_rejects_complete_looking_noncanonical_copy(
+        tmp_path, monkeypatch):
+    path, protocol = _protocol(tmp_path)
+    canonical = path.parent
+    _write(canonical / "campaign-manifest.json", {
+        "campaign_version": 2,
+        "evidence_namespace": "haichau_network_v2",
+        "runs": _expected_runs(tmp_path, protocol),
+    })
+    _write(canonical / "summary.json", {"complete": True})
+    forged = tmp_path / "copied-primary/final"
+    shutil.copytree(str(canonical), str(forged))
+    monkeypatch.setattr(
+        primary_validation, "validate_frozen_schedule_selection",
+        lambda *args: {"winner": {"arm": "schedule_bc_rehearsal"}})
+
+    with pytest.raises(ValueError, match="canonical"):
+        validate_primary_v3_reference(
+            tmp_path, forged / "frozen-protocol.json")
 
 
 @pytest.mark.parametrize("mutation,error", [

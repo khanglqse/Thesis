@@ -19,6 +19,7 @@ where = ["src"]
 pythonpath = ["src", "."]
 markers = [
     "docker: integration tests that require the CityFlow Docker image",
+    "docker_release: integration tests that require the immutable Hai Chau release image",
     "docker_host: integration tests that require the host Docker daemon",
 ]
-addopts = ["-m", "not docker and not docker_host"]
+addopts = ["-m", "not docker and not docker_host and not docker_release"]

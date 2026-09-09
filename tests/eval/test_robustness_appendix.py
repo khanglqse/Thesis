@@ -1,5 +1,6 @@
 import hashlib
 import json
+import shutil
 
 import pytest
 
@@ -91,7 +92,7 @@ def _fixture(tmp_path):
             "demand_path": str(flow_path.relative_to(root)),
             "demand_sha256": flow_sha,
         })
-    case_manifest = root / "final/case-manifest.json"
+    case_manifest = root / "results/haichau_network_v2/final/case-manifest.json"
     case_sha = _write_json(case_manifest, {
         "protocol_version": 3,
         "default_horizon_steps": 3600,
@@ -150,11 +151,11 @@ def _fixture(tmp_path):
         },
         "checkpoints": checkpoints,
     }
-    protocol_path = root / "final/frozen-protocol.json"
+    protocol_path = root / "results/haichau_network_v2/final/frozen-protocol.json"
     _write_json(protocol_path, protocol)
-    _write_json(root / "final/campaign-manifest.json", {
+    _write_json(root / "results/haichau_network_v2/final/campaign-manifest.json", {
         "campaign_version": 2, "runs": []})
-    _write_json(root / "final/summary.json", {
+    _write_json(root / "results/haichau_network_v2/final/summary.json", {
         "study_scope": {"evidence_namespace": "haichau_network_v2"}})
     config = {
         "schema_version": 1,
@@ -189,8 +190,8 @@ def test_freeze_binds_primary_artifacts_and_writes_only_robustness_namespace(tmp
     assert frozen["primary_protocol_sha256"] == _sha(primary)
     assert frozen["primary_results_reference"]["usage"] == "reference_only"
     assert frozen["primary_results_reference"]["campaign_manifest_sha256"] == _sha(
-        root / "final/campaign-manifest.json")
-    assert frozen["case_manifest_sha256"] == _sha(root / "final/case-manifest.json")
+        root / "results/haichau_network_v2/final/campaign-manifest.json")
+    assert frozen["case_manifest_sha256"] == _sha(root / "results/haichau_network_v2/final/case-manifest.json")
     assert frozen["network_sha256"] == _sha(root / "network/roadnet.json")
     assert frozen["phase_contract_sha256"] == _sha(root / "network/phase.json")
     assert len(frozen["checkpoint_bindings"]) == 5
@@ -225,6 +226,18 @@ def test_freeze_validates_primary_before_reading_or_materializing_test_flows(
     assert not (root / "results/haichau_network_v2/robustness").exists()
 
 
+def test_freeze_rejects_copied_primary_release_outside_canonical_final(tmp_path):
+    root, primary, config = _fixture(tmp_path)
+    forged = root / "copied-primary/final"
+    shutil.copytree(str(primary.parent), str(forged))
+
+    with pytest.raises(ValueError, match="canonical"):
+        freeze_robustness_protocol(
+            root, forged / "frozen-protocol.json", config,
+            root / "results/haichau_network_v2/robustness",
+            robustness_code_commit="6" * 40)
+
+
 @pytest.mark.parametrize("mutation,error", [
     (("confirmatory_learning_seeds", [11, 12, 13, 14, 15]), "12--16"),
     (("acceptance_rules", {"required_learning_seeds": [12]}), "12--16"),
@@ -245,7 +258,7 @@ def test_freeze_rejects_seed11_override_or_primary_seed_mismatch(
 
 def test_freeze_rejects_final_namespace_and_does_not_mutate_primary(tmp_path):
     root, primary, config = _fixture(tmp_path)
-    before = {path: path.read_bytes() for path in (root / "final").rglob("*")
+    before = {path: path.read_bytes() for path in (root / "results/haichau_network_v2/final").rglob("*")
               if path.is_file()}
 
     with pytest.raises(ValueError, match="separate robustness namespace"):
@@ -254,7 +267,7 @@ def test_freeze_rejects_final_namespace_and_does_not_mutate_primary(tmp_path):
             root / "results/haichau_network_v2/final/robustness",
             robustness_code_commit="6" * 40)
 
-    after = {path: path.read_bytes() for path in (root / "final").rglob("*")
+    after = {path: path.read_bytes() for path in (root / "results/haichau_network_v2/final").rglob("*")
              if path.is_file()}
     assert after == before
 
@@ -306,6 +319,25 @@ def test_expansion_revalidates_completed_primary_release(tmp_path, monkeypatch):
             ValueError("primary campaign is incomplete")))
 
     with pytest.raises(ValueError, match="incomplete"):
+        expand_robustness_runs(root, frozen)
+
+
+def test_expansion_rejects_copied_campaign_and_summary_reference(tmp_path):
+    root, primary, config = _fixture(tmp_path)
+    output = root / "results/haichau_network_v2/robustness"
+    frozen = freeze_robustness_protocol(
+        root, primary, config, output, robustness_code_commit="6" * 40)
+    copied = root / "copied-primary/final"
+    copied.mkdir(parents=True)
+    for name in ("campaign-manifest.json", "summary.json"):
+        shutil.copyfile(str(primary.parent / name), str(copied / name))
+    frozen["primary_results_reference"].update({
+        "campaign_manifest_path": str(
+            (copied / "campaign-manifest.json").relative_to(root)),
+        "summary_path": str((copied / "summary.json").relative_to(root)),
+    })
+
+    with pytest.raises(ValueError, match="verified release reference differs"):
         expand_robustness_runs(root, frozen)
 
 
@@ -447,6 +479,8 @@ def test_summary_is_hierarchical_seed_paired_and_has_no_pass_fail_label():
 def test_campaign_and_summary_writes_are_immutable_and_never_enter_final(tmp_path):
     root, primary, config = _fixture(tmp_path)
     output = root / "results/haichau_network_v2/robustness"
+    primary_summary = root / "results/haichau_network_v2/final/summary.json"
+    primary_summary_before = primary_summary.read_bytes()
     frozen = freeze_robustness_protocol(
         root, primary, config, output, robustness_code_commit="6" * 40)
     runs = expand_robustness_runs(root, frozen)
@@ -461,4 +495,4 @@ def test_campaign_and_summary_writes_are_immutable_and_never_enter_final(tmp_pat
     write_robustness_summary(output, summary)
     with pytest.raises(ValueError, match="refusing to replace"):
         write_robustness_summary(output, summary)
-    assert not (root / "results/haichau_network_v2/final/summary.json").exists()
+    assert primary_summary.read_bytes() == primary_summary_before

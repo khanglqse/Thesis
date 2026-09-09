@@ -1,6 +1,9 @@
 SHELL := /bin/bash
 CF_IMAGE := cityflowproject/cityflow:latest
 HAICHAU_IMAGE := traffic-rl-cityflow-research:v2
+HAICHAU_RELEASE_IMAGE := traffic-rl-cityflow-research@sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517
+HAICHAU_RELEASE_IMAGE_ID := sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517
+HAICHAU_RELEASE_DOCKERFILE_SHA256 := 7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf
 HAICHAU_PLATFORM := linux/amd64
 HAICHAU_BASE_DIGEST := sha256:b57e1f0953d55384d9fadfec21148312653cf120a0b600a34e364aa2777e2e32
 HAICHAU_DOCKERFILE_SHA256 := $(shell shasum -a 256 docker/cityflow-research/Dockerfile | awk '{print $$1}')
@@ -46,6 +49,17 @@ haichau-smoke: haichau-image
 		-e HAICHAU_DOCKERFILE_SHA256="$$dockerfile_sha" \
 		-e HAICHAU_IMAGE_PLATFORM="$(HAICHAU_PLATFORM)" \
 		$(HAICHAU_IMAGE) python3 scripts/verify_haichau_foundation.py --engine-smoke
+
+# Run the lane-restriction regression only in the immutable release runtime.
+haichau-robustness-incident-test:
+	@test "$(HAICHAU_DOCKERFILE_SHA256)" = "$(HAICHAU_RELEASE_DOCKERFILE_SHA256)"
+	@test "$$(docker image inspect --format '{{.Id}}' $(HAICHAU_RELEASE_IMAGE))" = "$(HAICHAU_RELEASE_IMAGE_ID)"
+	@test "$$(docker image inspect --format '{{ index .Config.Labels "org.traffic_rl.base_image_digest" }}' $(HAICHAU_RELEASE_IMAGE))" = "$(HAICHAU_BASE_DIGEST)"
+	@test "$$(docker image inspect --format '{{ index .Config.Labels "org.traffic_rl.dockerfile_sha256" }}' $(HAICHAU_RELEASE_IMAGE))" = "$(HAICHAU_RELEASE_DOCKERFILE_SHA256)"
+	@docker image inspect --format 'runtime_image=$(HAICHAU_RELEASE_IMAGE) runtime_image_id={{.Id}} base_image_digest={{ index .Config.Labels "org.traffic_rl.base_image_digest" }} dockerfile_sha256={{ index .Config.Labels "org.traffic_rl.dockerfile_sha256" }}' $(HAICHAU_RELEASE_IMAGE)
+	docker run --rm --platform $(HAICHAU_PLATFORM) -v "$(CURDIR):/work" -w /work \
+		$(HAICHAU_RELEASE_IMAGE) sh -lc \
+		'pip install pytest >/dev/null 2>&1 && python3 -m pytest -q -o addopts="" -o pythonpath=src -m docker_release tests/sim/test_robustness_incident_docker.py'
 LEARNING_SEED ?=
 HAICHAU_BASELINE_TUNING_ARTIFACT ?= results/haichau_network_v2/training/final-baseline-tuning.json
 HAICHAU_FINAL_CONCURRENCY ?= 2
@@ -113,8 +127,8 @@ haichau-final-training-test:
 haichau-baseline-shards-test:
 	SUMO_HOME=$(SUMO_HOME) python3 -m pytest tests/scripts/test_run_haichau_baseline_shards.py -v
 
-.PHONY: cf-run test cf-test cf-smoke haichau-image haichau-smoke \
+.PHONY: cf-run test cf-test cf-smoke haichau-image haichau-smoke haichau-robustness-incident-test \
 	haichau-foundation-verify haichau-train-smoke haichau-train-pilot haichau-train-final \
 	haichau-train-legacy-smoke haichau-train-legacy-pilot haichau-train-legacy-final \
-	haichau-precompute-final-baseline haichau-train-final-campaign \
+	haichau-precompute-final-baseline haichau-select-schedule-pilot haichau-train-final-campaign \
 	haichau-final-training-test haichau-baseline-shards-test

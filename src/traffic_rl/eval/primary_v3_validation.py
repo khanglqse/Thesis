@@ -20,6 +20,8 @@ PRIMARY_CONTROLLERS = (
     PRIMARY_LEARNED_CONTROLLER,
 )
 PRIMARY_RUN_COUNT = 120
+PRIMARY_RELATIVE = Path(
+    "results/haichau_network_v2/final/frozen-protocol.json")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REQUIRED_CHECKPOINT_ARTIFACTS = frozenset((
     "checkpoint/weights.npz", "checkpoint/contract.json", "validation.json",
@@ -58,6 +60,19 @@ def _inside_file(root, value, label):
     if not path.is_file():
         raise ValueError("%s is missing" % label)
     return path
+
+
+def canonical_primary_protocol_path(root, supplied=None):
+    """Return the sole primary protocol path accepted by the V3 verifier."""
+    root = Path(root).resolve()
+    canonical = (root / PRIMARY_RELATIVE).resolve()
+    if supplied is not None:
+        candidate = Path(str(supplied))
+        candidate = candidate if candidate.is_absolute() else root / candidate
+        if candidate.resolve() != canonical:
+            raise ValueError(
+                "primary V3 protocol must use the canonical final path")
+    return _inside_file(root, canonical, "canonical primary frozen protocol")
 
 
 def _hash_bound_file(root, value, expected, label):
@@ -147,7 +162,7 @@ def _validate_checkpoint_bindings(root, protocol):
 def validate_primary_v3_protocol(root, protocol_path, primary=None):
     """Validate the hash-bound primary protocol before any test flow is opened."""
     root = Path(root).resolve()
-    path = _inside_file(root, protocol_path, "primary frozen protocol")
+    path = canonical_primary_protocol_path(root, protocol_path)
     document = _json(path, "primary frozen protocol")
     if primary is not None and document != primary:
         raise ValueError("primary frozen protocol changed while validating")
