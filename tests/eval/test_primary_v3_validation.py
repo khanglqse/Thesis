@@ -209,6 +209,26 @@ def test_primary_validator_rejects_symlink_at_each_canonical_release_file(
         validate_primary_v3_reference(tmp_path, path)
 
 
+@pytest.mark.parametrize("component", [
+    "results", "haichau_network_v2", "final",
+])
+def test_primary_validator_rejects_symlinked_canonical_parent_component(
+        tmp_path, component):
+    path, unused_protocol = _protocol(tmp_path)
+    if component == "results":
+        canonical = tmp_path / "results"
+    elif component == "haichau_network_v2":
+        canonical = tmp_path / "results/haichau_network_v2"
+    else:
+        canonical = tmp_path / "results/haichau_network_v2/final"
+    copied = tmp_path / ("copied-%s" % component)
+    shutil.move(str(canonical), str(copied))
+    canonical.symlink_to(copied, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="symbolic link"):
+        validate_primary_v3_protocol(tmp_path, path)
+
+
 @pytest.mark.parametrize("mutation,error", [
     ("ineligible", "validation-eligible"),
     ("missing", "checkpoint is missing"),
