@@ -10,7 +10,7 @@ import yaml
 
 from traffic_rl.agents.schedule_residual import (
     CRITIC_UNITS, MACRO_FEATURES, MAX_MACROS, POLICY_INPUT_SCHEMA,
-    ResidualDDQN)
+    ResidualDDQN, select_macro)
 from traffic_rl.train.network_trainer import canonical_json_sha256, _tuning_binding
 from traffic_rl.train.schedule_residual_trainer import OPERATIONAL_MODE
 
@@ -66,15 +66,17 @@ def _rewards(queue):
     } for index, value in enumerate(values)]
 
 
-def _events(nodes, reason, learned=False):
+def _events(nodes, reason, actions=None):
+    actions = actions or {}
     result = []
     for block in range(12):
-        for index, node in enumerate(nodes):
-            active = learned and block == 0
+        for node in nodes:
+            macro = int(actions.get((block, node), 0))
+            active = macro != 0
             result.append({
                 "node": node,
                 "block_start_second": block * 300,
-                "macro_id": index + 1 if active else 0,
+                "macro_id": macro,
                 "reason": "learned_macro" if active else reason,
                 "boundary_second": block * 300 + 100 if active else None,
                 "shift_seconds": 10 if active else 0,
@@ -82,24 +84,27 @@ def _events(nodes, reason, learned=False):
     return result
 
 
-def _audit(nodes, mode, learned=False, baseline=False):
+def _audit(nodes, mode, actions=None, baseline=False):
+    actions = actions or {}
     reason = ("normal_exact_reference" if mode == "normal" else
               "zero_residual_diagnostic" if baseline else
               "baseline_tie_or_best")
-    events = _events(nodes, reason, learned=learned)
+    events = _events(nodes, reason, actions=actions)
     nonzero = sum(event["macro_id"] != 0 for event in events)
+    active_nodes = sorted(set(event["node"] for event in events
+                              if event["macro_id"] != 0))
     return {
         "time_of_day": mode,
         "observed_node_seconds": len(nodes) * 3600,
-        "phase_divergence_seconds": 20 if learned else 0,
-        "service_divergence_seconds": 20 if learned else 0,
-        "state_divergence_seconds": 20 if learned else 0,
+        "phase_divergence_seconds": 10 * nonzero,
+        "service_divergence_seconds": 10 * nonzero,
+        "state_divergence_seconds": 10 * nonzero,
         "nonzero_macros": nonzero,
         "illegal_requests": 0,
         "anchor_violations": 0,
         "unlogged_divergence_seconds": 0,
         "resync_successes": len(nodes) * 12,
-        "nonzero_macro_nodes": list(nodes) if learned else [],
+        "nonzero_macro_nodes": active_nodes,
         "abstentions": {reason: len(events) - nonzero},
         "phase_definition": "lightphase_exposed_during_simulator_step",
         "service_definition": "movement_time_since_service_divergence",
@@ -107,22 +112,84 @@ def _audit(nodes, mode, learned=False, baseline=False):
     }
 
 
-def _row(case, nodes, candidate_queue):
-    baseline = _metric(1000)
-    candidate = _metric(candidate_queue)
-    learned = case["scenario"] != "normal"
+def _timeline(nodes, actions):
+    digest = hashlib.sha256()
+    for second in range(1, 3601):
+        block = (second - 1) // 300
+        for node in nodes:
+            macro = int(actions.get((block, node), 0))
+            frame = {
+                "second": second, "node": node,
+                "served_lightphase": macro,
+                "signal_state": {
+                    "macro_id": macro,
+                    "second_in_block": (second - 1) % 300,
+                },
+            }
+            digest.update((json.dumps(
+                frame, sort_keys=True, separators=(",", ":")) + "\n").encode())
+    return {
+        "schema_version": 1,
+        "frame_definition": (
+            "canonical_json_lines(second,node,served_lightphase,signal_state)_v1"),
+        "observed_node_seconds": len(nodes) * 3600,
+        "sha256": digest.hexdigest(),
+    }
+
+
+class _FixtureValidationRunner(object):
+    """Policy replay whose source rows derive from actual checkpoint scores."""
+    def __init__(self, nodes):
+        self.nodes = list(nodes)
+
+    def _actions(self, network, scenario, policy):
+        actions = {}
+        if policy != "candidate" or scenario == "normal":
+            return actions
+        for index, node in enumerate(self.nodes):
+            desired = index + 1
+            features = np.zeros((MAX_MACROS, len(MACRO_FEATURES)), np.float32)
+            mask = np.zeros(MAX_MACROS, np.bool_)
+            mask[[0, desired]] = True
+            features[desired, 0] = 1.0
+            scores = network.q_values(features, mask)[0]
+            choice, _ = select_macro(scores, mask)
+            actions[(0, node)] = choice
+        return actions
+
+    def __call__(self, network, training_step, case, policy):
+        scenario = case["scenario"]
+        actions = self._actions(network, scenario, policy)
+        learned = sum(value != 0 for value in actions.values())
+        queue = 1000
+        if policy == "candidate" and scenario != "normal" and learned == 2:
+            queue = ({2: {"am_peak": 980, "pm_peak": 990},
+                      4: {"am_peak": 970, "pm_peak": 980}}
+                     [training_step][scenario])
+        result = {"metrics": _metric(queue),
+                  "timeline": _timeline(self.nodes, actions)}
+        if policy != "fixed25":
+            result.update({
+                "macro_rewards": _rewards(queue),
+                "policy_audit": _audit(
+                    self.nodes, scenario, actions=actions,
+                    baseline=(policy == "forced_macro0")),
+            })
+        return result
+
+
+def _row(case, candidate, baseline):
     return {
         "case_id": case["case_id"],
         "scenario": case["scenario"],
         "horizon_seconds": 3600,
-        "baseline": baseline,
-        "candidate": candidate,
-        "policy_audit": _audit(nodes, case["scenario"], learned=learned),
-        "candidate_macro_rewards": _rewards(candidate_queue),
-        "baseline_macro_rewards": _rewards(1000),
+        "baseline": baseline["metrics"],
+        "candidate": candidate["metrics"],
+        "policy_audit": candidate["policy_audit"],
+        "candidate_macro_rewards": candidate["macro_rewards"],
+        "baseline_macro_rewards": baseline["macro_rewards"],
         "baseline_policy": "forced_macro0_counterfactual",
-        "baseline_policy_audit": _audit(
-            nodes, case["scenario"], baseline=True),
+        "baseline_policy_audit": baseline["policy_audit"],
         "counterfactual_weight_independence": "macro0 never evaluates network",
         "operational_mode_source": "preregistered_time_of_day",
         "source_manifest_field": "cases[].scenario",
@@ -147,6 +214,10 @@ def _fixture(tmp_path):
     _git(root, "config", "user.email", "fixture@example.com")
     _git(root, "config", "user.name", "Fixture")
     _write(root / ".gitignore", "training/\noutput/\n")
+    network_path = root / "network.json"
+    phase_path = root / "phase-contract.json"
+    _write(network_path, {"fixture": "network"})
+    _write(phase_path, {"fixture": "phase-contract"})
     nodes = ["node-a", "node-b"]
     scenarios = ("normal", "am_peak", "pm_peak")
     cases = []
@@ -167,8 +238,10 @@ def _fixture(tmp_path):
     manifest = {
         "schema_version": 1,
         "cases": cases,
-        "network": {"agent_ids": nodes, "sha256": "n" * 64},
-        "phase_contract": {"sha256": "p" * 64},
+        "network": {"agent_ids": nodes, "path": "network.json",
+                    "sha256": _sha(network_path)},
+        "phase_contract": {"path": "phase-contract.json",
+                           "sha256": _sha(phase_path)},
         "runtime": {"base_image_digest": "sha256:runtime"},
         "preprocessing": {"count_norm": 20, "capacity_norm": 40},
         "simulation": {"action_interval": 10, "min_green": 20,
@@ -182,52 +255,41 @@ def _fixture(tmp_path):
         queue_integral_vehicle_seconds=1000.0,
         completion_rate=0.90, insertion_rate=0.95)
         for case in validation]
+    durations = [20, 25, 30, 35, 40, 45, 50, 60]
     baseline = {
         "schema_version": 1,
         "method": "validation_grid_search",
         "binding": _tuning_binding(
             manifest, validation, 3600,
-            {"simulation": manifest["simulation"],
-             "baseline": {"controller": "validation_tuned_fixed",
-                          "search_green_durations": [25]}}),
-        "search_space": {"fixed_green_duration": [25]},
+             {"simulation": manifest["simulation"],
+              "baseline": {"controller": "validation_tuned_fixed",
+                          "search_green_durations": durations}}),
+        "search_space": {"fixed_green_duration": durations},
         "selected": {"fixed_green_duration": 25},
-        "candidates": [{
-            "fixed_green_duration": 25,
-            "mean_queue_integral_vehicle_seconds": 1000.0,
-            "rows": baseline_rows,
-        }],
+        "candidates": [
+            {"fixed_green_duration": duration,
+             "mean_queue_integral_vehicle_seconds": (
+                 1000.0 if duration == 25 else 1100.0),
+             "rows": (baseline_rows if duration == 25 else [
+                 dict(row, queue_integral_vehicle_seconds=1100.0)
+                 for row in baseline_rows])}
+            for duration in durations],
     }
     baseline["tuning_sha256"] = canonical_json_sha256(baseline)
     _write(root / "baseline.json", baseline)
-    config = {
-        "schema_version": 1,
-        "controller_family": "schedule_residual_ddqn",
-        "macro": {"duration_seconds": 300, "shift_seconds": 10,
-                  "baseline_green_seconds": 25},
-        "operational_mode": OPERATIONAL_MODE,
-        "model": {"feature_dim": 27, "hidden": 8, "lr": 0.0003,
-                  "gamma_per_macro": 0.99},
-        "optimizer": {"batch_size": 8, "buffer_capacity": 100,
-                      "train_start": 2, "updates_per_macro": 1,
-                      "target_sync": 4, "grad_clip": 10.0,
-                      "huber_delta": 1.0},
-        "exploration": {"epsilon": 0.15},
-        "reward": {"type": "negative_network_queue_plus_pending_integral"},
-        "critic_units": CRITIC_UNITS,
-        "baseline": {"controller": "validation_tuned_fixed",
-                     "search_green_durations": [25]},
-        "tiers": {"smoke": {"episodes": 2, "horizon_seconds": 600,
-                              "eval_every": 2},
-                  "pilot": {"episodes": 4, "horizon_seconds": 3600,
-                             "eval_every": 2}},
-    }
-    _write(root / "config.yaml", yaml.safe_dump(config, sort_keys=True))
+    registered_config = (Path(__file__).resolve().parents[2] / "configs" /
+                         "haichau_training_v3b_residual.yaml")
+    config_bytes = registered_config.read_bytes()
+    config_path = root / "configs/haichau_training_v3b_residual.yaml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_bytes(config_bytes)
+    config = yaml.safe_load(config_bytes)
     spec = {
         "schema_version": 1,
         "decision_type": "haichau_residual_pilot_selection",
         "controller_family": "schedule_residual_ddqn",
         "mode": "pilot", "learning_seed": 11,
+        "source_config_sha256": hashlib.sha256(config_bytes).hexdigest(),
         "validation_checkpoints": ["step-2", "step-4"],
         "ranking": ["mean_peak_queue_regret_percent_ascending",
                     "training_step_ascending"],
@@ -252,9 +314,11 @@ def _fixture(tmp_path):
         },
         "manifest": "manifest.json",
         "baseline_tuning_artifact": "baseline.json",
-        "arm": {"config": "config.yaml", "run_dir": "training/pilot"},
+        "arm": {"config": "configs/haichau_training_v3b_residual.yaml",
+                "run_dir": "training/pilot"},
         "decision_output": "output/residual-decision.json",
         "selected_config_output": "output/residual-selected.yaml",
+        "validation_rerun_output": "output/residual-rerun.json",
     }
     _write(root / "spec.yaml", yaml.safe_dump(spec, sort_keys=True))
     _git(root, "add", ".")
@@ -307,6 +371,7 @@ def _fixture(tmp_path):
     execution_config.update({"mode": "pilot", "learning_seed": 11,
                              "run": config["tiers"]["pilot"]})
     checkpoints = []
+    validation_runner = _FixtureValidationRunner(nodes)
     for step in (2, 4):
         contract = {
             "schema_version": 1,
@@ -330,7 +395,7 @@ def _fixture(tmp_path):
             "baseline_tuning_sha256": baseline["tuning_sha256"],
         }
         checkpoint = run / "checkpoints" / ("step-%04d" % step)
-        net = ResidualDDQN(len(MACRO_FEATURES), 8, 0.0003, step,
+        net = ResidualDDQN(len(MACRO_FEATURES), 64, 0.0003, step,
                            grad_clip=10.0, huber_delta=1.0)
         # Make the policy demonstrably respond to a traffic feature. A clone
         # whose traffic columns are zero is rejected by the selector.
@@ -349,13 +414,9 @@ def _fixture(tmp_path):
         }
         rows = []
         for case in validation:
-            if case["scenario"] == "normal":
-                queue = 1000
-            elif step == 2:
-                queue = 980 if case["scenario"] == "am_peak" else 990
-            else:
-                queue = 970 if case["scenario"] == "am_peak" else 980
-            rows.append(_row(case, nodes, queue))
+            candidate = validation_runner(net, step, case, "candidate")
+            forced = validation_runner(net, step, case, "forced_macro0")
+            rows.append(_row(case, candidate, forced))
         artifact = {
             "schema_version": 1,
             "controller_family": "schedule_residual_ddqn",
@@ -387,7 +448,7 @@ def _fixture(tmp_path):
         "reason": "pilot must pass preregistered selector",
     })
     _refresh_status(run)
-    return root, spec, run
+    return root, spec, run, validation_runner
 
 
 def _mutate_json(path, callback):
@@ -408,8 +469,8 @@ def _set_candidate_queue(row, queue):
 def test_selects_best_eligible_checkpoint_and_binds_outputs(tmp_path):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, spec, _ = _fixture(tmp_path)
-    decision = select_from_spec(root, root / "spec.yaml")
+    root, spec, _, runner = _fixture(tmp_path)
+    decision = select_from_spec(root, root / "spec.yaml", runner)
 
     assert decision["status"] == "selected"
     assert decision["winner"]["checkpoint"] == "step-4"
@@ -425,10 +486,18 @@ def test_selects_best_eligible_checkpoint_and_binds_outputs(tmp_path):
         root / spec["selected_config_output"])
 
 
+def test_selector_fails_closed_without_deterministic_replay_runner(tmp_path):
+    from traffic_rl.research.pilot_residual_selector import select_from_spec
+
+    root, _, _, _ = _fixture(tmp_path)
+    with pytest.raises(ValueError, match="validation runner is required"):
+        select_from_spec(root, root / "spec.yaml")
+
+
 def test_tie_uses_earliest_preregistered_checkpoint(tmp_path):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, _, run = _fixture(tmp_path)
+    root, _, run, runner = _fixture(tmp_path)
     step4 = run / "validation-step-0004.json"
     step2 = json.loads((run / "validation-step-0002.json").read_text())
     value = json.loads(step4.read_text())
@@ -436,24 +505,27 @@ def test_tie_uses_earliest_preregistered_checkpoint(tmp_path):
     _write(step4, value)
     _refresh_status(run)
 
-    decision = select_from_spec(root, root / "spec.yaml")
+    def tied_runner(network, step, case, policy):
+        return runner(network, 2 if step == 4 else step, case, policy)
+
+    decision = select_from_spec(root, root / "spec.yaml", tied_runner)
 
     assert decision["winner"]["checkpoint"] == "step-2"
 
 
 @pytest.mark.parametrize("mutation, message", [
     ("forged_rank", "ranking"),
-    ("missing_trace", "macro events"),
+    ("missing_trace", "source row|macro events"),
     ("missing_hash", "hashes.*incomplete"),
     ("fixed_only_clone", "traffic feature response"),
-    ("one_peak_only", "no eligible"),
-    ("one_macro_node", "no eligible"),
+    ("one_peak_only", "source row|no eligible"),
+    ("one_macro_node", "source row|no eligible"),
     ("checkpoint_mismatch", "training step"),
 ])
 def test_fail_closed_adversarial_evidence(tmp_path, mutation, message):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, _, run = _fixture(tmp_path)
+    root, _, run, runner = _fixture(tmp_path)
     if mutation == "forged_rank":
         spec_path = root / "spec.yaml"
         spec = yaml.safe_load(spec_path.read_text())
@@ -522,13 +594,13 @@ def test_fail_closed_adversarial_evidence(tmp_path, mutation, message):
         _refresh_status(run)
 
     with pytest.raises(ValueError, match=message):
-        select_from_spec(root, root / "spec.yaml")
+        select_from_spec(root, root / "spec.yaml", runner)
 
 
 def test_rejects_rehashed_forged_source_rows(tmp_path):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, _, run = _fixture(tmp_path)
+    root, _, run, runner = _fixture(tmp_path)
     path = run / "validation-step-0004.json"
     def forge(value):
         row = next(row for row in value["rows"]
@@ -537,14 +609,109 @@ def test_rejects_rehashed_forged_source_rows(tmp_path):
     _mutate_json(path, forge)
     _refresh_status(run)
 
-    with pytest.raises(ValueError, match="normal.*exact"):
-        select_from_spec(root, root / "spec.yaml")
+    with pytest.raises(ValueError, match="source row|normal.*exact"):
+        select_from_spec(root, root / "spec.yaml", runner)
+
+
+def test_descendant_rejects_forged_rows_status_rerun_and_decision(tmp_path):
+    from traffic_rl.research.pilot_residual_selector import (
+        select_from_spec, validate_selected_outputs)
+
+    root, spec, run, runner = _fixture(tmp_path)
+    select_from_spec(root, root / "spec.yaml", runner)
+    source_path = run / "validation-step-0004.json"
+    _mutate_json(source_path, lambda value: _set_candidate_queue(
+        next(row for row in value["rows"] if row["scenario"] == "am_peak"),
+        900))
+    _refresh_status(run)
+
+    rerun_path = root / spec["validation_rerun_output"]
+    _mutate_json(rerun_path, lambda value: value["checkpoints"]["step-4"][
+        "rows"][1]["candidate"]["metrics"].update(
+            queue_integral_vehicle_seconds=900.0,
+            network_queue_integral_vehicle_seconds=890.0))
+    decision_path = root / spec["decision_output"]
+    decision = json.loads(decision_path.read_text())
+    decision["pilot_status"]["sha256"] = _sha(run / "status.json")
+    decision["checkpoints"]["step-4"]["validation"]["sha256"] = _sha(
+        source_path)
+    decision["validation_rerun"]["sha256"] = _sha(rerun_path)
+    _write(decision_path, decision)
+
+    with pytest.raises(ValueError, match="source row|deterministic|rerun"):
+        validate_selected_outputs(root, root / "spec.yaml", runner)
+
+
+def test_rejects_rehashed_weights_whose_real_policy_chooses_macro0(tmp_path):
+    from traffic_rl.research.pilot_residual_selector import select_from_spec
+
+    root, _, run, runner = _fixture(tmp_path)
+    path = run / "checkpoints/step-0004/weights.npz"
+    with np.load(str(path)) as source:
+        arrays = {name: source[name].copy() for name in source.files}
+    # The checkpoint remains traffic-responsive, but every fixture macro now
+    # scores below macro0. The old boolean reload claim would accept this.
+    arrays["W3"] *= -1.0
+    arrays["target_W3"] *= -1.0
+    np.savez(str(path), **arrays)
+    artifact_path = run / "validation-step-0004.json"
+    artifact = json.loads(artifact_path.read_text())
+    artifact["checkpoint"]["weights_sha256"] = _sha(path)
+    _write(artifact_path, artifact)
+    summary_path = run / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    next(item for item in summary["checkpoints"]
+         if item["training_step"] == 4)["checkpoint"] = artifact["checkpoint"]
+    _write(summary_path, summary)
+    _refresh_status(run)
+
+    with pytest.raises(ValueError, match="deterministic checkpoint replay"):
+        select_from_spec(root, root / "spec.yaml", runner)
+
+
+def test_rejects_equal_aggregate_normal_with_different_second_timeline(tmp_path):
+    from traffic_rl.research.pilot_residual_selector import select_from_spec
+
+    root, _, _, runner = _fixture(tmp_path)
+
+    def forged_timeline_runner(network, step, case, policy):
+        result = runner(network, step, case, policy)
+        if case["scenario"] == "normal" and policy == "candidate":
+            result["timeline"]["sha256"] = "f" * 64
+        return result
+
+    with pytest.raises(ValueError, match="normal candidate per-second timeline"):
+        select_from_spec(root, root / "spec.yaml", forged_timeline_runner)
+
+
+@pytest.mark.parametrize("section,field,value", [
+    ("optimizer", "updates_per_macro", 9),
+    ("exploration", "epsilon", 0.14),
+])
+def test_pins_every_registered_config_value_by_full_sha256(
+        tmp_path, section, field, value):
+    from traffic_rl.research.pilot_residual_selector import validate_registered_config
+
+    root, _, _, _ = _fixture(tmp_path)
+    path = root / "configs/haichau_training_v3b_residual.yaml"
+    config = yaml.safe_load(path.read_text())
+    config[section][field] = value
+    _write(path, yaml.safe_dump(config, sort_keys=True))
+    spec_path = root / "spec.yaml"
+    spec = yaml.safe_load(spec_path.read_text())
+    spec["source_config_sha256"] = _sha(path)
+    _write(spec_path, yaml.safe_dump(spec, sort_keys=True))
+    _git(root, "add", "configs/haichau_training_v3b_residual.yaml", "spec.yaml")
+    _git(root, "commit", "-qm", "forge registered config and hash")
+
+    with pytest.raises(ValueError, match="preregistration|SHA256"):
+        validate_registered_config(root, spec_path)
 
 
 def test_rejects_counterfactual_or_operational_mode_forgery(tmp_path):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, _, run = _fixture(tmp_path)
+    root, _, run, runner = _fixture(tmp_path)
     path = run / "validation-step-0004.json"
     _mutate_json(path, lambda value: value["rows"][0].update(
         counterfactual_weight_independence="claimed only",
@@ -552,28 +719,44 @@ def test_rejects_counterfactual_or_operational_mode_forgery(tmp_path):
     _refresh_status(run)
 
     with pytest.raises(ValueError, match="counterfactual|operational"):
-        select_from_spec(root, root / "spec.yaml")
+        select_from_spec(root, root / "spec.yaml", runner)
+
+
+def test_requires_explicit_manifest_time_of_day_declaration(tmp_path):
+    from traffic_rl.research.pilot_residual_selector import select_from_spec
+
+    root, _, _, runner = _fixture(tmp_path)
+    path = root / "manifest.json"
+    manifest = json.loads(path.read_text())
+    next(case for case in manifest["cases"]
+         if case["split"] == "validation").pop("operational_time_of_day")
+    _write(path, manifest)
+    _git(root, "add", "manifest.json")
+    _git(root, "commit", "-qm", "remove explicit time of day")
+
+    with pytest.raises(ValueError, match="time-of-day"):
+        select_from_spec(root, root / "spec.yaml", runner)
 
 
 def test_rejects_unregistered_config_input_even_when_committed(tmp_path):
     from traffic_rl.research.pilot_residual_selector import validate_registered_config
 
-    root, _, _ = _fixture(tmp_path)
-    path = root / "config.yaml"
+    root, _, _, _ = _fixture(tmp_path)
+    path = root / "configs/haichau_training_v3b_residual.yaml"
     config = yaml.safe_load(path.read_text())
     config["case_id_feature"] = True
     _write(path, yaml.safe_dump(config, sort_keys=True))
-    _git(root, "add", "config.yaml")
+    _git(root, "add", "configs/haichau_training_v3b_residual.yaml")
     _git(root, "commit", "-qm", "inject identity feature")
 
-    with pytest.raises(ValueError, match="keys|input|identity"):
+    with pytest.raises(ValueError, match="SHA256|keys|input|identity"):
         validate_registered_config(root, root / "spec.yaml")
 
 
 def test_rejects_row_whose_network_plus_pending_does_not_equal_queue(tmp_path):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, _, run = _fixture(tmp_path)
+    root, _, run, runner = _fixture(tmp_path)
     path = run / "validation-step-0004.json"
     _mutate_json(path, lambda value: value["rows"][0]["candidate"].update(
         network_queue_integral_vehicle_seconds=1.0,
@@ -581,25 +764,25 @@ def test_rejects_row_whose_network_plus_pending_does_not_equal_queue(tmp_path):
     _refresh_status(run)
 
     with pytest.raises(ValueError, match="network.*pending|objective"):
-        select_from_spec(root, root / "spec.yaml")
+        select_from_spec(root, root / "spec.yaml", runner)
 
 
 def test_rejects_checkpoint_bundle_hash_or_reload_drift(tmp_path):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, _, run = _fixture(tmp_path)
+    root, _, run, runner = _fixture(tmp_path)
     path = run / "checkpoints/step-0004/weights.npz"
     path.write_bytes(b"forged")
     _refresh_status(run)
 
     with pytest.raises(ValueError, match="checkpoint.*hash|reload"):
-        select_from_spec(root, root / "spec.yaml")
+        select_from_spec(root, root / "spec.yaml", runner)
 
 
 def test_rejects_rehashed_npz_with_uncontracted_array(tmp_path):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, _, run = _fixture(tmp_path)
+    root, _, run, runner = _fixture(tmp_path)
     path = run / "checkpoints/step-0004/weights.npz"
     with np.load(str(path)) as source:
         arrays = {name: source[name].copy() for name in source.files}
@@ -617,20 +800,20 @@ def test_rejects_rehashed_npz_with_uncontracted_array(tmp_path):
     _refresh_status(run)
 
     with pytest.raises(ValueError, match="NPZ.*fields|uncontracted"):
-        select_from_spec(root, root / "spec.yaml")
+        select_from_spec(root, root / "spec.yaml", runner)
 
 
 def test_descendant_validator_recomputes_source_rows_and_hashes(tmp_path):
     from traffic_rl.research.pilot_residual_selector import (
         select_from_spec, validate_selected_outputs)
 
-    root, spec, run = _fixture(tmp_path)
-    select_from_spec(root, root / "spec.yaml")
+    root, spec, run, runner = _fixture(tmp_path)
+    select_from_spec(root, root / "spec.yaml", runner)
     _write(root / "descendant.txt", "new release code\n")
     _git(root, "add", "descendant.txt")
     _git(root, "commit", "-qm", "descendant")
 
-    evidence = validate_selected_outputs(root, root / "spec.yaml")
+    evidence = validate_selected_outputs(root, root / "spec.yaml", runner)
     assert evidence["status"] == "selected"
     assert evidence["winner"]["checkpoint"] == "step-4"
 
@@ -638,13 +821,13 @@ def test_descendant_validator_recomputes_source_rows_and_hashes(tmp_path):
     _mutate_json(path, lambda value: _set_candidate_queue(value["rows"][1], 900))
     _refresh_status(run)
     with pytest.raises(ValueError, match="selected decision drift|source row"):
-        validate_selected_outputs(root, root / "spec.yaml")
+        validate_selected_outputs(root, root / "spec.yaml", runner)
 
 
 def test_no_eligible_writes_rejection_but_no_selected_config(tmp_path):
     from traffic_rl.research.pilot_residual_selector import select_from_spec
 
-    root, spec, run = _fixture(tmp_path)
+    root, spec, run, runner = _fixture(tmp_path)
     for step in (2, 4):
         path = run / ("validation-step-%04d.json" % step)
         def degrade(value):
@@ -654,8 +837,15 @@ def test_no_eligible_writes_rejection_but_no_selected_config(tmp_path):
         _mutate_json(path, degrade)
     _refresh_status(run)
 
+    def degraded_runner(network, step, case, policy):
+        result = runner(network, step, case, policy)
+        if policy == "candidate" and case["scenario"] != "normal":
+            result["metrics"] = _metric(1100)
+            result["macro_rewards"] = _rewards(1100)
+        return result
+
     with pytest.raises(ValueError, match="no eligible"):
-        select_from_spec(root, root / "spec.yaml")
+        select_from_spec(root, root / "spec.yaml", degraded_runner)
     decision = json.loads((root / spec["decision_output"]).read_text())
     assert decision["status"] == "rejected"
     assert decision["winner"] is None

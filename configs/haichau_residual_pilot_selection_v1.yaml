@@ -9,6 +9,7 @@ ranking:
   - mean_peak_queue_regret_percent_ascending
   - training_step_ascending
 no_eligible: fail_closed
+source_config_sha256: 8195782b5d099bd7a04de03bfebfd5206957e7d76ada354047c971cbb3d6e75a
 gates:
   normal_exact_fixed_per_case: true
   normal_timeline_zero:
@@ -38,3 +39,4 @@ arm:
   run_dir: results/haichau_network_v2/training/pilot-v3b-residual-seed11
 decision_output: results/haichau_network_v2/training/v3b-residual-pilot-decision.json
 selected_config_output: results/haichau_network_v2/training/haichau-v3b-residual-selected.yaml
+validation_rerun_output: results/haichau_network_v2/training/v3b-residual-pilot-rerun.json

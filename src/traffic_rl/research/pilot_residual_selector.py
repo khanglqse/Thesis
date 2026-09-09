@@ -1,10 +1,11 @@
 """Fail-closed V3-B residual pilot checkpoint selection.
 
-The selector reads only preregistered training and validation artifacts.  It
-recomputes every gate and ranking value from the six validation rows, reloads
-both checkpoint bundles, and never opens a held-out flow file.
+The selector loads preregistered training artifacts, reruns all six validation
+cases from both checkpoint bundles, and recomputes every gate and ranking.  It
+never opens a held-out flow file.
 """
 import copy
+import hashlib
 import json
 import math
 import re
@@ -18,10 +19,13 @@ from traffic_rl.agents.schedule_residual import (
     CRITIC_UNITS, MACRO_FEATURES, MAX_MACROS, POLICY_INPUT_SCHEMA,
     ResidualDDQN)
 from traffic_rl.research.artifacts import sha256_file
+from traffic_rl.sim.schedule_residual import signal_state
 from traffic_rl.train.network_trainer import (
-    _tracked_tree_attestation, _tuning_binding, _validate_precomputed_tuning,
-    canonical_json_sha256)
-from traffic_rl.train.schedule_residual_trainer import OPERATIONAL_MODE
+    _assert_rollout_complete, _close, _rollout, _tracked_tree_attestation,
+    _tuning_binding, _validate_precomputed_tuning, canonical_json_sha256)
+from traffic_rl.train.schedule_residual_trainer import (
+    OPERATIONAL_MODE, _summary_metrics, operational_time_of_day,
+    run_macro_episode)
 
 
 _CHECKPOINTS = ("step-2", "step-4")
@@ -35,6 +39,12 @@ _NORMAL_ZERO = (
 _PEAK_ZERO = ("illegal_requests", "anchor_violations",
               "unlogged_divergence_seconds")
 _COUNTERFACTUAL = "macro0 never evaluates network"
+_REGISTERED_CONFIG_PATH = "configs/haichau_training_v3b_residual.yaml"
+_REGISTERED_CONFIG_SHA256 = (
+    "8195782b5d099bd7a04de03bfebfd5206957e7d76ada354047c971cbb3d6e75a")
+_RERUN_PROTOCOL = "deterministic_cityflow_checkpoint_replay_v1"
+_TIMELINE_DEFINITION = (
+    "canonical_json_lines(second,node,served_lightphase,signal_state)_v1")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _TRAFFIC_FEATURE_SUFFIXES = {
     "incoming_queue_mean", "incoming_queue_max", "incoming_running_mean",
@@ -109,6 +119,53 @@ def _write_yaml(path, value):
                                    sort_keys=True))
 
 
+def _committed_file_sha256(root, commit, relative):
+    """Hash a file exactly as stored at a declared Git commit."""
+    try:
+        value = subprocess.check_output(
+            ["git", "-C", str(root), "show", "%s:%s" % (commit, relative)],
+            stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        raise ValueError("registered source file is absent from commit: %s" %
+                         exc.output.decode("utf-8", "replace"))
+    return hashlib.sha256(value).hexdigest()
+
+
+def _frozen_file_record(root, commit, relative, expected_sha256, label):
+    path = _inside(root, relative, label)
+    if not path.is_file() or sha256_file(path) != expected_sha256:
+        raise ValueError("%s differs from declared SHA256" % label)
+    if _committed_file_sha256(root, commit, relative) != expected_sha256:
+        raise ValueError("%s differs from source commit" % label)
+    return {"path": relative, "sha256": expected_sha256,
+            "git_commit": commit}
+
+
+def _frozen_simulation_inputs(root, commit, manifest, validation):
+    records = {}
+    for key, label in (("network", "road network"),
+                       ("phase_contract", "phase contract")):
+        value = manifest.get(key)
+        if (not isinstance(value, dict)
+                or not isinstance(value.get("path"), str)
+                or not _SHA256.match(str(value.get("sha256") or ""))):
+            raise ValueError("%s manifest binding is incomplete" % label)
+        records[key] = _frozen_file_record(
+            root, commit, value["path"], value["sha256"], label)
+    flow_records = []
+    for case in validation:
+        relative, digest = case.get("flow_path"), case.get("flow_sha256")
+        if not isinstance(relative, str) or not _SHA256.match(str(digest or "")):
+            raise ValueError("validation flow binding is incomplete")
+        record = _frozen_file_record(
+            root, commit, relative, digest,
+            "validation flow " + case["case_id"])
+        record["case_id"] = case["case_id"]
+        flow_records.append(record)
+    records["validation_flows"] = flow_records
+    return records
+
+
 def _number(value, label, minimum=None, maximum=None):
     if isinstance(value, bool):
         raise ValueError("%s must be numeric" % label)
@@ -162,11 +219,17 @@ def _validate_spec(root, spec_path):
             or not all(isinstance(arm.get(field), str)
                        for field in ("config", "run_dir")):
         raise ValueError("residual pilot selector arm is invalid")
+    if arm["config"] != _REGISTERED_CONFIG_PATH:
+        raise ValueError("residual pilot selector config path differs from preregistration")
+    if spec.get("source_config_sha256") != _REGISTERED_CONFIG_SHA256:
+        raise ValueError("residual pilot selector config SHA256 differs from preregistration")
     for field in ("manifest", "baseline_tuning_artifact", "decision_output",
-                  "selected_config_output"):
+                  "selected_config_output", "validation_rerun_output"):
         if not isinstance(spec.get(field), str):
             raise ValueError("residual pilot selector requires %s" % field)
-    if spec["decision_output"] == spec["selected_config_output"]:
+    outputs = (spec["decision_output"], spec["selected_config_output"],
+               spec["validation_rerun_output"])
+    if len(set(outputs)) != len(outputs):
         raise ValueError("residual selector outputs must be distinct")
     return path, spec
 
@@ -216,6 +279,8 @@ def validate_registered_config(root, spec_path):
     root = Path(root).resolve()
     _, spec = _validate_spec(root, spec_path)
     path = _inside(root, spec["arm"]["config"], "residual source config")
+    if sha256_file(path) != _REGISTERED_CONFIG_SHA256:
+        raise ValueError("residual source config differs from preregistered full SHA256")
     config = _yaml(path, "residual source config")
     _validate_config(config)
     return {
@@ -235,8 +300,8 @@ def _manifest_cases(manifest):
     if len(validation) != 6:
         raise ValueError("residual selection requires six validation cases")
     if any(case.get("scenario") not in _SCENARIOS or
-           case.get("operational_time_of_day", case.get("scenario")) !=
-           case.get("scenario") for case in validation):
+           case.get("operational_time_of_day") != case.get("scenario")
+           for case in validation):
         raise ValueError("validation operational time-of-day declaration is invalid")
     counts = dict((scenario, sum(case.get("scenario") == scenario
                                  for case in validation))
@@ -382,6 +447,92 @@ def _traffic_feature_response(network):
             "maximum_absolute_score_response": max(
                 item["absolute_score_response"] for item in responses),
             "responsive_features": [item["feature"] for item in responses]}
+
+
+def _json_default(value):
+    if isinstance(value, np.generic):
+        return value.item()
+    raise TypeError("timeline value is not JSON serializable")
+
+
+class _TimelineDigest(object):
+    """Streaming digest of every exposed signal state at every second."""
+    def __init__(self):
+        self.digest = hashlib.sha256()
+        self.observed_node_seconds = 0
+
+    def observe(self, env):
+        for node in env.agent_ids:
+            frame = {
+                "second": int(env._t), "node": node,
+                "served_lightphase": int(env._last_step_lightphases[node]),
+                "signal_state": signal_state(env, node),
+            }
+            encoded = json.dumps(
+                frame, sort_keys=True, separators=(",", ":"),
+                allow_nan=False, default=_json_default).encode("utf-8") + b"\n"
+            self.digest.update(encoded)
+            self.observed_node_seconds += 1
+
+    def record(self):
+        return {
+            "schema_version": 1,
+            "frame_definition": _TIMELINE_DEFINITION,
+            "observed_node_seconds": self.observed_node_seconds,
+            "sha256": self.digest.hexdigest(),
+        }
+
+
+def make_env_validation_runner(env_factory):
+    """Create the deterministic checkpoint replay used by the release CLI."""
+    if not callable(env_factory):
+        raise ValueError("validation environment factory must be callable")
+
+    def runner(network, training_step, case, policy):
+        del training_step
+        env = env_factory(case, 3600)
+        timeline = _TimelineDigest()
+        prior = getattr(env, "signal_observer", None)
+
+        def observer(observed):
+            if prior is not None:
+                prior(observed)
+            timeline.observe(observed)
+
+        env.signal_observer = observer
+        try:
+            if policy == "candidate":
+                info = run_macro_episode(
+                    env, network, operational_time_of_day(case), epsilon=0.0,
+                    seed=0)
+                result = {
+                    "metrics": _summary_metrics(info),
+                    "macro_rewards": info.get("macro_rewards"),
+                    "policy_audit": info.get("policy_audit"),
+                }
+            elif policy == "forced_macro0":
+                info = run_macro_episode(
+                    env, network, operational_time_of_day(case), epsilon=0.0,
+                    seed=0, zero_residual=True)
+                result = {
+                    "metrics": _summary_metrics(info),
+                    "macro_rewards": info.get("macro_rewards"),
+                    "policy_audit": info.get("policy_audit"),
+                }
+            elif policy == "fixed25":
+                info = _rollout(env, None, fixed_green_duration=25,
+                                action_interval=10)
+                result = {"metrics": _summary_metrics(info)}
+            else:
+                raise ValueError("unknown validation replay policy")
+            _assert_rollout_complete(
+                info, 3600, "%s replay %s" % (policy, case["case_id"]))
+            result["timeline"] = timeline.record()
+            return result
+        finally:
+            _close(env)
+
+    return runner
 
 
 def _validate_loaded_network(network, config):
@@ -560,6 +711,99 @@ def _validate_metric(metric, label):
     }
 
 
+def _validate_timeline(value, nodes, horizon, label):
+    if (not isinstance(value, dict)
+            or set(value) != {"schema_version", "frame_definition",
+                              "observed_node_seconds", "sha256"}
+            or value.get("schema_version") != 1
+            or value.get("frame_definition") != _TIMELINE_DEFINITION
+            or not _SHA256.match(str(value.get("sha256") or ""))):
+        raise ValueError("%s per-second timeline digest is invalid" % label)
+    if _integer(value.get("observed_node_seconds"), label + " observations") \
+            != len(nodes) * horizon:
+        raise ValueError("%s per-second timeline is incomplete" % label)
+    return copy.deepcopy(value)
+
+
+def _run_replay(validation_runner, network, step, case, policy):
+    if not callable(validation_runner):
+        raise ValueError("deterministic validation runner is required")
+    try:
+        result = validation_runner(network, step, copy.deepcopy(case), policy)
+    except Exception as exc:
+        raise ValueError("deterministic validation replay failed for %s/%s: %s" %
+                         (case.get("case_id"), policy, exc))
+    expected = ({"metrics", "timeline"} if policy == "fixed25" else
+                {"metrics", "macro_rewards", "policy_audit", "timeline"})
+    if not isinstance(result, dict) or set(result) != expected:
+        raise ValueError("deterministic validation replay result fields drift")
+    return copy.deepcopy(result)
+
+
+def _replay_checkpoint(validation_runner, network, step, rows, validation,
+                       tuned_rows, nodes, prior_baselines, fixed25):
+    """Recompute source rows and bind metrics/actions to loaded weights."""
+    by_case = dict((row.get("case_id"), row) for row in rows
+                   if isinstance(row, dict))
+    replay_rows, baselines = [], {}
+    for case in validation:
+        case_id, scenario = case["case_id"], case["scenario"]
+        source = by_case.get(case_id)
+        if source is None:
+            raise ValueError("deterministic replay source row is missing")
+        candidate = _run_replay(
+            validation_runner, network, step, case, "candidate")
+        baseline = _run_replay(
+            validation_runner, network, step, case, "forced_macro0")
+        if case_id not in fixed25:
+            fixed25[case_id] = _run_replay(
+                validation_runner, network, step, case, "fixed25")
+        fixed = fixed25[case_id]
+        for label, result in (("candidate", candidate),
+                              ("forced macro0", baseline),
+                              ("fixed25", fixed)):
+            _validate_metric(result.get("metrics"), label + " replay")
+            _validate_timeline(
+                result.get("timeline"), nodes, 3600, label + " replay")
+        if candidate["metrics"] != source.get("candidate") \
+                or candidate["macro_rewards"] != source.get(
+                    "candidate_macro_rewards") \
+                or candidate["policy_audit"] != source.get("policy_audit"):
+            raise ValueError(
+                "candidate source row differs from deterministic checkpoint replay")
+        if baseline["metrics"] != source.get("baseline") \
+                or baseline["macro_rewards"] != source.get(
+                    "baseline_macro_rewards") \
+                or baseline["policy_audit"] != source.get(
+                    "baseline_policy_audit"):
+            raise ValueError(
+                "forced macro0 source row differs from deterministic replay")
+        tuned = tuned_rows[case_id]
+        for field in ("queue_integral_vehicle_seconds", "completion_rate",
+                      "insertion_rate"):
+            if fixed["metrics"][field] != tuned[field]:
+                raise ValueError("fixed25 replay differs from frozen tuning row")
+        if baseline["metrics"] != fixed["metrics"] \
+                or baseline["timeline"] != fixed["timeline"]:
+            raise ValueError(
+                "forced macro0 per-second timeline or metrics differ from fixed25")
+        if scenario == "normal" and (
+                candidate["metrics"] != fixed["metrics"]
+                or candidate["timeline"] != fixed["timeline"]):
+            raise ValueError(
+                "normal candidate per-second timeline or metrics differ from fixed25")
+        baselines[case_id] = baseline
+        replay_rows.append({
+            "case_id": case_id, "scenario": scenario,
+            "candidate": candidate, "forced_macro0": baseline,
+            "fixed25": fixed,
+        })
+    if prior_baselines is not None and baselines != prior_baselines:
+        raise ValueError(
+            "forced macro0 replay depends on checkpoint weights")
+    return replay_rows, baselines
+
+
 def _quality(rows, validation, tuned_rows, nodes, prior_baselines):
     expected = dict((case["case_id"], case["scenario"])
                     for case in validation)
@@ -673,7 +917,7 @@ def _quality(rows, validation, tuned_rows, nodes, prior_baselines):
 
 
 def _validate_run(root, spec, config, manifest, baseline, validation,
-                  tuned_rows, source_tree):
+                  tuned_rows, source_tree, validation_runner):
     run_dir = _inside(root, spec["arm"]["run_dir"], "residual pilot run")
     if not run_dir.is_dir():
         raise ValueError("residual pilot run directory is missing")
@@ -772,8 +1016,10 @@ def _validate_run(root, spec, config, manifest, baseline, validation,
                    for item in checkpoint_summaries if isinstance(item, dict))
     if set(by_step) != {2, 4}:
         raise ValueError("residual pilot summary checkpoint identity drift")
-    qualities, bindings = {}, {}
+    qualities, bindings, rerun_checkpoints = {}, {}, {}
     prior_baselines = None
+    prior_replay_baselines = None
+    fixed25_replays = {}
     for step, name in ((2, "step-2"), (4, "step-4")):
         expected_contract = _expected_contract(
             config, manifest, baseline, source_tree, step)
@@ -814,6 +1060,11 @@ def _validate_run(root, spec, config, manifest, baseline, validation,
             artifact.get("rows"), validation, tuned_rows, nodes=
             manifest["network"]["agent_ids"], prior_baselines=prior_baselines)
         prior_baselines = current_baselines
+        replay_rows, current_replay_baselines = _replay_checkpoint(
+            validation_runner, network, step, artifact.get("rows"), validation,
+            tuned_rows, manifest["network"]["agent_ids"],
+            prior_replay_baselines, fixed25_replays)
+        prior_replay_baselines = current_replay_baselines
         quality["traffic_feature_response"] = response
         quality["gates"]["checkpoint_traffic_feature_response"] = True
         quality["training_step"] = step
@@ -823,7 +1074,20 @@ def _validate_run(root, spec, config, manifest, baseline, validation,
         qualities[name] = quality
         bindings[name] = {"checkpoint": record,
                           "validation": quality["validation"]}
-    return qualities, bindings
+        rerun_checkpoints[name] = {
+            "training_step": step, "checkpoint": record,
+            "rows": replay_rows,
+        }
+    rerun_evidence = {
+        "schema_version": 1, "protocol": _RERUN_PROTOCOL,
+        "source_commit": source_tree["git_commit"],
+        "config": {"path": _REGISTERED_CONFIG_PATH,
+                   "sha256": _REGISTERED_CONFIG_SHA256},
+        "manifest_sha256": canonical_json_sha256(manifest),
+        "checkpoints": rerun_checkpoints,
+        "test_split_accessed": False,
+    }
+    return qualities, bindings, rerun_evidence
 
 
 def _git_ancestor(root, ancestor, descendant):
@@ -833,11 +1097,13 @@ def _git_ancestor(root, ancestor, descendant):
         stderr=subprocess.PIPE) == 0
 
 
-def _evaluate(root, spec_path, allow_descendant=False):
+def _evaluate(root, spec_path, validation_runner, allow_descendant=False):
     root = Path(root).resolve()
     spec_path, spec = _validate_spec(root, spec_path)
     attestation = _tracked_tree_attestation(str(root))
     config_path = _inside(root, spec["arm"]["config"], "residual source config")
+    if sha256_file(config_path) != _REGISTERED_CONFIG_SHA256:
+        raise ValueError("residual source config differs from preregistered full SHA256")
     config = _yaml(config_path, "residual source config")
     _validate_config(config)
     manifest_path = _inside(root, spec["manifest"], "experiment manifest")
@@ -859,9 +1125,29 @@ def _evaluate(root, spec_path, allow_descendant=False):
             raise ValueError("current tree is not a descendant of residual pilot source")
     elif source_tree != attestation:
         raise ValueError("residual pilot source commit differs from clean selector tree")
-    qualities, bindings = _validate_run(
+    committed_config_sha256 = _committed_file_sha256(
+        root, source_tree["git_commit"], _REGISTERED_CONFIG_PATH)
+    if committed_config_sha256 != _REGISTERED_CONFIG_SHA256:
+        raise ValueError("residual source commit config differs from preregistration")
+    frozen_sources = {}
+    for label, path in (("selector_spec", spec_path),
+                        ("manifest", manifest_path),
+                        ("baseline_tuning", baseline_path)):
+        current = _record(root, path, label)
+        committed = _committed_file_sha256(
+            root, source_tree["git_commit"], current["path"])
+        if committed != current["sha256"]:
+            raise ValueError("%s differs from residual source commit" % label)
+        frozen_sources[label] = {
+            "path": current["path"], "sha256": committed,
+            "git_commit": source_tree["git_commit"],
+        }
+    frozen_sources["simulation_inputs"] = _frozen_simulation_inputs(
+        root, source_tree["git_commit"], manifest, validation)
+    qualities, bindings, rerun_evidence = _validate_run(
         root, spec, config, manifest, baseline, validation, tuned_rows,
-        source_tree)
+        source_tree, validation_runner)
+    rerun_evidence["frozen_source_inputs"] = copy.deepcopy(frozen_sources)
     eligible = [(quality["mean_peak_queue_regret_percent"],
                  quality["training_step"], name, quality)
                 for name, quality in qualities.items() if quality["eligible"]]
@@ -884,6 +1170,12 @@ def _evaluate(root, spec_path, allow_descendant=False):
         "source_commit": source_tree["git_commit"],
         "source_tree": source_tree,
         "config": _record(root, config_path, "residual source config"),
+        "committed_config": {
+            "path": _REGISTERED_CONFIG_PATH,
+            "git_commit": source_tree["git_commit"],
+            "sha256": committed_config_sha256,
+        },
+        "frozen_source_inputs": frozen_sources,
         "manifest": _record(root, manifest_path, "experiment manifest"),
         "baseline_tuning": _record(root, baseline_path,
                                     "baseline tuning artifact"),
@@ -893,7 +1185,7 @@ def _evaluate(root, spec_path, allow_descendant=False):
         "checkpoints": qualities, "winner": winner,
         "test_split_accessed": False,
     }
-    return decision, config, spec, run_dir
+    return decision, config, spec, run_dir, rerun_evidence
 
 
 def _selected_config(root, spec, config, decision):
@@ -905,6 +1197,9 @@ def _selected_config(root, spec, config, decision):
         "decision": {"path": spec["decision_output"]},
         "selector_spec": copy.deepcopy(decision["selector_spec"]),
         "source_commit": decision["source_commit"],
+        "committed_config": copy.deepcopy(decision["committed_config"]),
+        "frozen_source_inputs": copy.deepcopy(
+            decision["frozen_source_inputs"]),
         "pilot_run_dir": spec["arm"]["run_dir"],
         "selected_checkpoint": winner["checkpoint"],
         "training_step": winner["training_step"],
@@ -912,23 +1207,29 @@ def _selected_config(root, spec, config, decision):
             winner["mean_peak_queue_regret_percent"],
         "checkpoint_artifacts": copy.deepcopy(winner["checkpoint_artifacts"]),
         "pilot_status": copy.deepcopy(decision["pilot_status"]),
+        "validation_rerun": copy.deepcopy(decision["validation_rerun"]),
         "ranking": list(_RANKING), "gates": copy.deepcopy(_GATES),
         "test_split_accessed": False,
     }
     return selected
 
 
-def select_from_spec(root, spec_path):
+def select_from_spec(root, spec_path, validation_runner=None):
     """Select step2/4 or write a rejection decision and fail closed."""
     root = Path(root).resolve()
-    decision, config, spec, _ = _evaluate(root, spec_path,
-                                           allow_descendant=False)
+    decision, config, spec, _, rerun_evidence = _evaluate(
+        root, spec_path, validation_runner, allow_descendant=False)
     decision_path = _inside(root, spec["decision_output"],
                             "residual decision output")
     selected_path = _inside(root, spec["selected_config_output"],
                             "residual selected config output")
-    if decision_path.exists() or selected_path.exists():
+    rerun_path = _inside(root, spec["validation_rerun_output"],
+                         "residual validation rerun output")
+    if decision_path.exists() or selected_path.exists() or rerun_path.exists():
         raise ValueError("residual selector outputs already exist; decisions are immutable")
+    _write_json(rerun_path, rerun_evidence)
+    decision["validation_rerun"] = _record(
+        root, rerun_path, "residual validation rerun output")
     if decision["winner"] is None:
         _write_json(decision_path, decision)
         raise ValueError("no eligible residual checkpoint; selection failed closed")
@@ -940,15 +1241,22 @@ def select_from_spec(root, spec_path):
     return decision
 
 
-def validate_selected_outputs(root, spec_path):
+def validate_selected_outputs(root, spec_path, validation_runner=None):
     """Recompute selection semantics from source rows on a descendant commit."""
     root = Path(root).resolve()
-    prospective, config, spec, _ = _evaluate(
-        root, spec_path, allow_descendant=True)
+    prospective, config, spec, _, recomputed_rerun = _evaluate(
+        root, spec_path, validation_runner, allow_descendant=True)
     decision_path = _inside(root, spec["decision_output"],
                             "residual decision output")
     selected_path = _inside(root, spec["selected_config_output"],
                             "residual selected config output")
+    rerun_path = _inside(root, spec["validation_rerun_output"],
+                         "residual validation rerun output")
+    stored_rerun = _json(rerun_path, "residual validation rerun output")
+    if stored_rerun != recomputed_rerun:
+        raise ValueError("stored validation rerun differs from deterministic replay")
+    prospective["validation_rerun"] = _record(
+        root, rerun_path, "residual validation rerun output")
     decision = _json(decision_path, "residual decision output")
     if decision.get("status") != "selected" or decision.get("winner") is None:
         raise ValueError("residual decision did not select a checkpoint")
@@ -959,7 +1267,9 @@ def validate_selected_outputs(root, spec_path):
         raise ValueError("residual selected config hash drift")
     comparable = ("schema_version", "decision_type", "status", "selector_spec",
                   "source_commit", "source_tree", "config", "manifest",
-                  "baseline_tuning", "pilot_status", "ranking", "gates",
+                  "committed_config", "frozen_source_inputs",
+                  "baseline_tuning", "pilot_status",
+                  "validation_rerun", "ranking", "gates",
                   "checkpoints", "winner", "test_split_accessed")
     if any(decision.get(field) != prospective.get(field)
            for field in comparable):

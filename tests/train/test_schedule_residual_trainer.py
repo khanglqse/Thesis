@@ -166,3 +166,26 @@ def test_reusing_environment_cannot_mutate_previously_returned_signal_audit(netw
     second = run_macro_episode(env, None, "normal")
     assert first["policy_audit"]["observed_node_seconds"] == 300
     assert second["policy_audit"]["observed_node_seconds"] == 300
+
+
+def test_release_replay_runner_hashes_full_exact_signal_timeline(network):
+    from traffic_rl.research.pilot_residual_selector import make_env_validation_runner
+
+    roadnet = _NodeRoadnet(network, representative(network, 2))
+
+    def factory(case, horizon):
+        del case
+        return MultiAgentTrafficEnv(
+            roadnet, EmptySignalEngine(), max_steps=horizon, min_green=20,
+            encoder=PhaseFeatureEncoder(roadnet, 20, 40))
+
+    runner = make_env_validation_runner(factory)
+    case = {"case_id": "validation_normal", "scenario": "normal"}
+    candidate = runner(None, 2, case, "candidate")
+    forced = runner(None, 2, case, "forced_macro0")
+    fixed = runner(None, 2, case, "fixed25")
+
+    assert candidate["metrics"] == forced["metrics"] == fixed["metrics"]
+    assert candidate["timeline"] == forced["timeline"] == fixed["timeline"]
+    assert candidate["timeline"]["observed_node_seconds"] == 3600
+    assert len(candidate["timeline"]["sha256"]) == 64

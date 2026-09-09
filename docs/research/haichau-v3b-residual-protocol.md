@@ -78,6 +78,11 @@ validation case and reused across checkpoints; macro0 never reads weights,
 so this comparison is independent of checkpoint parameters. The tuned fixed
 artifact is hash-verified and must select25s before any run begins.
 
+Selection does not trust that reuse claim. It reruns candidate and forced
+macro0 from both reloaded checkpoint bundles and independently reruns fixed25.
+The forced-macro0 result must equal fixed25 in every case and must remain
+identical when the checkpoint weights change from step2 to step4.
+
 The preregistered selector must fail closed unless: normal is exact; mean queue
 regret in each peak regime is at most0; maximum case completion/insertion loss
 is at most2 percentage points; mean peak regret is at most-1%; learned nonzero
@@ -92,6 +97,15 @@ peak queue-regret percentage, then chooses the earlier training step on an
 exact tie. These ranking fields and their order are part of the registered
 schema; changing or rehashing them is rejected.
 
+The selector also pins the complete source configuration at
+`configs/haichau_training_v3b_residual.yaml` with raw-file SHA256
+`8195782b5d099bd7a04de03bfebfd5206957e7d76ada354047c971cbb3d6e75a`.
+It verifies both the working file and the blob read from the declared source
+commit. This binds every value, including epsilon and updates per macro. The
+selector specification, experiment manifest, baseline tuning artifact,
+network, phase contract, and six validation flows must likewise match the
+files stored at that source commit and their declared hashes.
+
 The selector recomputes every metric from the six source rows. In normal mode,
 queue, completion, and insertion must equal the fixed-25 counterfactual for
 each case, and phase, service, full-state, illegal-request, anchor,
@@ -101,20 +115,33 @@ at least1%, and every case must stay within2 percentage points for completion
 and insertion. Both peak regimes must contain learned nonzero macros spanning
 at least two distinct controlled nodes.
 
-For both checkpoints, the forced-macro0 rows must match the independently tuned
-fixed-25 rows and match one another exactly. Their per-second timeline and
-macro-reward traces are checked, and macro0 must declare that it never evaluates
-network weights. The selector also loads the exact hash-bound contract/NPZ,
-checks all parameter metadata and finiteness, and perturbs every live
-source/target demand feature under deterministic valid-range probes. A
-descriptor-only fixed-schedule clone therefore cannot qualify.
+For both checkpoints, the selector runs a fresh deterministic CityFlow replay
+for every candidate and forced-macro0 row, plus a fresh fixed25 replay for every
+case. It compares the complete metrics, macro rewards, policy audit, and macro
+event/action sequence with the recorded row. A streaming digest covers every
+second and controlled node, including the lightphase served during the second
+and the complete future-relevant signal state after it. Normal and forced
+macro0 timelines must equal fixed25 exactly. Forced macro0 metrics, actions,
+and timelines must also match across both weight bundles. Aggregate counters
+alone cannot establish these equalities.
 
-On success the decision binds the selected YAML, while the selected YAML keeps
-a path back to the decision; this avoids a circular file-hash claim. A later
-release validator can call `validate_selected_outputs` from a descendant commit.
-That routine reloads the two original bundles and recomputes the full selection
-from the source rows. A rejected pilot writes only a rejection decision and no
-selected configuration.
+The selector loads the exact hash-bound contract/NPZ, checks all parameter
+metadata and finiteness, and perturbs every live source/target demand feature
+under deterministic valid-range probes. A descriptor-only fixed-schedule clone
+therefore cannot qualify. The replay establishes the separate computational
+link that the chosen nonzero macros and reported improvement were produced by
+those reloaded weights; the legacy `reload_score_identity` flag is not treated
+as evidence.
+
+On success the selector persists the complete replay evidence at the
+preregistered `validation_rerun_output`; the decision hash-binds that artifact
+and the selected YAML hash-binds its record. The selected YAML keeps a path
+back to the decision, avoiding a circular file-hash claim. A later release
+validator can call `validate_selected_outputs` from a descendant commit with
+the real environment runner. It reloads both original bundles, repeats all
+rollouts, compares the persisted replay evidence, and recomputes selection. A
+rejected pilot writes a rejection decision and replay evidence, but no selected
+configuration.
 
 Every run records immutable source-tree provenance, resolved configuration,
 baseline tuning, learning curves, checkpoint contracts/weights, reload-score
