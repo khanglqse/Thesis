@@ -13,6 +13,9 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
+from traffic_rl.research.final_residual_selector import validate_registered_spec
+from traffic_rl.research.residual_release import FINAL_SEEDS
+from traffic_rl.train.schedule_residual_trainer import validate_config as validate_residual_config
 from traffic_rl.research.pilot_schedule_selector import (
     CONFIRMATORY_LEARNING_SEEDS, PRIMARY_LEARNED_CONTROLLER,
     validate_final_resolved_config, validate_final_schedule_selection)
@@ -316,6 +319,148 @@ def build_release_inputs(project_root, manifest, training_root, output_dir,
     }
 
 
+def _no_test_reference(value):
+    if isinstance(value, dict):
+        return all((key in ("test_split_accessed", "eligible_for_test_evaluation")
+                    or _no_test_reference(key)) and _no_test_reference(item)
+                   for key, item in value.items())
+    if isinstance(value, list):
+        return all(_no_test_reference(item) for item in value)
+    if isinstance(value, str):
+        return not any(token == "test" or token.startswith("testcase")
+                       for token in value.lower().replace("\\", "/").replace("_", "-").split("-") if token)
+    return True
+
+
+def build_residual_release_inputs(project_root, manifest, output_dir,
+                                  selector_spec):
+    """Write freeze-ready residual bindings only after all selectors pass.
+
+    This is intentionally preparation-only: it reads final selector evidence
+    and never opens a test demand file or launches CityFlow.
+    """
+    root = Path(project_root).resolve()
+    manifest_path = _project_file(root, manifest, "experiment manifest")
+    source_manifest, resolved = _manifest_configuration(root, manifest_path)
+    spec_path = _project_file(root, selector_spec, "final residual selector spec")
+    registered = validate_registered_spec(root, spec_path)
+    if tuple(registered["learning_seeds"]) != FINAL_SEEDS:
+        raise ValueError("residual selector does not bind all five final seeds")
+    spec = _yaml(spec_path, "final residual selector spec")
+    selected_config_path = _project_file(
+        root, spec.get("selected_config"), "selected residual config")
+    selected_config = _yaml(selected_config_path, "selected residual config")
+    if selected_config.get("controller_family") != "schedule_residual_ddqn":
+        raise ValueError("selected residual config has the wrong controller family")
+
+    checkpoints, decisions = [], {}
+    for seed in FINAL_SEEDS:
+        relative = spec["run_dir_template"].format(seed=seed)
+        run_dir = (root / relative).resolve()
+        try:
+            run_dir.relative_to(root)
+        except ValueError:
+            raise ValueError("residual final run escapes project root")
+        status_path = run_dir / "status.json"
+        selection_path = run_dir / spec["selection_filename"]
+        rerun_path = run_dir / spec["validation_rerun_filename"]
+        status = _json(status_path, "residual final status")
+        selection = _json(selection_path, "residual final selection")
+        rerun = _json(rerun_path, "residual final validation rerun")
+        if (status.get("status") != "complete"
+                or status.get("eligible_for_test_evaluation") is not True
+                or selection.get("status") != "selected"
+                or selection.get("learning_seed") != seed
+                or selection.get("test_split_accessed") is not False
+                or rerun.get("test_split_accessed") is not False):
+            raise ValueError("residual final selector is not eligible for seed %d" % seed)
+        hashes = status.get("artifact_sha256")
+        if (not isinstance(hashes, dict)
+                or hashes.get(selection_path.name) != _sha256(selection_path)
+                or hashes.get(rerun_path.name) != _sha256(rerun_path)):
+            raise ValueError("residual final selector evidence hash drift")
+        winner = selection.get("winner")
+        artifacts = winner.get("checkpoint_artifacts", {}) if isinstance(winner, dict) else {}
+        record = artifacts.get("checkpoint") if isinstance(artifacts, dict) else None
+        if (not isinstance(record, dict) or winner.get("training_step") not in (4, 8, 12)
+                or winner.get("checkpoint") != "step-%d" % winner["training_step"]):
+            raise ValueError("residual final selected checkpoint is invalid")
+        contract = run_dir / record.get("contract_path", "")
+        weights = run_dir / record.get("weights_path", "")
+        if (not contract.is_file() or not weights.is_file()
+                or _sha256(contract) != record.get("contract_sha256")
+                or _sha256(weights) != record.get("weights_sha256")):
+            raise ValueError("residual final selected checkpoint hash drift")
+        contract_doc = _json(contract, "residual selected checkpoint contract")
+        if (contract_doc.get("controller_family") != "schedule_residual_ddqn"
+                or contract_doc.get("learning_seed") != seed
+                or contract_doc.get("training_step") != winner["training_step"]
+                or contract_doc.get("mode") != "final"):
+            raise ValueError("residual final selected checkpoint contract drift")
+        checkpoints.append({
+            "controller_id": "schedule_residual_ddqn", "learning_seed": seed,
+            "path": _relative(root, weights), "sha256": _sha256(weights),
+            "checkpoint_contract": contract_doc,
+            "checkpoint_contract_sha256": _canonical_hash(contract_doc),
+            "contract_path": _relative(root, contract),
+            "contract_file_sha256": _sha256(contract),
+            "source_run_dir": _relative(root, run_dir),
+            "source_status_sha256": _sha256(status_path),
+            "selection": {"path": _relative(root, selection_path),
+                          "sha256": _sha256(selection_path)},
+            "validation_rerun": {"path": _relative(root, rerun_path),
+                                  "sha256": _sha256(rerun_path)},
+        })
+        decisions[str(seed)] = checkpoints[-1]["selection"]
+    if not _no_test_reference({"selectors": decisions}):
+        raise ValueError("test reference appears in residual selection evidence")
+    # The residual trainer's reward is its explicit queue-integral objective;
+    # these environment weights only retain the frozen metric plumbing.
+    resolved.update({"step_seconds": 1.0,
+                     "spillback_queue_threshold": resolved["normalization"]["capacity_norm"],
+                     "reward": {"queue_weight": 1.0,
+                                "downstream_block_weight": 0.1,
+                                "switch_penalty": 0.05}})
+    policy = {key: selected_config[key] for key in
+              ("macro", "operational_mode", "critic_units")}
+    document = {
+        "release_adapter": "schedule_residual_final_v1",
+        "resolved_config": resolved,
+        "primary_learned_controller": "schedule_residual_ddqn",
+        "confirmatory_learning_seeds": list(FINAL_SEEDS),
+        "final_residual_selector": {"path": _relative(root, spec_path),
+                                    "sha256": _sha256(spec_path),
+                                    "decisions": decisions,
+                                    "test_split_accessed": False},
+        "training_config_bindings": {"schedule_residual_ddqn": {
+            "path": _relative(root, selected_config_path),
+            "sha256": _sha256(selected_config_path)}},
+        "controller_configs": {
+            "tuned_fixed": {"green_duration": 25},
+            "max_pressure": {"controller_version": 2},
+            "hysteretic_mp": {"min_hold_decisions": 3, "switch_threshold": 2.5},
+            "schedule_residual_ddqn": policy,
+        },
+        "controller_commands": dict((controller, list(EVALUATOR_COMMAND)) for controller in (
+            "tuned_fixed", "max_pressure", "hysteretic_mp", "schedule_residual_ddqn")),
+        "checkpoints": checkpoints,
+    }
+    output_path = Path(output_dir)
+    if not output_path.is_absolute():
+        output_path = root / output_path
+    output_path = output_path.resolve()
+    try:
+        output_path.relative_to(root)
+    except ValueError:
+        raise ValueError("release output directory must remain inside project root")
+    target = output_path / "residual-final-controller-configs.json"
+    encoded = _encoded_json(document)
+    _assert_write_once(target, encoded)
+    _write_once(target, encoded)
+    return {"controller_configs": _relative(root, target),
+            "selected_checkpoints": len(checkpoints)}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project-root", default=str(PROJECT_ROOT))
@@ -328,11 +473,17 @@ def main(argv=None):
     parser.add_argument(
         "--pilot-schedule-selection",
         default="results/haichau_network_v2/training/pilot-v3-schedule-selection.json")
+    parser.add_argument("--residual-final-selector")
     args = parser.parse_args(argv)
     try:
-        result = build_release_inputs(
-            args.project_root, args.manifest, args.training_root, args.output_dir,
-            args.pilot_schedule_selection)
+        if args.residual_final_selector:
+            result = build_residual_release_inputs(
+                args.project_root, args.manifest, args.output_dir,
+                args.residual_final_selector)
+        else:
+            result = build_release_inputs(
+                args.project_root, args.manifest, args.training_root, args.output_dir,
+                args.pilot_schedule_selection)
     except ValueError as exc:
         print("release inputs refused: %s" % exc, file=sys.stderr)
         return 1

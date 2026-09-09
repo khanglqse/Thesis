@@ -1236,3 +1236,21 @@ def test_freeze_rejects_training_objective_drift(tmp_path, mutation):
             tmp_path, fixture['manifest'], fixture['viewer'], fixture['config'],
             fixture['index'], RUNTIME_IMAGE, fixture['dockerfile'],
             runtime_inspector=_runtime)
+
+
+def test_freeze_dispatches_residual_adapter_without_legacy_training_index(
+        tmp_path, monkeypatch):
+    import scripts.freeze_haichau_protocol as frozen
+
+    config = tmp_path / "residual-config.json"
+    _write(config, {"release_adapter": "schedule_residual_final_v1"})
+    received = {}
+    monkeypatch.setattr(frozen, "_freeze_residual_protocol", lambda *args: (
+        received.update({"args": args}) or {"kind": "residual"}))
+
+    result = frozen.freeze_protocol(
+        tmp_path, "manifest.json", "viewer.json", config, "",
+        RUNTIME_IMAGE, "dockerfile", runtime_inspector=_runtime)
+
+    assert result == {"kind": "residual"}
+    assert received["args"][3] == config

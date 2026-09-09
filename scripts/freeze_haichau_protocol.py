@@ -589,11 +589,116 @@ def _write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
+def _freeze_residual_protocol(root, experiment_manifest, viewer_network,
+                              controller_configs, runtime_image,
+                              runtime_dockerfile, runtime_inspector):
+    """Freeze a campaign from five already-selected residual final runs."""
+    root = Path(root).resolve()
+    final_dir = root / FINAL_RELATIVE
+    if final_dir.exists():
+        raise ValueError("refusing to overwrite an existing final protocol directory")
+    config_path, config_relative = _relative_file(
+        root, controller_configs, "residual controller configuration")
+    config = _json(config_path, "residual controller configuration")
+    if config.get("release_adapter") != "schedule_residual_final_v1":
+        raise ValueError("residual release adapter marker is invalid")
+    if (config.get("primary_learned_controller") != "schedule_residual_ddqn"
+            or tuple(config.get("confirmatory_learning_seeds", ())) != (12, 13, 14, 15, 16)):
+        raise ValueError("residual release controller/seed binding is invalid")
+    selector = config.get("final_residual_selector")
+    checkpoints = config.get("checkpoints")
+    if (not isinstance(selector, dict) or selector.get("test_split_accessed") is not False
+            or not isinstance(checkpoints, list) or len(checkpoints) != 5):
+        raise ValueError("residual release selector binding is incomplete")
+    expected_seeds = set((12, 13, 14, 15, 16))
+    if {(entry.get("controller_id"), entry.get("learning_seed")) for entry in checkpoints} != {
+            ("schedule_residual_ddqn", seed) for seed in expected_seeds}:
+        raise ValueError("residual release requires exactly five selected seed checkpoints")
+    for entry in checkpoints:
+        for field in ("path", "sha256", "contract_path", "contract_file_sha256"):
+            if not isinstance(entry.get(field), str):
+                raise ValueError("residual selected checkpoint binding is incomplete")
+        weights, _ = _relative_file(root, entry["path"], "residual checkpoint weights")
+        contract_path, _ = _relative_file(root, entry["contract_path"], "residual checkpoint contract")
+        if _sha256(weights) != entry["sha256"] or _sha256(contract_path) != entry["contract_file_sha256"]:
+            raise ValueError("residual selected checkpoint hash drift")
+        if _json(contract_path, "residual selected checkpoint contract") != entry.get("checkpoint_contract"):
+            raise ValueError("residual selected checkpoint contract drift")
+        decision = entry.get("selection")
+        if not isinstance(decision, dict):
+            raise ValueError("residual selected checkpoint lacks selector record")
+        decision_path, _ = _relative_file(root, decision.get("path"), "residual selector record")
+        if _sha256(decision_path) != decision.get("sha256"):
+            raise ValueError("residual selector record hash drift")
+        document = _json(decision_path, "residual selector record")
+        if (document.get("status") != "selected"
+                or document.get("learning_seed") != entry["learning_seed"]
+                or document.get("test_split_accessed") is not False):
+            raise ValueError("residual selector record is not eligible")
+    manifest_path, manifest_relative = _relative_file(root, experiment_manifest, "experiment manifest")
+    manifest = _json(manifest_path, "experiment manifest")
+    viewer_path, viewer_relative = _relative_file(root, viewer_network, "viewer network")
+    network_manifest, network_sha, viewer_sha, agent_ids = _network_manifest(
+        root, manifest, viewer_path, viewer_relative)
+    compatibility = _experiment_compatibility(root, manifest)
+    cases = _release_cases(root, manifest)
+    runtime = _runtime(root, runtime_image, runtime_dockerfile, runtime_inspector)
+    rules = _acceptance_rules()
+    protocol = {
+        "protocol_version": 1, "evidence_namespace": "haichau_network_v2",
+        "network_manifest_path": FINAL_RELATIVE + "/network-manifest.json",
+        "case_manifest_path": FINAL_RELATIVE + "/case-manifest.json",
+        "network_sha256": network_sha, "viewer_network_sha256": viewer_sha,
+        "phase_contract_sha256": compatibility["phase_contract_sha256"],
+        "generator_config_sha256": compatibility["generator_config_sha256"],
+        "experiment_manifest_sha256": compatibility["manifest_sha256"],
+        "normalization": config["resolved_config"]["normalization"],
+        "agent_ids": agent_ids, "code_commit": _current_clean_commit(root),
+        "source_experiment_manifest_path": manifest_relative,
+        "source_experiment_manifest_sha256": _sha256(manifest_path),
+        "controller_config_path": config_relative,
+        "controller_config_sha256": _sha256(config_path),
+        "selection": selector,
+        "primary_learned_controller": "schedule_residual_ddqn",
+        "confirmatory_learning_seeds": [12, 13, 14, 15, 16],
+        "training_config_bindings": config["training_config_bindings"],
+        "resolved_config": config["resolved_config"],
+        "controller_configs": config["controller_configs"],
+        "controller_commands": config["controller_commands"],
+        "checkpoints": checkpoints, "acceptance_rules": rules,
+    }
+    protocol.update(runtime)
+    parent = final_dir.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=".freeze-", dir=str(parent)))
+    try:
+        _write_json(temporary / "network-manifest.json", network_manifest)
+        case_manifest = {"schema_version": 1,
+            "source_experiment_manifest_path": manifest_relative,
+            "source_experiment_manifest_sha256": _sha256(manifest_path), "cases": cases}
+        _write_json(temporary / "case-manifest.json", case_manifest)
+        protocol["network_manifest_sha256"] = _sha256(temporary / "network-manifest.json")
+        protocol["case_manifest_sha256"] = _sha256(temporary / "case-manifest.json")
+        _write_json(temporary / "frozen-protocol.json", protocol)
+        os.rename(str(temporary), str(final_dir))
+    except Exception:
+        if temporary.exists():
+            shutil.rmtree(str(temporary))
+        raise
+    return protocol
+
+
 def freeze_protocol(root, experiment_manifest, viewer_network, controller_configs,
                     training_index, runtime_image, runtime_dockerfile,
                     runtime_inspector=inspect_runtime_image):
     """Return and atomically persist one immutable frozen campaign protocol."""
     root = Path(root).resolve()
+    raw_config_path, _ = _relative_file(root, controller_configs, "controller configuration")
+    raw_config = _json(raw_config_path, "controller configuration")
+    if raw_config.get("release_adapter") == "schedule_residual_final_v1":
+        return _freeze_residual_protocol(
+            root, experiment_manifest, viewer_network, controller_configs,
+            runtime_image, runtime_dockerfile, runtime_inspector)
     final_dir = root / FINAL_RELATIVE
     if final_dir.exists():
         raise ValueError("refusing to overwrite an existing final protocol directory")
@@ -697,7 +802,7 @@ def main(argv=None):
                         help="verified 53-signal viewer projection")
     parser.add_argument("--controller-configs", required=True,
                         help="JSON with resolved config and V3-selected controller commands")
-    parser.add_argument("--training-index", required=True,
+    parser.add_argument("--training-index", default="",
                         help="JSON mapping the selected learned controller and seeds 12--16")
     parser.add_argument("--runtime-image", required=True,
                         help="immutable repository@sha256 image reference")

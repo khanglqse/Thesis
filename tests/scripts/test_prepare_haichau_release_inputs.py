@@ -294,3 +294,29 @@ def test_build_release_inputs_refuses_untrustworthy_final_training(
     result = _run_script(tmp_path)
     assert result.returncode != 0
     assert error in result.stderr
+
+
+def test_residual_release_inputs_refuse_before_all_five_final_selectors(
+        tmp_path, monkeypatch):
+    import scripts.prepare_haichau_release_inputs as prepare
+
+    manifest_path, _ = _manifest(tmp_path)
+    selected = tmp_path / "selected.yaml"
+    _write_yaml(selected, {"controller_family": "schedule_residual_ddqn"})
+    spec = tmp_path / "selector.yaml"
+    _write_yaml(spec, {
+        "selected_config": selected.name,
+        "run_dir_template": "training/final-seed{seed}",
+        "selection_filename": "selection.json",
+        "validation_rerun_filename": "validation-rerun.json",
+    })
+    monkeypatch.setattr(prepare, "validate_registered_spec", lambda *args: {
+        "learning_seeds": [12, 13, 14, 15, 16],
+        "validation_checkpoints": ["step-4", "step-8", "step-12"],
+        "test_split_accessed": False,
+    })
+
+    with pytest.raises(ValueError, match="residual final status"):
+        prepare.build_residual_release_inputs(
+            tmp_path, manifest_path.name, "release-inputs", spec.name)
+    assert not (tmp_path / "release-inputs/residual-final-controller-configs.json").exists()

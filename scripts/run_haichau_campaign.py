@@ -13,6 +13,7 @@ from traffic_rl.eval.network_campaign import (
     verify_campaign,
 )
 from traffic_rl.eval.release_identity import verify_git_checkout, verify_runtime
+from traffic_rl.research.residual_release import FINAL_SEEDS
 from traffic_rl.research.pilot_schedule_selector import (
     CONFIRMATORY_LEARNING_SEEDS, PRIMARY_LEARNED_CONTROLLER,
     validate_frozen_schedule_selection)
@@ -24,6 +25,22 @@ DETERMINISTIC_CONTROLLERS = ("tuned_fixed", "max_pressure", "hysteretic_mp")
 
 def _sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _validate_protocol_selection(root, protocol):
+    primary = protocol.get("primary_learned_controller")
+    if primary == "schedule_residual_ddqn":
+        selection = protocol.get("selection")
+        decisions = selection.get("decisions") if isinstance(selection, dict) else None
+        if (not isinstance(decisions, dict)
+                or selection.get("test_split_accessed") is not False
+                or set(decisions) != set(str(seed) for seed in FINAL_SEEDS)):
+            raise ValueError("frozen residual selector binding is invalid")
+        return tuple(FINAL_SEEDS)
+    validate_frozen_schedule_selection(root, protocol.get("selection"))
+    if primary != PRIMARY_LEARNED_CONTROLLER:
+        raise ValueError("frozen primary learned controller is invalid")
+    return CONFIRMATORY_LEARNING_SEEDS
 
 
 def _write_campaign(path, runs):
@@ -59,13 +76,11 @@ def main(argv=None):
     if not protocol_path.is_file():
         raise ValueError("frozen protocol is required")
     protocol = json.loads(protocol_path.read_text())
-    validate_frozen_schedule_selection(PROJECT_ROOT, protocol.get("selection"))
+    expected_seeds = _validate_protocol_selection(PROJECT_ROOT, protocol)
     primary = protocol.get("primary_learned_controller")
-    if primary != PRIMARY_LEARNED_CONTROLLER:
-        raise ValueError("frozen primary learned controller is invalid")
     controllers = tuple(DETERMINISTIC_CONTROLLERS) + (primary,)
     frozen_seeds = protocol.get("confirmatory_learning_seeds")
-    if (tuple(frozen_seeds or ()) != CONFIRMATORY_LEARNING_SEEDS
+    if (tuple(frozen_seeds or ()) != tuple(expected_seeds)
             or frozen_seeds != protocol.get("acceptance_rules", {}).get(
                 "required_learning_seeds")):
         raise ValueError("frozen confirmatory seed bindings disagree")

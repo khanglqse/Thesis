@@ -1,3 +1,4 @@
+import pytest
 import json
 import hashlib
 
@@ -86,3 +87,18 @@ def test_prepare_derives_exact_v3_matrix_from_frozen_protocol(monkeypatch, tmp_p
         ("tuned_fixed", "max_pressure", "hysteretic_mp",
          "neighbor_phase_ddqn"))]
     assert selection_calls == [(tmp_path, {"path": "selector.json"})]
+
+
+def test_residual_protocol_requires_all_five_frozen_selector_records():
+    from scripts.run_haichau_campaign import _validate_protocol_selection
+
+    protocol = {
+        "primary_learned_controller": "schedule_residual_ddqn",
+        "selection": {"test_split_accessed": False,
+                      "decisions": dict((str(seed), {"path": "x"})
+                                        for seed in (12, 13, 14, 15, 16))},
+    }
+    assert _validate_protocol_selection(None, protocol) == (12, 13, 14, 15, 16)
+    del protocol["selection"]["decisions"]["16"]
+    with pytest.raises(ValueError, match="residual selector"):
+        _validate_protocol_selection(None, protocol)
