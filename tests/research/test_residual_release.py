@@ -101,3 +101,33 @@ def test_final_config_rejects_pilot_or_test_tainted_selection(tmp_path, monkeypa
     with pytest.raises(ValueError, match="test split"):
         residual_release.resolve_final_residual_config(
             tmp_path, "selector.yaml", selected, 12)
+
+
+def test_frozen_final_config_uses_hash_bound_decision_without_replay(tmp_path):
+    from traffic_rl.research.residual_release import resolve_frozen_final_residual_config
+
+    selected = _write_selected(tmp_path)
+    spec = tmp_path / "selector.yaml"
+    decision_path = tmp_path / "decision.json"
+    spec.write_text(yaml.safe_dump({"decision_output": "decision.json"}))
+    decision = _decision(selected, tmp_path)
+    decision["selector_spec"] = {"path": "selector.yaml", "sha256": _sha(spec)}
+    decision_path.write_text(__import__("json").dumps(decision))
+    config, binding = resolve_frozen_final_residual_config(
+        tmp_path, spec, selected, 12)
+    assert config["mode"] == "final"
+    assert binding["decision"]["sha256"] == _sha(decision_path)
+
+
+def test_frozen_final_config_rejects_decision_or_spec_hash_drift(tmp_path):
+    from traffic_rl.research.residual_release import resolve_frozen_final_residual_config
+
+    selected = _write_selected(tmp_path)
+    spec = tmp_path / "selector.yaml"
+    decision_path = tmp_path / "decision.json"
+    spec.write_text(yaml.safe_dump({"decision_output": "decision.json"}))
+    decision = _decision(selected, tmp_path)
+    decision["selector_spec"] = {"path": "selector.yaml", "sha256": "0" * 64}
+    decision_path.write_text(__import__("json").dumps(decision))
+    with pytest.raises(ValueError, match="selector spec"):
+        resolve_frozen_final_residual_config(tmp_path, spec, selected, 12)
