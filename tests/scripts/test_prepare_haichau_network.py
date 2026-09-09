@@ -146,6 +146,7 @@ def test_prepare_writes_hash_bound_cases(tmp_path):
         assert flow_path.is_file()
         assert len(json.loads(flow_path.read_text())) == 6
         assert flow_path.read_text().endswith("\n")
+        assert case["operational_time_of_day"] == case["scenario"]
 
     route_catalog = manifest["route_families"]
     assert len(route_catalog["sha256"]) == 64

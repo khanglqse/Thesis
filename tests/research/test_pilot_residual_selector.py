@@ -192,7 +192,7 @@ def _row(case, candidate, baseline):
         "baseline_policy_audit": baseline["policy_audit"],
         "counterfactual_weight_independence": "macro0 never evaluates network",
         "operational_mode_source": "preregistered_time_of_day",
-        "source_manifest_field": "cases[].scenario",
+        "source_manifest_field": "cases[].operational_time_of_day",
         "operational_time_of_day": case["scenario"],
     }
 
@@ -358,7 +358,7 @@ def _fixture(tmp_path):
         "operational_mode": {
             "input": "declared_time_of_day",
             "operational_mode_source": "preregistered_time_of_day",
-            "source_manifest_field": "cases[].scenario",
+            "source_manifest_field": "cases[].operational_time_of_day",
             "allowed_values": ["normal", "am_peak", "pm_peak"],
             "inference_inputs": ["current_phase_rows", "current_signal_state",
                                  "elapsed_seconds"],

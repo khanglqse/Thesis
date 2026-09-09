@@ -1027,6 +1027,7 @@ def build_flow_cases(roadnet, config, include_catalog=False):
                         "case_id": "%s_%s_demand%s" % (split, scenario, demand_seed),
                         "split": split,
                         "scenario": scenario,
+                        "operational_time_of_day": scenario,
                         "demand_seed": demand_seed,
                         "sim_seed": sim_seed,
                         "scale": sum(item["source_vehicle_count"] for item in regime["profile_bins"]) / float(normal_total),

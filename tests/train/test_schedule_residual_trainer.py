@@ -68,7 +68,8 @@ def test_smoke_artifacts_bind_checkpoints_and_never_open_test_cases(network, tmp
     node = representative(network, 2)
     roadnet = _NodeRoadnet(network, node)
     cases = [{"case_id": split + "_" + scenario + str(seed), "split": split,
-              "scenario": scenario, "flow_sha256": scenario + str(seed)}
+              "scenario": scenario, "operational_time_of_day": scenario,
+              "flow_sha256": scenario + str(seed)}
              for split, seeds in (("train", [11]), ("validation", [31, 32]), ("test", [101]))
              for scenario in ("normal", "am_peak", "pm_peak") for seed in seeds]
     manifest = {"cases": cases, "network": {"agent_ids": [node], "sha256": "network"},
@@ -142,9 +143,11 @@ def test_smoke_artifacts_bind_checkpoints_and_never_open_test_cases(network, tmp
 
 
 def test_operational_mode_binds_explicit_declaration_and_rejects_mismatch():
-    assert operational_time_of_day({"scenario": "normal", "case_id": "am_peak", "sim_seed": 9}) == "normal"
+    assert operational_time_of_day({"scenario": "normal", "operational_time_of_day": "normal", "case_id": "am_peak", "sim_seed": 9}) == "normal"
     with pytest.raises(ValueError, match="time.of.day"):
         operational_time_of_day({"scenario": "unrecognized"})
+    with pytest.raises(ValueError, match="declaration"):
+        operational_time_of_day({"scenario": "normal"})
     with pytest.raises(ValueError, match="mismatch"):
         operational_time_of_day({"scenario": "normal", "operational_time_of_day": "am_peak"})
 
@@ -180,7 +183,8 @@ def test_release_replay_runner_hashes_full_exact_signal_timeline(network):
             encoder=PhaseFeatureEncoder(roadnet, 20, 40))
 
     runner = make_env_validation_runner(factory)
-    case = {"case_id": "validation_normal", "scenario": "normal"}
+    case = {"case_id": "validation_normal", "scenario": "normal",
+            "operational_time_of_day": "normal"}
     candidate = runner(None, 2, case, "candidate")
     forced = runner(None, 2, case, "forced_macro0")
     fixed = runner(None, 2, case, "fixed25")

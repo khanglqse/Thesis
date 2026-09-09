@@ -833,7 +833,7 @@ def _quality(rows, validation, tuned_rows, nodes, prior_baselines):
                 or row.get("counterfactual_weight_independence") != _COUNTERFACTUAL):
             raise ValueError("forced macro0 counterfactual weight independence is unproven")
         if (row.get("operational_mode_source") != "preregistered_time_of_day"
-                or row.get("source_manifest_field") != "cases[].scenario"
+                or row.get("source_manifest_field") != "cases[].operational_time_of_day"
                 or row.get("operational_time_of_day") != scenario):
             raise ValueError("operational time-of-day source is not preregistered")
         baseline = _validate_metric(row.get("baseline"), "forced macro0")
@@ -957,7 +957,7 @@ def _validate_run(root, spec, config, manifest, baseline, validation,
     expected_operational = {
         "input": "declared_time_of_day",
         "operational_mode_source": "preregistered_time_of_day",
-        "source_manifest_field": "cases[].scenario",
+        "source_manifest_field": "cases[].operational_time_of_day",
         "allowed_values": ["normal", "am_peak", "pm_peak"],
         "inference_inputs": ["current_phase_rows", "current_signal_state",
                              "elapsed_seconds"],

@@ -30,7 +30,7 @@ def operational_time_of_day(case):
     mode = case.get("scenario")
     if mode not in ("normal", "am_peak", "pm_peak"):
         raise ValueError("unknown declared operational time-of-day mode")
-    if case.get("operational_time_of_day", mode) != mode:
+    if case.get("operational_time_of_day") != mode:
         raise ValueError("operational time-of-day declaration mismatch")
     return mode
 
@@ -197,7 +197,7 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
         "test_split_accessed": False,
         "operational_mode": {"input": "declared_time_of_day",
             "operational_mode_source": "preregistered_time_of_day",
-            "source_manifest_field": "cases[].scenario",
+            "source_manifest_field": "cases[].operational_time_of_day",
             "allowed_values": ["normal", "am_peak", "pm_peak"],
             "inference_inputs": ["current_phase_rows", "current_signal_state", "elapsed_seconds"],
             "case_id_seed_filename_future_flow_features": False}}
@@ -326,7 +326,7 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
                     "baseline_policy_audit": baseline["policy_audit"],
                     "counterfactual_weight_independence": "macro0 never evaluates network",
                     "operational_mode_source": "preregistered_time_of_day",
-                    "source_manifest_field": "cases[].scenario",
+                    "source_manifest_field": "cases[].operational_time_of_day",
                     "operational_time_of_day": operational_time_of_day(case)})
             artifact = {"schema_version": 1, "controller_family": "schedule_residual_ddqn",
                 "mode": config["mode"], "learning_seed": config["learning_seed"],
