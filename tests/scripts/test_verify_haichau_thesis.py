@@ -1356,3 +1356,35 @@ def test_checkpoint_contract_rejects_training_objective_drift(mutation):
     else:
         protocol['resolved_config']['reward']['queue_weight'] = 2.0
     assert not _checkpoint_contract_valid(contract, protocol, 'neighbor_phase_ddqn')
+
+
+def test_residual_selector_gate_requires_five_hash_bound_decisions(tmp_path):
+    import scripts.verify_haichau_thesis as verifier
+
+    spec = tmp_path / "configs/residual-final.yaml"
+    spec.parent.mkdir(parents=True)
+    spec.write_text("schema_version: 1\n")
+    config = tmp_path / "training/selected.yaml"
+    config.parent.mkdir(parents=True)
+    config.write_text("controller_family: schedule_residual_ddqn\n")
+    decisions = {}
+    for seed in (12, 13, 14, 15, 16):
+        path = tmp_path / ("training/final-seed%d/selection.json" % seed)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({
+            "status": "selected", "learning_seed": seed,
+            "test_split_accessed": False,
+        }))
+        decisions[str(seed)] = {"path": str(path.relative_to(tmp_path)),
+                                "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    protocol = {
+        "primary_learned_controller": "schedule_residual_ddqn",
+        "confirmatory_learning_seeds": [12, 13, 14, 15, 16],
+        "selection": {"path": str(spec.relative_to(tmp_path)), "sha256": hashlib.sha256(spec.read_bytes()).hexdigest(),
+                      "decisions": decisions, "test_split_accessed": False},
+        "training_config_bindings": {"schedule_residual_ddqn": {
+            "path": str(config.relative_to(tmp_path)), "sha256": hashlib.sha256(config.read_bytes()).hexdigest()}},
+    }
+    assert verifier._pilot_schedule_selection_gate(tmp_path, protocol)["passed"]
+    del protocol["selection"]["decisions"]["16"]
+    assert not verifier._pilot_schedule_selection_gate(tmp_path, protocol)["passed"]

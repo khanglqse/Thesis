@@ -32,6 +32,11 @@ from traffic_rl.report.haichau_network import validate_claims
 from traffic_rl.report.haichau_demo_fallbacks import validate_fallbacks
 from traffic_rl.report.media_validation import probe_pdf, probe_png, probe_video
 from traffic_rl.agents.phase_ddqn import PhaseScoringDDQN
+from traffic_rl.agents.schedule_residual import (
+    CRITIC_UNITS, MACRO_FEATURES, MAX_MACROS, POLICY_INPUT_SCHEMA,
+    ResidualDDQN,
+)
+from traffic_rl.research.residual_release import FINAL_SEEDS
 from traffic_rl.sim.phase_encoder import SCHEDULE_CONTEXT_FEATURES
 
 
@@ -228,7 +233,59 @@ def _runtime_gate(root, protocol):
         return _gate(False, str(exc))
 
 
+def _is_residual_release(protocol):
+    return (protocol or {}).get("primary_learned_controller") == "schedule_residual_ddqn"
+
+
+def _residual_selection_gate(root, protocol):
+    """Verify the immutable five-seed residual selection binding."""
+    try:
+        selection = (protocol or {}).get("selection")
+        if (not isinstance(selection, dict)
+                or selection.get("test_split_accessed") is not False
+                or tuple((protocol or {}).get("confirmatory_learning_seeds", ()))
+                != FINAL_SEEDS):
+            raise ValueError("residual release controller/seed contract drift")
+        spec = _inside(root, selection.get("path"))
+        if not spec or not spec.is_file() or _sha256(spec) != selection.get("sha256"):
+            raise ValueError("residual final selector spec hash drift")
+        decisions = selection.get("decisions")
+        if not isinstance(decisions, dict) or set(decisions) != set(str(seed) for seed in FINAL_SEEDS):
+            raise ValueError("residual release requires five selector decisions")
+        bindings = (protocol or {}).get("training_config_bindings")
+        record = bindings.get("schedule_residual_ddqn") if isinstance(bindings, dict) else None
+        config_path = _inside(root, record.get("path")) if isinstance(record, dict) else None
+        if (not config_path or not config_path.is_file()
+                or _sha256(config_path) != record.get("sha256")):
+            raise ValueError("selected residual config hash drift")
+        config = yaml.safe_load(config_path.read_text())
+        if not isinstance(config, dict) or config.get("controller_family") != "schedule_residual_ddqn":
+            raise ValueError("selected residual config is invalid")
+        observed = set()
+        for seed in FINAL_SEEDS:
+            decision_record = decisions[str(seed)]
+            decision_path = _inside(root, decision_record.get("path")) if isinstance(decision_record, dict) else None
+            if (not decision_path or not decision_path.is_file()
+                    or _sha256(decision_path) != decision_record.get("sha256")):
+                raise ValueError("residual selector decision hash drift")
+            decision = _json(decision_path)
+            if (decision.get("status") != "selected" or decision.get("learning_seed") != seed
+                    or decision.get("test_split_accessed") is not False):
+                raise ValueError("residual selector decision is not eligible")
+            observed.add(seed)
+        return _gate(True, "five residual final selectors and selected config are hash-valid", {
+            "selector_spec": {"path": str(spec.relative_to(root)), "sha256": _sha256(spec)},
+            "learning_seeds": list(sorted(observed)),
+            "training_config": {"path": str(config_path.relative_to(root)),
+                                "sha256": _sha256(config_path)},
+        })
+    except Exception as exc:
+        return _gate(False, str(exc))
+
+
 def _pilot_schedule_selection_gate(root, protocol):
+    if _is_residual_release(protocol):
+        return _residual_selection_gate(root, protocol)
     try:
         declared = (protocol or {}).get("selection")
         selection = validate_frozen_schedule_selection(root, declared)
@@ -504,7 +561,104 @@ def _source_checkpoint_valid(root, entry, protocol, controller, seed,
         raise ValueError("final source checkpoint schedule contract drift")
 
 
+def _residual_contract_valid(contract, protocol, seed):
+    expected_macro = {"duration_seconds": 300, "shift_seconds": 10,
+                      "baseline_green_seconds": 25}
+    try:
+        return bool(
+            isinstance(contract, dict)
+            and contract.get("schema_version") == 1
+            and contract.get("controller_family") == "schedule_residual_ddqn"
+            and contract.get("feature_dim") == len(MACRO_FEATURES)
+            and contract.get("feature_order") == list(MACRO_FEATURES)
+            and contract.get("max_macros") == MAX_MACROS
+            and contract.get("macro") == expected_macro
+            and contract.get("critic_units") == CRITIC_UNITS
+            and contract.get("policy_input_schema") == POLICY_INPUT_SCHEMA
+            and contract.get("mode") == "final"
+            and contract.get("learning_seed") == seed
+            and contract.get("training_step") in (4, 8, 12)
+            and contract.get("network_sha256") == (protocol or {}).get("network_sha256")
+            and contract.get("phase_contract_sha256") == (protocol or {}).get("phase_contract_sha256")
+            and contract.get("normalization") == (protocol or {}).get("normalization")
+            and contract.get("simulation") == (protocol or {}).get("resolved_config", {}).get("simulation"))
+    except (TypeError, ValueError):
+        return False
+
+
+def _residual_checkpoint_gate(root, protocol):
+    entries = (protocol or {}).get("checkpoints", [])
+    cells, evidence = set(), []
+    valid = isinstance(entries, list) and len(entries) == len(FINAL_SEEDS)
+    for entry in entries if isinstance(entries, list) else ():
+        seed = entry.get("learning_seed") if isinstance(entry, dict) else None
+        ok = False
+        try:
+            if entry.get("controller_id") != "schedule_residual_ddqn" or seed not in FINAL_SEEDS:
+                raise ValueError("residual checkpoint identity is invalid")
+            run_dir = _inside(root, entry.get("source_run_dir"))
+            weights = _inside(root, entry.get("path"))
+            contract_path = _inside(root, entry.get("contract_path"))
+            if (not run_dir or not weights or not contract_path or not weights.is_file()
+                    or not contract_path.is_file() or weights.parent != contract_path.parent
+                    or _sha256(weights) != entry.get("sha256")
+                    or _sha256(contract_path) != entry.get("contract_file_sha256")):
+                raise ValueError("residual checkpoint artifact hash drift")
+            contract = _json(contract_path)
+            if (contract != entry.get("checkpoint_contract")
+                    or entry.get("checkpoint_contract_sha256") != _canonical_hash(contract)
+                    or not _residual_contract_valid(contract, protocol, seed)):
+                raise ValueError("residual checkpoint contract drift")
+            ResidualDDQN.load_bundle(str(weights.parent), contract)
+            status_path = run_dir / "status.json"
+            selection = entry.get("selection")
+            rerun = entry.get("validation_rerun")
+            selection_path = _inside(root, selection.get("path")) if isinstance(selection, dict) else None
+            rerun_path = _inside(root, rerun.get("path")) if isinstance(rerun, dict) else None
+            if (not status_path.is_file() or not selection_path or not rerun_path
+                    or not selection_path.is_file() or not rerun_path.is_file()):
+                raise ValueError("residual selection artifacts are missing")
+            status = _json(status_path)
+            selected = _json(selection_path)
+            rerun_doc = _json(rerun_path)
+            if (status.get("status") != "complete"
+                    or status.get("eligible_for_test_evaluation") is not True
+                    or status.get("artifact_sha256", {}).get(selection_path.name) != _sha256(selection_path)
+                    or status.get("artifact_sha256", {}).get(rerun_path.name) != _sha256(rerun_path)
+                    or selected.get("status") != "selected"
+                    or selected.get("learning_seed") != seed
+                    or selected.get("test_split_accessed") is not False
+                    or rerun_doc.get("test_split_accessed") is not False):
+                raise ValueError("residual final selector evidence drift")
+            run_manifest = _json(run_dir / "run-manifest.json")
+            source_tree = run_manifest.get("source_tree") if isinstance(run_manifest, dict) else None
+            if (not isinstance(source_tree, dict)
+                    or source_tree.get("git_commit") != run_manifest.get("code_commit")
+                    or contract.get("code_commit") != source_tree.get("git_commit")):
+                raise ValueError("residual model source attestation drift")
+            # Release code may be a descendant of the aa59 training commit;
+            # the model contract remains bound to its original clean source.
+            completed = subprocess.run(["git", "-C", str(root), "merge-base", "--is-ancestor",
+                                        source_tree["git_commit"], protocol["code_commit"]],
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if completed.returncode:
+                raise ValueError("release code is not a descendant of model source attestation")
+            ok = True
+        except (KeyError, OSError, ValueError, TypeError):
+            ok = False
+        valid = valid and ok and ("schedule_residual_ddqn", seed) not in cells
+        cells.add(("schedule_residual_ddqn", seed))
+        evidence.append({"controller_id": "schedule_residual_ddqn", "learning_seed": seed,
+                         "valid": ok})
+    expected = {("schedule_residual_ddqn", seed) for seed in FINAL_SEEDS}
+    return _gate(valid and cells == expected,
+                 "five selected residual checkpoints are hash-bound to their aa59 source attestations",
+                 {"cells": evidence})
+
+
 def _checkpoint_gate(root, protocol):
+    if _is_residual_release(protocol):
+        return _residual_checkpoint_gate(root, protocol)
     entries = (protocol or {}).get("checkpoints", [])
     if not isinstance(entries, list):
         return _gate(False, "frozen checkpoint list must be an array")
@@ -616,15 +770,16 @@ def _expected_runs(root, protocol):
     manifest = bind_frozen_manifest(case_manifest, protocol)
     if len(manifest["agent_ids"]) != 53:
         raise ValueError("frozen protocol must bind the exact 53 agent IDs")
-    if ((protocol or {}).get("primary_learned_controller")
-            != PRIMARY_LEARNED_CONTROLLER
-            or tuple((protocol or {}).get(
-                "confirmatory_learning_seeds", ())) != REQUIRED_SEEDS):
-        raise ValueError("frozen V3 controller/seed contract is invalid")
-    if set(manifest["controller_configs"]) != set(REQUIRED_CONTROLLERS):
+    primary = (protocol or {}).get("primary_learned_controller")
+    expected_seeds = FINAL_SEEDS if primary == "schedule_residual_ddqn" else REQUIRED_SEEDS
+    required_controllers = ("tuned_fixed", "max_pressure", "hysteretic_mp", primary)
+    if (primary not in (PRIMARY_LEARNED_CONTROLLER, "schedule_residual_ddqn")
+            or tuple((protocol or {}).get("confirmatory_learning_seeds", ()))
+            != tuple(expected_seeds)):
+        raise ValueError("frozen learned controller/seed contract is invalid")
+    if set(manifest["controller_configs"]) != set(required_controllers):
         raise ValueError("frozen protocol must bind every controller config")
-    return expand_runs(
-        manifest, rules["required_learning_seeds"], REQUIRED_CONTROLLERS)
+    return expand_runs(manifest, rules["required_learning_seeds"], required_controllers)
 
 
 def _campaign_gates(root, protocol):
