@@ -20,6 +20,17 @@ CONTROLLERS = (
 DETERMINISTIC_CONTROLLERS = frozenset((
     "tuned_fixed", "max_pressure", "hysteretic_mp",
 ))
+
+# These inputs are hash-bound by the frozen protocol and run contracts.  They
+# remain outside the mutable campaign output directory while evaluation runs.
+_RELEASE_INPUT_PREFIXES = (
+    "results/haichau_network_v2/training",
+    "results/haichau_network_v2/release-inputs",
+)
+
+
+def _release_dirty_prefixes(campaign_relative):
+    return _RELEASE_INPUT_PREFIXES + (str(campaign_relative),)
 _ARTIFACTS = (
     "run-manifest.json", "resolved-config.json", "metrics.json",
     "stdout.log", "stderr.log",
@@ -788,7 +799,7 @@ def verify_campaign(campaign_dir, require_release_provenance=False, project_root
             raise ValueError("release campaign directory must remain inside project root")
         source = verify_git_checkout(
             project_root, runs[0].get("code_commit"),
-            allowed_dirty_prefixes=(campaign_relative,))
+            allowed_dirty_prefixes=_release_dirty_prefixes(campaign_relative))
         verify_runtime(project_root, runs[0])
         current_head = source["head_commit"]
     for run in runs:
@@ -832,7 +843,7 @@ def run_pending(campaign_dir, executor=None, project_root=None):
             raise ValueError("release campaign contains no runs")
         source = verify_git_checkout(
             project_root, runs[0].get("code_commit"),
-            allowed_dirty_prefixes=(campaign_relative,))
+            allowed_dirty_prefixes=_release_dirty_prefixes(campaign_relative))
         runtime = verify_runtime(project_root, runs[0])
     counts = {"completed": 0, "failed": 0, "skipped": 0, "total": len(runs)}
     for run in runs:

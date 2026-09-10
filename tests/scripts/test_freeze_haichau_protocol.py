@@ -1254,3 +1254,19 @@ def test_freeze_dispatches_residual_adapter_without_legacy_training_index(
 
     assert result == {"kind": "residual"}
     assert received["args"][3] == config
+
+
+def test_freeze_clean_commit_allows_hash_bound_release_inputs(monkeypatch, tmp_path):
+    import scripts.freeze_haichau_protocol as frozen
+
+    seen = {}
+    monkeypatch.setattr(frozen, "_run", lambda argv, root: "a" * 40)
+    monkeypatch.setattr(
+        frozen, "verify_git_checkout",
+        lambda root, commit, **kwargs: seen.update(kwargs))
+
+    assert frozen._current_clean_commit(tmp_path) == "a" * 40
+    assert seen["allowed_dirty_prefixes"] == (
+        "results/haichau_network_v2/training",
+        "results/haichau_network_v2/release-inputs",
+    )

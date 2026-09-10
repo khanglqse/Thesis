@@ -115,7 +115,10 @@ def _current_clean_commit(root):
     # paths remain subject to verify_git_checkout's descendant/diff checks.
     verify_git_checkout(
         root, head,
-        allowed_dirty_prefixes=("results/haichau_network_v2/training",))
+        allowed_dirty_prefixes=(
+            "results/haichau_network_v2/training",
+            "results/haichau_network_v2/release-inputs",
+        ))
     return head
 
 

@@ -206,10 +206,15 @@ def test_all_run_manifests_exist_before_docker_runtime_inspection(
             assert json.loads(
                 (run_dir / "run-manifest.json").read_text()) == run
             assert (run_dir / "runtime-configs").is_dir()
+        assert kwargs["allowed_dirty_prefixes"] == (
+            "results/haichau_network_v2/training",
+            "results/haichau_network_v2/release-inputs",
+            "results/final",
+        )
         return {"head_commit": runs[0]["code_commit"]}
 
     monkeypatch.setattr(network_campaign, "verify_git_checkout", assert_inputs_exist)
-    monkeypatch.setattr(network_campaign, "verify_runtime", assert_inputs_exist)
+    monkeypatch.setattr(network_campaign, "verify_runtime", lambda *args: {})
     monkeypatch.setattr(
         network_campaign, "_trusted_docker_executor",
         lambda run, run_dir, project_root, source, runtime: (
