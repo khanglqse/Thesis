@@ -3,7 +3,7 @@ study_role: exploratory_appendix
 controllers:
   - tuned_fixed
   - max_pressure
-  - neighbor_phase_ddqn
+  - schedule_residual_ddqn
 conditions:
   demand_plus20:
     kind: demand_scale

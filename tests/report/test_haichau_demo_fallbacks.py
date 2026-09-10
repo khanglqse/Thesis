@@ -144,3 +144,22 @@ def test_shared_queue_color_scale_covers_both_controller_panels():
     learned = {"frames": [{"nodes": {"a": {"queue": 50}, "b": {"queue": 1}}}]}
 
     assert _queue_color_scale([(0, fixed, learned)]) == 50.0
+
+
+def test_representative_pairs_support_schedule_residual_controller():
+    from traffic_rl.report.haichau_demo_fallbacks import _representative_pairs
+
+    runs = []
+    for regime in ("normal", "am_peak", "pm_peak"):
+        for controller, seed in (("tuned_fixed", None),
+                                 ("schedule_residual_ddqn", 12)):
+            runs.append({"run_id": "%s-%s" % (regime, controller),
+                         "regime": regime, "controller_id": controller,
+                         "learning_seed": seed, "case_id": regime + "-case",
+                         "scheduled_vehicles": 100})
+    selected = _representative_pairs({
+        "protocol": {"primary_learned_controller": "schedule_residual_ddqn"},
+        "campaign": {"runs": runs}})
+
+    assert [right["controller_id"] for left, right in selected] == [
+        "schedule_residual_ddqn"] * 3

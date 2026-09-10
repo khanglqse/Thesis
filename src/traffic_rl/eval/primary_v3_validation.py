@@ -17,10 +17,23 @@ from traffic_rl.research.pilot_schedule_selector import (
 )
 
 
-PRIMARY_CONTROLLERS = (
+RESIDUAL_PRIMARY_CONTROLLER = "schedule_residual_ddqn"
+SUPPORTED_PRIMARY_CONTROLLERS = (PRIMARY_LEARNED_CONTROLLER,
+                                 RESIDUAL_PRIMARY_CONTROLLER)
+DETERMINISTIC_PRIMARY_CONTROLLERS = (
     "tuned_fixed", "max_pressure", "hysteretic_mp",
-    PRIMARY_LEARNED_CONTROLLER,
 )
+
+
+def _primary_controllers(protocol):
+    controller = protocol.get("primary_learned_controller")
+    if controller not in SUPPORTED_PRIMARY_CONTROLLERS:
+        raise ValueError("primary V3 controller is unsupported")
+    return DETERMINISTIC_PRIMARY_CONTROLLERS + (controller,)
+
+
+# Backward-compatible name for the legacy neighbor-DDQN release tests.
+PRIMARY_CONTROLLERS = DETERMINISTIC_PRIMARY_CONTROLLERS + (PRIMARY_LEARNED_CONTROLLER,)
 PRIMARY_RUN_COUNT = 120
 PRIMARY_FINAL_RELATIVE = Path("results/haichau_network_v2/final")
 PRIMARY_RELATIVE = PRIMARY_FINAL_RELATIVE / "frozen-protocol.json"
@@ -117,7 +130,7 @@ def _inside_directory(root, value, label):
     return path
 
 
-def _validate_checkpoint_bindings(root, protocol):
+def _validate_checkpoint_bindings(root, protocol, controller):
     entries = protocol.get("checkpoints")
     if not isinstance(entries, list) or len(entries) != len(
             CONFIRMATORY_LEARNING_SEEDS):
@@ -126,19 +139,31 @@ def _validate_checkpoint_bindings(root, protocol):
     for seed in CONFIRMATORY_LEARNING_SEEDS:
         matches = [entry for entry in entries
                    if isinstance(entry, dict)
-                   and entry.get("controller_id") == PRIMARY_LEARNED_CONTROLLER
+                   and entry.get("controller_id") == controller
                    and entry.get("learning_seed") == seed]
         if len(matches) != 1:
             raise ValueError("primary V3 requires one checkpoint per seed 12--16")
         entry = matches[0]
-        if entry.get("validation_eligible") is not True:
+        if controller == RESIDUAL_PRIMARY_CONTROLLER:
+            selection = entry.get("selection", {})
+            if not isinstance(selection, dict):
+                raise ValueError("residual checkpoint selection binding is invalid")
+            selection_path = _hash_bound_file(
+                root, selection.get("path"), selection.get("sha256"),
+                "residual checkpoint selection")
+            decision = _json(selection_path, "residual checkpoint selection")
+            if (decision.get("status") != "selected"
+                    or decision.get("learning_seed") != seed
+                    or decision.get("test_split_accessed") is not False):
+                raise ValueError("residual checkpoint is not validation-eligible")
+        elif entry.get("validation_eligible") is not True:
             raise ValueError("primary checkpoint is not validation-eligible")
         checkpoint = _hash_bound_file(
             root, entry.get("path"), entry.get("sha256"), "checkpoint")
         contract = entry.get("checkpoint_contract")
         if (not isinstance(contract, dict)
                 or contract.get("controller_family")
-                != PRIMARY_LEARNED_CONTROLLER
+                != controller
                 or canonical_sha256(contract)
                 != entry.get("checkpoint_contract_sha256")):
             raise ValueError("primary checkpoint contract is invalid")
@@ -149,7 +174,10 @@ def _validate_checkpoint_bindings(root, protocol):
             raise ValueError("primary checkpoint contract file differs")
         run_dir = _inside_directory(
             root, entry.get("source_run_dir"), "checkpoint source run")
-        if (checkpoint != (run_dir / "checkpoint/weights.npz").resolve()
+        if controller == RESIDUAL_PRIMARY_CONTROLLER:
+            if checkpoint.parent != contract_path.parent:
+                raise ValueError("residual checkpoint is outside its source run")
+        elif (checkpoint != (run_dir / "checkpoint/weights.npz").resolve()
                 or contract_path
                 != (run_dir / "checkpoint/contract.json").resolve()):
             raise ValueError("primary checkpoint is outside its source run")
@@ -162,18 +190,27 @@ def _validate_checkpoint_bindings(root, protocol):
             raise ValueError(
                 "primary checkpoint source is not complete and validation-eligible")
         artifacts = entry.get("source_artifacts")
-        if (not isinstance(artifacts, dict)
-                or not _REQUIRED_CHECKPOINT_ARTIFACTS.issubset(set(artifacts))
-                or artifacts != status.get("artifact_sha256")):
-            raise ValueError("primary checkpoint source artifact binding is invalid")
-        for relative, digest in artifacts.items():
-            artifact_path = (run_dir / str(relative)).resolve()
-            try:
-                artifact_path.relative_to(run_dir)
-            except ValueError:
-                raise ValueError("checkpoint source artifact escapes its run")
-            _hash_bound_file(
-                root, artifact_path, digest, "checkpoint source artifact")
+        if controller == RESIDUAL_PRIMARY_CONTROLLER:
+            rerun = entry.get("validation_rerun", {})
+            rerun_path = _hash_bound_file(
+                root, rerun.get("path"), rerun.get("sha256"),
+                "residual validation rerun")
+            if _json(rerun_path, "residual validation rerun").get(
+                    "test_split_accessed") is not False:
+                raise ValueError("residual checkpoint validation rerun used test evidence")
+        else:
+            if (not isinstance(artifacts, dict)
+                    or not _REQUIRED_CHECKPOINT_ARTIFACTS.issubset(set(artifacts))
+                    or artifacts != status.get("artifact_sha256")):
+                raise ValueError("primary checkpoint source artifact binding is invalid")
+            for relative, digest in artifacts.items():
+                artifact_path = (run_dir / str(relative)).resolve()
+                try:
+                    artifact_path.relative_to(run_dir)
+                except ValueError:
+                    raise ValueError("checkpoint source artifact escapes its run")
+                _hash_bound_file(
+                    root, artifact_path, digest, "checkpoint source artifact")
         validated.append({
             "learning_seed": seed,
             "path": str(checkpoint.relative_to(Path(root).resolve())),
@@ -190,22 +227,24 @@ def validate_primary_v3_protocol(root, protocol_path, primary=None):
     if primary is not None and document != primary:
         raise ValueError("primary frozen protocol changed while validating")
 
-    # This recomputes the pilot decision and eligibility from validation-only
-    # artifacts.  It deliberately runs before opening the case manifest.
-    validate_frozen_schedule_selection(root, document.get("selection"))
+    # Validation selection is rechecked before opening the held-out case manifest.
+    controller = document.get("primary_learned_controller")
+    if controller == PRIMARY_LEARNED_CONTROLLER:
+        validate_frozen_schedule_selection(root, document.get("selection"))
+    elif controller != RESIDUAL_PRIMARY_CONTROLLER:
+        raise ValueError("primary V3 controller is unsupported")
     if (document.get("protocol_version") != 1
             or document.get("evidence_namespace") != "haichau_network_v2"):
         raise ValueError("primary V3 frozen protocol identity is invalid")
     seeds = tuple(document.get("confirmatory_learning_seeds", ()))
     required = tuple(document.get("acceptance_rules", {}).get(
         "required_learning_seeds", ()))
-    if (document.get("primary_learned_controller")
-            != PRIMARY_LEARNED_CONTROLLER
+    if (controller not in SUPPORTED_PRIMARY_CONTROLLERS
             or seeds != CONFIRMATORY_LEARNING_SEEDS
             or required != CONFIRMATORY_LEARNING_SEEDS
             or 11 in seeds):
         raise ValueError("primary V3 controller/seeds must be exact seeds 12--16")
-    checkpoints = _validate_checkpoint_bindings(root, document)
+    checkpoints = _validate_checkpoint_bindings(root, document, controller)
     case_path = _hash_bound_file(
         root, document.get("case_manifest_path"),
         document.get("case_manifest_sha256"), "primary case manifest")
@@ -264,7 +303,7 @@ def validate_primary_v3_reference(root, protocol_path, primary=None):
         validated["case_manifest_path"], "primary case manifest")
     bound = bind_frozen_manifest(case_document, protocol)
     expected_runs = expand_runs(
-        bound, list(CONFIRMATORY_LEARNING_SEEDS), PRIMARY_CONTROLLERS)
+        bound, list(CONFIRMATORY_LEARNING_SEEDS), _primary_controllers(protocol))
     if len(expected_runs) != PRIMARY_RUN_COUNT:
         raise ValueError("primary frozen protocol must expand to exactly 120 runs")
 
@@ -295,6 +334,6 @@ def validate_primary_v3_reference(root, protocol_path, primary=None):
         "summary_path": summary_path,
         "summary_sha256": _sha256(summary_path),
         "run_count": PRIMARY_RUN_COUNT,
-        "controllers": list(PRIMARY_CONTROLLERS),
+        "controllers": list(_primary_controllers(protocol)),
         "learning_seeds": list(CONFIRMATORY_LEARNING_SEEDS),
     }

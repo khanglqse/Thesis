@@ -529,3 +529,33 @@ def test_campaign_and_summary_writes_are_immutable_and_never_enter_final(tmp_pat
     with pytest.raises(ValueError, match="refusing to replace"):
         write_robustness_summary(output, summary)
     assert primary_summary.read_bytes() == primary_summary_before
+
+
+def test_freeze_and_expansion_bind_schedule_residual_checkpoints(tmp_path):
+    root, primary, config = _fixture(tmp_path)
+    document = json.loads(primary.read_text())
+    document["primary_learned_controller"] = "schedule_residual_ddqn"
+    document["controller_configs"].pop("neighbor_phase_ddqn")
+    document["controller_configs"]["schedule_residual_ddqn"] = {
+        "macro": {"duration_seconds": 300, "shift_seconds": 10,
+                  "baseline_green_seconds": 25},
+    }
+    for checkpoint in document["checkpoints"]:
+        checkpoint["controller_id"] = "schedule_residual_ddqn"
+        checkpoint["checkpoint_contract"]["controller_family"] = (
+            "schedule_residual_ddqn")
+    primary.write_text(json.dumps(document))
+    selected = json.loads(config.read_text())
+    selected["controllers"][-1] = "schedule_residual_ddqn"
+    config.write_text(json.dumps(selected))
+
+    frozen = freeze_robustness_protocol(
+        root, primary, config, root / "results/haichau_network_v2/robustness",
+        robustness_code_commit="6" * 40)
+    runs = expand_robustness_runs(root, frozen)
+
+    assert frozen["controllers"][-1] == "schedule_residual_ddqn"
+    learned = [run for run in runs
+               if run["controller_id"] == "schedule_residual_ddqn"]
+    assert len(learned) == 300
+    assert {run["learning_seed"] for run in learned} == set(LEARNING_SEEDS)

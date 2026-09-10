@@ -68,11 +68,20 @@ def _release_pdf(root, evidence):
     return pdf
 
 
+def _primary_controller(evidence):
+    controller = evidence.get("protocol", {}).get(
+        "primary_learned_controller", "neighbor_phase_ddqn")
+    if controller not in ("neighbor_phase_ddqn", "schedule_residual_ddqn"):
+        raise ValueError("final campaign has unsupported learned controller")
+    return controller
+
+
 def _representative_pairs(evidence):
     """Choose a predeclared, outcome-independent pair from each final regime."""
+    primary_controller = _primary_controller(evidence)
     by_regime = {}
     for run in evidence["campaign"]["runs"]:
-        if run.get("controller_id") not in ("tuned_fixed", "neighbor_phase_ddqn"):
+        if run.get("controller_id") not in ("tuned_fixed", primary_controller):
             continue
         regime = run.get("regime")
         if regime not in ("normal", "am_peak", "pm_peak"):
@@ -81,7 +90,7 @@ def _representative_pairs(evidence):
             run["controller_id"], []).append(run)
     learned_seeds = sorted(set(
         run.get("learning_seed") for run in evidence["campaign"]["runs"]
-        if run.get("controller_id") == "neighbor_phase_ddqn"
+        if run.get("controller_id") == primary_controller
         and isinstance(run.get("learning_seed"), int)
         and not isinstance(run.get("learning_seed"), bool)))
     if not learned_seeds:
@@ -92,7 +101,7 @@ def _representative_pairs(evidence):
         pair = by_regime.get(regime, {})
         fixed = sorted(pair.get("tuned_fixed", []), key=lambda item: item["run_id"])
         learned = sorted(
-            (run for run in pair.get("neighbor_phase_ddqn", [])
+            (run for run in pair.get(primary_controller, [])
              if run.get("learning_seed") == first_learning_seed),
             key=lambda item: item["run_id"])
         demand_by_case = {}
@@ -414,6 +423,7 @@ def validate_final_evidence(project_root, campaign_dir=None):
             peak_ci_upper_limit=rules.get("peak_ci_upper_limit", 0.0),
             completion_degradation_limit=rules.get(
                 "completion_degradation_limit", 0.02),
+            primary_learned_controller=protocol.get("primary_learned_controller"),
         )
         expected_summary = {
             "study_scope": {

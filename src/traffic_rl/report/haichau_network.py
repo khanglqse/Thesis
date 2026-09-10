@@ -19,6 +19,7 @@ _CONTROLLER_LABELS = {
     "hysteretic_mp": "Hysteretic Max-Pressure",
     "shared_ddqn_legacy": "Shared DDQN legacy",
     "neighbor_phase_ddqn": "Neighbor phase DDQN",
+    "schedule_residual_ddqn": "Schedule-residual DDQN",
 }
 
 
@@ -40,10 +41,17 @@ def _format_number(value):
     return "--" if value is None else "%.2f" % float(value)
 
 
+def _primary_controller(document):
+    primary = document.get("_metadata", {}).get("primary_learned_controller")
+    if primary not in ("neighbor_phase_ddqn", "schedule_residual_ddqn"):
+        primary = "neighbor_phase_ddqn"
+    return primary
+
+
 def build_tables(summary):
     scope = _scope(summary)
     document = _document(summary)
-    candidate = document.get("neighbor_phase_ddqn", {})
+    candidate = document.get(_primary_controller(document), {})
     baseline = document.get("tuned_fixed", {})
     regimes = [name for name in ("normal", "am_peak", "pm_peak")
                if name in candidate and name in baseline]
@@ -153,7 +161,7 @@ def _write_figures(summary, output_dir, summary_sha256, command):
     import numpy as np
 
     document = _document(summary)
-    candidate = document["neighbor_phase_ddqn"]
+    candidate = document[_primary_controller(document)]
     baseline = document["tuned_fixed"]
     regimes = [name for name in ("normal", "am_peak", "pm_peak")
                if name in candidate and name in baseline]
@@ -171,7 +179,7 @@ def _write_figures(summary, output_dir, summary_sha256, command):
            yerr=np.asarray([low_error, high_error]), capsize=4)
     ax.axhline(0, color="#28323c", linewidth=1)
     ax.set_xticks(np.arange(len(regimes)), labels)
-    ax.set_ylabel("DDQN - tuned fixed queue integral (vehicle-seconds)")
+    ax.set_ylabel("Learned controller - tuned fixed queue integral (vehicle-seconds)")
     ax.set_title("Matched differences; lower is better")
     ax.grid(axis="y", alpha=0.2)
     fig.tight_layout()
@@ -185,7 +193,7 @@ def _write_figures(summary, output_dir, summary_sha256, command):
     ax.bar(x - 0.18, [baseline[name]["completion_rate"]["mean"] for name in regimes],
            width=0.36, label="Tuned fixed", color="#60768a")
     ax.bar(x + 0.18, [candidate[name]["completion_rate"]["mean"] for name in regimes],
-           width=0.36, label="Neighbor phase DDQN", color="#d39031")
+           width=0.36, label=_CONTROLLER_LABELS[_primary_controller(document)], color="#d39031")
     ax.set_xticks(x, labels)
     ax.set_ylim(0, 1)
     ax.set_ylabel("Completion rate")

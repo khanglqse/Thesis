@@ -172,3 +172,16 @@ def test_artifact_generation_removes_stale_output(tmp_path):
     write_artifacts(_summary(), output, "build-test", thesis_path=thesis)
 
     assert not (output / "stale-table.tex").exists()
+
+
+def test_tables_use_the_residual_primary_summary_key():
+    summary = _summary()
+    document = summary["summary"]
+    document["schedule_residual_ddqn"] = document.pop("neighbor_phase_ddqn")
+    document["_metadata"] = {
+        "primary_learned_controller": "schedule_residual_ddqn"}
+
+    table = build_tables(summary)["network_results"]
+
+    assert "PM peak" in table
+    assert "Schedule-residual DDQN" in build_tables(summary)["controller_comparison"]

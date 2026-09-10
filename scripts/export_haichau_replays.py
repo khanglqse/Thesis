@@ -75,6 +75,10 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
     shutil.copyfile(network_path, output_dir / "network.json")
     _write_json(output_dir / "aggregate-summary.json", summary)
 
+    primary_controller = summary.get("summary", {}).get("_metadata", {}).get(
+        "primary_learned_controller", "neighbor_phase_ddqn")
+    if primary_controller not in ("neighbor_phase_ddqn", "schedule_residual_ddqn"):
+        raise ValueError("summary has an unsupported learned controller")
     replay_entries = []
     grids = {}
     for run_id in selected_run_ids:
@@ -119,7 +123,7 @@ def export_bundle(campaign_dir, output_dir, network_path, selected_run_ids,
     for regime in sorted(set(entry["regime"] for entry in replay_entries)):
         selected = [entry for entry in replay_entries if entry["regime"] == regime]
         controller_ids = set(entry["controller_id"] for entry in selected)
-        if controller_ids != {"tuned_fixed", "neighbor_phase_ddqn"} \
+        if controller_ids != {"tuned_fixed", primary_controller} \
                 or len(set(entry["case_id"] for entry in selected)) != 1:
             raise ValueError("each demo regime requires one fresh matched controller pair")
 

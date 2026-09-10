@@ -30,7 +30,19 @@ CONDITIONS = (
     "demand_plus20", "sensor_gaussian", "sensor_dropout",
     "incident_lane_reduction50",
 )
-CONTROLLERS = ("tuned_fixed", "max_pressure", "neighbor_phase_ddqn")
+DETERMINISTIC_CONTROLLERS = ("tuned_fixed", "max_pressure")
+SUPPORTED_PRIMARY_CONTROLLERS = ("neighbor_phase_ddqn", "schedule_residual_ddqn")
+
+
+def _primary_controller(primary):
+    controller = primary.get("primary_learned_controller")
+    if controller not in SUPPORTED_PRIMARY_CONTROLLERS:
+        raise ValueError("primary protocol selected controller is unsupported")
+    return controller
+
+
+def _controllers(primary):
+    return DETERMINISTIC_CONTROLLERS + (_primary_controller(primary),)
 RESULT_RELATIVE = Path("results/haichau_network_v2/robustness")
 BOOTSTRAP_SAMPLES = 10000
 BOOTSTRAP_SEED = 20260908
@@ -103,7 +115,7 @@ def _current_commit(root):
     return commit
 
 
-def _validate_config(config):
+def _validate_config(config, controllers):
     if not isinstance(config, dict):
         raise ValueError("robustness config must be an object")
     forbidden = set(config).intersection({
@@ -115,7 +127,7 @@ def _validate_config(config):
     if config.get("schema_version") != 1 \
             or config.get("study_role") != "exploratory_appendix":
         raise ValueError("config must label study_role exploratory_appendix")
-    if tuple(config.get("controllers", ())) != CONTROLLERS:
+    if tuple(config.get("controllers", ())) != tuple(controllers):
         raise ValueError("config controllers differ from the V3 appendix contract")
     bootstrap = config.get("bootstrap", {})
     if bootstrap != {"samples": BOOTSTRAP_SAMPLES, "seed": BOOTSTRAP_SEED}:
@@ -199,26 +211,27 @@ def _validate_phases(roadnet, agent_ids):
                 raise ValueError("controlled signal phase references an invalid road link")
 
 
-def _checkpoint_bindings(root, primary):
+def _checkpoint_bindings(root, primary, controller):
     bindings = []
     entries = primary.get("checkpoints", ())
     for seed in LEARNING_SEEDS:
         matches = [item for item in entries
-                   if item.get("controller_id") == "neighbor_phase_ddqn"
+                   if item.get("controller_id") == controller
                    and item.get("learning_seed") == seed]
         if len(matches) != 1:
             raise ValueError("primary protocol requires one checkpoint per seed 12--16")
         item = matches[0]
-        if item.get("validation_eligible") is not True:
+        if controller != "schedule_residual_ddqn" \
+                and item.get("validation_eligible") is not True:
             raise ValueError("primary checkpoint is not validation-eligible")
         path = _verified_file(
             root, item.get("path"), item.get("sha256"), "checkpoint")
         contract = item.get("checkpoint_contract")
         if not isinstance(contract, dict) \
-                or contract.get("controller_family") != "neighbor_phase_ddqn":
+                or contract.get("controller_family") != controller:
             raise ValueError("checkpoint contract is invalid")
         bindings.append({
-            "controller_id": "neighbor_phase_ddqn",
+            "controller_id": controller,
             "learning_seed": seed,
             "path": str(path.relative_to(Path(root).resolve())),
             "sha256": item["sha256"],
@@ -242,7 +255,8 @@ def freeze_robustness_protocol(root, primary_protocol_path, config_path,
     primary_path = canonical_primary_protocol_path(root, primary_protocol_path)
     config_file = _project_path(root, config_path, "robustness config")
     primary = _json(primary_path, "primary protocol")
-    config = _validate_config(yaml.safe_load(config_file.read_text()))
+    controllers = _controllers(primary)
+    config = _validate_config(yaml.safe_load(config_file.read_text()), controllers)
     primary_reference = validate_primary_v3_reference(
         root, primary_path, primary=primary)
     primary_campaign = primary_reference["campaign_manifest_path"]
@@ -252,8 +266,7 @@ def freeze_robustness_protocol(root, primary_protocol_path, config_path,
         "required_learning_seeds", ()))
     if seeds != LEARNING_SEEDS or rule_seeds != LEARNING_SEEDS or 11 in seeds:
         raise ValueError("primary protocol must derive exact learning seeds 12--16")
-    if primary.get("primary_learned_controller") != "neighbor_phase_ddqn":
-        raise ValueError("primary protocol selected controller is not V3 DDQN")
+
     resolved = primary.get("resolved_config", {})
     roadnet_path = _verified_file(
         root, primary.get("network_path", resolved.get("network_path")),
@@ -264,7 +277,7 @@ def freeze_robustness_protocol(root, primary_protocol_path, config_path,
     roadnet = json.loads(roadnet_path.read_text())
     _validate_phases(roadnet, list(primary.get("agent_ids", ())))
     cases, case_path = _case_bindings(root, primary, roadnet)
-    checkpoints = _checkpoint_bindings(root, primary)
+    checkpoints = _checkpoint_bindings(root, primary, controllers[-1])
     target = select_topology_incident(
         roadnet, controlled_signal_ids=primary.get("agent_ids", ()))
     conditions = json.loads(json.dumps(config["conditions"]))
@@ -321,7 +334,7 @@ def freeze_robustness_protocol(root, primary_protocol_path, config_path,
                 "runtime_dockerfile_sha256"),
             "agent_ids": list(primary.get("agent_ids", ())),
             "controlled_signals": 53,
-            "controllers": list(CONTROLLERS),
+            "controllers": list(controllers),
             "learning_seeds": list(LEARNING_SEEDS),
             "cases": cases,
             "conditions": conditions,
@@ -331,10 +344,10 @@ def freeze_robustness_protocol(root, primary_protocol_path, config_path,
             "normalization": primary.get("normalization"),
             "controller_configs": dict(
                 (name, primary.get("controller_configs", {}).get(name, {}))
-                for name in CONTROLLERS),
+                for name in controllers),
             "controller_commands": dict(
                 (name, ["python3", "scripts/evaluate_haichau_robustness.py"])
-                for name in CONTROLLERS),
+                for name in controllers),
             "bootstrap": {"samples": BOOTSTRAP_SAMPLES, "seed": BOOTSTRAP_SEED},
             "primary_results_usage": "reference_only_not_counted_as_fresh_episode",
             "changes_to_training_selection_or_acceptance": False,
@@ -383,15 +396,15 @@ def _verify_frozen_inputs(root, protocol):
         root, protocol["phase_contract_path"],
         protocol["phase_contract_sha256"], "phase contract")
     primary = _json(primary_path, "primary protocol")
-    config = _validate_config(yaml.safe_load(config_path.read_text()))
+    controllers = _controllers(primary)
+    config = _validate_config(yaml.safe_load(config_path.read_text()), controllers)
     primary_reference = validate_primary_v3_reference(
         root, primary_path, primary=primary)
     if (tuple(primary.get("confirmatory_learning_seeds", ())) != LEARNING_SEEDS
             or tuple(primary.get("acceptance_rules", {}).get(
                 "required_learning_seeds", ())) != LEARNING_SEEDS
-            or primary.get("primary_learned_controller")
-            != "neighbor_phase_ddqn"):
-        raise ValueError("primary protocol no longer binds V3 seeds 12--16")
+):
+        raise ValueError("primary protocol no longer binds exact seeds 12--16")
     if protocol.get("primary_code_commit") != primary.get("code_commit") \
             or not re.fullmatch(r"[0-9a-f]{40}", str(
                 protocol.get("robustness_code_commit", ""))):
@@ -416,7 +429,7 @@ def _verify_frozen_inputs(root, protocol):
     expected_cases, expected_case_path = _case_bindings(root, primary, roadnet)
     if expected_case_path != case_path or protocol.get("cases") != expected_cases:
         raise ValueError("robustness cases differ from the hash-bound primary cases")
-    if protocol.get("checkpoint_bindings") != _checkpoint_bindings(root, primary):
+    if protocol.get("checkpoint_bindings") != _checkpoint_bindings(root, primary, controllers[-1]):
         raise ValueError("robustness checkpoint bindings differ from primary")
     expected_conditions = json.loads(json.dumps(config["conditions"]))
     target = select_topology_incident(
@@ -426,13 +439,13 @@ def _verify_frozen_inputs(root, protocol):
         raise ValueError("robustness condition differs from preregistration")
     expected_configs = dict(
         (name, primary.get("controller_configs", {}).get(name, {}))
-        for name in CONTROLLERS)
+        for name in controllers)
     if protocol.get("controller_configs") != expected_configs \
             or protocol.get("resolved_config") != primary.get("resolved_config"):
         raise ValueError("robustness runtime configuration differs from primary")
     expected_commands = dict(
         (name, ["python3", "scripts/evaluate_haichau_robustness.py"])
-        for name in CONTROLLERS)
+        for name in controllers)
     if protocol.get("controller_commands") != expected_commands \
             or protocol.get("bootstrap") != {
                 "samples": BOOTSTRAP_SAMPLES, "seed": BOOTSTRAP_SEED}:
@@ -503,8 +516,12 @@ def expand_robustness_runs(root, protocol):
     """Expand the frozen 4 x 15 x (2 deterministic + 5 learned) matrix."""
     root = Path(root).resolve()
     _verify_frozen_inputs(root, protocol)
+    primary_controller = _primary_controller({
+        "primary_learned_controller": protocol.get("controllers", [None])[-1]
+    })
+    controllers = DETERMINISTIC_CONTROLLERS + (primary_controller,)
     if tuple(protocol.get("learning_seeds", ())) != LEARNING_SEEDS \
-            or tuple(protocol.get("controllers", ())) != CONTROLLERS:
+            or tuple(protocol.get("controllers", ())) != controllers:
         raise ValueError("frozen appendix seed/controller contract drift")
     if set(protocol.get("conditions", {})) != set(CONDITIONS):
         raise ValueError("frozen appendix condition contract drift")
@@ -515,8 +532,8 @@ def expand_robustness_runs(root, protocol):
     runs = []
     for condition_id in CONDITIONS:
         condition = protocol["conditions"][condition_id]
-        for controller_id in CONTROLLERS:
-            seeds = LEARNING_SEEDS if controller_id == "neighbor_phase_ddqn" else (None,)
+        for controller_id in controllers:
+            seeds = LEARNING_SEEDS if controller_id == primary_controller else (None,)
             for learning_seed in seeds:
                 for case in cases:
                     demand = {
@@ -614,8 +631,8 @@ def _metric_summary(values):
 
 
 def _controller_summary_cell(condition_id, controller_id, group, baseline,
-                             matched_case_count):
-    learning = controller_id == "neighbor_phase_ddqn"
+                             matched_case_count, primary_controller):
+    learning = controller_id == primary_controller
     expected = matched_case_count * (len(LEARNING_SEEDS) if learning else 1)
     if len(group) != expected:
         raise ValueError("robustness controller/case expansion is incomplete")
@@ -689,20 +706,25 @@ def summarize_robustness(rows):
             baseline[(row["condition_id"], row["case_id"])] = row
     if len(baseline) != 60:
         raise ValueError("robustness summary requires all matched fixed references")
+    controllers = tuple(sorted(set(row.get("controller_id") for row in rows)))
+    primary = [name for name in controllers if name not in DETERMINISTIC_CONTROLLERS]
+    if len(primary) != 1 or primary[0] not in SUPPORTED_PRIMARY_CONTROLLERS:
+        raise ValueError("robustness rows require one supported learned controller")
+    primary_controller = primary[0]
     output = {}
     for condition_id in CONDITIONS:
         output[condition_id] = {}
-        for controller_id in CONTROLLERS:
+        for controller_id in controllers:
             group = [row for row in rows
                      if row["condition_id"] == condition_id
                      and row["controller_id"] == controller_id]
             cell = _controller_summary_cell(
-                condition_id, controller_id, group, baseline, 15)
+                condition_id, controller_id, group, baseline, 15, primary_controller)
             cell["by_regime"] = {}
             for regime in ("normal", "am_peak", "pm_peak"):
                 regime_group = [row for row in group if row["regime"] == regime]
                 cell["by_regime"][regime] = _controller_summary_cell(
-                    condition_id, controller_id, regime_group, baseline, 5)
+                    condition_id, controller_id, regime_group, baseline, 5, primary_controller)
             output[condition_id][controller_id] = cell
     return {
         "schema_version": 1,
