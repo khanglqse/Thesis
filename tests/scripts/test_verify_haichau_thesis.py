@@ -1474,3 +1474,11 @@ def test_residual_checkpoint_gate_allows_aa59_model_source_and_descendant_releas
     bad_manifest.write_text(json.dumps({
         "code_commit": "c" * 40, "source_tree": {"git_commit": "c" * 40}}))
     assert not verifier._checkpoint_gate(tmp_path, protocol)["passed"]
+
+
+def test_demo_replay_pair_uses_residual_primary_controller():
+    from scripts.verify_haichau_thesis import _demo_pair_controllers
+
+    assert _demo_pair_controllers({
+        "primary_learned_controller": "schedule_residual_ddqn",
+    }) == {"tuned_fixed", "schedule_residual_ddqn"}

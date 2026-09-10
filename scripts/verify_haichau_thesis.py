@@ -944,6 +944,13 @@ def _thesis_gate(root, summary):
         return _gate(False, str(exc))
 
 
+def _demo_pair_controllers(protocol):
+    primary = (protocol or {}).get("primary_learned_controller")
+    if primary not in (PRIMARY_LEARNED_CONTROLLER, "schedule_residual_ddqn"):
+        raise ValueError("offline demo primary controller is invalid")
+    return {"tuned_fixed", primary}
+
+
 def _probe_fallback(name, path):
     if name.endswith(".mp4"):
         return probe_video(path)
@@ -1042,8 +1049,8 @@ def audit_demo(root, protocol=None, campaign=None, summary=None):
                 "offline demo replay run IDs differ from fallback provenance")
         for regime in REQUIRED_REGIMES:
             entries = [entry for entry in replays if entry.get("regime") == regime]
-            if len(entries) != 2 or set(entry.get("controller_id") for entry in entries) != {
-                    "tuned_fixed", PRIMARY_LEARNED_CONTROLLER} \
+            if len(entries) != 2 or set(entry.get("controller_id") for entry in entries) != \
+                    _demo_pair_controllers(protocol) \
                     or len(set(entry.get("case_id") for entry in entries)) != 1:
                 return _gate(False, "offline demo replay pair is not matched: %s" % regime)
             grids = []
