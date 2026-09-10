@@ -616,8 +616,10 @@ def _residual_checkpoint_gate(root, protocol):
             selection_path = _inside(root, selection.get("path")) if isinstance(selection, dict) else None
             rerun_path = _inside(root, rerun.get("path")) if isinstance(rerun, dict) else None
             if (not status_path.is_file() or not selection_path or not rerun_path
-                    or not selection_path.is_file() or not rerun_path.is_file()):
-                raise ValueError("residual selection artifacts are missing")
+                    or not selection_path.is_file() or not rerun_path.is_file()
+                    or _sha256(selection_path) != selection.get("sha256")
+                    or _sha256(rerun_path) != rerun.get("sha256")):
+                raise ValueError("residual selection artifacts are missing or hash-drifted")
             status = _json(status_path)
             selected = _json(selection_path)
             rerun_doc = _json(rerun_path)
@@ -775,7 +777,8 @@ def _expected_runs(root, protocol):
     required_controllers = ("tuned_fixed", "max_pressure", "hysteretic_mp", primary)
     if (primary not in (PRIMARY_LEARNED_CONTROLLER, "schedule_residual_ddqn")
             or tuple((protocol or {}).get("confirmatory_learning_seeds", ()))
-            != tuple(expected_seeds)):
+            != tuple(expected_seeds)
+            or tuple(rules.get("required_learning_seeds", ())) != tuple(expected_seeds)):
         raise ValueError("frozen learned controller/seed contract is invalid")
     if set(manifest["controller_configs"]) != set(required_controllers):
         raise ValueError("frozen protocol must bind every controller config")

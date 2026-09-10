@@ -1388,3 +1388,89 @@ def test_residual_selector_gate_requires_five_hash_bound_decisions(tmp_path):
     assert verifier._pilot_schedule_selection_gate(tmp_path, protocol)["passed"]
     del protocol["selection"]["decisions"]["16"]
     assert not verifier._pilot_schedule_selection_gate(tmp_path, protocol)["passed"]
+
+
+def test_residual_checkpoint_gate_allows_aa59_model_source_and_descendant_release(
+        tmp_path, monkeypatch):
+    import scripts.verify_haichau_thesis as verifier
+    from traffic_rl.agents.schedule_residual import (
+        CRITIC_UNITS, MACRO_FEATURES, MAX_MACROS, POLICY_INPUT_SCHEMA)
+
+    source_commit = "a" * 40
+    release_commit = "b" * 40
+    simulation = {"action_interval": 10, "yellow_time": 3,
+                  "min_green": 20, "maximum_red": 180}
+    normalization = {"count_norm": 20.0, "capacity_norm": 40.0}
+    macro = {"duration_seconds": 300, "shift_seconds": 10,
+             "baseline_green_seconds": 25}
+    monkeypatch.setattr(verifier.ResidualDDQN, "load_bundle", classmethod(
+        lambda cls, directory, contract: object()))
+
+    class Completed(object):
+        returncode = 0
+    monkeypatch.setattr(verifier.subprocess, "run", lambda *args, **kwargs: Completed())
+    entries = []
+    for seed in (12, 13, 14, 15, 16):
+        run = tmp_path / ("training/final-seed%d" % seed)
+        checkpoint = run / "checkpoints/step-0004"
+        checkpoint.mkdir(parents=True)
+        weights = checkpoint / "weights.npz"
+        weights.write_bytes(b"checkpoint-%d" % seed)
+        contract = {
+            "schema_version": 1, "controller_family": "schedule_residual_ddqn",
+            "feature_dim": len(MACRO_FEATURES), "feature_order": list(MACRO_FEATURES),
+            "hidden_size": 4, "max_macros": MAX_MACROS, "macro": macro,
+            "normal_policy": "exact_executed_fixed25_from_reset",
+            "peak_policy": "raw_greedy_prevalidated_macro_with_baseline_tie_break",
+            "critic_units": CRITIC_UNITS, "policy_input_schema": POLICY_INPUT_SCHEMA,
+            "network_sha256": "n" * 64, "phase_contract_sha256": "p" * 64,
+            "normalization": normalization, "simulation": simulation,
+            "code_commit": source_commit, "training_step": 4,
+            "learning_seed": seed, "mode": "final",
+        }
+        contract_path = checkpoint / "contract.json"
+        contract_path.write_text(json.dumps(contract, sort_keys=True))
+        selection_path = run / "selection.json"
+        rerun_path = run / "validation-rerun.json"
+        selection_path.write_text(json.dumps({"status": "selected", "learning_seed": seed,
+                                              "test_split_accessed": False}))
+        rerun_path.write_text(json.dumps({"test_split_accessed": False}))
+        status = {"status": "complete", "eligible_for_test_evaluation": True,
+                  "artifact_sha256": {
+                      "selection.json": hashlib.sha256(selection_path.read_bytes()).hexdigest(),
+                      "validation-rerun.json": hashlib.sha256(rerun_path.read_bytes()).hexdigest()}}
+        (run / "status.json").write_text(json.dumps(status))
+        (run / "run-manifest.json").write_text(json.dumps({
+            "code_commit": source_commit, "source_tree": {"git_commit": source_commit}}))
+        entries.append({
+            "controller_id": "schedule_residual_ddqn", "learning_seed": seed,
+            "path": str(weights.relative_to(tmp_path)),
+            "sha256": hashlib.sha256(weights.read_bytes()).hexdigest(),
+            "contract_path": str(contract_path.relative_to(tmp_path)),
+            "contract_file_sha256": hashlib.sha256(contract_path.read_bytes()).hexdigest(),
+            "checkpoint_contract": contract,
+            "checkpoint_contract_sha256": verifier._canonical_hash(contract),
+            "source_run_dir": str(run.relative_to(tmp_path)),
+            "selection": {"path": str(selection_path.relative_to(tmp_path)),
+                          "sha256": hashlib.sha256(selection_path.read_bytes()).hexdigest()},
+            "validation_rerun": {"path": str(rerun_path.relative_to(tmp_path)),
+                                  "sha256": hashlib.sha256(rerun_path.read_bytes()).hexdigest()},
+        })
+    protocol = {"primary_learned_controller": "schedule_residual_ddqn",
+                "network_sha256": "n" * 64, "phase_contract_sha256": "p" * 64,
+                "normalization": normalization,
+                "resolved_config": {"simulation": simulation},
+                "code_commit": release_commit, "checkpoints": entries}
+    assert verifier._checkpoint_gate(tmp_path, protocol)["passed"]
+
+    entries[0]["selection"] = dict(entries[1]["selection"])
+    assert not verifier._checkpoint_gate(tmp_path, protocol)["passed"]
+    first_selection = tmp_path / "training/final-seed12/selection.json"
+    entries[0]["selection"] = {
+        "path": str(first_selection.relative_to(tmp_path)),
+        "sha256": hashlib.sha256(first_selection.read_bytes()).hexdigest(),
+    }
+    bad_manifest = tmp_path / "training/final-seed12/run-manifest.json"
+    bad_manifest.write_text(json.dumps({
+        "code_commit": "c" * 40, "source_tree": {"git_commit": "c" * 40}}))
+    assert not verifier._checkpoint_gate(tmp_path, protocol)["passed"]
