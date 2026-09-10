@@ -8,6 +8,7 @@ from pathlib import Path
 
 from traffic_rl.eval.network_campaign import verify_campaign
 from traffic_rl.eval.network_statistics import aggregate_campaign, evaluate_acceptance
+from traffic_rl.research.residual_release import FINAL_SEEDS
 from traffic_rl.research.pilot_schedule_selector import (
     CONFIRMATORY_LEARNING_SEEDS, PRIMARY_LEARNED_CONTROLLER,
     validate_frozen_schedule_selection)
@@ -61,15 +62,24 @@ def main(argv=None):
     if not protocol_path.is_absolute():
         protocol_path = PROJECT_ROOT / protocol_path
     protocol = json.loads(protocol_path.read_text())
-    validate_frozen_schedule_selection(PROJECT_ROOT, protocol.get("selection"))
-    if (protocol.get("primary_learned_controller")
-            != PRIMARY_LEARNED_CONTROLLER
-            or tuple(protocol.get("confirmatory_learning_seeds", ()))
-            != CONFIRMATORY_LEARNING_SEEDS):
+    primary = protocol.get("primary_learned_controller")
+    if primary == "schedule_residual_ddqn":
+        selection = protocol.get("selection")
+        decisions = selection.get("decisions") if isinstance(selection, dict) else None
+        if (not isinstance(decisions, dict)
+                or selection.get("test_split_accessed") is not False
+                or set(decisions) != set(str(seed) for seed in FINAL_SEEDS)):
+            raise ValueError("frozen residual selector binding is invalid")
+        expected_seeds = FINAL_SEEDS
+    else:
+        validate_frozen_schedule_selection(PROJECT_ROOT, protocol.get("selection"))
+        if primary != PRIMARY_LEARNED_CONTROLLER:
+            raise ValueError("frozen V3 controller/seed contract is invalid")
+        expected_seeds = CONFIRMATORY_LEARNING_SEEDS
+    if tuple(protocol.get("confirmatory_learning_seeds", ())) != expected_seeds:
         raise ValueError("frozen V3 controller/seed contract is invalid")
     rules = protocol.get("acceptance_rules", {})
-    if tuple(rules.get("required_learning_seeds", ())) \
-            != CONFIRMATORY_LEARNING_SEEDS:
+    if tuple(rules.get("required_learning_seeds", ())) != expected_seeds:
         raise ValueError("acceptance rules must freeze confirmatory seeds 12--16")
     summary = aggregate_campaign(
         _load_runs(campaign_dir),
