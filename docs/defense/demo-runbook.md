@@ -12,88 +12,98 @@ Do not substitute any `results/haichau*` legacy row, checkpoint or replay into t
 The extension has no performance or acceptance claim until
 `scripts/verify_haichau_thesis.py` exits zero and its report says `"complete": true`.
 
-The foundation/model pipeline must first provide a tracked or checksum-verified canonical
-network manifest, a frozen 30-case split, CityFlow image digest and five validation-eligible
-checkpoint bundles for the selected V3 schedule-aware `neighbor_phase_ddqn` family at
-confirmation seeds 12--16. Seed 11 is the model-selection pilot only; it is excluded from
-the five-seed confirmation and held-out evaluation. Record the final checkpoint paths and
-hashes in
-`results/haichau_network_v2/final/frozen-protocol.json`. Do not create that file from
-placeholders.
+The residual release pipeline first provides a tracked or checksum-verified canonical
+network manifest, frozen 30-case split, immutable CityFlow runtime, one shared
+validation-only fixed-time tuning artifact, and five validation-eligible checkpoint bundles
+for `schedule_residual_ddqn` at confirmation seeds 12--16. Seed 11 is the residual
+pilot only: it selects the preregistered residual configuration and is excluded from the
+five-seed confirmation and held-out evaluation. Each final seed independently selects one
+of its validation checkpoints (steps 4, 8, or 12). The selector writes
+`selection.json` and `validation-rerun.json` in that seed's run directory; it must be
+`eligible` before release preparation can read it. Do not create a frozen protocol from
+placeholders or use a test-case metric during either selection stage.
 
-The frozen protocol also records the ordered 53 agent IDs, hashes for both the executable
-CityFlow roadnet and the viewer projection, complete resolved configs for the three
-deterministic baselines and the selected V3 learned controller, and checkpoint contracts for
-its five confirmation checkpoints. Each
-checkpoint contract contains the observation schema version, feature order, normalization,
-hidden size, action contract and compatible network hash. Its acceptance rules declare the
-same five confirmation seeds, all three regimes, at least two matched demand units per regime, bootstrap
-seed `20260908`, 10,000 samples, normal point limit 0, normal CI margin 5%, strict peak CI
-upper limit 0 and maximum completion degradation 2%. Every case has a `demand_path` whose
-bytes match its `demand_sha256`.
+The frozen protocol records the ordered 53 agent IDs, hashes for the executable CityFlow
+roadnet and viewer projection, complete resolved configs for `tuned_fixed`,
+`max_pressure`, `hysteretic_mp`, and `schedule_residual_ddqn`, and a selected checkpoint
+contract for every confirmation seed. The residual controller keeps the exact 25-second
+fixed schedule in normal demand and applies its validated residual macro policy in AM/PM
+peak demand. The acceptance rules cover the five seeds, all three regimes, matched demand
+units, normal exact-fixed behavior, peak queue regret, completion/insertion loss, and the
+predeclared bootstrap analysis. Every case has a `demand_path` whose bytes match its
+`demand_sha256`.
 
-Commit the evaluation code before freezing the protocol. Record the full 40-character
+Commit the evaluation code before freezing the protocol. The model-source attestation can
+be the commit that produced the training evidence; the release adapter and frozen protocol
+must be committed at the same commit or a descendant. Record the full 40-character
 `code_commit`, immutable `runtime_image` (`repository@sha256:...`), its inspected
 `runtime_image_id`, and the path/hash of `docker/haichau-evaluation.Dockerfile`. The
 Dockerfile `FROM` line must use that exact image. Preparation and verification require a
 clean descendant checkout with no changes to code paths since `code_commit`; campaign
 execution re-inspects the image and runs every controller command inside it with networking
 disabled. A digest-shaped string that is absent from `docker image inspect` is rejected.
-The release runner owns this Docker invocation; an injected Python executor is marked as
-test-only and cannot pass the final audit. Release containers remain stopped after their
-command exits. The runner starts each container detached, waits for its exit, and stores the
-two streams returned by `docker logs` as canonical `stdout.log` and `stderr.log`. Docker
-client or daemon diagnostics, including platform warnings, go in
-`docker-cli-diagnostics.json` and never enter the container stderr hash. Each completed
-status records the exact run/wait argv, container ID, execution Git head, inspected image
-identity, exit code and hashes of all three records. The verifier calls
-`docker container inspect` and `docker logs` itself, verifies the
-retained container's image ID/reference, command, working directory, disabled network,
-project mount and exit state, then requires its stdout JSON to equal the hashed config,
-metrics and replay artifacts. Keep these containers until the final audit succeeds.
+The release runner owns this Docker invocation; an injected Python executor is test-only
+and cannot pass the final audit. Keep completed release containers until the final audit
+succeeds so the verifier can inspect their image ID/reference, command, working directory,
+disabled network, project mount, exit state, logs and stdout JSON.
 
-Use the freeze CLI only after the five selected V3 confirmation runs are complete and
-validation-eligible. First precompute one shared, validation-only fixed-time tuning
-artifact; the launcher hash-binds it to every final run. Then launch the selected
-schedule-aware `neighbor_phase_ddqn` family for seeds `12` through `16`, exactly 12
-one-hour episodes per seed with validation at steps `4`, `8`, and `12`. Seed `11` selects
-the preregistered schedule-rehearsal arm and must not appear as a confirmation checkpoint.
-The default concurrency is two. The launcher resumes only fully verified completed jobs and
-refuses partial, ineligible, hash-drifted, or mixed-duration outputs. The resulting index has
-exactly one learned controller ID at seeds `12` through `16`; its controller configuration
-contains the three deterministic baselines and the selected learned family.
+First prepare the shared fixed-time tuning artifact. Then train the seed-11 residual pilot
+and run its validation-only selector. The pilot selector produces
+`haichau-v3b-residual-selected.yaml`; final training is refused unless it binds that
+selected config and the preregistered pilot selector. Train all five final seeds with 12
+one-hour episodes and validation at steps 4, 8, and 12. Run the final selector once for
+each seed after its final training completes. The final selectors access validation evidence
+only and fail closed for partial, ineligible, hash-drifted, or test-referencing outputs.
 
 ```sh
 make haichau-precompute-final-baseline
-make haichau-select-schedule-pilot
-make haichau-train-final-campaign
-python3 scripts/prepare_haichau_release_inputs.py
-python3 scripts/prepare_haichau_viewer_network.py
+PYTHONPATH=src python3 scripts/train_haichau_residual.py \
+  --mode pilot --learning-seed 11 \
+  --output results/haichau_network_v2/training/pilot-v3b-residual-seed11
+PYTHONPATH=src python3 scripts/select_haichau_residual_pilot.py
+for seed in 12 13 14 15 16; do
+  PYTHONPATH=src python3 scripts/train_haichau_residual.py \
+    --mode final --learning-seed "$seed" \
+    --selected-config results/haichau_network_v2/training/haichau-v3b-residual-selected.yaml \
+    --selection-spec configs/haichau_residual_pilot_selection_v1.yaml \
+    --output "results/haichau_network_v2/training/final-seed${seed}"
+done
+for seed in 12 13 14 15 16; do
+  PYTHONPATH=src python3 scripts/select_haichau_residual_final.py \
+    --learning-seed "$seed"
+done
 ```
 
-The V3 schedule selector must succeed before final training. It binds the winning
-rehearsal or no-rehearsal configuration and eligible checkpoint step to one immutable
-decision identity. The launcher, release-input builder, freeze command, campaign, statistics
-and final verifier all recheck that decision, selected YAML and SHA-256 binding. Freeze reads
-validation evidence only; any test metric or held-out case reference in selection evidence
-is rejected.
-
-To select a different campaign parallelism, set `HAICHAU_FINAL_CONCURRENCY`; leave it at
-the default `2` for the release path. The focused launcher test is available as
-`make haichau-final-training-test`.
-
-The freeze command reads only training/validation evidence, verifies the selected
-checkpoint bundle, and creates the network manifest, case manifest, and protocol together.
-It refuses an existing final directory, hash drift, a non-final/short run, or any
-test-case reference in selection evidence.
+The final selector binds each seed's eligible validation checkpoint to the immutable
+`configs/haichau_residual_final_selection_v1.yaml` decision. It ranks only the
+preregistered validation criteria and rejects any test metric or held-out case reference.
+`prepare_haichau_release_inputs.py` requires all five eligible selector records, validates
+the selected checkpoint hashes and contracts, and emits the residual-specific controller
+configuration. Prepare the viewer projection before freezing.
 
 ```sh
+PYTHONPATH=src python3 scripts/prepare_haichau_release_inputs.py \
+  --residual-final-selector configs/haichau_residual_final_selection_v1.yaml \
+  --manifest results/haichau_network_v2/experiment-manifest.json \
+  --output-dir results/haichau_network_v2/release-inputs
+PYTHONPATH=src python3 scripts/prepare_haichau_viewer_network.py
+```
+
+The freeze command reads only training/validation evidence, verifies the five selected
+residual checkpoint bundles, and creates the network manifest, case manifest, and protocol
+together. It refuses an existing final directory, hash drift, incomplete selector evidence,
+or any test-case reference in selection evidence. The pinned release image below is also
+the `FROM` image in `docker/haichau-evaluation.Dockerfile`; inspect it locally before
+freezing.
+
+```sh
+docker image inspect traffic-rl-cityflow-research@sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517
 PYTHONPATH=src python3 scripts/freeze_haichau_protocol.py \
   --manifest results/haichau_network_v2/experiment-manifest.json \
   --viewer-network results/haichau_network_v2/release-inputs/viewer-network.json \
-  --controller-configs results/haichau_network_v2/release-inputs/final-controller-configs.json \
-  --training-index results/haichau_network_v2/release-inputs/training-index.json \
-  --runtime-image registry.example/traffic-rl@sha256:IMMUTABLE_IMAGE_DIGEST
+  --controller-configs results/haichau_network_v2/release-inputs/residual-final-controller-configs.json \
+  --runtime-image traffic-rl-cityflow-research@sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517 \
+  --runtime-dockerfile docker/haichau-evaluation.Dockerfile
 ```
 
 Prepare the immutable run set from the frozen case manifest, then execute it. Every
@@ -246,17 +256,16 @@ replay provenance** panel. Read the shown acceptance status, run/case IDs, contr
 checkpoint digest, learning seed, and pending-demand fields; distinguish `N/A` from evidence.
 State the 30-case split (9 train, 6 validation, 15 held-out test) and the result of every
 acceptance gate. If acceptance is negative, say so directly.
-- **1:10--2:10 — Network behavior.** Open the matched normal tuned-fixed and neighbor-DDQN
+- **1:10--2:10 — Network behavior.** Open the matched normal tuned-fixed and schedule-residual DDQN
   replays. Play them in sync, select one or two nodes, and explain queue integral, pending
   demand and completion. Describe what the replay shows without turning one case into the
   aggregate conclusion.
 - **2:10--3:25 — Peak cases.** Repeat the comparison for AM and PM. Point to the aggregate
   queue-difference interval and completion degradation for each regime. Use the generated
   values shown by the bundle; do not memorize or insert values before the final campaign.
-- **3:25--4:15 — Controller contribution.** Explain how the candidate scores valid phase
-  rows using local movement features, fixed-schedule context and mean-pooled
-  upstream/downstream queues. Clarify that this is neighbor-aware DDQN rather than learned
-  CoLight-style graph attention.
+- **3:25--4:15 — Controller contribution.** Explain how the residual controller follows the exact fixed schedule in normal demand and
+  uses its validated macro action only in peak demand. Explain the aggregate result and
+  the logged macro behavior; do not infer city-wide behavior from one replay.
 - **4:15--5:00 — Claim boundary and takeaway.** State whether the predeclared normal
   non-inferiority, peak improvement and completion gates passed. Conclude only at the level
   supported by that status. Finish with the empirical single-junction anchor as the source
