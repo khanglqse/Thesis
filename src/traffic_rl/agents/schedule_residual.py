@@ -29,16 +29,20 @@ POLICY_INPUT_SCHEMA = {
 }
 
 
-def select_macro(scores, mask):
+def select_macro(scores, mask, min_score_margin=0.0):
     scores = np.asarray(scores)
     mask = np.asarray(mask, dtype=np.bool_)
     if scores.ndim != 1 or scores.shape != mask.shape or not mask[0]:
         raise ValueError("macro scores/mask require an available baseline")
+    margin = float(min_score_margin)
+    if not np.isfinite(margin) or margin < 0.0:
+        raise ValueError("macro score margin must be finite and nonnegative")
     if not np.all(np.isfinite(scores[mask])):
         return 0, "nonfinite_scores"
     best = int(np.argmax(np.where(mask, scores, -np.inf)))
-    if best == 0 or scores[best] <= scores[0]:
-        return 0, "baseline_tie_or_best"
+    if best == 0 or scores[best] <= scores[0] + margin:
+        reason = "baseline_margin" if best != 0 and margin > 0.0 else "baseline_tie_or_best"
+        return 0, reason
     return best, "learned_macro"
 
 
@@ -128,7 +132,7 @@ class ScheduleResidualController(object):
     name = "schedule_residual_ddqn"
 
     def __init__(self, env, network, time_of_day, epsilon=0.0, seed=0,
-                 zero_residual=False, catalog=None):
+                 zero_residual=False, catalog=None, min_score_margin=0.0):
         if time_of_day not in ("normal", "am_peak", "pm_peak"):
             raise ValueError("time_of_day must be declared normal, am_peak, or pm_peak")
         if env.action_interval != 10 or env.sim_step_seconds != 1 \
@@ -139,6 +143,9 @@ class ScheduleResidualController(object):
         self.env, self.network = env, network
         self.time_of_day = time_of_day
         self.epsilon, self.zero_residual = float(epsilon), bool(zero_residual)
+        self.min_score_margin = float(min_score_margin)
+        if not np.isfinite(self.min_score_margin) or self.min_score_margin < 0.0:
+            raise ValueError("macro score margin must be finite and nonnegative")
         self.rng = np.random.RandomState(seed)
         self.catalog = {} if catalog is None else catalog
         self.shadows = {node: ShadowSignal(env.roadnet, node,
@@ -241,7 +248,9 @@ class ScheduleResidualController(object):
                     choice = int(self.rng.choice(np.flatnonzero(mask)))
                     reason = "training_exploration" if choice else "exploration_baseline"
                 else:
-                    choice, reason = select_macro(self.network.q_values(features, mask)[0], mask)
+                    choice, reason = select_macro(
+                        self.network.q_values(features, mask)[0], mask,
+                        self.min_score_margin)
                 template = block["templates"][choice]
                 self.block_features[node], self.block_masks[node] = features, mask
                 self.block_actions[node] = choice

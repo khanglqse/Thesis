@@ -20,6 +20,15 @@ def test_baseline_tie_break_nonfinite_and_invalid_macro_abstain():
     assert select_macro([0, np.nan, 1], [True, True, True]) == (0, "nonfinite_scores")
 
 
+def test_select_macro_can_abstain_when_advantage_is_below_safety_margin():
+    assert select_macro([1.0, 1.04, 0.0], [True, True, True], 0.05) == (
+        0, "baseline_margin")
+    assert select_macro([1.0, 1.06, 0.0], [True, True, True], 0.05) == (
+        1, "learned_macro")
+    with pytest.raises(ValueError, match="margin"):
+        select_macro([0.0, 1.0], [True, True], -0.1)
+
+
 @pytest.mark.parametrize("weights", ["random", "nan"])
 def test_normal_all_53_signals_exact_every_second_for_arbitrary_weights(network, weights):
     encoder = PhaseFeatureEncoder(network, 20, 40)
