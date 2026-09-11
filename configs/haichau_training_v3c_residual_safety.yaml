@@ -1,5 +1,5 @@
-# V3-C repair cohort is preregistered before observing its validation outcomes.
-# Earlier V3-B outputs remain immutable negative/partial evidence.
+# V3-B pilot is preregistered before observing residual validation outcomes.
+# V3-A outputs and selectors remain unchanged as negative ablation evidence.
 schema_version: 1
 controller_family: schedule_residual_ddqn
 macro: {duration_seconds: 300, shift_seconds: 10, baseline_green_seconds: 25}
