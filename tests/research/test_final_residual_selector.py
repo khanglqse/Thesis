@@ -146,6 +146,24 @@ def test_final_config_accepts_resolved_final_release_binding():
     assert config["final_release"]["selection"]["training_step"] == 4
 
 
+def test_final_selector_v2_accepts_repair_cohort_template(tmp_path):
+    from traffic_rl.research import final_residual_selector as selector
+
+    spec = _spec()
+    spec.update({
+        "schema_version": 2,
+        "pilot_selector_spec": "pilot-v2.yaml",
+        "selected_config": "selected-v2.yaml",
+        "run_dir_template":
+            "results/haichau_network_v2/training/v3c-final-seed{seed}",
+    })
+    spec_path = tmp_path / "spec.json"
+    _write(spec_path, spec)
+    path, loaded = selector._validate_spec(tmp_path, spec_path)
+    assert path == spec_path
+    assert loaded["run_dir_template"].endswith("v3c-final-seed{seed}")
+
+
 def test_final_selector_failure_does_not_transition_status(tmp_path, monkeypatch):
     from traffic_rl.research import final_residual_selector as selector
 

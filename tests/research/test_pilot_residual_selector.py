@@ -872,3 +872,34 @@ def test_registered_residual_selector_and_config_are_preregistered():
         "episodes": 4, "horizon_seconds": 3600, "eval_every": 2}
     assert evidence["feature_dim"] == 27
     assert evidence["operational_mode_source"] == "declared_time_of_day"
+
+
+def test_selector_v2_binds_explicit_safety_config(tmp_path):
+    """A repair cohort may bind a new preregistered source config explicitly."""
+    from traffic_rl.research import pilot_residual_selector as selector
+
+    config = tmp_path / "configs" / "haichau_training_v3c_residual_safety.yaml"
+    config.parent.mkdir(parents=True)
+    config.write_text("schema_version: 1\n")
+    spec = {
+        "schema_version": 2,
+        "decision_type": "haichau_residual_pilot_selection",
+        "controller_family": "schedule_residual_ddqn",
+        "mode": "pilot", "learning_seed": 11,
+        "validation_checkpoints": ["step-2", "step-4"],
+        "ranking": list(selector._RANKING), "no_eligible": "fail_closed",
+        "gates": selector._GATES,
+        "arm": {"config": "configs/haichau_training_v3c_residual_safety.yaml",
+                "run_dir": "results/pilot"},
+        "source_config_sha256": _sha(config),
+        "manifest": "manifest.json",
+        "baseline_tuning_artifact": "baseline.json",
+        "decision_output": "decision.json",
+        "selected_config_output": "selected.yaml",
+        "validation_rerun_output": "rerun.json",
+    }
+    spec_path = tmp_path / "spec.yaml"
+    spec_path.write_text(yaml.safe_dump(spec, sort_keys=False))
+    path, loaded = selector._validate_spec(tmp_path, spec_path)
+    assert path == spec_path
+    assert loaded["arm"]["config"].endswith("v3c_residual_safety.yaml")

@@ -203,7 +203,7 @@ def _validate_spec(root, spec_path):
     path = _inside(root, supplied, "residual pilot selector specification")
     spec = _yaml(path, "residual pilot selector specification")
     expected = {
-        "schema_version": 1,
+        "schema_version": spec.get("schema_version", 1),
         "decision_type": "haichau_residual_pilot_selection",
         "controller_family": "schedule_residual_ddqn",
         "mode": "pilot", "learning_seed": 11,
@@ -211,6 +211,8 @@ def _validate_spec(root, spec_path):
         "ranking": list(_RANKING), "no_eligible": "fail_closed",
         "gates": _GATES,
     }
+    if spec.get("schema_version") not in (1, 2):
+        raise ValueError("residual pilot selector schema version is unsupported")
     for field, value in expected.items():
         if spec.get(field) != value:
             raise ValueError("residual pilot selector %s differs from preregistration" % field)
@@ -219,10 +221,15 @@ def _validate_spec(root, spec_path):
             or not all(isinstance(arm.get(field), str)
                        for field in ("config", "run_dir")):
         raise ValueError("residual pilot selector arm is invalid")
-    if arm["config"] != _REGISTERED_CONFIG_PATH:
-        raise ValueError("residual pilot selector config path differs from preregistration")
-    if spec.get("source_config_sha256") != _REGISTERED_CONFIG_SHA256:
-        raise ValueError("residual pilot selector config SHA256 differs from preregistration")
+    if spec.get("schema_version") == 1:
+        if arm["config"] != _REGISTERED_CONFIG_PATH:
+            raise ValueError("residual pilot selector config path differs from preregistration")
+        if spec.get("source_config_sha256") != _REGISTERED_CONFIG_SHA256:
+            raise ValueError("residual pilot selector config SHA256 differs from preregistration")
+    else:
+        if not isinstance(spec.get("source_config_sha256"), str) \
+                or not _SHA256.fullmatch(spec["source_config_sha256"]):
+            raise ValueError("residual pilot selector v2 config SHA256 is invalid")
     for field in ("manifest", "baseline_tuning_artifact", "decision_output",
                   "selected_config_output", "validation_rerun_output"):
         if not isinstance(spec.get(field), str):
@@ -232,6 +239,20 @@ def _validate_spec(root, spec_path):
     if len(set(outputs)) != len(outputs):
         raise ValueError("residual selector outputs must be distinct")
     return path, spec
+
+
+def _source_config_binding(root, spec):
+    """Return the hash-bound source config path and digest for this cohort."""
+    if spec.get("schema_version") == 1:
+        return _REGISTERED_CONFIG_PATH, _REGISTERED_CONFIG_SHA256
+    path = spec.get("arm", {}).get("config")
+    digest = spec.get("source_config_sha256")
+    if not isinstance(path, str) or not isinstance(digest, str):
+        raise ValueError("residual pilot selector v2 source config binding is incomplete")
+    _inside(root, path, "residual source config")
+    if not _SHA256.fullmatch(digest):
+        raise ValueError("residual pilot selector v2 source config hash is invalid")
+    return path, digest
 
 
 def _validate_config(config):
@@ -1085,11 +1106,13 @@ def _validate_run(root, spec, config, manifest, baseline, validation,
             "training_step": step, "checkpoint": record,
             "rows": replay_rows,
         }
+    source_config_path = spec.get("arm", {}).get("config", _REGISTERED_CONFIG_PATH)
+    source_config_sha256 = spec.get("source_config_sha256", _REGISTERED_CONFIG_SHA256)
     rerun_evidence = {
         "schema_version": 1, "protocol": _RERUN_PROTOCOL,
         "source_commit": source_tree["git_commit"],
-        "config": {"path": _REGISTERED_CONFIG_PATH,
-                   "sha256": _REGISTERED_CONFIG_SHA256},
+        "config": {"path": source_config_path,
+                   "sha256": source_config_sha256},
         "manifest_sha256": canonical_json_sha256(manifest),
         "checkpoints": rerun_checkpoints,
         "test_split_accessed": False,
@@ -1107,9 +1130,10 @@ def _git_ancestor(root, ancestor, descendant):
 def _evaluate(root, spec_path, validation_runner, allow_descendant=False):
     root = Path(root).resolve()
     spec_path, spec = _validate_spec(root, spec_path)
+    source_config_relative, source_config_sha256 = _source_config_binding(root, spec)
     attestation = _tracked_tree_attestation(str(root))
     config_path = _inside(root, spec["arm"]["config"], "residual source config")
-    if sha256_file(config_path) != _REGISTERED_CONFIG_SHA256:
+    if sha256_file(config_path) != source_config_sha256:
         raise ValueError("residual source config differs from preregistered full SHA256")
     config = _yaml(config_path, "residual source config")
     _validate_config(config)
@@ -1133,8 +1157,8 @@ def _evaluate(root, spec_path, validation_runner, allow_descendant=False):
     elif source_tree != attestation:
         raise ValueError("residual pilot source commit differs from clean selector tree")
     committed_config_sha256 = _committed_file_sha256(
-        root, source_tree["git_commit"], _REGISTERED_CONFIG_PATH)
-    if committed_config_sha256 != _REGISTERED_CONFIG_SHA256:
+        root, source_tree["git_commit"], source_config_relative)
+    if committed_config_sha256 != source_config_sha256:
         raise ValueError("residual source commit config differs from preregistration")
     frozen_sources = {}
     for label, path in (("selector_spec", spec_path),
@@ -1178,7 +1202,7 @@ def _evaluate(root, spec_path, validation_runner, allow_descendant=False):
         "source_tree": source_tree,
         "config": _record(root, config_path, "residual source config"),
         "committed_config": {
-            "path": _REGISTERED_CONFIG_PATH,
+            "path": source_config_relative,
             "git_commit": source_tree["git_commit"],
             "sha256": committed_config_sha256,
         },

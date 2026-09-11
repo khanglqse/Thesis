@@ -104,8 +104,9 @@ def _assert_no_test_reference(value, label):
 def _validate_spec(root, spec_path):
     path = _inside(root, spec_path, "final residual selector specification")
     spec = _yaml(path, "final residual selector specification")
+    schema_version = spec.get("schema_version", 1)
     expected = {
-        "schema_version": 1,
+        "schema_version": schema_version,
         "decision_type": _DECISION_TYPE,
         "controller_family": "schedule_residual_ddqn",
         "mode": "final",
@@ -114,10 +115,15 @@ def _validate_spec(root, spec_path):
         "ranking": list(_RANKING),
         "no_eligible": "fail_closed",
         "gates": _GATES,
-        "run_dir_template": "results/haichau_network_v2/training/final-seed{seed}",
+        "run_dir_template": (
+            "results/haichau_network_v2/training/final-seed{seed}"
+            if schema_version == 1 else
+            "results/haichau_network_v2/training/v3c-final-seed{seed}"),
         "selection_filename": "selection.json",
         "validation_rerun_filename": "validation-rerun.json",
     }
+    if schema_version not in (1, 2):
+        raise ValueError("final residual selector schema version is unsupported")
     for field, expected_value in expected.items():
         if spec.get(field) != expected_value:
             raise ValueError("final residual selector %s differs from preregistration" % field)
