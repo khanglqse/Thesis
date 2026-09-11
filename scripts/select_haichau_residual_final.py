@@ -42,7 +42,9 @@ def main(argv=None):
         factory = _make_env_factory(
             manifest, factory_config, Path(temp), "neighbor_phase_ddqn")
         decision = select_seed_from_spec(
-            ROOT, args.spec, args.learning_seed, make_env_validation_runner(factory))
+            ROOT, args.spec, args.learning_seed,
+            make_env_validation_runner(
+                factory, config.get("safety", {}).get("min_score_margin", 0.0)))
     print(json.dumps(decision, indent=2, sort_keys=True))
     return 0
 

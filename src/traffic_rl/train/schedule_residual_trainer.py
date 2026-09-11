@@ -47,6 +47,12 @@ def validate_config(config):
         raise ValueError("operational time-of-day input contract drift")
     if config.get("critic_units") != CRITIC_UNITS:
         raise ValueError("critic unit contract drift")
+    safety = config.get("safety", {})
+    if not isinstance(safety, dict) or set(safety) - {"min_score_margin"}:
+        raise ValueError("residual safety config drift")
+    margin = float(safety.get("min_score_margin", 0.0))
+    if not np.isfinite(margin) or margin < 0.0:
+        raise ValueError("residual safety margin must be finite and nonnegative")
     mode, run = config.get("mode"), config.get("run", {})
     if mode == "pilot":
         if run != {"episodes": 4, "horizon_seconds": 3600, "eval_every": 2} \
@@ -103,10 +109,12 @@ def _integrals(env):
 
 
 def run_macro_episode(env, network, time_of_day, epsilon=0.0, seed=0,
-                      zero_residual=False, catalog=None, transition_callback=None):
+                      zero_residual=False, catalog=None, transition_callback=None,
+                      min_score_margin=0.0):
     """Execute one episode; learning callbacks receive completed 300s macros."""
     controller = ScheduleResidualController(env, network, time_of_day,
-            epsilon=epsilon, seed=seed, zero_residual=zero_residual, catalog=catalog)
+            epsilon=epsilon, seed=seed, zero_residual=zero_residual, catalog=catalog,
+            min_score_margin=min_score_margin)
     try:
         return _execute_macro_episode(env, controller, transition_callback)
     finally:
@@ -282,7 +290,8 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
             try:
                 result = run_macro_episode(env, net, operational_time_of_day(case), epsilon=epsilon,
                     seed=config["learning_seed"] * 1000 + episode,
-                    catalog=catalog, transition_callback=receive)
+                    catalog=catalog, transition_callback=receive,
+                    min_score_margin=config.get("safety", {}).get("min_score_margin", 0.0))
                 _assert_rollout_complete(result, horizon, "residual training")
             finally:
                 _close(env)

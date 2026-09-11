@@ -240,7 +240,14 @@ def _validate_config(config):
         "model", "optimizer", "exploration", "reward", "critic_units",
         "baseline", "tiers"}
     if set(config) != expected_keys:
-        raise ValueError("residual source config keys include an unregistered input")
+        if set(config) != expected_keys | {"safety"}:
+            raise ValueError("residual source config keys include an unregistered input")
+        safety = config.get("safety")
+        if not isinstance(safety, dict) or set(safety) != {"min_score_margin"}:
+            raise ValueError("residual safety config drift")
+        margin = float(safety["min_score_margin"])
+        if not np.isfinite(margin) or margin < 0.0:
+            raise ValueError("residual safety margin must be finite and nonnegative")
     if (config.get("schema_version") != 1
             or config.get("controller_family") != "schedule_residual_ddqn"
             or config.get("macro") != {
@@ -483,7 +490,7 @@ class _TimelineDigest(object):
         }
 
 
-def make_env_validation_runner(env_factory):
+def make_env_validation_runner(env_factory, min_score_margin=0.0):
     """Create the deterministic checkpoint replay used by the release CLI."""
     if not callable(env_factory):
         raise ValueError("validation environment factory must be callable")
@@ -504,7 +511,7 @@ def make_env_validation_runner(env_factory):
             if policy == "candidate":
                 info = run_macro_episode(
                     env, network, operational_time_of_day(case), epsilon=0.0,
-                    seed=0)
+                    seed=0, min_score_margin=min_score_margin)
                 result = {
                     "metrics": _summary_metrics(info),
                     "macro_rewards": info.get("macro_rewards"),
