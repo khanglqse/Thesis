@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the preregistered V3-B residual smoke/pilot in the CityFlow image."""
+"""Run the preregistered residual smoke/pilot/final job in the CityFlow image."""
 import argparse
 import json
 import os

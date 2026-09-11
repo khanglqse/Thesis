@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select the preregistered V3-B residual pilot checkpoint."""
+"""Select the preregistered residual pilot checkpoint."""
 import argparse
 import json
 import os
