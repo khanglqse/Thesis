@@ -9,7 +9,7 @@ ranking:
   - mean_peak_queue_regret_percent_ascending
   - training_step_ascending
 no_eligible: fail_closed
-source_config_sha256: REPLACE_SOURCE_HASH
+source_config_sha256: 5ca571cda552f8d7fb408720586f443f51ebb2254a6f4afe8fb18c5bd7617ea8
 gates:
   normal_exact_fixed_per_case: true
   normal_timeline_zero:
