@@ -91,6 +91,8 @@ def main(argv=None):
     parser.add_argument("--root", default=str(ROOT))
     parser.add_argument("--output", default="results/haichau_network_v2/quick-campaign")
     parser.add_argument("--seed", type=int, default=12)
+    parser.add_argument("--checkpoint-root", default=None,
+                        help="checkpoint step directory containing contract.json and weights.npz")
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
     output = (root / args.output).resolve()
@@ -102,8 +104,9 @@ def main(argv=None):
              if case.get("split") == "test"}
     if set(REGIMES) - set(cases):
         raise ValueError("test manifest lacks a regime")
-    quick_checkpoint = root / ("results/haichau_network_v2/training/"
-                               "quick300-seed%d/checkpoints/step-0001" % args.seed)
+    quick_checkpoint = (Path(args.checkpoint_root).resolve() if args.checkpoint_root
+                        else root / ("results/haichau_network_v2/training/"
+                                     "quick300-seed%d/checkpoints/step-0001" % args.seed))
     contract = json.loads((quick_checkpoint / "contract.json").read_text())
     base_config = {
         "network_path": manifest["network"]["path"],

@@ -153,7 +153,7 @@ def _validate_residual_contract(contract, run, normalization):
             or contract.get("peak_policy") != "raw_greedy_prevalidated_macro_with_baseline_tie_break"
             or contract.get("critic_units") != CRITIC_UNITS
             or contract.get("policy_input_schema") != POLICY_INPUT_SCHEMA
-            or contract.get("mode") not in ("final", "quick")):
+            or contract.get("mode") not in ("final", "pilot", "quick")):
         raise ValueError("residual checkpoint contract mismatch")
     if (contract.get("network_sha256") != run.get("network_sha256")
             or contract.get("phase_contract_sha256")
@@ -162,7 +162,8 @@ def _validate_residual_contract(contract, run, normalization):
             or contract.get("simulation")
             != run.get("resolved_config", {}).get("simulation")):
         raise ValueError("residual checkpoint compatibility differs from runtime")
-    allowed_steps = (4, 8, 12) if contract.get("mode") == "final" else (1,)
+    allowed_steps = ((4, 8, 12) if contract.get("mode") == "final" else
+                     (2, 4) if contract.get("mode") == "pilot" else (1,))
     if (contract.get("learning_seed") != run.get("learning_seed")
             or type(contract.get("training_step")) is not int
             or contract["training_step"] not in allowed_steps):
