@@ -89,6 +89,7 @@ def test_smoke_artifacts_bind_checkpoints_and_never_open_test_cases(network, tmp
               "optimizer": {"grad_clip": 10, "huber_delta": 1, "buffer_capacity": 100,
                     "train_start": 1, "updates_per_macro": 1, "batch_size": 2, "target_sync": 2},
               "exploration": {"epsilon": .2}}
+    config["safety"] = {"min_score_margin": 5.0}
     validation = [x for x in cases if x["split"] == "validation"]
     tuning = {"schema_version": 1, "method": "validation_grid_search",
         "binding": _tuning_binding(manifest, validation, 3600,
@@ -118,6 +119,16 @@ def test_smoke_artifacts_bind_checkpoints_and_never_open_test_cases(network, tmp
         return {"status": "verified", "network_sha256": "network",
                 "generator_config_sha256": "generator", "runtime_digest": "runtime"}
 
+    calls = []
+    original_run_macro_episode = trainer.run_macro_episode
+
+    def recording_run_macro_episode(*args, **kwargs):
+        calls.append({"zero_residual": kwargs.get("zero_residual", False),
+                      "training": kwargs.get("transition_callback") is not None,
+                      "min_score_margin": kwargs.get("min_score_margin", 0.0)})
+        return original_run_macro_episode(*args, **kwargs)
+
+    monkeypatch.setattr(trainer, "run_macro_episode", recording_run_macro_episode)
     output = tmp_path / "run"
     result = train_residual(factory, manifest, config, str(output), str(tmp_path), tuning, foundation)
     assert result["episodes"] == 2
@@ -137,6 +148,9 @@ def test_smoke_artifacts_bind_checkpoints_and_never_open_test_cases(network, tmp
     status = json.loads((output / "status.json").read_text())
     assert status["status"] == "complete"
     assert status["eligible_for_final"] is False
+    assert any(call["min_score_margin"] == 5.0 and not call["zero_residual"]
+               and not call["training"]
+               for call in calls)
     assert "checkpoints/step-0002/weights.npz" in status["artifact_sha256"]
     with pytest.raises(ValueError, match="immutable"):
         train_residual(factory, manifest, config, str(output), str(tmp_path), tuning, foundation)

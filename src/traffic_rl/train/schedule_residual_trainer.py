@@ -349,7 +349,10 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
                 baseline = baseline_rows[case["case_id"]]
                 env = env_factory(case, horizon)
                 try:
-                    candidate = run_macro_episode(env, loaded, operational_time_of_day(case), catalog=catalog)
+                    candidate = run_macro_episode(
+                        env, loaded, operational_time_of_day(case), catalog=catalog,
+                        min_score_margin=config.get("safety", {}).get(
+                            "min_score_margin", 0.0))
                     _assert_rollout_complete(candidate, horizon, "residual validation")
                 finally:
                     _close(env)
