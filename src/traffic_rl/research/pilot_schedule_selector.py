@@ -485,7 +485,8 @@ def _validate_arm(root, arm, spec, config, manifest, baseline, baseline_hash,
     ) + checkpoint_names
     missing = [name for name in names if not (run_dir / name).is_file()]
     if missing:
-        label = ("checkpoint artifact" if missing[0].startswith("checkpoints/")
+        label = ("pilot run checkpoint artifact"
+                 if missing[0].startswith("checkpoints/")
                  else "pilot artifact")
         raise ValueError("%s %s is missing: %s" % (arm, label, missing[0]))
     status = _validate_status(run_dir, names, arm)
