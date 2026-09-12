@@ -15,7 +15,10 @@ limits computation as follows:
 | learning seeds | 5 | 3 (12, 13, 14) |
 
 The simulator requires a 300-second macro block, so shorter horizons are not
-valid. `scripts/train_haichau_residual.py --mode quick` writes immutable
+valid. `configs/haichau_training_v3d_residual_quick.yaml` contains the quick
+tier, while the canonical full protocol config is unchanged. Use
+`scripts/train_haichau_residual.py --mode quick --config
+configs/haichau_training_v3d_residual_quick.yaml`; it writes immutable
 per-seed artifacts under `results/haichau_network_v2/training/quick300-seedN/`.
 The comparison runner is:
 
