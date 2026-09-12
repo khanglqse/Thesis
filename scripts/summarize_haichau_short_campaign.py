@@ -5,7 +5,20 @@ import argparse
 from collections import defaultdict
 import json
 from pathlib import Path
+import random
 from statistics import mean, median
+
+
+def bootstrap_ci(values, repeats=10000, seed=20260913):
+    rng = random.Random(seed)
+    samples = []
+    values = list(values)
+    for _ in range(repeats):
+        samples.append(mean(rng.choice(values) for _ in values))
+    samples.sort()
+    return {"lower_95_pct": samples[int(0.025 * repeats)],
+            "upper_95_pct": samples[int(0.975 * repeats) - 1],
+            "repeats": repeats, "seed": seed}
 
 
 def main(argv=None):
@@ -51,10 +64,13 @@ def main(argv=None):
               "aggregate": {"fixed_queue_hours": fixed_total,
                              "residual_queue_hours": residual_total,
                              "improvement_pct": 100.0 * (fixed_total - residual_total) / fixed_total},
+              "paired_bootstrap_ci_pct": bootstrap_ci(
+                  [row["improvement_pct"] for row in rows]),
               "by_regime": {regime: {"n": len(values), "mean_improvement_pct": mean(values),
                                      "median_improvement_pct": median(values),
                                      "min_improvement_pct": min(values),
-                                     "max_improvement_pct": max(values)}
+                                     "max_improvement_pct": max(values),
+                                     "paired_bootstrap_ci_pct": bootstrap_ci(values)}
                             for regime, values in sorted(by_regime.items())},
               "interpretation": "aggregate comparison only; not a replacement for frozen release campaign"}
     Path(args.output).write_text(json.dumps(output, indent=2, sort_keys=True) + "\n")
