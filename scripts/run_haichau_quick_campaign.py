@@ -93,6 +93,8 @@ def main(argv=None):
     parser.add_argument("--horizon", type=int, default=300,
                         help="simulation horizon in seconds; must be a multiple of 300")
     parser.add_argument("--controllers", default="tuned_fixed,max_pressure,schedule_residual_ddqn")
+    parser.add_argument("--margin", type=float, default=0.0,
+                        help="residual score margin for exploratory safety fallback")
     parser.add_argument("--cases-per-regime", type=int, default=1,
                         help="number of test demand realizations per regime")
     parser.add_argument("--demand-seeds", default=None,
@@ -108,6 +110,8 @@ def main(argv=None):
         parser.error("--controllers contains an unknown or empty controller")
     if args.cases_per_regime <= 0:
         parser.error("--cases-per-regime must be positive")
+    if args.margin < 0:
+        parser.error("--margin must be nonnegative")
     requested_seeds = (None if args.demand_seeds is None else
                        {int(value) for value in args.demand_seeds.split(",") if value})
     root = Path(args.root).resolve()
@@ -140,6 +144,7 @@ def main(argv=None):
         "reward": {"queue_weight": 1.0, "downstream_block_weight": 0.0,
                     "switch_penalty": 0.0},
         "spillback_queue_threshold": contract["normalization"]["capacity_norm"],
+        "safety": {"min_score_margin": args.margin},
     }
     root_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root,
                                            text=True).strip()
