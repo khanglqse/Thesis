@@ -19,7 +19,6 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
 IMAGE = "traffic-rl-cityflow-research@sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517"
-HORIZON = 300
 REGIMES = ("normal", "am_peak", "pm_peak")
 
 
@@ -41,15 +40,15 @@ def scheduled(row):
                    // float(row["interval"]))
 
 
-def short_flow(source, target):
+def short_flow(source, target, horizon):
     rows = json.loads(Path(source).read_text())
     kept = []
     count = 0
     for row in rows:
-        if int(row["startTime"]) >= HORIZON:
+        if int(row["startTime"]) >= horizon:
             continue
         clipped = dict(row)
-        clipped["endTime"] = min(int(row["endTime"]), HORIZON - 1)
+        clipped["endTime"] = min(int(row["endTime"]), horizon - 1)
         if clipped["endTime"] < int(clipped["startTime"]):
             continue
         kept.append(clipped)
@@ -91,9 +90,18 @@ def main(argv=None):
     parser.add_argument("--root", default=str(ROOT))
     parser.add_argument("--output", default="results/haichau_network_v2/quick-campaign")
     parser.add_argument("--seed", type=int, default=12)
+    parser.add_argument("--horizon", type=int, default=300,
+                        help="simulation horizon in seconds; must be a multiple of 300")
+    parser.add_argument("--controllers", default="tuned_fixed,max_pressure,schedule_residual_ddqn")
     parser.add_argument("--checkpoint-root", default=None,
                         help="checkpoint step directory containing contract.json and weights.npz")
     args = parser.parse_args(argv)
+    if args.horizon <= 0 or args.horizon % 300:
+        parser.error("--horizon must be a positive multiple of 300")
+    controllers = tuple(value for value in args.controllers.split(",") if value)
+    allowed_controllers = {"tuned_fixed", "max_pressure", "hysteretic_mp", "schedule_residual_ddqn"}
+    if not controllers or set(controllers) - allowed_controllers:
+        parser.error("--controllers contains an unknown or empty controller")
     root = Path(args.root).resolve()
     output = (root / args.output).resolve()
     if output.exists() and any(output.iterdir()):
@@ -128,9 +136,9 @@ def main(argv=None):
     for regime in REGIMES:
         case = cases[regime]
         flow_target = output / "demands" / (case["case_id"] + "_300s.json")
-        vehicle_count = short_flow(root / case["flow_path"], flow_target)
+        vehicle_count = short_flow(root / case["flow_path"], flow_target, args.horizon)
         demand_rel = str(flow_target.relative_to(root))
-        for controller in ("tuned_fixed", "max_pressure", "schedule_residual_ddqn"):
+        for controller in controllers:
             learning_seed = args.seed if controller == "schedule_residual_ddqn" else None
             config = dict(base_config)
             if controller == "tuned_fixed":
@@ -152,7 +160,7 @@ def main(argv=None):
                 "run_id": run_id, "case_id": case["case_id"], "regime": regime,
                 "controller_id": controller, "learning_seed": learning_seed,
                 "demand_seed": case["demand_seed"], "simulator_seed": case["sim_seed"],
-                "scheduled_vehicles": vehicle_count, "horizon_steps": HORIZON,
+                "scheduled_vehicles": vehicle_count, "horizon_steps": args.horizon,
                 "network_sha256": manifest["network"]["sha256"],
                 "viewer_network_sha256": manifest["network"]["sha256"],
                 "demand_sha256": sha256(flow_target), "demand_path": demand_rel,
@@ -178,9 +186,8 @@ def main(argv=None):
             records.append(future.result())
     records.sort(key=lambda item: item["run_id"])
     (output / "campaign-summary.json").write_text(
-        json.dumps({"profile": "quick", "horizon_seconds": HORIZON,
-                    "regimes": REGIMES, "controllers": ["tuned_fixed", "max_pressure",
-                    "schedule_residual_ddqn"], "runs": records},
+                    json.dumps({"profile": "exploratory_short", "horizon_seconds": args.horizon,
+                    "regimes": REGIMES, "controllers": controllers, "runs": records},
                    indent=2, sort_keys=True) + "\n")
     failures = sum(record["returncode"] != 0 for record in records)
     print(json.dumps({"complete": len(records) - failures, "failed": failures,
