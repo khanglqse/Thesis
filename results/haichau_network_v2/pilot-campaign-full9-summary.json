@@ -10,26 +10,50 @@
       "mean_improvement_pct": 1.6966127121805727,
       "median_improvement_pct": 0.34960689890947033,
       "min_improvement_pct": -7.15384342524788,
-      "n": 3
+      "n": 3,
+      "paired_bootstrap_ci_pct": {
+        "lower_95_pct": -7.15384342524788,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 11.894074662880127
+      }
     },
     "normal": {
       "max_improvement_pct": 0.0,
       "mean_improvement_pct": 0.0,
       "median_improvement_pct": 0.0,
       "min_improvement_pct": 0.0,
-      "n": 3
+      "n": 3,
+      "paired_bootstrap_ci_pct": {
+        "lower_95_pct": 0.0,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 0.0
+      }
     },
     "pm_peak": {
       "max_improvement_pct": 19.20213153381087,
       "mean_improvement_pct": 4.748315733280379,
       "median_improvement_pct": 4.705397586079284,
       "min_improvement_pct": -9.662581920049016,
-      "n": 3
+      "n": 3,
+      "paired_bootstrap_ci_pct": {
+        "lower_95_pct": -9.662581920049016,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 19.20213153381087
+      }
     }
   },
   "case_count": 9,
   "horizon_seconds": 3600,
   "interpretation": "aggregate comparison only; not a replacement for frozen release campaign",
+  "paired_bootstrap_ci_pct": {
+    "lower_95_pct": -2.9245438287438166,
+    "repeats": 10000,
+    "seed": 20260913,
+    "upper_95_pct": 7.7331432683701955
+  },
   "profile": "exploratory_short_full_hour",
   "rows": [
     {
