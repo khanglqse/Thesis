@@ -19,7 +19,7 @@ from traffic_rl.train.schedule_residual_trainer import train_residual
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", required=True, choices=("smoke", "pilot", "final"))
+    parser.add_argument("--mode", required=True, choices=("quick", "smoke", "pilot", "final"))
     parser.add_argument("--learning-seed", type=int, default=11)
     parser.add_argument("--manifest", default="results/haichau_network_v2/experiment-manifest.json")
     parser.add_argument("--config", default="configs/haichau_training_v3b_residual.yaml")

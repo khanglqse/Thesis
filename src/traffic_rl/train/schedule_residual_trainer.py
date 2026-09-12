@@ -61,6 +61,12 @@ def validate_config(config):
     elif mode == "smoke":
         if run != {"episodes": 2, "horizon_seconds": 600, "eval_every": 2}:
             raise ValueError("smoke protocol requires 2 episodes of600s,eval2")
+    elif mode == "quick":
+        # Fast local/demo check.  This tier deliberately uses one short
+        # episode; it is useful for iteration and presentation rehearsal and
+        # must never be used as the frozen thesis evidence protocol.
+        if run != {"episodes": 1, "horizon_seconds": 120, "eval_every": 1}:
+            raise ValueError("quick protocol requires 1 episode of120s,eval1")
     elif mode == "final":
         if (run != {"episodes": 12, "horizon_seconds": 3600, "eval_every": 4}
                 or config.get("learning_seed") not in (12, 13, 14, 15, 16)):
@@ -199,6 +205,10 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
     verification = _verify_training_foundation(foundation_root, manifest,
         foundation_verifier or _default_foundation_verifier)
     train = training_cases(manifest)
+    if config["mode"] == "quick":
+        # Keep one deterministic representative case for each peak regime.
+        train = [next(case for case in train if case["scenario"] == regime)
+                 for regime in ("am_peak", "pm_peak")]
     validation = [case for case in manifest["cases"] if case.get("split") == "validation"]
     if len(validation) != 6 or set(case["scenario"] for case in validation) != {"normal", "am_peak", "pm_peak"}:
         raise ValueError("residual validation requires six declared validation cases")
@@ -252,7 +262,7 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
                                   len(MACRO_FEATURES), config["learning_seed"])
     catalog = {}
     horizon = config["run"]["horizon_seconds"]
-    if config["mode"] == "smoke":
+    if config["mode"] in ("smoke", "quick"):
         validation = [next(case for case in validation if case["scenario"] == regime)
                       for regime in ("normal", "am_peak", "pm_peak")]
     baseline_rows = {}

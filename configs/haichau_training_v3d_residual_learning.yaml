@@ -29,6 +29,8 @@ baseline:
   controller: validation_tuned_fixed
   search_green_durations: [20, 25, 30, 35, 40, 45, 50, 60]
 tiers:
+  # Fast local/demo iteration only; excluded from frozen thesis evidence.
+  quick: {episodes: 1, horizon_seconds: 120, eval_every: 1}
   smoke: {episodes: 2, horizon_seconds: 600, eval_every: 2}
   pilot: {episodes: 4, horizon_seconds: 3600, eval_every: 2}
 safety: {min_score_margin: 0.0}
