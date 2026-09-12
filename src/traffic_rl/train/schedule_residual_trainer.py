@@ -65,8 +65,8 @@ def validate_config(config):
         # Fast local/demo check.  This tier deliberately uses one short
         # episode; it is useful for iteration and presentation rehearsal and
         # must never be used as the frozen thesis evidence protocol.
-        if run != {"episodes": 1, "horizon_seconds": 120, "eval_every": 1}:
-            raise ValueError("quick protocol requires 1 episode of120s,eval1")
+        if run != {"episodes": 1, "horizon_seconds": 300, "eval_every": 1}:
+            raise ValueError("quick protocol requires 1 episode of300s,eval1")
     elif mode == "final":
         if (run != {"episodes": 12, "horizon_seconds": 3600, "eval_every": 4}
                 or config.get("learning_seed") not in (12, 13, 14, 15, 16)):
