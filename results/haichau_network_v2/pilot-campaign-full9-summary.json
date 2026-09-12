@@ -1,0 +1,118 @@
+{
+  "aggregate": {
+    "fixed_queue_hours": 5159.337222222222,
+    "improvement_pct": 3.8729942379549804,
+    "residual_queue_hours": 4959.516388888889
+  },
+  "by_regime": {
+    "am_peak": {
+      "max_improvement_pct": 11.894074662880127,
+      "mean_improvement_pct": 1.6966127121805727,
+      "median_improvement_pct": 0.34960689890947033,
+      "min_improvement_pct": -7.15384342524788,
+      "n": 3
+    },
+    "normal": {
+      "max_improvement_pct": 0.0,
+      "mean_improvement_pct": 0.0,
+      "median_improvement_pct": 0.0,
+      "min_improvement_pct": 0.0,
+      "n": 3
+    },
+    "pm_peak": {
+      "max_improvement_pct": 19.20213153381087,
+      "mean_improvement_pct": 4.748315733280379,
+      "median_improvement_pct": 4.705397586079284,
+      "min_improvement_pct": -9.662581920049016,
+      "n": 3
+    }
+  },
+  "case_count": 9,
+  "horizon_seconds": 3600,
+  "interpretation": "aggregate comparison only; not a replacement for frozen release campaign",
+  "profile": "exploratory_short_full_hour",
+  "rows": [
+    {
+      "case_id": "test_am_peak_demand101",
+      "fixed_completion_rate": 0.6776129943502824,
+      "fixed_queue_hours": 471.06555555555553,
+      "improvement_pct": 11.894074662880127,
+      "regime": "am_peak",
+      "residual_completion_rate": 0.6990348399246704,
+      "residual_queue_hours": 415.0366666666667
+    },
+    {
+      "case_id": "test_am_peak_demand102",
+      "fixed_completion_rate": 0.6581307528911966,
+      "fixed_queue_hours": 520.8230555555556,
+      "improvement_pct": 0.34960689890947033,
+      "regime": "am_peak",
+      "residual_completion_rate": 0.6567146565966486,
+      "residual_queue_hours": 519.0022222222223
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "fixed_completion_rate": 0.6821067481777568,
+      "fixed_queue_hours": 477.68805555555554,
+      "improvement_pct": -7.15384342524788,
+      "regime": "am_peak",
+      "residual_completion_rate": 0.6670585469080649,
+      "residual_queue_hours": 511.8611111111111
+    },
+    {
+      "case_id": "test_normal_demand101",
+      "fixed_completion_rate": 0.795172689691959,
+      "fixed_queue_hours": 246.4986111111111,
+      "improvement_pct": 0.0,
+      "regime": "normal",
+      "residual_completion_rate": 0.795172689691959,
+      "residual_queue_hours": 246.4986111111111
+    },
+    {
+      "case_id": "test_normal_demand102",
+      "fixed_completion_rate": 0.7184466019417476,
+      "fixed_queue_hours": 414.87916666666666,
+      "improvement_pct": 0.0,
+      "regime": "normal",
+      "residual_completion_rate": 0.7184466019417476,
+      "residual_queue_hours": 414.87916666666666
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "fixed_completion_rate": 0.738076205702105,
+      "fixed_queue_hours": 426.4902777777778,
+      "improvement_pct": 0.0,
+      "regime": "normal",
+      "residual_completion_rate": 0.738076205702105,
+      "residual_queue_hours": 426.4902777777778
+    },
+    {
+      "case_id": "test_pm_peak_demand101",
+      "fixed_completion_rate": 0.6132586006957866,
+      "fixed_queue_hours": 692.0280555555555,
+      "improvement_pct": -9.662581920049016,
+      "regime": "pm_peak",
+      "residual_completion_rate": 0.5975067645921918,
+      "residual_queue_hours": 758.8958333333334
+    },
+    {
+      "case_id": "test_pm_peak_demand102",
+      "fixed_completion_rate": 0.5733191653786708,
+      "fixed_queue_hours": 853.4525,
+      "improvement_pct": 4.705397586079284,
+      "regime": "pm_peak",
+      "residual_completion_rate": 0.5840417310664606,
+      "residual_queue_hours": 813.2941666666667
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "fixed_completion_rate": 0.5550737207285342,
+      "fixed_queue_hours": 1056.4119444444445,
+      "improvement_pct": 19.20213153381087,
+      "regime": "pm_peak",
+      "residual_completion_rate": 0.5897658282740676,
+      "residual_queue_hours": 853.5583333333333
+    }
+  ],
+  "schema_version": 1
+}
