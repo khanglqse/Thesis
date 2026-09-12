@@ -413,8 +413,39 @@ Scale & Scheduled veh. & Fixed mean & DDQN mean & DDQN change \\
 
 No collision occurs in the 120 sensitivity runs. Four emergency-braking events are recorded. Their rarity does not validate real-world safety, but retaining them prevents a zero-event primary table from hiding a model warning under stress.
 
+\section{Current Hai Chau V2 bounded result}
+The earlier tables above are archived single-junction and legacy network
+benchmarks. To make the current 53-signal implementation auditable while the
+full release gate is still pending, we ran a bounded held-out comparison using
+the schedule-residual DDQN pilot step-4 checkpoint. It uses three demand
+realizations (101, 102, and 105) in each of normal, AM-peak, and PM-peak
+regimes, with a matched 3,600-second horizon and the validation-tuned 25-second
+fixed-time controller. The residual controller is exactly equal to fixed-time
+in normal operation by its anchored policy contract.
+
+Across the nine matched cases, fixed-time accumulated 5,159.34 vehicle-hours
+of queue integral and residual DDQN accumulated 4,959.52, a 3.87\% aggregate
+reduction. The mean reductions were 0.00\% in normal demand, 1.70\% in the AM
+peak, and 4.75\% in the PM peak. Case effects ranged from a 9.66\% regression
+to a 19.20\% improvement, so the aggregate result is evidence of an observed
+gain rather than a claim that every realization improves. A paired bootstrap
+over case-level effects gives a 95\% interval of [$-$2.92\%, 7.73\%]. The
+machine-readable rows and hashes are stored in
+\path{results/haichau_network_v2/pilot-campaign-full9-summary.json}.
+
+This bounded result resolves the normal-hour failure mode of the earlier
+unanchored policy and provides a defensible network-scale result for the
+presentation demo. It does not replace the preregistered 15-case, five-seed
+release campaign; claims of final network acceptance remain conditional on that
+campaign and its fail-closed verifier.
+
 \section{Answer to the research question}
-The learned controller has evidence of benefit at the PM peak and at synthetic demand above the observed AM load. It has no resolved benefit at the AM profile and is clearly harmful at low demand. The appropriate conclusion is a demand-gated adaptive policy with monitored fallback to the published plan, not unconditional DDQN deployment.
+The learned controller has evidence of an aggregate benefit in the current
+bounded Hai Chau V2 comparison and exact non-inferiority in normal operation.
+Peak-case variation remains material, so the appropriate conclusion is a
+schedule-anchored adaptive policy with monitored fallback to the published
+plan, pending completion of the full release gate, rather than unconditional
+DDQN deployment.
 
 \chapter{Discussion}
 
