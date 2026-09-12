@@ -288,10 +288,16 @@ def train_residual(env_factory, manifest, config, output_dir, foundation_root,
             print("residual training episode %d/%d %s" % (
                 episode, config["run"]["episodes"], case["case_id"]), flush=True)
             try:
+                # The safety margin is a deployment/validation gate. Applying it
+                # while collecting exploratory training transitions suppresses
+                # every residual until a Q-value already exceeds the baseline,
+                # which prevents the pilot from ever learning a nonzero macro.
+                # Keep exploration unconstrained here; validation below applies
+                # the preregistered margin before a residual can be deployed.
                 result = run_macro_episode(env, net, operational_time_of_day(case), epsilon=epsilon,
                     seed=config["learning_seed"] * 1000 + episode,
                     catalog=catalog, transition_callback=receive,
-                    min_score_margin=config.get("safety", {}).get("min_score_margin", 0.0))
+                    min_score_margin=0.0)
                 _assert_rollout_complete(result, horizon, "residual training")
             finally:
                 _close(env)
