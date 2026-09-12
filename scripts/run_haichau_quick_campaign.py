@@ -93,6 +93,10 @@ def main(argv=None):
     parser.add_argument("--horizon", type=int, default=300,
                         help="simulation horizon in seconds; must be a multiple of 300")
     parser.add_argument("--controllers", default="tuned_fixed,max_pressure,schedule_residual_ddqn")
+    parser.add_argument("--cases-per-regime", type=int, default=1,
+                        help="number of test demand realizations per regime")
+    parser.add_argument("--demand-seeds", default=None,
+                        help="optional comma-separated demand seeds to include")
     parser.add_argument("--checkpoint-root", default=None,
                         help="checkpoint step directory containing contract.json and weights.npz")
     args = parser.parse_args(argv)
@@ -102,15 +106,26 @@ def main(argv=None):
     allowed_controllers = {"tuned_fixed", "max_pressure", "hysteretic_mp", "schedule_residual_ddqn"}
     if not controllers or set(controllers) - allowed_controllers:
         parser.error("--controllers contains an unknown or empty controller")
+    if args.cases_per_regime <= 0:
+        parser.error("--cases-per-regime must be positive")
+    requested_seeds = (None if args.demand_seeds is None else
+                       {int(value) for value in args.demand_seeds.split(",") if value})
     root = Path(args.root).resolve()
     output = (root / args.output).resolve()
     if output.exists() and any(output.iterdir()):
         raise ValueError("quick campaign output already exists: %s" % output)
     output.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((root / "results/haichau_network_v2/experiment-manifest.json").read_text())
-    cases = {case["operational_time_of_day"]: case for case in manifest["cases"]
-             if case.get("split") == "test"}
-    if set(REGIMES) - set(cases):
+    cases = {}
+    for regime in REGIMES:
+        candidates = sorted((case for case in manifest["cases"]
+                             if case.get("split") == "test"
+                             and case.get("operational_time_of_day") == regime),
+                            key=lambda case: (case.get("demand_seed"), case.get("case_id")))
+        if requested_seeds is not None:
+            candidates = [case for case in candidates if case.get("demand_seed") in requested_seeds]
+        cases[regime] = candidates[:args.cases_per_regime]
+    if any(not cases[regime] for regime in REGIMES):
         raise ValueError("test manifest lacks a regime")
     quick_checkpoint = (Path(args.checkpoint_root).resolve() if args.checkpoint_root
                         else root / ("results/haichau_network_v2/training/"
@@ -134,51 +149,51 @@ def main(argv=None):
         text=True).strip()
     runs = []
     for regime in REGIMES:
-        case = cases[regime]
-        flow_target = output / "demands" / (case["case_id"] + "_300s.json")
-        vehicle_count = short_flow(root / case["flow_path"], flow_target, args.horizon)
-        demand_rel = str(flow_target.relative_to(root))
-        for controller in controllers:
-            learning_seed = args.seed if controller == "schedule_residual_ddqn" else None
-            config = dict(base_config)
-            if controller == "tuned_fixed":
-                config["green_duration"] = 25
-            elif controller == "hysteretic_mp":
-                config["min_hold_decisions"] = 3
-            else:
-                config.update({"macro": contract["macro"],
-                               "operational_mode": {
-                                   "input": "declared_time_of_day",
-                                   "normal": "exact_executed_fixed25_from_reset",
-                                   "peaks": "raw_greedy_prevalidated_macro",
-                                   "forbidden_features": ["case_id", "learning_seed",
-                                       "demand_seed", "simulator_seed", "filename",
-                                       "future_flow"]},
-                               "critic_units": contract["critic_units"]})
-            run_id = "%s__%s__quick300" % (controller, case["case_id"])
-            run = {
-                "run_id": run_id, "case_id": case["case_id"], "regime": regime,
-                "controller_id": controller, "learning_seed": learning_seed,
-                "demand_seed": case["demand_seed"], "simulator_seed": case["sim_seed"],
-                "scheduled_vehicles": vehicle_count, "horizon_steps": args.horizon,
-                "network_sha256": manifest["network"]["sha256"],
-                "viewer_network_sha256": manifest["network"]["sha256"],
-                "demand_sha256": sha256(flow_target), "demand_path": demand_rel,
-                "runtime_digest": IMAGE.split("@", 1)[1], "runtime_image": IMAGE,
-                "runtime_image_id": image_id,
-                "runtime_dockerfile_path": runtime["dockerfile"]["path"],
-                "runtime_dockerfile_sha256": runtime["dockerfile"]["sha256"],
-                "code_commit": root_commit, "evidence_namespace": "haichau_network_v2_quick",
-                "fresh_evaluation": True, "controlled_signals": manifest["network"]["controlled_signals"],
-                "agent_ids": manifest["network"]["agent_ids"], "resolved_config": config,
-            }
-            if controller == "schedule_residual_ddqn":
-                weights = quick_checkpoint / "weights.npz"
-                run.update({"checkpoint_path": str(weights.relative_to(root)),
-                            "checkpoint_sha256": sha256(weights),
-                            "checkpoint_contract": contract,
-                            "checkpoint_contract_sha256": canonical_sha256(contract)})
-            runs.append(run)
+        for case in cases[regime]:
+            flow_target = output / "demands" / (case["case_id"] + "_%ds.json" % args.horizon)
+            vehicle_count = short_flow(root / case["flow_path"], flow_target, args.horizon)
+            demand_rel = str(flow_target.relative_to(root))
+            for controller in controllers:
+                learning_seed = args.seed if controller == "schedule_residual_ddqn" else None
+                config = dict(base_config)
+                if controller == "tuned_fixed":
+                    config["green_duration"] = 25
+                elif controller == "hysteretic_mp":
+                    config["min_hold_decisions"] = 3
+                else:
+                    config.update({"macro": contract["macro"],
+                                   "operational_mode": {
+                                       "input": "declared_time_of_day",
+                                       "normal": "exact_executed_fixed25_from_reset",
+                                       "peaks": "raw_greedy_prevalidated_macro",
+                                       "forbidden_features": ["case_id", "learning_seed",
+                                           "demand_seed", "simulator_seed", "filename",
+                                           "future_flow"]},
+                                   "critic_units": contract["critic_units"]})
+                run_id = "%s__%s__%ds" % (controller, case["case_id"], args.horizon)
+                run = {
+                    "run_id": run_id, "case_id": case["case_id"], "regime": regime,
+                    "controller_id": controller, "learning_seed": learning_seed,
+                    "demand_seed": case["demand_seed"], "simulator_seed": case["sim_seed"],
+                    "scheduled_vehicles": vehicle_count, "horizon_steps": args.horizon,
+                    "network_sha256": manifest["network"]["sha256"],
+                    "viewer_network_sha256": manifest["network"]["sha256"],
+                    "demand_sha256": sha256(flow_target), "demand_path": demand_rel,
+                    "runtime_digest": IMAGE.split("@", 1)[1], "runtime_image": IMAGE,
+                    "runtime_image_id": image_id,
+                    "runtime_dockerfile_path": runtime["dockerfile"]["path"],
+                    "runtime_dockerfile_sha256": runtime["dockerfile"]["sha256"],
+                    "code_commit": root_commit, "evidence_namespace": "haichau_network_v2_quick",
+                    "fresh_evaluation": True, "controlled_signals": manifest["network"]["controlled_signals"],
+                    "agent_ids": manifest["network"]["agent_ids"], "resolved_config": config,
+                }
+                if controller == "schedule_residual_ddqn":
+                    weights = quick_checkpoint / "weights.npz"
+                    run.update({"checkpoint_path": str(weights.relative_to(root)),
+                                "checkpoint_sha256": sha256(weights),
+                                "checkpoint_contract": contract,
+                                "checkpoint_contract_sha256": canonical_sha256(contract)})
+                runs.append(run)
     records = []
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(run_one, root, run, output) for run in runs]
