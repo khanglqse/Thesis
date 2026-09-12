@@ -45,3 +45,11 @@ PYTHONPATH=src python3 scripts/summarize_haichau_short_campaign.py \
 The completed nine-case comparison reports a 3.87% aggregate queue-hour
 reduction for residual DDQN versus fixed-time, while retaining every AM, PM,
 and normal case so variation remains visible.
+
+Generate the presentation chart with:
+
+```bash
+PYTHONPATH=src python3 scripts/plot_haichau_short_campaign.py \
+  results/haichau_network_v2/pilot-campaign-full9-summary.json \
+  --output results/haichau_network_v2/pilot-campaign-full9-improvement.png
+```
