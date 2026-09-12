@@ -344,7 +344,9 @@ def build_controller_runtime(project_root, run, runtime_dir,
         # this policy.  Evaluation is greedy and deterministic per seed.
         controller = ScheduleResidualController(
             env, network, str(run.get("regime")), epsilon=0.0,
-            seed=int(run.get("learning_seed")))
+            seed=int(run.get("learning_seed")),
+            min_score_margin=float(config.get("safety", {}).get(
+                "min_score_margin", 0.0)))
     else:
         controller = DQNController(network, env.agent_ids)
     return env, controller
