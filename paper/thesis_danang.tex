@@ -464,6 +464,19 @@ reduced the metric by 6.12\%. Max-Pressure is the strongest controller in this
 synthetic matrix; the thesis consequently claims improvement over fixed-time,
 not universal superiority over every baseline. The complete matrix is stored
 in \path{results/haichau_network_v2/final15-controller-matrix-summary.json}.
+
+The same fifteen matched seed-14 cases provide secondary operational outcomes.
+Residual DDQN increases mean completion from $66.92\%$ to $67.98\%$ (+1.06
+percentage points) and insertion from $97.15\%$ to $97.97\%$ (+0.82 points).
+The mean maximum queue at a signal falls from 141.87 to 124.93 vehicles.
+Completed-trip travel time rises slightly from 737.81 to 743.26 seconds, and
+spillback lane-seconds rise from 1,432.33 to 1,497.53 overall. The AM spillback
+increase (1,144.8 to 1,461.0 lane-seconds) and PM decrease (2,751.4 to 2,630.8)
+show why queue reduction is not interpreted as universal travel-time or
+spillback improvement. These descriptive outcomes are generated from
+\path{results/haichau_network_v2/final15-seed14-secondary-summary.json} and do
+not replace seed-level inference.
+
 For the defense, a self-contained replay bundle at
 \path{results/haichau_network_v2/demo-bounded} shows matched normal, AM-peak,
 and PM-peak maps without requiring CityFlow or network access.

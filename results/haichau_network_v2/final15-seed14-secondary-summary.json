@@ -1,0 +1,519 @@
+{
+  "by_regime": {
+    "am_peak": {
+      "cases": [
+        "test_am_peak_demand101",
+        "test_am_peak_demand102",
+        "test_am_peak_demand103",
+        "test_am_peak_demand104",
+        "test_am_peak_demand105"
+      ],
+      "completion_difference_percentage_points_mean": 0.821847287387012,
+      "insertion_difference_percentage_points_mean": 0.6047188443854679,
+      "phase_switches_fixed_mean": 4895.0,
+      "phase_switches_learned_mean": 4895.0,
+      "queue_reduction_percent_mean": 3.531767685224613,
+      "spillback_lane_seconds_fixed_mean": 1144.8,
+      "spillback_lane_seconds_learned_mean": 1461.0
+    },
+    "normal": {
+      "cases": [
+        "test_normal_demand101",
+        "test_normal_demand102",
+        "test_normal_demand103",
+        "test_normal_demand104",
+        "test_normal_demand105"
+      ],
+      "completion_difference_percentage_points_mean": 0.0,
+      "insertion_difference_percentage_points_mean": 0.0,
+      "phase_switches_fixed_mean": 4895.0,
+      "phase_switches_learned_mean": 4895.0,
+      "queue_reduction_percent_mean": 0.0,
+      "spillback_lane_seconds_fixed_mean": 400.8,
+      "spillback_lane_seconds_learned_mean": 400.8
+    },
+    "pm_peak": {
+      "cases": [
+        "test_pm_peak_demand101",
+        "test_pm_peak_demand102",
+        "test_pm_peak_demand103",
+        "test_pm_peak_demand104",
+        "test_pm_peak_demand105"
+      ],
+      "completion_difference_percentage_points_mean": 2.3496421523203948,
+      "insertion_difference_percentage_points_mean": 1.8469888054508576,
+      "phase_switches_fixed_mean": 4895.0,
+      "phase_switches_learned_mean": 4895.0,
+      "queue_reduction_percent_mean": 8.862112821685802,
+      "spillback_lane_seconds_fixed_mean": 2751.4,
+      "spillback_lane_seconds_learned_mean": 2630.8
+    }
+  },
+  "campaign_inputs": {
+    "fixed": {
+      "path": "results/haichau_network_v2/final15-seed12-step8-run2/campaign-summary.json",
+      "sha256": "f62e60e44ff6aec32dcce840353ba901e5c57f06efdc41ee7a4c69f2c3b38a6c"
+    },
+    "learned": {
+      "path": "results/haichau_network_v2/final15-seed14-step4-residual/campaign-summary.json",
+      "sha256": "cc31181d16bc40913e306e2bd0a61f741a02a0bb93c00f5b9803dee933681fe6"
+    }
+  },
+  "case_count": 15,
+  "controller_pair": {
+    "fixed": "tuned_fixed",
+    "learned": "schedule_residual_ddqn"
+  },
+  "evidence_scope": "bounded_15_case_matrix_seed14_step4",
+  "horizon_seconds": 3600,
+  "overall": {
+    "completion_rate": {
+      "fixed_mean": 0.6691891680155957,
+      "learned_mean": 0.6797607994812871,
+      "learned_minus_fixed": 0.0105716314656914
+    },
+    "insertion_rate": {
+      "fixed_mean": 0.9715165706171229,
+      "learned_mean": 0.9796889294499106,
+      "learned_minus_fixed": 0.008172358832787663
+    },
+    "intergreen_seconds": {
+      "fixed_mean": 30282.0,
+      "learned_mean": 30282.0,
+      "learned_minus_fixed": 0.0
+    },
+    "max_node_queue": {
+      "fixed_mean": 141.86666666666667,
+      "learned_mean": 124.93333333333334,
+      "learned_minus_fixed": -16.933333333333337
+    },
+    "phase_switches": {
+      "fixed_mean": 4895.0,
+      "learned_mean": 4895.0,
+      "learned_minus_fixed": 0.0
+    },
+    "queue_integral_vehicle_hours": {
+      "fixed_mean": 555.962,
+      "learned_mean": 521.9501481481482,
+      "learned_minus_fixed": -34.011851851851816
+    },
+    "spillback_lane_seconds": {
+      "fixed_mean": 1432.3333333333333,
+      "learned_mean": 1497.5333333333333,
+      "learned_minus_fixed": 65.20000000000005
+    },
+    "travel_time_completed_mean_seconds": {
+      "fixed_mean": 737.808964341031,
+      "learned_mean": 743.2563305672935,
+      "learned_minus_fixed": 5.4473662262624885
+    }
+  },
+  "paired_cases": [
+    {
+      "case_id": "test_am_peak_demand101",
+      "completion_difference_percentage_points": 1.1299435028248594,
+      "fixed": {
+        "completion_rate": 0.6776129943502824,
+        "insertion_rate": 0.9701035781544256,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 102.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 471.06555555555553,
+        "spillback_lane_seconds": 1874.0,
+        "travel_time_completed_mean_seconds": 739.3927392739274
+      },
+      "insertion_difference_percentage_points": 2.2245762711864403,
+      "learned": {
+        "completion_rate": 0.688912429378531,
+        "insertion_rate": 0.99234934086629,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 117.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 437.7397222222222,
+        "spillback_lane_seconds": 2022.0,
+        "travel_time_completed_mean_seconds": 741.7792584999146
+      },
+      "queue_reduction_percent": 7.074563813953707,
+      "regime": "am_peak"
+    },
+    {
+      "case_id": "test_am_peak_demand102",
+      "completion_difference_percentage_points": 0.10620722209110367,
+      "fixed": {
+        "completion_rate": 0.6581307528911966,
+        "insertion_rate": 0.9801746518763276,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 195.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 520.8230555555556,
+        "spillback_lane_seconds": 684.0,
+        "travel_time_completed_mean_seconds": 738.5768334229873
+      },
+      "insertion_difference_percentage_points": -0.2832192589096061,
+      "learned": {
+        "completion_rate": 0.6591928251121076,
+        "insertion_rate": 0.9773424592872315,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 174.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 523.9505555555555,
+        "spillback_lane_seconds": 1273.0,
+        "travel_time_completed_mean_seconds": 761.4824561403509
+      },
+      "queue_reduction_percent": -0.6004918497058228,
+      "regime": "am_peak"
+    },
+    {
+      "case_id": "test_am_peak_demand103",
+      "completion_difference_percentage_points": 1.2954893416558755,
+      "fixed": {
+        "completion_rate": 0.6621128253444823,
+        "insertion_rate": 0.9845718996584619,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 101.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 515.6411111111111,
+        "spillback_lane_seconds": 1774.0,
+        "travel_time_completed_mean_seconds": 743.5622554251156
+      },
+      "insertion_difference_percentage_points": 0.08244023083264773,
+      "learned": {
+        "completion_rate": 0.6750677187610411,
+        "insertion_rate": 0.9853963019667884,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 95.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 470.53777777777776,
+        "spillback_lane_seconds": 1549.0,
+        "travel_time_completed_mean_seconds": 741.7904745289602
+      },
+      "queue_reduction_percent": 8.747039823132793,
+      "regime": "am_peak"
+    },
+    {
+      "case_id": "test_am_peak_demand104",
+      "completion_difference_percentage_points": 1.730429664508526,
+      "fixed": {
+        "completion_rate": 0.6844025897586816,
+        "insertion_rate": 0.9907004120070629,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 68.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 436.6358333333333,
+        "spillback_lane_seconds": 109.0,
+        "travel_time_completed_mean_seconds": 742.1689026487788
+      },
+      "insertion_difference_percentage_points": 0.38846380223661603,
+      "learned": {
+        "completion_rate": 0.7017068864037669,
+        "insertion_rate": 0.9945850500294291,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 43.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 407.47805555555556,
+        "spillback_lane_seconds": 0.0,
+        "travel_time_completed_mean_seconds": 749.2221103841638
+      },
+      "queue_reduction_percent": 6.677825215393705,
+      "regime": "am_peak"
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "completion_difference_percentage_points": -0.15283329414530478,
+      "fixed": {
+        "completion_rate": 0.6821067481777568,
+        "insertion_rate": 0.966141547143193,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 172.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 477.68805555555554,
+        "spillback_lane_seconds": 1283.0,
+        "travel_time_completed_mean_seconds": 718.0122371596001
+      },
+      "insertion_difference_percentage_points": 0.6113331765812413,
+      "learned": {
+        "completion_rate": 0.6805784152363038,
+        "insertion_rate": 0.9722548789090054,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 142.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 497.9425,
+        "spillback_lane_seconds": 2461.0,
+        "travel_time_completed_mean_seconds": 743.8744169977543
+      },
+      "queue_reduction_percent": -4.240098576651316,
+      "regime": "am_peak"
+    },
+    {
+      "case_id": "test_normal_demand101",
+      "completion_difference_percentage_points": 0.0,
+      "fixed": {
+        "completion_rate": 0.795172689691959,
+        "insertion_rate": 1.0,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 43.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 246.4986111111111,
+        "spillback_lane_seconds": 0.0,
+        "travel_time_completed_mean_seconds": 723.6620828442059
+      },
+      "insertion_difference_percentage_points": 0.0,
+      "learned": {
+        "completion_rate": 0.795172689691959,
+        "insertion_rate": 1.0,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 43.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 246.4986111111111,
+        "spillback_lane_seconds": 0.0,
+        "travel_time_completed_mean_seconds": 723.6620828442059
+      },
+      "queue_reduction_percent": 0.0,
+      "regime": "normal"
+    },
+    {
+      "case_id": "test_normal_demand102",
+      "completion_difference_percentage_points": 0.0,
+      "fixed": {
+        "completion_rate": 0.7184466019417476,
+        "insertion_rate": 0.9692778294986035,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 56.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 414.87916666666666,
+        "spillback_lane_seconds": 0.0,
+        "travel_time_completed_mean_seconds": 726.6645686782673
+      },
+      "insertion_difference_percentage_points": 0.0,
+      "learned": {
+        "completion_rate": 0.7184466019417476,
+        "insertion_rate": 0.9692778294986035,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 56.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 414.87916666666666,
+        "spillback_lane_seconds": 0.0,
+        "travel_time_completed_mean_seconds": 726.6645686782673
+      },
+      "queue_reduction_percent": 0.0,
+      "regime": "normal"
+    },
+    {
+      "case_id": "test_normal_demand103",
+      "completion_difference_percentage_points": 0.0,
+      "fixed": {
+        "completion_rate": 0.7019691325172964,
+        "insertion_rate": 0.9515699840340607,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 91.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 479.63194444444446,
+        "spillback_lane_seconds": 471.0,
+        "travel_time_completed_mean_seconds": 729.7541698256255
+      },
+      "insertion_difference_percentage_points": 0.0,
+      "learned": {
+        "completion_rate": 0.7019691325172964,
+        "insertion_rate": 0.9515699840340607,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 91.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 479.63194444444446,
+        "spillback_lane_seconds": 471.0,
+        "travel_time_completed_mean_seconds": 729.7541698256255
+      },
+      "queue_reduction_percent": 0.0,
+      "regime": "normal"
+    },
+    {
+      "case_id": "test_normal_demand104",
+      "completion_difference_percentage_points": 0.0,
+      "fixed": {
+        "completion_rate": 0.7867803837953091,
+        "insertion_rate": 1.0,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 45.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 249.33444444444444,
+        "spillback_lane_seconds": 0.0,
+        "travel_time_completed_mean_seconds": 723.534891598916
+      },
+      "insertion_difference_percentage_points": 0.0,
+      "learned": {
+        "completion_rate": 0.7867803837953091,
+        "insertion_rate": 1.0,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 45.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 249.33444444444444,
+        "spillback_lane_seconds": 0.0,
+        "travel_time_completed_mean_seconds": 723.534891598916
+      },
+      "queue_reduction_percent": 0.0,
+      "regime": "normal"
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "completion_difference_percentage_points": 0.0,
+      "fixed": {
+        "completion_rate": 0.738076205702105,
+        "insertion_rate": 0.9830802025046629,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 233.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 426.4902777777778,
+        "spillback_lane_seconds": 1533.0,
+        "travel_time_completed_mean_seconds": 724.4341155234657
+      },
+      "insertion_difference_percentage_points": 0.0,
+      "learned": {
+        "completion_rate": 0.738076205702105,
+        "insertion_rate": 0.9830802025046629,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 233.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 426.4902777777778,
+        "spillback_lane_seconds": 1533.0,
+        "travel_time_completed_mean_seconds": 724.4341155234657
+      },
+      "queue_reduction_percent": 0.0,
+      "regime": "normal"
+    },
+    {
+      "case_id": "test_pm_peak_demand101",
+      "completion_difference_percentage_points": -0.2899110939311944,
+      "fixed": {
+        "completion_rate": 0.6132586006957866,
+        "insertion_rate": 0.9715887127947429,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 182.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 692.0280555555555,
+        "spillback_lane_seconds": 3061.0,
+        "travel_time_completed_mean_seconds": 752.9418531358336
+      },
+      "insertion_difference_percentage_points": 0.2609199845380772,
+      "learned": {
+        "completion_rate": 0.6103594897564747,
+        "insertion_rate": 0.9741979126401237,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 174.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 708.6355555555556,
+        "spillback_lane_seconds": 3089.0,
+        "travel_time_completed_mean_seconds": 763.2189677010766
+      },
+      "queue_reduction_percent": -2.3998304500339485,
+      "regime": "pm_peak"
+    },
+    {
+      "case_id": "test_pm_peak_demand102",
+      "completion_difference_percentage_points": 1.101236476043277,
+      "fixed": {
+        "completion_rate": 0.5733191653786708,
+        "insertion_rate": 0.9667697063369397,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 200.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 853.4525,
+        "spillback_lane_seconds": 3522.0,
+        "travel_time_completed_mean_seconds": 764.4131423757372
+      },
+      "insertion_difference_percentage_points": 1.004636785162294,
+      "learned": {
+        "completion_rate": 0.5843315301391035,
+        "insertion_rate": 0.9768160741885626,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 186.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 808.3052777777777,
+        "spillback_lane_seconds": 3187.0,
+        "travel_time_completed_mean_seconds": 765.2949247809555
+      },
+      "queue_reduction_percent": 5.289951370723296,
+      "regime": "pm_peak"
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "completion_difference_percentage_points": 3.3211397766653827,
+      "fixed": {
+        "completion_rate": 0.5662302656911822,
+        "insertion_rate": 0.9570658452060069,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 224.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 841.3308333333333,
+        "spillback_lane_seconds": 2829.0,
+        "travel_time_completed_mean_seconds": 750.951377082625
+      },
+      "insertion_difference_percentage_points": 2.0504428186368884,
+      "learned": {
+        "completion_rate": 0.599441663457836,
+        "insertion_rate": 0.9775702733923758,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 164.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 745.59,
+        "spillback_lane_seconds": 1987.0,
+        "travel_time_completed_mean_seconds": 762.07547775815
+      },
+      "queue_reduction_percent": 11.379689123481938,
+      "regime": "pm_peak"
+    },
+    {
+      "case_id": "test_pm_peak_demand104",
+      "completion_difference_percentage_points": 1.3615295480880696,
+      "fixed": {
+        "completion_rate": 0.6251448435689455,
+        "insertion_rate": 0.9735419080726149,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 149.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 657.5186111111111,
+        "spillback_lane_seconds": 757.0,
+        "travel_time_completed_mean_seconds": 752.7281433426011
+      },
+      "insertion_difference_percentage_points": 0.994592506759373,
+      "learned": {
+        "completion_rate": 0.6387601390498262,
+        "insertion_rate": 0.9834878331402086,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 105.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 631.7022222222222,
+        "spillback_lane_seconds": 659.0,
+        "travel_time_completed_mean_seconds": 754.5602418745276
+      },
+      "queue_reduction_percent": 3.926335840937334,
+      "regime": "pm_peak"
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "completion_difference_percentage_points": 6.254216054736439,
+      "fixed": {
+        "completion_rate": 0.5550737207285342,
+        "insertion_rate": 0.9081622819697408,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 267.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 1056.4119444444445,
+        "spillback_lane_seconds": 3588.0,
+        "travel_time_completed_mean_seconds": 736.3371527777778
+      },
+      "insertion_difference_percentage_points": 4.924351932157656,
+      "learned": {
+        "completion_rate": 0.6176158812758986,
+        "insertion_rate": 0.9574058012913174,
+        "intergreen_seconds": 30282.0,
+        "max_node_queue": 206.0,
+        "phase_switches": 4895.0,
+        "queue_integral_vehicle_hours": 780.5361111111112,
+        "spillback_lane_seconds": 4232.0,
+        "travel_time_completed_mean_seconds": 737.4968013730692
+      },
+      "queue_reduction_percent": 26.114418223320396,
+      "regime": "pm_peak"
+    }
+  ],
+  "schema_version": 1
+}

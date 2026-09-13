@@ -63,6 +63,29 @@ machine-readable matrix is
 Its network, runtime, checkpoint and case identities are recorded in
 `results/haichau_network_v2/final15-controller-matrix-provenance.json`.
 
+### 4.2.2 Secondary operational outcomes
+
+The same matched seed-14 pairs provide additional diagnostics. Values below
+are arithmetic means over the fifteen cases; they are descriptive and do not
+replace the primary seed-level inference.
+
+| Outcome | Fixed-time | Residual DDQN | Difference (DDQN - fixed) |
+| --- | ---: | ---: | ---: |
+| Completion rate | 66.92% | **67.98%** | **+1.06 pp** |
+| Insertion rate | 97.15% | **97.97%** | **+0.82 pp** |
+| Mean maximum node queue | 141.87 | **124.93** | **−16.93 vehicles** |
+| Completed-trip travel time | 737.81 s | 743.26 s | +5.45 s |
+| Spillback lane-seconds | 1,432.33 | 1,497.53 | +65.20 |
+
+The improvement in completion and maximum queue is consistent with the lower
+queue integral. Completed-trip travel time is slightly higher, so queue
+reduction should not be presented as universal travel-time improvement. The
+spillback increase is concentrated in AM peak (1,461.0 versus 1,144.8
+lane-seconds); PM peak decreases from 2,751.4 to 2,630.8 lane-seconds. The
+machine-readable source is
+`results/haichau_network_v2/final15-seed14-secondary-summary.json`, generated
+by `scripts/summarize_haichau_secondary.py`.
+
 As a checkpoint sensitivity result, seed 12 step 8 over the same 15 cases
 reduced the aggregate metric by only 0.78% and regressed 5.67% in AM peak.
 Seed 15 step 8 reduced the aggregate metric by 0.44%, with a paired bootstrap
