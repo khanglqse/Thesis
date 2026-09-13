@@ -1,0 +1,79 @@
+{
+  "acceptance": {
+    "accepted": false,
+    "reason": "bounded demo; pending five-seed release verifier"
+  },
+  "aggregate_path": "summary.json",
+  "bundle_version": 2,
+  "controlled_signals": 53,
+  "demand_label": "synthetic network demand constrained by Da Nang evidence",
+  "evidence_scope": "bounded_15_case_matrix_seed14_step4",
+  "files": {
+    "haichau_network_demo.css": "6a3acfef9025d584e3b4146ecc86d0607ba1169feff4d9876e99a3737314180b",
+    "haichau_network_demo.js": "f33f346e87e230908b9f9dfb39c859758858eacce3a95364e9e9a7861d6de2a8",
+    "haichau_network_demo_core.js": "90693b25d07ccc9695c67e279072e7fee56ba2c2703bf21f6a5104b90a5399c3",
+    "index.html": "69533b3765b14cd84aea27605cce63715ff2fd38a7989de85ae4a1bb5302aabb",
+    "launch_demo.command": "6b048aa4ff457872e6c251a023f939a4c178fceff0fc140759f942cc7de6f040",
+    "launch_demo.py": "bffaad31625e55b3f831ba2e63604460d739e18442bca9270f739e8fd479e578",
+    "network.json": "c7d32708aa2303c5c37452b300fac914c089c2451c67f9bb0cac0ec1f1e4e667",
+    "replays/am_peak__ddqn.json": "621427f3893abfe191ba45588c5419244104293eb97de12a0772e31cd32b5c4e",
+    "replays/am_peak__fixed.json": "86c4fd7898c5a44f3a34325f190e2a0ca95eff075d2a6e3b20109fc24b6e8193",
+    "replays/normal__ddqn.json": "2300bc3110726e140f3cc874a8109b562d3d99eadab23b3e84eddc9800d48855",
+    "replays/normal__fixed.json": "2300bc3110726e140f3cc874a8109b562d3d99eadab23b3e84eddc9800d48855",
+    "replays/pm_peak__ddqn.json": "7e1a2e6d8b8339cdd22763863aa96f5ba68569c39edde95b756594def3ab35c8",
+    "replays/pm_peak__fixed.json": "7650142c12a56132f3804d4e779b10afe46f9ec19b218eb6ae3f0be1e60c2034",
+    "summary.json": "044270bdc084b4199b923bed5bb37308c3e810471637dac22591c652d50ef611"
+  },
+  "network_path": "network.json",
+  "replays": [
+    {
+      "case_id": "test_normal_demand105",
+      "controller_id": "tuned_fixed",
+      "learning_seed": null,
+      "path": "replays/normal__fixed.json",
+      "regime": "normal",
+      "sha256": "2300bc3110726e140f3cc874a8109b562d3d99eadab23b3e84eddc9800d48855"
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "controller_id": "neighbor_phase_ddqn",
+      "learning_seed": 14,
+      "path": "replays/normal__ddqn.json",
+      "regime": "normal",
+      "sha256": "2300bc3110726e140f3cc874a8109b562d3d99eadab23b3e84eddc9800d48855"
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "controller_id": "tuned_fixed",
+      "learning_seed": null,
+      "path": "replays/am_peak__fixed.json",
+      "regime": "am_peak",
+      "sha256": "86c4fd7898c5a44f3a34325f190e2a0ca95eff075d2a6e3b20109fc24b6e8193"
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "controller_id": "neighbor_phase_ddqn",
+      "learning_seed": 14,
+      "path": "replays/am_peak__ddqn.json",
+      "regime": "am_peak",
+      "sha256": "621427f3893abfe191ba45588c5419244104293eb97de12a0772e31cd32b5c4e"
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "controller_id": "tuned_fixed",
+      "learning_seed": null,
+      "path": "replays/pm_peak__fixed.json",
+      "regime": "pm_peak",
+      "sha256": "7650142c12a56132f3804d4e779b10afe46f9ec19b218eb6ae3f0be1e60c2034"
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "controller_id": "neighbor_phase_ddqn",
+      "learning_seed": 14,
+      "path": "replays/pm_peak__ddqn.json",
+      "regime": "pm_peak",
+      "sha256": "7e1a2e6d8b8339cdd22763863aa96f5ba68569c39edde95b756594def3ab35c8"
+    }
+  ],
+  "runtime_image": "traffic-rl-cityflow-research@sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517"
+}

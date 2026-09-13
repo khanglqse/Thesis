@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" data-bundle=".">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hai Chau 53-signal replay</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="haichau_network_demo.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="context">Offline thesis defense replay</p>
+      <h1>Hai Chau signal control</h1>
+      <p class="subtitle">Tuned fixed time and neighbor-aware phase-scoring DDQN</p>
+    </div>
+    <div class="bundle-status" aria-live="polite">
+      <strong id="status">Loading verified bundle…</strong>
+      <span>53 controlled signals · no network required</span>
+    </div>
+  </header>
+
+  <section class="controlbar" aria-label="Replay controls">
+    <label>Scenario <select id="scenario"></select></label>
+    <button id="play" type="button">Play</button>
+    <button id="reset" type="button">Reset</button>
+    <label>Speed <select id="speed"><option value="1">1×</option><option value="5">5×</option><option value="10" selected>10×</option><option value="30">30×</option></select></label>
+    <input id="seek" aria-label="Simulation time" type="range" min="0" max="0" step="5" value="0">
+    <output id="clock" for="seek">00:00</output>
+    <p id="provenance">synthetic network demand constrained by Da Nang evidence</p>
+  </section>
+
+  <main>
+    <section class="comparison" aria-label="Synchronized network comparison">
+      <article class="replay-panel">
+        <h2>Tuned fixed time <small>baseline</small></h2>
+        <canvas id="fixedCanvas" width="900" height="560" tabindex="0" aria-label="Tuned fixed-time network map"></canvas>
+        <div id="fixedMetrics" class="metrics"></div>
+      </article>
+      <article class="replay-panel">
+        <h2>Schedule-residual DDQN <small>candidate</small></h2>
+        <canvas id="learnedCanvas" width="900" height="560" tabindex="0" aria-label="Schedule-residual DDQN network map"></canvas>
+        <div id="learnedMetrics" class="metrics"></div>
+      </article>
+    </section>
+
+    <aside class="detail" aria-live="polite">
+      <h2>Selected signal</h2>
+      <p id="selectionHint">Select a node on either map.</p>
+      <div id="nodeDetail"></div>
+    </aside>
+  </main>
+
+  <section class="provenance-panel" aria-live="polite">
+    <div>
+      <p class="context">Verified replay provenance</p>
+      <h2>Run identity and demand accounting</h2>
+      <p id="acceptanceStatus">Acceptance status: N/A</p>
+    </div>
+    <div id="replayProvenance" class="provenance-records"></div>
+  </section>
+
+  <section class="aggregate" aria-label="Frozen aggregate evidence">
+    <div>
+      <p class="context">Frozen aggregate evidence · queue integral · lower is better</p>
+      <strong id="aggregateEffect">—</strong>
+      <span id="aggregateInterval">Waiting for verified summary</span>
+    </div>
+    <p id="aggregateMeaning">The maps show one representative matched case. Aggregate conclusions use all frozen runs and treat the learning seed as the independent unit.</p>
+  </section>
+
+  <footer>
+    Node color: green low queue, amber moderate, red high. Phase and queue values remain visible in the detail rail, so color is never the only encoding.
+  </footer>
+
+  <script src="haichau_network_demo_core.js"></script>
+  <script src="haichau_network_demo.js"></script>
+</body>
+</html>
