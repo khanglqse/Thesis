@@ -81,6 +81,18 @@ results/research_pilot/baseline_seed1/
 results/research_pilot/training/
 results/research_pilot/generated/am_peak_published_smoke.log
 
+# Large local Hai Chau campaign outputs. Machine-readable summaries, manifests,
+# figures, and the portable demo are tracked; raw replay directories and logs
+# remain local evidence because a single 15-case campaign is hundreds of MB.
+results/haichau_network_v2/final15-*/
+results/haichau_network_v2/training/final-seed*/
+results/haichau_network_v2/training/final-seed*.log
+results/haichau_network_v2/training/final-rerun-logs/
+results/haichau_network_v2/training/invalidated-*/
+results/haichau_network_v2/training/.v3b-*/
+results/haichau_network_v2/training/release-supervisor.log
+results/haichau_network_v2/training/release_supervisor.py
+
 # Peak scenario roadnet is a copy of roadnet_haichau.json (regenerate via build_peak_flow.py)
 data/danang/roadnet_haichau_peak.json
 .playwright-mcp/
