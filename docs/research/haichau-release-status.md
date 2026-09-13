@@ -8,6 +8,10 @@ result and must be updated before claiming a frozen release.
 
 - The foundation verifier reports a 53-signal network, 30 declared cases, and
   a 9/6/15 train/validation/test split.
+- The machine-readable audit at
+  `results/haichau_network_v2/verification/gated-thesis-audit.json` confirms that
+  the presentation bundle and exploratory gate pass their scoped checks, while
+  preserving the strict verifier's failed-gate list separately.
 - The bounded seed-14 step-4 evaluation covers all 15 test cases at a 3,600 s
   horizon. Schedule-residual DDQN reduces total queue-hours from 8,339.43 to
   7,829.25 (6.12%); the paired bootstrap 95% interval is 0.90%--8.35%.

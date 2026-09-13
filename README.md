@@ -36,6 +36,12 @@ summaries:
 python3 scripts/summarize_regime_gated_direct.py
 ```
 
+To emit the scoped readiness audit (including the strict verifier result):
+
+```sh
+python3 scripts/audit_gated_thesis.py
+```
+
 ### Preregistered V3 robustness appendix
 
 After the primary 53-signal protocol, campaign, and summary are complete and committed, the
