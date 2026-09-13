@@ -21,6 +21,12 @@ for normal, AM peak, and PM peak. The normal replay is intentionally identical
 to fixed-time because the controller contract anchors light-demand operation to
 the reference schedule.
 
+The interactive bundle is the stable seed-14 step-4 bounded replay. The newer
+regime-gated fresh replays are recorded in the thesis JSON artifacts: the gate
+keeps fixed-time in normal/AM and uses the residual policy in PM, so its
+full-day aggregate is lower than fixed-time across the five available seed
+summaries. The gate remains exploratory and is labelled as such in the deck.
+
 ## What to show
 
 1. Start with the network map and state that it contains 53 OSM-derived Hai Chau
