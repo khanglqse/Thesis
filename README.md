@@ -20,8 +20,11 @@ The extension uses the separate `haichau_network_v2` namespace. Its demand label
 **synthetic network demand constrained by Da Nang evidence**. A result becomes releasable
 only when `scripts/verify_haichau_thesis.py` reports `"complete": true`; a failed acceptance
 outcome is still reported as a valid negative result once every evidence gate is complete.
-At present the final five-seed checkpoints, frozen case manifest and fresh campaign have to
-be supplied by the foundation/model pipeline before that verifier can pass.
+Final training artifacts now exist for seeds 12--16, and fresh direct regime-gated summaries
+are available in `results/haichau_network_v2/final15-regime-gated-*`. The strict verifier still
+fails closed because the preregistered residual selector rejects seeds 13 and 16 and the
+frozen confirmatory campaign has not been released. Do not relabel the gated exploratory
+summaries as a strict five-seed release.
 
 The exact campaign, thesis, offline-demo and clean-checkout procedure is in
 `docs/defense/demo-runbook.md`.
@@ -191,8 +194,8 @@ PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
 ```
 
 It writes `results/haichau_network_v2/verification/final-report.json` and exits nonzero
-until the network, split, five learned checkpoint bundles for the selected
-`neighbor_phase_ddqn` family, fresh matched runs, statistics, paper, offline demo and
+until the network, split, five eligible checkpoint bundles for the selected
+`schedule_residual_ddqn` family, fresh matched runs, statistics, paper, offline demo and
 clean-checkout record are all hash-valid.
 
 ### Pre-final Hai Chau capacity calibration
