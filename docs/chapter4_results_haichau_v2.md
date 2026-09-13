@@ -79,6 +79,9 @@ summary is stored in `results/haichau_network_v2/final15-three-seed-summary.json
 it is a sensitivity result because the preregistered cohort still includes
 seeds 13 and 16.
 
+Figure `results/haichau_network_v2/final15-seed-sensitivity.png` visualizes the
+same seed-level spread for presentation.
+
 ## 4.3 Training and validation
 
 The reduced training profile uses three learning seeds (12, 13, and 14), one
