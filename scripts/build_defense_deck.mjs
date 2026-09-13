@@ -192,7 +192,8 @@ function metric(slide, value, label, x, y, color = C.navy) {
     body(s, r[1], 3.0, y - 0.03, 5.7, 0.78, { fontSize: 20, color: C.ink });
     body(s, r[2], 9.1, y - 0.03, 3.1, 0.78, { fontSize: 18, bold: true, color: r[3], align: "center" });
   });
-  body(s, "Exploratory gated composition: fixed-time in normal/AM, residual policy in PM.", 1.2, 6.38, 10.8, 0.42, { fontSize: 21, bold: true, color: C.navy, align: "center" });
+  body(s, "Fresh seed-14 gated replay: 5.11% lower overall; fixed-time in normal/AM, residual policy in PM.", 0.85, 6.38, 11.3, 0.42, { fontSize: 18.5, bold: true, color: C.navy, align: "center" });
+  note(s, "Source: results/haichau_network_v2/final15-regime-gated-seed14-direct-summary.json. Exploratory controller outside the strict five-seed protocol.");
 }
 
 // 11 native line chart

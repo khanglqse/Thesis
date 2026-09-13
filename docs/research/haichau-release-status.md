@@ -38,6 +38,13 @@ result and must be updated before claiming a frozen release.
   `results/haichau_network_v2/final15-regime-gated-summary.json`. This result
   diagnoses a practical demand gate; it is not a fresh strict campaign and
   still needs direct simulator confirmation before a confirmatory claim.
+- A direct fresh replay of that gate for seed 14 covers all 15 test cases and
+  reproduces the composed result: 8,339.43 to 7,913.46 vehicle-hours, a 5.11%
+  reduction. Normal and AM are exact fixed-time ties; PM improves 10.39% in
+  aggregate. The compact, hash-bound rows are in
+  `results/haichau_network_v2/final15-regime-gated-seed14-direct-summary.json`.
+  It remains exploratory because the gate is outside the frozen five-seed
+  release protocol.
 - A short safety-margin sensitivity run with seed 13, one test case per regime,
   and a 900 s horizon compares residual score margins 0 and 5. Margin 5 exactly
   falls back to fixed-time in all three cases; margin 0 changes the queue by only

@@ -459,6 +459,16 @@ exploratory counterfactual composition rather than a fresh controller run; it
 motivates a preregistered gated campaign and is stored in
 \path{results/haichau_network_v2/final15-regime-gated-summary.json}.
 
+We then ran the same gate as a direct fresh replay for seed 14 rather than a
+row composition. Across all fifteen test cases, fixed-time accumulated 8,339.43
+vehicle-hours and the gated controller accumulated 7,913.46, a 5.11\%
+reduction. Normal and AM were exact fixed-time ties, while the PM aggregate
+reduction was 10.39\%. The direct rows retain the same network, demand hashes,
+checkpoint identity, and 3,600-second horizon in
+\path{results/haichau_network_v2/final15-regime-gated-seed14-direct-summary.json}.
+This is still exploratory evidence because the gated controller is outside the
+frozen five-seed release protocol.
+
 The residual safety margin was also varied in a short, explicitly exploratory
 check using learning seed 13, one held-out demand realization per regime, and a
 900-second horizon. With a score margin of 5, the controller selected the exact
