@@ -98,7 +98,7 @@ def main():
         "interpretation": (
             "The gate is presentation-ready exploratory evidence: fixed-time is "
             "retained in normal/AM and the residual policy is enabled in PM. "
-            "Seeds 13 and 16 have PM-only fresh coverage. The strict verifier "
+            "Seeds 13 and 16 assemble fresh fixed normal/AM and fresh PM coverage. The strict verifier "
             "remains the authority for a confirmatory release and is intentionally "
             "reported separately."),
     }

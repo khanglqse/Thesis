@@ -494,12 +494,12 @@ cases. Their queue-hours fall from 8,339.43 to 8,142.43 (2.36\%) and 8,253.86
 reductions are 4.80\% and 2.09\%, with case-level regressions. Across the five available
 seed summaries, the derived full-day reductions are 2.36\%, 5.62\%, 5.11\%,
 1.03\%, and 3.27\% (mean 3.48\%). Seeds 12, 14, and 15 have fresh fifteen-case
-coverage, whereas seeds 13 and 16 have fresh PM-only coverage; the latter use
-the common fixed normal/AM totals for the full-day derivation. The provenance
-table is stored in
+coverage for all five seeds. Seeds 12, 14, and 15 use direct full-day gate
+campaigns, while seeds 13 and 16 combine fresh fixed normal/AM replays with
+fresh PM gate replays. The provenance table is stored in
 \path{results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json}.
-At the case level, the gate regresses 3/15 cases for seed 12, 1/5 for seed 13,
-1/15 for seed 14, 3/15 for seed 15, and 2/5 for seed 16; the positive aggregate
+At the case level, the gate regresses 3/15 cases for seed 12, 1/15 for seed 13,
+1/15 for seed 14, 3/15 for seed 15, and 2/15 for seed 16; the positive aggregate
 does not imply improvement for every demand realization.
 
 \begin{table}[H]
@@ -511,16 +511,16 @@ does not imply improvement for every demand realization.
 Seed & Fresh coverage & Full-day reduction & PM reduction & Regressions \\
 \midrule
 12 & 15 cases & 2.36\% & 4.80\% & 3/15 \\
-13 & 5 PM cases & 5.62\% & 11.43\% & 1/5 \\
+13 & 15 cases & 5.62\% & 11.43\% & 1/15 \\
 14 & 15 cases & 5.11\% & 10.39\% & 1/15 \\
 15 & 15 cases & 1.03\% & 2.09\% & 3/15 \\
-16 & 5 PM cases & 3.27\% & 6.66\% & 2/5 \\
+16 & 15 cases & 3.27\% & 6.66\% & 2/15 \\
 \bottomrule
 \end{tabular}
 \vspace{-2pt}
 \begin{minipage}{0.92\textwidth}
-\small\textit{Note: the full-day values for seeds 13 and 16 are derived using the
-common fixed normal/AM totals because only the PM cases were replayed fresh.}
+\small\textit{Note: for seeds 13 and 16, normal/AM are fresh fixed-time replays
+and PM is a fresh residual-policy replay; the effective controller is recorded per case.}
 \end{minipage}
 \end{table}
 

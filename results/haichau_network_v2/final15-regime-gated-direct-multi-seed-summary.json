@@ -1,24 +1,24 @@
 {
   "aggregate_across_seed_summaries": {
     "bootstrap_ci95_pct": [
-      2.009994154942915,
-      4.946684339070876
+      2.0099941549429103,
+      4.946684339070871
     ],
     "bootstrap_repeats": 10000,
     "bootstrap_seed": 20260913,
     "max_pct": 5.622160160959576,
-    "mean_derived_full_day_improvement_pct": 3.478339247006895,
+    "mean_derived_full_day_improvement_pct": 3.4783392470068906,
     "min_pct": 1.026065996783419,
     "values_pct": [
       2.3623050709434303,
       5.622160160959576,
       5.1079363670871745,
       1.026065996783419,
-      3.273228639260875
+      3.273228639260853
     ]
   },
   "evidence_namespace": "haichau_network_v2",
-  "interpretation": "Fresh direct evidence for the gate covers all 15 cases for seeds 12, 14, and 15, and the five PM test cases for seeds 13 and 16. Full-day reductions for the PM-only seeds are derived by combining their fresh PM totals with the common fixed normal/AM totals. Case-level effects are computed against the common fresh fixed-time baseline. This is exploratory evidence outside the frozen strict confirmatory protocol; it must not be reported as a five-seed strict release.",
+  "interpretation": "Fresh direct evidence for the gate covers all 15 cases for seeds 12, 14, and 15, and the five PM test cases for seeds 13 and 16. Seeds 13 and 16 use fresh fixed normal/AM replays plus fresh PM gate replays; older PM-only artifacts remain supported as a fallback. Case-level effects are computed against the common fresh fixed-time baseline. This is exploratory evidence outside the frozen strict confirmatory protocol; it must not be reported as a five-seed strict release.",
   "learning_seeds": [
     12,
     13,
@@ -50,19 +50,19 @@
       "source_summary": "final15-regime-gated-seed12-direct-summary.json"
     },
     {
-      "case_count": 5,
-      "case_effects_covered": 5,
+      "case_count": 15,
+      "case_effects_covered": 15,
       "case_level_effect_max_pct": 26.738175317236042,
       "case_level_effect_min_pct": -1.7603252276621733,
       "case_level_improvements": 4,
       "case_level_regressions": 1,
-      "coverage": "pm_5_cases",
+      "coverage": "full_15_cases",
       "derived_full_day_improvement_pct": 5.622160160959576,
       "fixed_queue_hours": 8339.43,
       "gated_queue_hours": 7870.573888888889,
       "learning_seed": 13,
       "pm_improvement_pct": 11.433445885233098,
-      "source_summary": "final15-regime-gated-seed13-pm-direct-summary.json"
+      "source_summary": "final15-regime-gated-seed13-full-direct-summary.json"
     },
     {
       "case_count": 15,
@@ -95,19 +95,19 @@
       "source_summary": "final15-regime-gated-seed15-direct-summary.json"
     },
     {
-      "case_count": 5,
-      "case_effects_covered": 5,
+      "case_count": 15,
+      "case_effects_covered": 15,
       "case_level_effect_max_pct": 18.894170860851577,
       "case_level_effect_min_pct": -5.32661448777165,
       "case_level_improvements": 3,
       "case_level_regressions": 2,
-      "coverage": "pm_5_cases",
-      "derived_full_day_improvement_pct": 3.273228639260875,
+      "coverage": "full_15_cases",
+      "derived_full_day_improvement_pct": 3.273228639260853,
       "fixed_queue_hours": 8339.43,
-      "gated_queue_hours": 8066.461388888887,
+      "gated_queue_hours": 8066.461388888889,
       "learning_seed": 16,
       "pm_improvement_pct": 6.656566416741252,
-      "source_summary": "final15-regime-gated-seed16-pm-direct-summary.json"
+      "source_summary": "final15-regime-gated-seed16-full-direct-summary.json"
     }
   ]
 }

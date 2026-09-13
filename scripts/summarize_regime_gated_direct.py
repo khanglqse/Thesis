@@ -2,9 +2,10 @@
 """Summarize direct exploratory regime-gated Hai Chau replays.
 
 The gate uses tuned fixed-time in normal/AM and the residual checkpoint in PM.
-Some seed summaries contain all 15 cases while the PM-only summaries contain
-only the five PM cases; the latter receive a clearly labelled full-day
-derivation using the common deterministic fixed-time normal/AM totals.
+Seed summaries are compacted from direct gate campaigns. If an older checkout
+contains only a PM-only summary for seed 13 or 16, the script retains the
+clearly labelled fallback derivation using common deterministic fixed-time
+normal/AM totals.
 """
 
 import argparse
@@ -105,11 +106,18 @@ def main(argv=None):
     baseline = _fixed_rows(_read(root / args.baseline))
     names = {
         12: "final15-regime-gated-seed12-direct-summary.json",
-        13: "final15-regime-gated-seed13-pm-direct-summary.json",
+        13: "final15-regime-gated-seed13-full-direct-summary.json",
         14: "final15-regime-gated-seed14-direct-summary.json",
         15: "final15-regime-gated-seed15-direct-summary.json",
-        16: "final15-regime-gated-seed16-pm-direct-summary.json",
+        16: "final15-regime-gated-seed16-full-direct-summary.json",
     }
+    # Keep backward compatibility with a checkout that has only the earlier
+    # PM-only compact summaries. New full summaries are preferred whenever
+    # the fresh normal/AM fixed runs are available.
+    for seed, fallback in ((13, "final15-regime-gated-seed13-pm-direct-summary.json"),
+                           (16, "final15-regime-gated-seed16-pm-direct-summary.json")):
+        if not (root / names[seed]).is_file():
+            names[seed] = fallback
     results = []
     for seed, name in names.items():
         summary = _read(root / name)
@@ -137,9 +145,9 @@ def main(argv=None):
         "interpretation": (
             "Fresh direct evidence for the gate covers all 15 cases for seeds "
             "12, 14, and 15, and the five PM test cases for seeds 13 and 16. "
-            "Full-day reductions for the PM-only seeds are derived by combining "
-            "their fresh PM totals with the common fixed normal/AM totals. Case-level "
-            "effects are computed against the common fresh fixed-time baseline. "
+            "Seeds 13 and 16 use fresh fixed normal/AM replays plus fresh PM gate "
+            "replays; older PM-only artifacts remain supported as a fallback. "
+            "Case-level effects are computed against the common fresh fixed-time baseline. "
             "This is exploratory evidence outside the frozen strict confirmatory "
             "protocol; it must not be reported as a five-seed strict release."),
     }

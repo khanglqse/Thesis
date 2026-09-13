@@ -69,12 +69,13 @@ result and must be updated before claiming a frozen release.
   `results/haichau_network_v2/final15-regime-gated-seed12-direct-summary.json`
   and `results/haichau_network_v2/final15-regime-gated-seed15-direct-summary.json`.
 - Combining all five seed-level gate summaries gives derived full-day reductions
-  of 2.36%, 5.62%, 5.11%, 1.03%, and 3.27% (mean 3.48%). Seeds 12, 14, and 15
-  have fresh 15-case coverage; seeds 13 and 16 have fresh PM-only coverage and
-  use the common fixed normal/AM totals for the full-day derivation. The complete
-  provenance table is `results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json`.
-  At the case level, the gate regresses 3/15 cases for seed 12, 1/5 for seed 13,
-  1/15 for seed 14, 3/15 for seed 15, and 2/5 for seed 16; aggregate gains
+  of 2.36%, 5.62%, 5.11%, 1.03%, and 3.27% (mean 3.48%). All five seeds now
+  have fresh 15-case coverage: seeds 12, 14, and 15 use direct full-day gate
+  campaigns, while seeds 13 and 16 combine fresh fixed normal/AM replays with
+  fresh PM gate replays. The complete provenance table is
+  `results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json`.
+  At the case level, the gate regresses 3/15 cases for seed 12, 1/15 for seed 13,
+  1/15 for seed 14, 3/15 for seed 15, and 2/15 for seed 16; aggregate gains
   therefore do not imply improvement for every demand realization.
 - A short safety-margin sensitivity run with seed 13, one test case per regime,
   and a 900 s horizon compares residual score margins 0 and 5. Margin 5 exactly
