@@ -69,6 +69,9 @@ result and must be updated before claiming a frozen release.
   have fresh 15-case coverage; seeds 13 and 16 have fresh PM-only coverage and
   use the common fixed normal/AM totals for the full-day derivation. The complete
   provenance table is `results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json`.
+  At the case level, the gate regresses 3/15 cases for seed 12, 1/5 for seed 13,
+  1/15 for seed 14, 3/15 for seed 15, and 2/5 for seed 16; aggregate gains
+  therefore do not imply improvement for every demand realization.
 - A short safety-margin sensitivity run with seed 13, one test case per regime,
   and a 900 s horizon compares residual score margins 0 and 5. Margin 5 exactly
   falls back to fixed-time in all three cases; margin 0 changes the queue by only
