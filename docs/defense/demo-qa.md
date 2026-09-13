@@ -1,5 +1,11 @@
 # Defense demo QA record
 
+> **LEGACY ARCHIVE.** This QA record covers the older single-junction
+> `results/defense_bundle/v1` replay. Its 34.5% PM and 320.7% normal-demand
+> figures are not the current 53-signal Hai Chau evidence. For presentation,
+> use [`haichau-bounded-demo.md`](haichau-bounded-demo.md) and
+> `results/haichau_network_v2/demo-bounded`.
+
 Date: 2026-09-07. Host: macOS, Chrome, SUMO 1.24 replay bundle.
 
 | Check | Evidence | Result |

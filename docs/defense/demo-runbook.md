@@ -302,9 +302,11 @@ cannot disappear into the departure denominator.
 
 ## Legacy single-junction defense bundle
 
-The remainder of this runbook applies to the existing `results/defense_bundle/v1`
-evidence. Its observed-date and representative percentages are legacy claims and must not
-be presented as results of the 53-signal extension.
+> **ARCHIVE ONLY.** The remainder of this section applies to the existing
+> `results/defense_bundle/v1` evidence. Its observed-date and representative
+> percentages are legacy claims and must not be presented as results of the
+> 53-signal extension. Use [`haichau-bounded-demo.md`](haichau-bounded-demo.md)
+> for the current presentation path.
 
 ## Main path
 
