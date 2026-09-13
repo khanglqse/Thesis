@@ -1,0 +1,57 @@
+{
+  "case_count": 15,
+  "case_ids": [
+    "test_am_peak_demand101",
+    "test_am_peak_demand102",
+    "test_am_peak_demand103",
+    "test_am_peak_demand104",
+    "test_am_peak_demand105",
+    "test_normal_demand101",
+    "test_normal_demand102",
+    "test_normal_demand103",
+    "test_normal_demand104",
+    "test_normal_demand105",
+    "test_pm_peak_demand101",
+    "test_pm_peak_demand102",
+    "test_pm_peak_demand103",
+    "test_pm_peak_demand104",
+    "test_pm_peak_demand105"
+  ],
+  "claim_scope": "held-out synthetic Hai Chau network; one selected learned seed; not five-seed release",
+  "code_commit": "d6ca43155e110040e76e3628bda95335a1a706aa",
+  "controllers": [
+    "tuned_fixed",
+    "max_pressure",
+    "hysteretic_mp",
+    "schedule_residual_ddqn"
+  ],
+  "horizon_seconds": 3600,
+  "learned_checkpoint": {
+    "contract_path": "results/haichau_network_v2/training/final-seed14/checkpoints/step-0004/contract.json",
+    "contract_sha256": "7b0c5649c76305dda4bfe9b4fbbad8b00376f54af91a4eab913555d3aa7bc74e",
+    "learning_seed": 14,
+    "training_step": 4,
+    "weights_path": "results/haichau_network_v2/training/final-seed14/checkpoints/step-0004/weights.npz",
+    "weights_sha256": "34c5a31b954a9423167d7653ca8aa4f59b53337d3b7969a79c7bc39fa3ee59b1"
+  },
+  "network": {
+    "controlled_signals": 53,
+    "path": "datasets/haichau_network_v2/roadnet.json",
+    "sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1"
+  },
+  "profile": "bounded_15_case_controller_matrix",
+  "runtime": {
+    "digest": "sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517",
+    "dockerfile": "docker/cityflow-research/Dockerfile",
+    "dockerfile_sha256": "7464817a4fb91980e5711ce2eac96e749cecd9fc4bad6b41c1a996f0ebe11adf",
+    "image": "traffic-rl-cityflow-research@sha256:8a946185be9dfcdfb7bd189b88b73d84bb95e5d85c3003a7432ce9369dfc0517"
+  },
+  "schema_version": 1,
+  "selection_note": "seed 14 step 4 passed preregistered validation selector; seed 12 step 8 is retained as negative sensitivity result.",
+  "source_campaigns": [
+    "results/haichau_network_v2/final15-seed12-step8-run2",
+    "results/haichau_network_v2/final15-seed14-step4-residual",
+    "results/haichau_network_v2/final15-baselines-run2"
+  ],
+  "summary": "results/haichau_network_v2/final15-controller-matrix-summary.json"
+}
