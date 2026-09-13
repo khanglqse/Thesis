@@ -49,6 +49,15 @@ result and must be updated before claiming a frozen release.
   to 3,631.89 vehicle-hours, an 11.43% aggregate reduction. One case regresses
   by 1.76%, so the result is reported as an aggregate with case-level variation;
   rows are in `results/haichau_network_v2/final15-regime-gated-seed13-pm-direct-summary.json`.
+- A second independent PM-only replay for seed 16 covers the same five cases:
+  4,100.74 to 3,827.77 vehicle-hours, a 6.66% aggregate reduction. Two cases
+  regress, so this is also exploratory evidence with case-level variation; rows
+  are in `results/haichau_network_v2/final15-regime-gated-seed16-pm-direct-summary.json`.
+- Across the three direct PM gate replays (seeds 13, 14, and 16), the derived
+  full-day aggregate reductions are 5.62%, 5.11%, and 3.27% (mean 4.67%).
+  These runs strengthen the presentation claim that the gate improves the
+  fixed-time aggregate on this network, while remaining outside the frozen
+  five-seed confirmatory protocol.
 - A short safety-margin sensitivity run with seed 13, one test case per regime,
   and a 900 s horizon compares residual score margins 0 and 5. Margin 5 exactly
   falls back to fixed-time in all three cases; margin 0 changes the queue by only

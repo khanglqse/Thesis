@@ -476,6 +476,16 @@ as a useful robustness direction, but it does not make the two rejected seeds
 eligible for the frozen release. Its direct rows are stored in
 \path{results/haichau_network_v2/final15-regime-gated-seed13-pm-direct-summary.json}.
 
+A second independent PM-only replay for seed 16 produced 3,827.77 vehicle-hours
+against 4,100.74 for fixed-time, a 6.66\% aggregate reduction. Two of the five
+cases regressed, so this result is reported with its case-level variation and
+remains exploratory. Across the direct PM gate replays for seeds 13, 14, and
+16, the derived full-day aggregate reductions are 5.62\%, 5.11\%, and 3.27\%
+(mean 4.67\%). These replays provide additional robustness evidence for the
+presentation demo, but they remain outside the frozen five-seed confirmatory
+protocol. The seed-16 rows are stored in
+\path{results/haichau_network_v2/final15-regime-gated-seed16-pm-direct-summary.json}.
+
 The residual safety margin was also varied in a short, explicitly exploratory
 check using learning seed 13, one held-out demand realization per regime, and a
 900-second horizon. With a score margin of 5, the controller selected the exact
