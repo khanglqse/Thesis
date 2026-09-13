@@ -60,8 +60,8 @@ result and must be updated before claiming a frozen release.
   five-seed confirmatory protocol.
 - Fresh full-day gate replays for seeds 12 and 15 cover all 15 held-out cases,
   reducing 8,339.43 vehicle-hours to 8,142.43 (2.36%) and 8,253.86 (1.03%).
-  Normal and AM are exact fixed-time ties; the PM reductions are 3.28% and
-  0.48%, with case-level regressions. The compact rows are in
+  Normal and AM are exact fixed-time ties; the fresh PM reductions are 4.80%
+  and 2.09%, with case-level regressions. The compact rows are in
   `results/haichau_network_v2/final15-regime-gated-seed12-direct-summary.json`
   and `results/haichau_network_v2/final15-regime-gated-seed15-direct-summary.json`.
 - Combining all five seed-level gate summaries gives derived full-day reductions
