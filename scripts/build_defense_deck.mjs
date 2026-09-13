@@ -156,7 +156,7 @@ function metric(slide, value, label, x, y, color = C.navy) {
   body(s, "0.78%", 9.65, 4.0, 2.65, 0.65, { fontSize: 32, bold: true, color: C.coral, align: "center" });
   body(s, "AM peak regression", 9.65, 4.67, 2.65, 0.5, { fontSize: 13, color: C.gray, align: "center" });
   body(s, "Seed 15: 0.44% lower. Checkpoint and seed selection remain necessary.", 9.55, 5.55, 2.9, 0.75, { fontSize: 16, bold: true, color: C.navy, align: "center" });
-  note(s, "Source: results/haichau_network_v2/final15-three-seed-summary.json and final15-seed-sensitivity.png. Bounded 15-case matrix; seeds 13 and 16 are not yet eligible under the strict selector.");
+  note(s, "Source: results/haichau_network_v2/final15-three-seed-summary.json and final15-seed-sensitivity.png. The strict selector still rejects seeds 13 and 16; independent gated PM replays are reported separately.");
 }
 
 // 9 native chart
@@ -192,8 +192,8 @@ function metric(slide, value, label, x, y, color = C.navy) {
     body(s, r[1], 3.0, y - 0.03, 5.7, 0.78, { fontSize: 20, color: C.ink });
     body(s, r[2], 9.1, y - 0.03, 3.1, 0.78, { fontSize: 18, bold: true, color: r[3], align: "center" });
   });
-  body(s, "Fresh seed-14 gated replay: 5.11% lower overall; fixed-time in normal/AM, residual policy in PM.", 0.85, 6.38, 11.3, 0.42, { fontSize: 18.5, bold: true, color: C.navy, align: "center" });
-  note(s, "Source: results/haichau_network_v2/final15-regime-gated-seed14-direct-summary.json. Exploratory controller outside the strict five-seed protocol.");
+  body(s, "Fresh seed-14 gate: 5.11% lower overall; PM-only replays seed13/16: 11.43% and 6.66% lower.", 0.7, 6.38, 11.6, 0.42, { fontSize: 17.2, bold: true, color: C.navy, align: "center" });
+  note(s, "Sources: final15-regime-gated-seed14-direct-summary.json, final15-regime-gated-seed13-pm-direct-summary.json, and final15-regime-gated-seed16-pm-direct-summary.json. Exploratory gate outside the strict five-seed protocol; case-level regressions remain.");
 }
 
 // 11 native line chart
