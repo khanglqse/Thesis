@@ -342,8 +342,18 @@ def build_controller_runtime(project_root, run, runtime_dir,
     elif controller_id == "schedule_residual_ddqn":
         # The declared frozen regime is the only operation context supplied to
         # this policy.  Evaluation is greedy and deterministic per seed.
+        gate = config.get("regime_gate")
+        if gate is not None:
+            expected_gate = {"normal": "fixed", "am_peak": "fixed",
+                             "pm_peak": "residual"}
+            if gate != expected_gate:
+                raise ValueError("unsupported residual regime gate")
+            effective_time_of_day = (
+                "pm_peak" if gate[run["regime"]] == "residual" else "normal")
+        else:
+            effective_time_of_day = run["regime"]
         controller = ScheduleResidualController(
-            env, network, str(run.get("regime")), epsilon=0.0,
+            env, network, effective_time_of_day, epsilon=0.0,
             seed=int(run.get("learning_seed")),
             min_score_margin=float(config.get("safety", {}).get(
                 "min_score_margin", 0.0)))

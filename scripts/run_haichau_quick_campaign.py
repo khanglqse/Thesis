@@ -95,6 +95,8 @@ def main(argv=None):
     parser.add_argument("--controllers", default="tuned_fixed,max_pressure,schedule_residual_ddqn")
     parser.add_argument("--margin", type=float, default=0.0,
                         help="residual score margin for exploratory safety fallback")
+    parser.add_argument("--regime-gated", action="store_true",
+                        help="exploratory policy: fixed in normal/AM, residual in PM")
     parser.add_argument("--cases-per-regime", type=int, default=1,
                         help="number of test demand realizations per regime")
     parser.add_argument("--demand-seeds", default=None,
@@ -175,6 +177,10 @@ def main(argv=None):
                                            "demand_seed", "simulator_seed", "filename",
                                            "future_flow"]},
                                    "critic_units": contract["critic_units"]})
+                    if args.regime_gated and controller == "schedule_residual_ddqn":
+                        config["regime_gate"] = {
+                            "normal": "fixed", "am_peak": "fixed",
+                            "pm_peak": "residual"}
                 run_id = "%s__%s__%ds" % (controller, case["case_id"], args.horizon)
                 run = {
                     "run_id": run_id, "case_id": case["case_id"], "regime": regime,
