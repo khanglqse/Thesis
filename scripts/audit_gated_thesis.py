@@ -61,6 +61,12 @@ def main():
                        if row["coverage"] == "full_15_cases"]
     all_positive = all(row["derived_full_day_improvement_pct"] > 0
                        for row in seed_results)
+    foundation_evidence = {
+        key: foundation.get(key)
+        for key in ("status", "controlled_signals", "cases", "split_counts",
+                    "network_sha256", "runtime_digest")
+        if key in foundation
+    }
     audit = {
         "schema_version": 1,
         "profile": "exploratory_regime_gated_thesis_audit",
@@ -68,7 +74,7 @@ def main():
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "presentation_ready": bool(artifacts) and len(artifacts) == 4,
         "foundation": {"passed": foundation.get("status") == "verified",
-                       "returncode": foundation_rc, "result": foundation},
+                       "returncode": foundation_rc, "evidence": foundation_evidence},
         "exploratory_gate": {
             "passed": all_positive,
             "learning_seeds": summary["learning_seeds"],
