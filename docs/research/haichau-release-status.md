@@ -45,6 +45,10 @@ result and must be updated before claiming a frozen release.
   `results/haichau_network_v2/final15-regime-gated-seed14-direct-summary.json`.
   It remains exploratory because the gate is outside the frozen five-seed
   release protocol.
+- The same PM-only replay for seed 13 covers all five PM test cases: 4,100.74
+  to 3,631.89 vehicle-hours, an 11.43% aggregate reduction. One case regresses
+  by 1.76%, so the result is reported as an aggregate with case-level variation;
+  rows are in `results/haichau_network_v2/final15-regime-gated-seed13-pm-direct-summary.json`.
 - A short safety-margin sensitivity run with seed 13, one test case per regime,
   and a 900 s horizon compares residual score margins 0 and 5. Margin 5 exactly
   falls back to fixed-time in all three cases; margin 0 changes the queue by only

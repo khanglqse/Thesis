@@ -469,6 +469,13 @@ checkpoint identity, and 3,600-second horizon in
 This is still exploratory evidence because the gated controller is outside the
 frozen five-seed release protocol.
 
+The same policy was replayed on the five PM test cases for seed 13. Queue-hours
+fell from 4,100.74 to 3,631.89 (11.43\%); one case regressed by 1.76\%, while
+the other four improved. This independent learning seed supports the PM gate
+as a useful robustness direction, but it does not make the two rejected seeds
+eligible for the frozen release. Its direct rows are stored in
+\path{results/haichau_network_v2/final15-regime-gated-seed13-pm-direct-summary.json}.
+
 The residual safety margin was also varied in a short, explicitly exploratory
 check using learning seed 13, one held-out demand realization per regime, and a
 900-second horizon. With a score margin of 5, the controller selected the exact
