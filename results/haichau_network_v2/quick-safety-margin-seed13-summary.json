@@ -1,7 +1,6 @@
 {
   "campaigns": [
     {
-      "campaign_summary_sha256": "547e861d3f57b1f55c73219551a7fc8b2afaff26945f3a2183ced78b109f9eb9",
       "case_selection": "test demand101, one case per regime",
       "horizon_seconds": 900,
       "margin": 0.0,
@@ -57,7 +56,6 @@
       ]
     },
     {
-      "campaign_summary_sha256": "cd356a12ae8b227c9765b0df0b1fe7b06597121e1c00d9bf2ea5579e44f6ffd1",
       "case_selection": "test demand101, one case per regime",
       "horizon_seconds": 900,
       "margin": 5.0,
@@ -167,5 +165,6 @@
   "network_namespace": "haichau_network_v2",
   "profile": "exploratory_safety_margin_sensitivity",
   "schema_version": 1,
+  "source_artifacts_retained": false,
   "source_code_commit": "e57b513450546ad2cfe90a61b9bd63abcd84fe9e"
 }
