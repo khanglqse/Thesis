@@ -44,11 +44,13 @@ summaries. The gate remains exploratory and is labelled as such in the deck.
 
 ## Scope statement
 
-The displayed result uses learning seed 14, checkpoint step 4, and all fifteen
-declared held-out cases. Three completed learning seeds give a mean aggregate
-reduction of 2.45%; seed variation is therefore part of the result. The strict
-five-seed confirmatory release is still pending and must not be described as
-accepted until `scripts/verify_haichau_thesis.py` reports `complete: true`.
+The interactive display uses learning seed 14, checkpoint step 4, and all
+fifteen declared held-out cases. The accompanying gated analysis has fresh
+fifteen-case coverage for seeds 12--16 and gives a mean full-day reduction of
+3.48% (seed range 1.03%--5.62%; bootstrap 95% interval 2.01%--4.95%). The
+gated analysis is exploratory; it must not be described as a frozen
+confirmatory release until `scripts/verify_haichau_thesis.py` reports
+`complete: true`.
 
 ## Preflight
 

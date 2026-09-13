@@ -34,14 +34,14 @@ result and must be updated before claiming a frozen release.
 - The thesis PDF and defense Q&A now distinguish bounded evidence from the
   pending strict release. The short launch and preflight procedure is in
   `docs/defense/haichau-bounded-demo.md`.
-- A regime-gated exploratory composition over the three completed seeds keeps
+- A regime-gated exploratory composition over the five completed seeds keeps
   tuned fixed-time in normal and AM-peak cases and enables the residual policy
   only in PM peak. Across 45 matched case rows it reduces queue-hours by
-  2.83%; the three seed-level reductions are 2.36%, 5.11%, and 1.03%. The
-  source-bound summary is
+  3.48% across 75 matched case rows. The five seed-level reductions are
+  2.36%, 5.62%, 5.11%, 1.03%, and 3.27%. The source-bound summary is
   `results/haichau_network_v2/final15-regime-gated-summary.json`. This result
   diagnoses a practical demand gate; it is not a fresh strict campaign and
-  still needs direct simulator confirmation before a confirmatory claim.
+  remains exploratory.
 - A direct fresh replay of that gate for seed 14 covers all 15 test cases and
   reproduces the composed result: 8,339.43 to 7,913.46 vehicle-hours, a 5.11%
   reduction. Normal and AM are exact fixed-time ties; PM improves 10.39% in
@@ -89,12 +89,11 @@ result and must be updated before claiming a frozen release.
 
 The strict verifier is not complete. It still requires a frozen protocol and
 runtime attestation, five selected confirmatory learning seeds (12--16), fresh
-matched release runs, hierarchical seed-level statistics, acceptance evidence,
-hash-derived thesis artifacts, an offline-demo release manifest, and a clean
-checkout record. Seeds 13 and 16 currently have no eligible checkpoint under
-the preregistered selector; their rejection is evidence and must not be hidden
-by relabelling a bounded run as final.
+matched release runs under that protocol, hierarchical seed-level statistics,
+acceptance evidence, hash-derived thesis artifacts, an offline-demo release
+manifest, and a clean checkout record. Seeds 13 and 16 have no eligible
+checkpoint under the preregistered selector; their rejection is evidence and
+must not be hidden by relabelling a gated exploratory run as final.
 
-The seed-14 and seed-12 full 15-case runs are therefore useful results for the
-thesis and defense, but they are not evidence that all five confirmatory seeds
-have passed.
+The five-seed gated summaries are useful results for the thesis and defense,
+but they are not evidence that the frozen confirmatory protocol has passed.
