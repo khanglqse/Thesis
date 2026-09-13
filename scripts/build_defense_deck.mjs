@@ -192,8 +192,8 @@ function metric(slide, value, label, x, y, color = C.navy) {
     body(s, r[1], 3.0, y - 0.03, 5.7, 0.78, { fontSize: 20, color: C.ink });
     body(s, r[2], 9.1, y - 0.03, 3.1, 0.78, { fontSize: 18, bold: true, color: r[3], align: "center" });
   });
-  body(s, "Fresh seed-14 gate: 5.11% lower overall; PM-only replays seed13/16: 11.43% and 6.66% lower.", 0.7, 6.38, 11.6, 0.42, { fontSize: 17.2, bold: true, color: C.navy, align: "center" });
-  note(s, "Sources: final15-regime-gated-seed14-direct-summary.json, final15-regime-gated-seed13-pm-direct-summary.json, and final15-regime-gated-seed16-pm-direct-summary.json. Exploratory gate outside the strict five-seed protocol; case-level regressions remain.");
+  body(s, "Five-seed gate summaries: 1.03–5.62% lower overall (mean 3.48%); normal/AM remain exact fixed-time ties.", 0.55, 6.38, 11.9, 0.42, { fontSize: 17.1, bold: true, color: C.navy, align: "center" });
+  note(s, "Sources: final15-regime-gated-direct-multi-seed-summary.json and its hash-bound per-seed summaries. Fresh fifteen-case coverage is available for seeds 12, 14, and 15; seeds 13 and 16 are PM-only. Exploratory gate outside the strict five-seed protocol; case-level regressions remain.");
 }
 
 // 11 native line chart
