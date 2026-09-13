@@ -4,7 +4,7 @@
 
 **Why one intersection?** A full OSM conversion introduced neighboring signals and short fragments without validated demand or timings. The isolated junction supports a causal comparison but no corridor claim.
 
-**Does the 53-signal extension use observed district-wide demand?** No. It uses an OpenStreetMap-derived Hai Chau topology and synthetic network demand constrained by Da Nang evidence. The JICA and DaCRISS planning studies provide context only; they do not calibrate the 53 signal timings, routes, or flows. It has no acceptance or performance result until the release verifier reports `"complete": true`.
+**Does the 53-signal extension use observed district-wide demand?** No. It uses an OpenStreetMap-derived Hai Chau topology and synthetic network demand constrained by Da Nang evidence. The JICA and DaCRISS planning studies provide context only; they do not calibrate the 53 signal timings, routes, or flows. The bounded 15-case analysis reports a 6.12% aggregate queue reduction for seed 14, while the strict five-seed confirmatory release remains pending until the release verifier reports `"complete": true`.
 
 **Why does RL lose in normal traffic?** Fixed time clears sparse arrivals with little residual queue. Adaptive switching pays clearance cost without enough benefit. This motivates demand gating.
 
