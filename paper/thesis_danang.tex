@@ -442,6 +442,15 @@ normal-hour failure mode and provides a defensible network-scale result for the
 presentation demo, but it does not replace the preregistered five-seed release
 campaign or its fail-closed verifier.
 
+For context, the same fifteen cases were evaluated with two non-learning
+baselines. Max-Pressure accumulated 6,347.00 vehicle-hours and hysteretic
+Max-Pressure 6,739.13, compared with 8,339.43 for fixed-time. Their aggregate
+reductions were therefore 23.89\% and 19.19\%, while schedule-residual DDQN
+reduced the metric by 6.12\%. Max-Pressure is the strongest controller in this
+synthetic matrix; the thesis consequently claims improvement over fixed-time,
+not universal superiority over every baseline. The complete matrix is stored
+in \path{results/haichau_network_v2/final15-controller-matrix-summary.json}.
+
 \section{Answer to the research question}
 The learned controller has evidence of an aggregate benefit across all fifteen
 bounded Hai Chau V2 test cases and exact non-inferiority in normal operation.

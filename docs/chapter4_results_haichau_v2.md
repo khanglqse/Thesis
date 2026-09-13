@@ -43,6 +43,24 @@ The machine-readable source is
 `results/haichau_network_v2/final15-seed14-step4-summary.json`; regenerate it
 with `scripts/summarize_haichau_short_campaign.py` after rerunning the campaigns.
 
+### 4.2.1 Baseline matrix
+
+The same 15 cases were also run with raw Max-Pressure and hysteretic
+Max-Pressure. The complete matrix is:
+
+| Controller | Total queue-hours | Mean completion rate | Change vs fixed-time |
+| --- | ---: | ---: | ---: |
+| Fixed-time | 8,339.43 | 66.92% | 0.00% |
+| Max-Pressure | 6,347.00 | 70.56% | **23.89% lower** |
+| Hysteretic Max-Pressure | 6,739.13 | 69.77% | **19.19% lower** |
+| Schedule-residual DDQN | 7,829.25 | 67.98% | **6.12% lower** |
+
+Max-Pressure is the strongest baseline in this synthetic network. The learned
+controller still improves over fixed-time, but this comparison prevents an
+unsupported claim that DDQN is the best controller for every regime. The
+machine-readable matrix is
+`results/haichau_network_v2/final15-controller-matrix-summary.json`.
+
 As a checkpoint sensitivity result, seed 12 step 8 over the same 15 cases
 reduced the aggregate metric by only 0.78% and regressed 5.67% in AM peak.
 This is retained as a negative result: passing validation for one seed does not
