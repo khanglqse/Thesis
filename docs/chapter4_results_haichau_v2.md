@@ -65,8 +65,12 @@ Its network, runtime, checkpoint and case identities are recorded in
 
 As a checkpoint sensitivity result, seed 12 step 8 over the same 15 cases
 reduced the aggregate metric by only 0.78% and regressed 5.67% in AM peak.
-This is retained as a negative result: passing validation for one seed does not
-guarantee test generalization.
+Seed 15 step 8 reduced the aggregate metric by 0.44%, with a paired bootstrap
+interval of −3.99% to 3.99%. These are retained as negative sensitivity
+results: passing validation for one seed does not guarantee test
+generalization. The two sensitivity summaries are
+`results/haichau_network_v2/final15-seed12-step8-summary.json` and
+`results/haichau_network_v2/final15-seed15-step8-summary.json`.
 
 ## 4.3 Training and validation
 
