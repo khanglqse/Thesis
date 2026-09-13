@@ -105,6 +105,8 @@ def main(argv=None):
                         help="checkpoint step directory containing contract.json and weights.npz")
     parser.add_argument("--workers", type=int, default=2,
                         help="parallel CityFlow containers for this exploratory campaign")
+    parser.add_argument("--regimes", default=",".join(REGIMES),
+                        help="comma-separated regimes to run (exploratory subset allowed)")
     args = parser.parse_args(argv)
     if args.horizon <= 0 or args.horizon % 300:
         parser.error("--horizon must be a positive multiple of 300")
@@ -116,6 +118,9 @@ def main(argv=None):
         parser.error("--cases-per-regime must be positive")
     if args.workers <= 0:
         parser.error("--workers must be positive")
+    selected_regimes = tuple(value for value in args.regimes.split(",") if value)
+    if not selected_regimes or set(selected_regimes) - set(REGIMES):
+        parser.error("--regimes contains an unknown or empty regime")
     if args.margin < 0:
         parser.error("--margin must be nonnegative")
     requested_seeds = (None if args.demand_seeds is None else
@@ -127,7 +132,7 @@ def main(argv=None):
     output.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((root / "results/haichau_network_v2/experiment-manifest.json").read_text())
     cases = {}
-    for regime in REGIMES:
+    for regime in selected_regimes:
         candidates = sorted((case for case in manifest["cases"]
                              if case.get("split") == "test"
                              and case.get("operational_time_of_day") == regime),
@@ -135,7 +140,7 @@ def main(argv=None):
         if requested_seeds is not None:
             candidates = [case for case in candidates if case.get("demand_seed") in requested_seeds]
         cases[regime] = candidates[:args.cases_per_regime]
-    if any(not cases[regime] for regime in REGIMES):
+    if any(not cases[regime] for regime in selected_regimes):
         raise ValueError("test manifest lacks a regime")
     quick_checkpoint = (Path(args.checkpoint_root).resolve() if args.checkpoint_root
                         else root / ("results/haichau_network_v2/training/"
@@ -159,7 +164,7 @@ def main(argv=None):
         ["docker", "image", "inspect", IMAGE, "-f", "{{.Id}}"],
         text=True).strip()
     runs = []
-    for regime in REGIMES:
+    for regime in selected_regimes:
         for case in cases[regime]:
             flow_target = output / "demands" / (case["case_id"] + "_%ds.json" % args.horizon)
             vehicle_count = short_flow(root / case["flow_path"], flow_target, args.horizon)
@@ -217,7 +222,7 @@ def main(argv=None):
     records.sort(key=lambda item: item["run_id"])
     (output / "campaign-summary.json").write_text(
                     json.dumps({"profile": "exploratory_short", "horizon_seconds": args.horizon,
-                    "regimes": REGIMES, "controllers": controllers, "runs": records},
+                    "regimes": selected_regimes, "controllers": controllers, "runs": records},
                    indent=2, sort_keys=True) + "\n")
     failures = sum(record["returncode"] != 0 for record in records)
     print(json.dumps({"complete": len(records) - failures, "failed": failures,
