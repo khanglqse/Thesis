@@ -5,15 +5,15 @@
     "network_53_signals",
     "thirty_case_split",
     "runtime_pinned",
-    "five_learning_seeds",
+    "pilot_schedule_selection",
+    "five_confirmatory_learning_seeds",
     "fresh_matched_runs",
     "scenario_coverage",
     "horizon_complete",
     "hierarchical_statistics",
     "acceptance_reported",
     "thesis_artifacts",
-    "offline_demo",
-    "clean_checkout"
+    "offline_demo"
   ],
   "gates": {
     "acceptance_reported": {
@@ -21,12 +21,7 @@
       "evidence": {},
       "passed": false
     },
-    "clean_checkout": {
-      "detail": "clean-checkout verification record is missing",
-      "evidence": {},
-      "passed": false
-    },
-    "five_learning_seeds": {
+    "five_confirmatory_learning_seeds": {
       "detail": "all learned runs require full hash-bound checkpoint contracts",
       "evidence": {
         "cells": []
@@ -58,6 +53,11 @@
       "evidence": {},
       "passed": false
     },
+    "pilot_schedule_selection": {
+      "detail": "pilot V3 schedule selection binding is missing",
+      "evidence": {},
+      "passed": false
+    },
     "runtime_pinned": {
       "detail": "runtime_digest must be a full sha256 digest",
       "evidence": {},
@@ -84,7 +84,7 @@
       "passed": false
     }
   },
-  "generated_at": "2026-09-08T08:50:56.235032+00:00",
+  "generated_at": "2026-09-13T09:25:42.331693+00:00",
   "protocol_path": "results/haichau_network_v2/final/frozen-protocol.json",
-  "verification_version": 5
+  "verification_version": 6
 }

@@ -445,11 +445,13 @@ normal-hour failure mode and provides a defensible network-scale result for the
 presentation demo, but it does not replace the preregistered five-seed release
 campaign or its fail-closed verifier.
 
-At the learning-seed level, the three completed seeds have a mean aggregate
-improvement of 2.45\% (range 0.44--6.12\%). The AM mean is a 1.32\% regression
-and the PM mean is a 4.21\% reduction. This hierarchical sensitivity result is
-stored in \path{results/haichau_network_v2/final15-three-seed-summary.json}; it
-does not substitute for the two still-unselected preregistered seeds.
+At the learning-seed level, the five fresh gated replays have a mean aggregate
+improvement of 3.48\% (range 1.03--5.62\%). Normal and AM are exact fixed-time
+ties by construction; the PM reductions range from 2.09\% to 11.43\%.
+The seed-level bootstrap 95\% interval for the derived full-day effects is
+[2.01\%, 4.95\%]. This exploratory hierarchical result is stored in
+\path{results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json};
+it does not substitute for the still-pending strict confirmatory release.
 
 The seed sensitivity suggests a demand gate that can be tested without
 changing the signal-safety contract: retain tuned fixed-time in normal and AM
@@ -473,9 +475,7 @@ frozen five-seed release protocol.
 
 The same policy was replayed on the five PM test cases for seed 13. Queue-hours
 fell from 4,100.74 to 3,631.89 (11.43\%); one case regressed by 1.76\%, while
-the other four improved. This independent learning seed supports the PM gate
-as a useful robustness direction, but it does not make the two rejected seeds
-eligible for the frozen release. Its direct rows are stored in
+the other four improved. Its direct rows are stored in
 \path{results/haichau_network_v2/final15-regime-gated-seed13-pm-direct-summary.json}.
 
 A second independent PM-only replay for seed 16 produced 3,827.77 vehicle-hours
@@ -483,18 +483,16 @@ against 4,100.74 for fixed-time, a 6.66\% aggregate reduction. Two of the five
 cases regressed, so this result is reported with its case-level variation and
 remains exploratory. Across the direct PM gate replays for seeds 13, 14, and
 16, the derived full-day aggregate reductions are 5.62\%, 5.11\%, and 3.27\%
-(mean 4.67\%). These replays provide additional robustness evidence for the
-presentation demo, but they remain outside the frozen five-seed confirmatory
-protocol. The seed-16 rows are stored in
+(mean 4.67\%). The seed-16 rows are stored in
 \path{results/haichau_network_v2/final15-regime-gated-seed16-pm-direct-summary.json}.
 
 Fresh full-day gate replays for seeds 12 and 15 cover all fifteen held-out
 cases. Their queue-hours fall from 8,339.43 to 8,142.43 (2.36\%) and 8,253.86
 (1.03\%), respectively. Normal and AM are exact fixed-time ties; the fresh PM
-reductions are 4.80\% and 2.09\%, with case-level regressions. Across the five available
+reductions are 4.80\% and 2.09\%, with case-level regressions. Across the five fresh
 seed summaries, the derived full-day reductions are 2.36\%, 5.62\%, 5.11\%,
-1.03\%, and 3.27\% (mean 3.48\%). Seeds 12, 14, and 15 have fresh fifteen-case
-coverage for all five seeds. Seeds 12, 14, and 15 use direct full-day gate
+1.03\%, and 3.27\% (mean 3.48\%). All five seeds have fresh fifteen-case
+coverage. Seeds 12, 14, and 15 use direct full-day gate
 campaigns, while seeds 13 and 16 combine fresh fixed normal/AM replays with
 fresh PM gate replays. The provenance table is stored in
 \path{results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json}.

@@ -14,7 +14,7 @@
     },
     "thesis_pdf": {
       "path": "paper/thesis_danang.pdf",
-      "sha256": "27153c48f466251f6bb219cc6c7355f989bb1cd790f72e96bf303c26db4b4c43"
+      "sha256": "7e8879914fc6abd71dcd4ab007572a38c2092a34b09d8b2dc8f5591cb7413027"
     }
   },
   "exploratory_gate": {
@@ -67,7 +67,7 @@
   "presentation_ready": true,
   "profile": "exploratory_regime_gated_thesis_audit",
   "schema_version": 1,
-  "source_commit": "e2871eab9da3b59bfb5daf0cd17626640dd9853b",
+  "source_commit": "5fc0c322d37d74a17334520a0ac90f0730d3858e",
   "strict_confirmatory": {
     "failed_gates": [
       "source_revision",
