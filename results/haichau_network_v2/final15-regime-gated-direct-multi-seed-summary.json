@@ -1,20 +1,20 @@
 {
   "aggregate_across_seed_summaries": {
     "bootstrap_ci95_pct": [
-      2.009994154942909,
-      4.946684339070866
+      2.009994154942915,
+      4.946684339070876
     ],
     "bootstrap_repeats": 10000,
     "bootstrap_seed": 20260913,
-    "max_pct": 5.622160160959571,
-    "mean_derived_full_day_improvement_pct": 3.4783392470068875,
-    "min_pct": 1.0260659967834198,
+    "max_pct": 5.622160160959576,
+    "mean_derived_full_day_improvement_pct": 3.478339247006895,
+    "min_pct": 1.026065996783419,
     "values_pct": [
-      2.3623050709434312,
-      5.622160160959571,
-      5.107936367087173,
-      1.0260659967834198,
-      3.2732286392608425
+      2.3623050709434303,
+      5.622160160959576,
+      5.1079363670871745,
+      1.026065996783419,
+      3.273228639260875
     ]
   },
   "evidence_namespace": "haichau_network_v2",
@@ -42,7 +42,7 @@
       "case_level_improvements": 2,
       "case_level_regressions": 3,
       "coverage": "full_15_cases",
-      "derived_full_day_improvement_pct": 2.3623050709434312,
+      "derived_full_day_improvement_pct": 2.3623050709434303,
       "fixed_queue_hours": 8339.43,
       "gated_queue_hours": 8142.427222222223,
       "learning_seed": 12,
@@ -57,9 +57,9 @@
       "case_level_improvements": 4,
       "case_level_regressions": 1,
       "coverage": "pm_5_cases",
-      "derived_full_day_improvement_pct": 5.622160160959571,
+      "derived_full_day_improvement_pct": 5.622160160959576,
       "fixed_queue_hours": 8339.43,
-      "gated_queue_hours": 7870.57388888889,
+      "gated_queue_hours": 7870.573888888889,
       "learning_seed": 13,
       "pm_improvement_pct": 11.433445885233098,
       "source_summary": "final15-regime-gated-seed13-pm-direct-summary.json"
@@ -72,7 +72,7 @@
       "case_level_improvements": 4,
       "case_level_regressions": 1,
       "coverage": "full_15_cases",
-      "derived_full_day_improvement_pct": 5.107936367087173,
+      "derived_full_day_improvement_pct": 5.1079363670871745,
       "fixed_queue_hours": 8339.43,
       "gated_queue_hours": 7913.457222222222,
       "learning_seed": 14,
@@ -87,7 +87,7 @@
       "case_level_improvements": 2,
       "case_level_regressions": 3,
       "coverage": "full_15_cases",
-      "derived_full_day_improvement_pct": 1.0260659967834198,
+      "derived_full_day_improvement_pct": 1.026065996783419,
       "fixed_queue_hours": 8339.43,
       "gated_queue_hours": 8253.861944444445,
       "learning_seed": 15,
@@ -102,9 +102,9 @@
       "case_level_improvements": 3,
       "case_level_regressions": 2,
       "coverage": "pm_5_cases",
-      "derived_full_day_improvement_pct": 3.2732286392608425,
+      "derived_full_day_improvement_pct": 3.273228639260875,
       "fixed_queue_hours": 8339.43,
-      "gated_queue_hours": 8066.46138888889,
+      "gated_queue_hours": 8066.461388888887,
       "learning_seed": 16,
       "pm_improvement_pct": 6.656566416741252,
       "source_summary": "final15-regime-gated-seed16-pm-direct-summary.json"
