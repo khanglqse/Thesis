@@ -29,6 +29,13 @@ summaries as a strict five-seed release.
 The exact campaign, thesis, offline-demo and clean-checkout procedure is in
 `docs/defense/demo-runbook.md`.
 
+To reproduce the exploratory five-seed gate table from the compact, hash-bound
+summaries:
+
+```sh
+python3 scripts/summarize_regime_gated_direct.py
+```
+
 ### Preregistered V3 robustness appendix
 
 After the primary 53-signal protocol, campaign, and summary are complete and committed, the
