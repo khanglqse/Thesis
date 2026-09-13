@@ -18,9 +18,10 @@ result and must be updated before claiming a frozen release.
 - On the same cases, Max-Pressure reduces queue-hours by 23.89% and
   hysteretic Max-Pressure by 19.19%. These are stronger baselines and remain
   part of the claim boundary.
-- Three completed learned seeds (12, 14 and 15) give aggregate reductions of
-  0.78%, 6.12% and 0.44%; the mean seed-level reduction is 2.45%. The AM
-  mean across these seeds is −1.32%, so seed variance is material.
+- The bounded learned checkpoint comparison remains useful historical context:
+  seeds 12, 14 and 15 gave aggregate reductions of 0.78%, 6.12% and 0.44%
+  before the regime-gated replays. The current five-seed gate is reported below;
+  seed variation remains material.
 - Normal operation is exactly tied to fixed-time by the residual controller's
   anchored policy. AM and PM improvements are 3.53% and 8.86% respectively,
   with individual-case regressions still present.
@@ -36,8 +37,8 @@ result and must be updated before claiming a frozen release.
   `docs/defense/haichau-bounded-demo.md`.
 - A regime-gated exploratory composition over the five completed seeds keeps
   tuned fixed-time in normal and AM-peak cases and enables the residual policy
-  only in PM peak. Across 45 matched case rows it reduces queue-hours by
-  3.48% across 75 matched case rows. The five seed-level reductions are
+  only in PM peak. Across 75 matched case rows it reduces queue-hours by
+  3.48%. The five seed-level reductions are
   2.36%, 5.62%, 5.11%, 1.03%, and 3.27%. The source-bound summary is
   `results/haichau_network_v2/final15-regime-gated-summary.json`. This result
   diagnoses a practical demand gate; it is not a fresh strict campaign and
