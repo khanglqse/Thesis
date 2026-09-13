@@ -38,6 +38,13 @@ result and must be updated before claiming a frozen release.
   `results/haichau_network_v2/final15-regime-gated-summary.json`. This result
   diagnoses a practical demand gate; it is not a fresh strict campaign and
   still needs direct simulator confirmation before a confirmatory claim.
+- A short safety-margin sensitivity run with seed 13, one test case per regime,
+  and a 900 s horizon compares residual score margins 0 and 5. Margin 5 exactly
+  falls back to fixed-time in all three cases; margin 0 changes the queue by only
+  0.019% in AM and 0.011% in PM, with an AM completion gain of 0.34 percentage
+  points and a PM loss of 0.10 points. This exploratory parameter evidence is
+  recorded in `results/haichau_network_v2/quick-safety-margin-seed13-summary.json`;
+  it does not replace the full frozen campaign.
 
 ## Still required for a frozen confirmatory release
 

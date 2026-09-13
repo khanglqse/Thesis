@@ -459,6 +459,17 @@ exploratory counterfactual composition rather than a fresh controller run; it
 motivates a preregistered gated campaign and is stored in
 \path{results/haichau_network_v2/final15-regime-gated-summary.json}.
 
+The residual safety margin was also varied in a short, explicitly exploratory
+check using learning seed 13, one held-out demand realization per regime, and a
+900-second horizon. With a score margin of 5, the controller selected the exact
+fixed-time trace in all three cases. With margin 0, the queue reduction was only
+0.019\% in AM and 0.011\% in PM (zero in normal demand); AM completion increased
+by 0.34 percentage points while PM completion decreased by 0.10 points. These
+results show that the fallback parameter trades learned activity for safety, but
+they are too small and too short to support a confirmatory claim. The complete
+rows and campaign hashes are in
+\path{results/haichau_network_v2/quick-safety-margin-seed13-summary.json}.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.82\textwidth]{../results/haichau_network_v2/final15-seed-sensitivity.png}
