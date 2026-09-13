@@ -486,6 +486,17 @@ presentation demo, but they remain outside the frozen five-seed confirmatory
 protocol. The seed-16 rows are stored in
 \path{results/haichau_network_v2/final15-regime-gated-seed16-pm-direct-summary.json}.
 
+Fresh full-day gate replays for seeds 12 and 15 cover all fifteen held-out
+cases. Their queue-hours fall from 8,339.43 to 8,142.43 (2.36\%) and 8,253.86
+(1.03\%), respectively. Normal and AM are exact fixed-time ties; PM reductions
+are 3.28\% and 0.48\%, with case-level regressions. Across the five available
+seed summaries, the derived full-day reductions are 2.36\%, 5.62\%, 5.11\%,
+1.03\%, and 3.27\% (mean 3.48\%). Seeds 12, 14, and 15 have fresh fifteen-case
+coverage, whereas seeds 13 and 16 have fresh PM-only coverage; the latter use
+the common fixed normal/AM totals for the full-day derivation. The provenance
+table is stored in
+\path{results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json}.
+
 The residual safety margin was also varied in a short, explicitly exploratory
 check using learning seed 13, one held-out demand realization per regime, and a
 900-second horizon. With a score margin of 5, the controller selected the exact

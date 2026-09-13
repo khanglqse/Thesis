@@ -58,6 +58,17 @@ result and must be updated before claiming a frozen release.
   These runs strengthen the presentation claim that the gate improves the
   fixed-time aggregate on this network, while remaining outside the frozen
   five-seed confirmatory protocol.
+- Fresh full-day gate replays for seeds 12 and 15 cover all 15 held-out cases,
+  reducing 8,339.43 vehicle-hours to 8,142.43 (2.36%) and 8,253.86 (1.03%).
+  Normal and AM are exact fixed-time ties; the PM reductions are 3.28% and
+  0.48%, with case-level regressions. The compact rows are in
+  `results/haichau_network_v2/final15-regime-gated-seed12-direct-summary.json`
+  and `results/haichau_network_v2/final15-regime-gated-seed15-direct-summary.json`.
+- Combining all five seed-level gate summaries gives derived full-day reductions
+  of 2.36%, 5.62%, 5.11%, 1.03%, and 3.27% (mean 3.48%). Seeds 12, 14, and 15
+  have fresh 15-case coverage; seeds 13 and 16 have fresh PM-only coverage and
+  use the common fixed normal/AM totals for the full-day derivation. The complete
+  provenance table is `results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json`.
 - A short safety-margin sensitivity run with seed 13, one test case per regime,
   and a 900 s horizon compares residual score margins 0 and 5. Margin 5 exactly
   falls back to fixed-time in all three cases; margin 0 changes the queue by only
