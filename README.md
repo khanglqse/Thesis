@@ -26,6 +26,12 @@ fails closed because the preregistered residual selector rejects seeds 13 and 16
 frozen confirmatory campaign has not been released. Do not relabel the gated exploratory
 summaries as a strict five-seed release.
 
+The presentation-ready gated result covers **5 learning seeds × 15 held-out cases = 75
+fresh one-hour replays**. It keeps tuned fixed-time in normal and AM-peak demand and enables
+the residual DDQN only in PM peak, giving a positive full-day reduction for every seed
+(range 1.03%--5.62%, mean 3.48%, bootstrap 95% CI 2.01%--4.95%). Normal and AM are exact
+fixed-time ties; case-level regressions remain reported in the seed table.
+
 The exact campaign, thesis, offline-demo and clean-checkout procedure is in
 `docs/defense/demo-runbook.md`.
 
