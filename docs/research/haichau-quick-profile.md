@@ -42,9 +42,12 @@ PYTHONPATH=src python3 scripts/summarize_haichau_short_campaign.py \
   --output results/haichau_network_v2/pilot-campaign-full9-summary.json
 ```
 
-The completed nine-case comparison reports a 3.87% aggregate queue-hour
-reduction for residual DDQN versus fixed-time, while retaining every AM, PM,
-and normal case so variation remains visible.
+The completed 15-case seed-14 step-4 comparison reports a 6.12% aggregate
+queue-hour reduction for residual DDQN versus fixed-time. Its paired bootstrap
+95% interval is 0.90%--8.35%; normal demand is exactly tied by design, while
+AM and PM peak means improve by 3.53% and 8.86%. The seed-12 step-8 run is
+retained as a negative sensitivity result (0.78% aggregate, with a 5.67% AM
+regression). These bounded results do not replace the five-seed release gate.
 
 Generate the presentation chart with:
 

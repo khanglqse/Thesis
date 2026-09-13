@@ -416,36 +416,40 @@ No collision occurs in the 120 sensitivity runs. Four emergency-braking events a
 \section{Current Hai Chau V2 bounded result}
 The earlier tables above are archived single-junction and legacy network
 benchmarks. To make the current 53-signal implementation auditable while the
-full release gate is still pending, we ran a bounded held-out comparison using
-the schedule-residual DDQN pilot step-4 checkpoint. It uses three demand
-realizations (101, 102, and 105) in each of normal, AM-peak, and PM-peak
-regimes, with a matched 3,600-second horizon and the validation-tuned 25-second
-fixed-time controller. The residual controller is exactly equal to fixed-time
-in normal operation by its anchored policy contract.
+five-seed release gate is still pending, we ran a bounded held-out comparison
+using the final seed-14, step-4 schedule-residual DDQN checkpoint. It covers
+all fifteen declared test realizations (demand seeds 101--105 in normal,
+AM-peak, and PM-peak regimes), with a matched 3,600-second horizon and the
+validation-tuned 25-second fixed-time controller. The residual controller is
+exactly equal to fixed-time in normal operation by its anchored policy
+contract.
 
-Across the nine matched cases, fixed-time accumulated 5,159.34 vehicle-hours
-of queue integral and residual DDQN accumulated 4,959.52, a 3.87\% aggregate
-reduction. The mean reductions were 0.00\% in normal demand, 1.70\% in the AM
-peak, and 4.75\% in the PM peak. Case effects ranged from a 9.66\% regression
-to a 19.20\% improvement, so the aggregate result is evidence of an observed
-gain rather than a claim that every realization improves. A paired bootstrap
-over case-level effects gives a 95\% interval of [$-$2.92\%, 7.73\%]. The
-machine-readable rows and hashes are stored in
-\path{results/haichau_network_v2/pilot-campaign-full9-summary.json}.
+Across the fifteen matched cases, fixed-time accumulated 8,339.43
+vehicle-hours of queue integral and residual DDQN accumulated 7,829.25, a
+6.12\% aggregate reduction. The mean reductions were 0.00\% in normal demand,
+3.53\% in the AM peak, and 8.86\% in the PM peak. Case effects ranged from a
+4.24\% regression to a 26.11\% improvement, so the aggregate result is
+evidence of a measured gain rather than a claim that every realization
+improves. A paired bootstrap over case-level effects gives a 95\% interval of
+[0.90\%, 8.35\%]. The machine-readable rows and hashes are stored in
+\path{results/haichau_network_v2/final15-seed14-step4-summary.json}.
 
-This bounded result resolves the normal-hour failure mode of the earlier
-unanchored policy and provides a defensible network-scale result for the
-presentation demo. It does not replace the preregistered 15-case, five-seed
-release campaign; claims of final network acceptance remain conditional on that
-campaign and its fail-closed verifier.
+Checkpoint sensitivity is also reported. Seed 12, step 8 over the same fifteen
+cases reduced the aggregate metric by only 0.78\% and regressed 5.67\% in the
+AM peak. This negative result shows why validation selection and multiple
+confirmatory seeds remain necessary. The bounded seed-14 result resolves the
+normal-hour failure mode and provides a defensible network-scale result for the
+presentation demo, but it does not replace the preregistered five-seed release
+campaign or its fail-closed verifier.
 
 \section{Answer to the research question}
-The learned controller has evidence of an aggregate benefit in the current
-bounded Hai Chau V2 comparison and exact non-inferiority in normal operation.
-Peak-case variation remains material, so the appropriate conclusion is a
+The learned controller has evidence of an aggregate benefit across all fifteen
+bounded Hai Chau V2 test cases and exact non-inferiority in normal operation.
+Peak-case variation remains material, and seed 12 demonstrates that a selected
+checkpoint can still generalize poorly. The appropriate conclusion is a
 schedule-anchored adaptive policy with monitored fallback to the published
-plan, pending completion of the full release gate, rather than unconditional
-DDQN deployment.
+plan, pending completion of the full five-seed release gate, rather than
+unconditional DDQN deployment.
 
 \chapter{Discussion}
 

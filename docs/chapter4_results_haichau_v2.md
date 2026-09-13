@@ -15,35 +15,38 @@ pending demand, reported as vehicle-hours. Lower values are better.
 
 ## 4.2 Matched held-out comparison
 
-The bounded confirmatory set contains nine test realizations: demand seeds
-101, 102, and 105 for normal, AM peak, and PM peak. The residual model is the
-pilot step-4 checkpoint, selected without reading the test split. The aggregate
-result is:
+The strongest completed bounded comparison uses the final seed-14 step-4
+checkpoint, selected without reading the test split. It covers all 15 declared
+test realizations: demand seeds 101--105 for each of normal, AM peak, and PM
+peak. The aggregate result is:
 
 | Controller | Queue-hours | Relative to fixed-time |
 | --- | ---: | ---: |
-| Fixed-time | 5,159.34 | 0.00% |
-| Schedule-residual DDQN | 4,959.52 | **3.87% lower** |
+| Fixed-time | 8,339.43 | 0.00% |
+| Schedule-residual DDQN (seed 14, step 4) | 7,829.25 | **6.12% lower** |
 
 The per-regime means show where the gain comes from:
 
 | Regime | Cases | Mean change vs fixed | Range |
 | --- | ---: | ---: | ---: |
-| Normal | 3 | 0.00% | 0.00% to 0.00% |
-| AM peak | 3 | 1.70% lower | −7.15% to 11.89% |
-| PM peak | 3 | 4.75% lower | −9.66% to 19.20% |
+| Normal | 5 | 0.00% | 0.00% to 0.00% |
+| AM peak | 5 | 3.53% lower | −4.24% to 8.75% |
+| PM peak | 5 | 8.86% lower | −2.40% to 26.11% |
 
 The normal result is an exact tie by construction: the residual controller
 uses the executed fixed-time reference in that regime. The peak results vary
 with demand realization, so the aggregate number and the complete per-case
-table should be presented together. A paired bootstrap over the nine case-level
-percentage changes gives a 95% interval of −2.92% to 7.73%; the current sample
-supports an observed aggregate gain but is not large enough for a definitive
-significance claim.
+table should be presented together. A paired bootstrap over the 15 case-level
+percentage changes gives a 95% interval of 0.90% to 8.35%.
 
 The machine-readable source is
-`results/haichau_network_v2/pilot-campaign-full9-summary.json`; regenerate it
+`results/haichau_network_v2/final15-seed14-step4-summary.json`; regenerate it
 with `scripts/summarize_haichau_short_campaign.py` after rerunning the campaigns.
+
+As a checkpoint sensitivity result, seed 12 step 8 over the same 15 cases
+reduced the aggregate metric by only 0.78% and regressed 5.67% in AM peak.
+This is retained as a negative result: passing validation for one seed does not
+guarantee test generalization.
 
 ## 4.3 Training and validation
 
@@ -59,7 +62,7 @@ normal cases.
 
 The result answers the practical failure mode seen in the earlier experiment:
 the learned controller no longer incurs a normal-hour penalty and improves the
-held-out aggregate queue metric. It does not justify claiming improvement on
-every individual demand realization. The nine-case table is an exploratory
-bounded result; the preregistered 15-case release campaign remains the final
-evidence gate when all five confirmatory seeds pass selection.
+held-out aggregate queue metric across the complete 15-case matrix. It does
+not justify claiming improvement on every individual demand realization. This
+is a bounded one-seed result; the preregistered five-seed release campaign
+remains the final evidence gate.

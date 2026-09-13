@@ -1,0 +1,196 @@
+{
+  "aggregate": {
+    "fixed_queue_hours": 8339.43,
+    "improvement_pct": 6.117657654992942,
+    "residual_queue_hours": 7829.252222222222
+  },
+  "by_regime": {
+    "am_peak": {
+      "max_improvement_pct": 8.747039823132793,
+      "mean_improvement_pct": 3.531767685224613,
+      "median_improvement_pct": 6.677825215393705,
+      "min_improvement_pct": -4.240098576651317,
+      "n": 5,
+      "paired_bootstrap_ci_pct": {
+        "lower_95_pct": -1.2492447531412134,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 7.664206497913341
+      }
+    },
+    "normal": {
+      "max_improvement_pct": 0.0,
+      "mean_improvement_pct": 0.0,
+      "median_improvement_pct": 0.0,
+      "min_improvement_pct": 0.0,
+      "n": 5,
+      "paired_bootstrap_ci_pct": {
+        "lower_95_pct": 0.0,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 0.0
+      }
+    },
+    "pm_peak": {
+      "max_improvement_pct": 26.1144182233204,
+      "mean_improvement_pct": 8.862112821685804,
+      "median_improvement_pct": 5.289951370723297,
+      "min_improvement_pct": -2.399830450033949,
+      "n": 5,
+      "paired_bootstrap_ci_pct": {
+        "lower_95_pct": 1.6213067228634852,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 17.511908376324367
+      }
+    }
+  },
+  "case_count": 15,
+  "horizon_seconds": 3600,
+  "interpretation": "aggregate comparison only; not a replacement for frozen release campaign",
+  "paired_bootstrap_ci_pct": {
+    "lower_95_pct": 0.901646407242527,
+    "repeats": 10000,
+    "seed": 20260913,
+    "upper_95_pct": 8.354162264486186
+  },
+  "profile": "exploratory_short_full_hour",
+  "rows": [
+    {
+      "case_id": "test_am_peak_demand101",
+      "fixed_completion_rate": 0.6776129943502824,
+      "fixed_queue_hours": 471.06555555555553,
+      "improvement_pct": 7.074563813953706,
+      "regime": "am_peak",
+      "residual_completion_rate": 0.688912429378531,
+      "residual_queue_hours": 437.7397222222222
+    },
+    {
+      "case_id": "test_am_peak_demand102",
+      "fixed_completion_rate": 0.6581307528911966,
+      "fixed_queue_hours": 520.8230555555556,
+      "improvement_pct": -0.6004918497058228,
+      "regime": "am_peak",
+      "residual_completion_rate": 0.6591928251121076,
+      "residual_queue_hours": 523.9505555555555
+    },
+    {
+      "case_id": "test_am_peak_demand103",
+      "fixed_completion_rate": 0.6621128253444823,
+      "fixed_queue_hours": 515.6411111111111,
+      "improvement_pct": 8.747039823132793,
+      "regime": "am_peak",
+      "residual_completion_rate": 0.6750677187610411,
+      "residual_queue_hours": 470.53777777777776
+    },
+    {
+      "case_id": "test_am_peak_demand104",
+      "fixed_completion_rate": 0.6844025897586816,
+      "fixed_queue_hours": 436.6358333333333,
+      "improvement_pct": 6.677825215393705,
+      "regime": "am_peak",
+      "residual_completion_rate": 0.7017068864037669,
+      "residual_queue_hours": 407.47805555555556
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "fixed_completion_rate": 0.6821067481777568,
+      "fixed_queue_hours": 477.68805555555554,
+      "improvement_pct": -4.240098576651317,
+      "regime": "am_peak",
+      "residual_completion_rate": 0.6805784152363038,
+      "residual_queue_hours": 497.9425
+    },
+    {
+      "case_id": "test_normal_demand101",
+      "fixed_completion_rate": 0.795172689691959,
+      "fixed_queue_hours": 246.4986111111111,
+      "improvement_pct": 0.0,
+      "regime": "normal",
+      "residual_completion_rate": 0.795172689691959,
+      "residual_queue_hours": 246.4986111111111
+    },
+    {
+      "case_id": "test_normal_demand102",
+      "fixed_completion_rate": 0.7184466019417476,
+      "fixed_queue_hours": 414.87916666666666,
+      "improvement_pct": 0.0,
+      "regime": "normal",
+      "residual_completion_rate": 0.7184466019417476,
+      "residual_queue_hours": 414.87916666666666
+    },
+    {
+      "case_id": "test_normal_demand103",
+      "fixed_completion_rate": 0.7019691325172964,
+      "fixed_queue_hours": 479.63194444444446,
+      "improvement_pct": 0.0,
+      "regime": "normal",
+      "residual_completion_rate": 0.7019691325172964,
+      "residual_queue_hours": 479.63194444444446
+    },
+    {
+      "case_id": "test_normal_demand104",
+      "fixed_completion_rate": 0.7867803837953091,
+      "fixed_queue_hours": 249.33444444444444,
+      "improvement_pct": 0.0,
+      "regime": "normal",
+      "residual_completion_rate": 0.7867803837953091,
+      "residual_queue_hours": 249.33444444444444
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "fixed_completion_rate": 0.738076205702105,
+      "fixed_queue_hours": 426.4902777777778,
+      "improvement_pct": 0.0,
+      "regime": "normal",
+      "residual_completion_rate": 0.738076205702105,
+      "residual_queue_hours": 426.4902777777778
+    },
+    {
+      "case_id": "test_pm_peak_demand101",
+      "fixed_completion_rate": 0.6132586006957866,
+      "fixed_queue_hours": 692.0280555555555,
+      "improvement_pct": -2.399830450033949,
+      "regime": "pm_peak",
+      "residual_completion_rate": 0.6103594897564747,
+      "residual_queue_hours": 708.6355555555556
+    },
+    {
+      "case_id": "test_pm_peak_demand102",
+      "fixed_completion_rate": 0.5733191653786708,
+      "fixed_queue_hours": 853.4525,
+      "improvement_pct": 5.289951370723297,
+      "regime": "pm_peak",
+      "residual_completion_rate": 0.5843315301391035,
+      "residual_queue_hours": 808.3052777777777
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "fixed_completion_rate": 0.5662302656911822,
+      "fixed_queue_hours": 841.3308333333333,
+      "improvement_pct": 11.379689123481938,
+      "regime": "pm_peak",
+      "residual_completion_rate": 0.599441663457836,
+      "residual_queue_hours": 745.59
+    },
+    {
+      "case_id": "test_pm_peak_demand104",
+      "fixed_completion_rate": 0.6251448435689455,
+      "fixed_queue_hours": 657.5186111111111,
+      "improvement_pct": 3.926335840937334,
+      "regime": "pm_peak",
+      "residual_completion_rate": 0.6387601390498262,
+      "residual_queue_hours": 631.7022222222222
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "fixed_completion_rate": 0.5550737207285342,
+      "fixed_queue_hours": 1056.4119444444445,
+      "improvement_pct": 26.1144182233204,
+      "regime": "pm_peak",
+      "residual_completion_rate": 0.6176158812758986,
+      "residual_queue_hours": 780.5361111111112
+    }
+  ],
+  "schema_version": 1
+}
