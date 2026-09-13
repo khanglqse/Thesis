@@ -103,6 +103,8 @@ def main(argv=None):
                         help="optional comma-separated demand seeds to include")
     parser.add_argument("--checkpoint-root", default=None,
                         help="checkpoint step directory containing contract.json and weights.npz")
+    parser.add_argument("--workers", type=int, default=2,
+                        help="parallel CityFlow containers for this exploratory campaign")
     args = parser.parse_args(argv)
     if args.horizon <= 0 or args.horizon % 300:
         parser.error("--horizon must be a positive multiple of 300")
@@ -112,6 +114,8 @@ def main(argv=None):
         parser.error("--controllers contains an unknown or empty controller")
     if args.cases_per_regime <= 0:
         parser.error("--cases-per-regime must be positive")
+    if args.workers <= 0:
+        parser.error("--workers must be positive")
     if args.margin < 0:
         parser.error("--margin must be nonnegative")
     requested_seeds = (None if args.demand_seeds is None else
@@ -206,7 +210,7 @@ def main(argv=None):
                                 "checkpoint_contract_sha256": canonical_sha256(contract)})
                 runs.append(run)
     records = []
-    with ThreadPoolExecutor(max_workers=2) as pool:
+    with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futures = [pool.submit(run_one, root, run, output) for run in runs]
         for future in as_completed(futures):
             records.append(future.result())
