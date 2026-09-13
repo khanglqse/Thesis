@@ -22,6 +22,14 @@ result and must be updated before claiming a frozen release.
   with individual-case regressions still present.
 - The offline bundle in `results/haichau_network_v2/demo-bounded` validates as
   a 53-signal portable bundle and was served successfully over loopback.
+- Secondary outcomes are now generated from the same matched seed-14 pairs:
+  completion +1.06 percentage points, insertion +0.82 points, mean maximum
+  node queue −16.93 vehicles, completed-trip travel time +5.45 seconds, and
+  spillback +65.20 lane-seconds. They are descriptive and stored in
+  `results/haichau_network_v2/final15-seed14-secondary-summary.json`.
+- The thesis PDF and defense Q&A now distinguish bounded evidence from the
+  pending strict release. The short launch and preflight procedure is in
+  `docs/defense/haichau-bounded-demo.md`.
 
 ## Still required for a frozen confirmatory release
 
