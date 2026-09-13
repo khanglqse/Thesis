@@ -30,6 +30,14 @@ result and must be updated before claiming a frozen release.
 - The thesis PDF and defense Q&A now distinguish bounded evidence from the
   pending strict release. The short launch and preflight procedure is in
   `docs/defense/haichau-bounded-demo.md`.
+- A regime-gated exploratory composition over the three completed seeds keeps
+  tuned fixed-time in normal and AM-peak cases and enables the residual policy
+  only in PM peak. Across 45 matched case rows it reduces queue-hours by
+  2.83%; the three seed-level reductions are 2.36%, 5.11%, and 1.03%. The
+  source-bound summary is
+  `results/haichau_network_v2/final15-regime-gated-summary.json`. This result
+  diagnoses a practical demand gate; it is not a fresh strict campaign and
+  still needs direct simulator confirmation before a confirmatory claim.
 
 ## Still required for a frozen confirmatory release
 

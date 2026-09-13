@@ -449,6 +449,16 @@ and the PM mean is a 4.21\% reduction. This hierarchical sensitivity result is
 stored in \path{results/haichau_network_v2/final15-three-seed-summary.json}; it
 does not substitute for the two still-unselected preregistered seeds.
 
+The seed sensitivity suggests a demand gate that can be tested without
+changing the signal-safety contract: retain tuned fixed-time in normal and AM
+peak demand, where the residual learner is least stable, and enable the
+residual policy only in PM peak. Composing the completed matched rows under
+that rule gives 2.83\% lower queue-hours across 45 rows, with seed-level
+reductions of 2.36\%, 5.11\%, and 1.03\% for seeds 12, 14, and 15. This is an
+exploratory counterfactual composition rather than a fresh controller run; it
+motivates a preregistered gated campaign and is stored in
+\path{results/haichau_network_v2/final15-regime-gated-summary.json}.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.82\textwidth]{../results/haichau_network_v2/final15-seed-sensitivity.png}

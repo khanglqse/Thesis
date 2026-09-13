@@ -1,0 +1,561 @@
+{
+  "aggregate": {
+    "case_count": 45,
+    "case_effect_bootstrap_ci95_pct": {
+      "lower": -0.43774403855996113,
+      "repeats": 10000,
+      "seed": 20260913,
+      "upper": 3.525983198804771
+    },
+    "case_effect_max_pct": 26.1144182233204,
+    "case_effect_mean_pct": 1.4018756484400767,
+    "case_effect_min_pct": -12.591453220626505,
+    "fixed_queue_hours": 25018.29,
+    "gated_queue_hours": 24309.74638888889,
+    "improvement_pct": 2.832102478271345,
+    "seed_count": 3,
+    "seed_effect_bootstrap_ci95_pct": {
+      "lower": 1.026065996783419,
+      "repeats": 10000,
+      "seed": 20260913,
+      "upper": 5.1079363670871745
+    },
+    "seed_effect_mean_pct": 2.8321024782713415
+  },
+  "analysis": "regime_gated_counterfactual",
+  "by_regime": {
+    "am_peak": {
+      "case_count": 15,
+      "fixed_queue_hours": 7265.560833333333,
+      "gated_queue_hours": 7265.560833333333,
+      "improvement_pct": 0.0
+    },
+    "normal": {
+      "case_count": 15,
+      "fixed_queue_hours": 5450.503333333333,
+      "gated_queue_hours": 5450.503333333333,
+      "improvement_pct": 0.0
+    },
+    "pm_peak": {
+      "case_count": 15,
+      "fixed_queue_hours": 12302.225833333334,
+      "gated_queue_hours": 11593.682222222222,
+      "improvement_pct": 5.7594749170616515
+    }
+  },
+  "interpretation": "Exploratory composition of completed paired rows; a fresh gated campaign is required before strict confirmatory claims.",
+  "policy": {
+    "am_peak": "tuned_fixed",
+    "normal": "tuned_fixed",
+    "pm_peak": "schedule_residual_ddqn"
+  },
+  "rows": [
+    {
+      "case_id": "test_am_peak_demand101",
+      "fixed_queue_hours": 471.06555555555553,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 471.06555555555553,
+      "regime": "am_peak",
+      "residual_queue_hours": 522.4413888888889,
+      "seed": 12
+    },
+    {
+      "case_id": "test_am_peak_demand102",
+      "fixed_queue_hours": 520.8230555555556,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 520.8230555555556,
+      "regime": "am_peak",
+      "residual_queue_hours": 525.2469444444445,
+      "seed": 12
+    },
+    {
+      "case_id": "test_am_peak_demand103",
+      "fixed_queue_hours": 515.6411111111111,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 515.6411111111111,
+      "regime": "am_peak",
+      "residual_queue_hours": 521.2011111111111,
+      "seed": 12
+    },
+    {
+      "case_id": "test_am_peak_demand104",
+      "fixed_queue_hours": 436.6358333333333,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 436.6358333333333,
+      "regime": "am_peak",
+      "residual_queue_hours": 476.125,
+      "seed": 12
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "fixed_queue_hours": 477.68805555555554,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 477.68805555555554,
+      "regime": "am_peak",
+      "residual_queue_hours": 508.5391666666667,
+      "seed": 12
+    },
+    {
+      "case_id": "test_normal_demand101",
+      "fixed_queue_hours": 246.4986111111111,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 246.4986111111111,
+      "regime": "normal",
+      "residual_queue_hours": 246.4986111111111,
+      "seed": 12
+    },
+    {
+      "case_id": "test_normal_demand102",
+      "fixed_queue_hours": 414.87916666666666,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 414.87916666666666,
+      "regime": "normal",
+      "residual_queue_hours": 414.87916666666666,
+      "seed": 12
+    },
+    {
+      "case_id": "test_normal_demand103",
+      "fixed_queue_hours": 479.63194444444446,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 479.63194444444446,
+      "regime": "normal",
+      "residual_queue_hours": 479.63194444444446,
+      "seed": 12
+    },
+    {
+      "case_id": "test_normal_demand104",
+      "fixed_queue_hours": 249.33444444444444,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 249.33444444444444,
+      "regime": "normal",
+      "residual_queue_hours": 249.33444444444444,
+      "seed": 12
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "fixed_queue_hours": 426.4902777777778,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 426.4902777777778,
+      "regime": "normal",
+      "residual_queue_hours": 426.4902777777778,
+      "seed": 12
+    },
+    {
+      "case_id": "test_pm_peak_demand101",
+      "fixed_queue_hours": 692.0280555555555,
+      "gated_improvement_pct": -5.851601231645649,
+      "gated_queue_hours": 732.5227777777778,
+      "regime": "pm_peak",
+      "residual_queue_hours": 732.5227777777778,
+      "seed": 12
+    },
+    {
+      "case_id": "test_pm_peak_demand102",
+      "fixed_queue_hours": 853.4525,
+      "gated_improvement_pct": -1.0464684456500082,
+      "gated_queue_hours": 862.3836111111111,
+      "regime": "pm_peak",
+      "residual_queue_hours": 862.3836111111111,
+      "seed": 12
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "fixed_queue_hours": 841.3308333333333,
+      "gated_improvement_pct": 0.6058853185974168,
+      "gated_queue_hours": 836.2333333333333,
+      "regime": "pm_peak",
+      "residual_queue_hours": 836.2333333333333,
+      "seed": 12
+    },
+    {
+      "case_id": "test_pm_peak_demand104",
+      "fixed_queue_hours": 657.5186111111111,
+      "gated_improvement_pct": -0.40970534420867305,
+      "gated_queue_hours": 660.2125,
+      "regime": "pm_peak",
+      "residual_queue_hours": 660.2125,
+      "seed": 12
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "fixed_queue_hours": 1056.4119444444445,
+      "gated_improvement_pct": 23.099416973019,
+      "gated_queue_hours": 812.3869444444445,
+      "regime": "pm_peak",
+      "residual_queue_hours": 812.3869444444445,
+      "seed": 12
+    },
+    {
+      "case_id": "test_am_peak_demand101",
+      "fixed_queue_hours": 471.06555555555553,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 471.06555555555553,
+      "regime": "am_peak",
+      "residual_queue_hours": 437.7397222222222,
+      "seed": 14
+    },
+    {
+      "case_id": "test_am_peak_demand102",
+      "fixed_queue_hours": 520.8230555555556,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 520.8230555555556,
+      "regime": "am_peak",
+      "residual_queue_hours": 523.9505555555555,
+      "seed": 14
+    },
+    {
+      "case_id": "test_am_peak_demand103",
+      "fixed_queue_hours": 515.6411111111111,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 515.6411111111111,
+      "regime": "am_peak",
+      "residual_queue_hours": 470.53777777777776,
+      "seed": 14
+    },
+    {
+      "case_id": "test_am_peak_demand104",
+      "fixed_queue_hours": 436.6358333333333,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 436.6358333333333,
+      "regime": "am_peak",
+      "residual_queue_hours": 407.47805555555556,
+      "seed": 14
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "fixed_queue_hours": 477.68805555555554,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 477.68805555555554,
+      "regime": "am_peak",
+      "residual_queue_hours": 497.9425,
+      "seed": 14
+    },
+    {
+      "case_id": "test_normal_demand101",
+      "fixed_queue_hours": 246.4986111111111,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 246.4986111111111,
+      "regime": "normal",
+      "residual_queue_hours": 246.4986111111111,
+      "seed": 14
+    },
+    {
+      "case_id": "test_normal_demand102",
+      "fixed_queue_hours": 414.87916666666666,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 414.87916666666666,
+      "regime": "normal",
+      "residual_queue_hours": 414.87916666666666,
+      "seed": 14
+    },
+    {
+      "case_id": "test_normal_demand103",
+      "fixed_queue_hours": 479.63194444444446,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 479.63194444444446,
+      "regime": "normal",
+      "residual_queue_hours": 479.63194444444446,
+      "seed": 14
+    },
+    {
+      "case_id": "test_normal_demand104",
+      "fixed_queue_hours": 249.33444444444444,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 249.33444444444444,
+      "regime": "normal",
+      "residual_queue_hours": 249.33444444444444,
+      "seed": 14
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "fixed_queue_hours": 426.4902777777778,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 426.4902777777778,
+      "regime": "normal",
+      "residual_queue_hours": 426.4902777777778,
+      "seed": 14
+    },
+    {
+      "case_id": "test_pm_peak_demand101",
+      "fixed_queue_hours": 692.0280555555555,
+      "gated_improvement_pct": -2.399830450033949,
+      "gated_queue_hours": 708.6355555555556,
+      "regime": "pm_peak",
+      "residual_queue_hours": 708.6355555555556,
+      "seed": 14
+    },
+    {
+      "case_id": "test_pm_peak_demand102",
+      "fixed_queue_hours": 853.4525,
+      "gated_improvement_pct": 5.289951370723297,
+      "gated_queue_hours": 808.3052777777777,
+      "regime": "pm_peak",
+      "residual_queue_hours": 808.3052777777777,
+      "seed": 14
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "fixed_queue_hours": 841.3308333333333,
+      "gated_improvement_pct": 11.379689123481938,
+      "gated_queue_hours": 745.59,
+      "regime": "pm_peak",
+      "residual_queue_hours": 745.59,
+      "seed": 14
+    },
+    {
+      "case_id": "test_pm_peak_demand104",
+      "fixed_queue_hours": 657.5186111111111,
+      "gated_improvement_pct": 3.926335840937334,
+      "gated_queue_hours": 631.7022222222222,
+      "regime": "pm_peak",
+      "residual_queue_hours": 631.7022222222222,
+      "seed": 14
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "fixed_queue_hours": 1056.4119444444445,
+      "gated_improvement_pct": 26.1144182233204,
+      "gated_queue_hours": 780.5361111111112,
+      "regime": "pm_peak",
+      "residual_queue_hours": 780.5361111111112,
+      "seed": 14
+    },
+    {
+      "case_id": "test_am_peak_demand101",
+      "fixed_queue_hours": 471.06555555555553,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 471.06555555555553,
+      "regime": "am_peak",
+      "residual_queue_hours": 488.92027777777776,
+      "seed": 15
+    },
+    {
+      "case_id": "test_am_peak_demand102",
+      "fixed_queue_hours": 520.8230555555556,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 520.8230555555556,
+      "regime": "am_peak",
+      "residual_queue_hours": 570.6430555555555,
+      "seed": 15
+    },
+    {
+      "case_id": "test_am_peak_demand103",
+      "fixed_queue_hours": 515.6411111111111,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 515.6411111111111,
+      "regime": "am_peak",
+      "residual_queue_hours": 517.0444444444445,
+      "seed": 15
+    },
+    {
+      "case_id": "test_am_peak_demand104",
+      "fixed_queue_hours": 436.6358333333333,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 436.6358333333333,
+      "regime": "am_peak",
+      "residual_queue_hours": 420.7369444444444,
+      "seed": 15
+    },
+    {
+      "case_id": "test_am_peak_demand105",
+      "fixed_queue_hours": 477.68805555555554,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 477.68805555555554,
+      "regime": "am_peak",
+      "residual_queue_hours": 473.3333333333333,
+      "seed": 15
+    },
+    {
+      "case_id": "test_normal_demand101",
+      "fixed_queue_hours": 246.4986111111111,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 246.4986111111111,
+      "regime": "normal",
+      "residual_queue_hours": 246.4986111111111,
+      "seed": 15
+    },
+    {
+      "case_id": "test_normal_demand102",
+      "fixed_queue_hours": 414.87916666666666,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 414.87916666666666,
+      "regime": "normal",
+      "residual_queue_hours": 414.87916666666666,
+      "seed": 15
+    },
+    {
+      "case_id": "test_normal_demand103",
+      "fixed_queue_hours": 479.63194444444446,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 479.63194444444446,
+      "regime": "normal",
+      "residual_queue_hours": 479.63194444444446,
+      "seed": 15
+    },
+    {
+      "case_id": "test_normal_demand104",
+      "fixed_queue_hours": 249.33444444444444,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 249.33444444444444,
+      "regime": "normal",
+      "residual_queue_hours": 249.33444444444444,
+      "seed": 15
+    },
+    {
+      "case_id": "test_normal_demand105",
+      "fixed_queue_hours": 426.4902777777778,
+      "gated_improvement_pct": 0.0,
+      "gated_queue_hours": 426.4902777777778,
+      "regime": "normal",
+      "residual_queue_hours": 426.4902777777778,
+      "seed": 15
+    },
+    {
+      "case_id": "test_pm_peak_demand101",
+      "fixed_queue_hours": 692.0280555555555,
+      "gated_improvement_pct": -12.591453220626505,
+      "gated_queue_hours": 779.1644444444445,
+      "regime": "pm_peak",
+      "residual_queue_hours": 779.1644444444445,
+      "seed": 15
+    },
+    {
+      "case_id": "test_pm_peak_demand102",
+      "fixed_queue_hours": 853.4525,
+      "gated_improvement_pct": -6.6882587034558005,
+      "gated_queue_hours": 910.5336111111111,
+      "regime": "pm_peak",
+      "residual_queue_hours": 910.5336111111111,
+      "seed": 15
+    },
+    {
+      "case_id": "test_pm_peak_demand103",
+      "fixed_queue_hours": 841.3308333333333,
+      "gated_improvement_pct": -3.8619039742260184,
+      "gated_queue_hours": 873.8222222222222,
+      "regime": "pm_peak",
+      "residual_queue_hours": 873.8222222222222,
+      "seed": 15
+    },
+    {
+      "case_id": "test_pm_peak_demand104",
+      "fixed_queue_hours": 657.5186111111111,
+      "gated_improvement_pct": 1.829437020582858,
+      "gated_queue_hours": 645.4897222222222,
+      "regime": "pm_peak",
+      "residual_queue_hours": 645.4897222222222,
+      "seed": 15
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "fixed_queue_hours": 1056.4119444444445,
+      "gated_improvement_pct": 23.68849167898782,
+      "gated_queue_hours": 806.1638888888889,
+      "regime": "pm_peak",
+      "residual_queue_hours": 806.1638888888889,
+      "seed": 15
+    }
+  ],
+  "schema_version": 1,
+  "seeds": {
+    "12": {
+      "by_regime": {
+        "am_peak": {
+          "fixed_queue_hours": 2421.853611111111,
+          "gated_queue_hours": 2421.853611111111,
+          "improvement_pct": 0.0,
+          "n": 5
+        },
+        "normal": {
+          "fixed_queue_hours": 1816.8344444444444,
+          "gated_queue_hours": 1816.8344444444444,
+          "improvement_pct": 0.0,
+          "n": 5
+        },
+        "pm_peak": {
+          "fixed_queue_hours": 4100.741944444444,
+          "gated_queue_hours": 3903.7391666666667,
+          "improvement_pct": 4.804076443890122,
+          "n": 5
+        }
+      },
+      "case_count": 15,
+      "fixed_queue_hours": 8339.43,
+      "gated_queue_hours": 8142.427222222223,
+      "improvement_pct": 2.3623050709434303,
+      "seed": 12,
+      "source_summary": "results/haichau_network_v2/final15-seed12-step8-summary.json"
+    },
+    "14": {
+      "by_regime": {
+        "am_peak": {
+          "fixed_queue_hours": 2421.853611111111,
+          "gated_queue_hours": 2421.853611111111,
+          "improvement_pct": 0.0,
+          "n": 5
+        },
+        "normal": {
+          "fixed_queue_hours": 1816.8344444444444,
+          "gated_queue_hours": 1816.8344444444444,
+          "improvement_pct": 0.0,
+          "n": 5
+        },
+        "pm_peak": {
+          "fixed_queue_hours": 4100.741944444444,
+          "gated_queue_hours": 3674.769166666667,
+          "improvement_pct": 10.387700166182649,
+          "n": 5
+        }
+      },
+      "case_count": 15,
+      "fixed_queue_hours": 8339.43,
+      "gated_queue_hours": 7913.457222222222,
+      "improvement_pct": 5.1079363670871745,
+      "seed": 14,
+      "source_summary": "results/haichau_network_v2/final15-seed14-step4-summary.json"
+    },
+    "15": {
+      "by_regime": {
+        "am_peak": {
+          "fixed_queue_hours": 2421.853611111111,
+          "gated_queue_hours": 2421.853611111111,
+          "improvement_pct": 0.0,
+          "n": 5
+        },
+        "normal": {
+          "fixed_queue_hours": 1816.8344444444444,
+          "gated_queue_hours": 1816.8344444444444,
+          "improvement_pct": 0.0,
+          "n": 5
+        },
+        "pm_peak": {
+          "fixed_queue_hours": 4100.741944444444,
+          "gated_queue_hours": 4015.173888888889,
+          "improvement_pct": 2.0866481411121205,
+          "n": 5
+        }
+      },
+      "case_count": 15,
+      "fixed_queue_hours": 8339.43,
+      "gated_queue_hours": 8253.861944444445,
+      "improvement_pct": 1.026065996783419,
+      "seed": 15,
+      "source_summary": "results/haichau_network_v2/final15-seed15-step8-summary.json"
+    }
+  },
+  "source_files": {
+    "12": {
+      "path": "results/haichau_network_v2/final15-seed12-step8-summary.json",
+      "sha256": "939fdfc9e7620c031129548cdacc654b5569477029cb68744f77f784bd3ccec4"
+    },
+    "14": {
+      "path": "results/haichau_network_v2/final15-seed14-step4-summary.json",
+      "sha256": "a11067e8bcd0145c208a10c2c0ffcc350c128838ff20fe7f81399a1dd788703c"
+    },
+    "15": {
+      "path": "results/haichau_network_v2/final15-seed15-step8-summary.json",
+      "sha256": "a0c77ac2176f5f526d8ecd2a9626104df8ee9e5b6484cb2b04ce6eddbae880f4"
+    }
+  },
+  "source_protocol": "matched_15_case_rows_per_seed"
+}

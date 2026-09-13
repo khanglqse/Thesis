@@ -47,8 +47,8 @@ function metric(slide, value, label, x, y, color = C.navy) {
   const s = pptx.addSlide(); s.background = { color: C.navy };
   s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.22, h: 7.5, fill: { color: C.coral }, line: { color: C.coral } });
   s.addText("EVIDENCE-AWARE\nREINFORCEMENT LEARNING", { x: 0.85, y: 1.05, w: 8.5, h: 1.5, fontFace: "Aptos Display", fontSize: 35, bold: true, color: C.white, margin: 0, breakLine: false });
-  s.addText("Traffic signal control at a Da Nang intersection", { x: 0.88, y: 2.75, w: 8.8, h: 0.65, fontSize: 23, color: "D9E3E5", margin: 0 });
-  s.addText("Demand-matched simulation, seed-aware evaluation, offline defense demo", { x: 0.88, y: 3.54, w: 10.7, h: 0.4, fontSize: 14, color: C.gold, margin: 0 });
+  s.addText("Traffic signal control in Da Nang", { x: 0.88, y: 2.75, w: 8.8, h: 0.65, fontSize: 23, color: "D9E3E5", margin: 0 });
+  s.addText("Audited junction plus a 53-signal Hai Chau network extension", { x: 0.88, y: 3.54, w: 10.7, h: 0.4, fontSize: 14, color: C.gold, margin: 0 });
   s.addText("Luong Quang Khang\nMaster of Software Engineering\nFPT University · 2026", { x: 0.88, y: 5.35, w: 4.8, h: 1.05, fontSize: 17, color: C.white, margin: 0, breakLine: false });
   s.addText("Supervisors\nDr. Nguyen Luong Vuong\nDr. Bui Cao Vu", { x: 8.6, y: 5.35, w: 3.7, h: 1.05, fontSize: 14, color: "D9E3E5", margin: 0, align: "right", breakLine: false });
 }
@@ -56,13 +56,13 @@ function metric(slide, value, label, x, y, color = C.navy) {
 // 2
 {
   const s = pptx.addSlide("MASTER"); title(s, "Research question");
-  body(s, "When does a learned controller reduce queue accumulation relative to the published 103-second signal plan?", 1.05, 1.5, 11.1, 1.25, { fontSize: 27, bold: true, color: C.navy, align: "center" });
+  body(s, "When does a learned controller reduce queue accumulation relative to fixed-time control?", 1.05, 1.5, 11.1, 1.25, { fontSize: 27, bold: true, color: C.navy, align: "center" });
   s.addShape(pptx.ShapeType.line, { x: 2.0, y: 3.15, w: 9.3, h: 0, line: { color: C.teal, width: 2 } });
-  metric(s, "1 junction", "audited Da Nang site", 1.25, 3.65, C.teal);
-  metric(s, "5 seeds", "independent learned policies", 4.05, 3.65, C.coral);
-  metric(s, "105 runs", "primary held-out evaluation", 6.85, 3.65, C.navy);
+  metric(s, "53 signals", "Hai Chau network topology", 1.25, 3.65, C.teal);
+  metric(s, "30 cases", "9 train · 6 validation · 15 test", 4.05, 3.65, C.coral);
+  metric(s, "3 seeds", "bounded learned sensitivity", 6.85, 3.65, C.navy);
   metric(s, "3 regimes", "normal, AM peak, PM peak", 9.65, 3.65, C.gold);
-  body(s, "The thesis tests a conditional claim. It does not claim city-wide deployment performance.", 2.0, 5.45, 9.3, 0.72, { fontSize: 18, italic: true, color: C.gray, align: "center" });
+  body(s, "The network evidence is synthetic and bounded; strict five-seed release remains pending.", 2.0, 5.45, 9.3, 0.72, { fontSize: 18, italic: true, color: C.gray, align: "center" });
   note(s, "Research design and scope: thesis_danang.pdf, Chapters 1 and 4.");
 }
 
@@ -95,10 +95,10 @@ function metric(slide, value, label, x, y, color = C.navy) {
   const xs = [0.8, 3.35, 5.9, 8.45, 10.7];
   const labels = [
     ["BUILD", "Published signal\nObserved counts"],
-    ["TRAIN", "AM seed 11\n30 × one hour"],
-    ["SELECT", "AM seed 31\nEvery 5 episodes"],
-    ["TEST", "3 regimes\n5 demand seeds"],
-    ["REPORT", "Seed-level CI\nNo cherry-picking"],
+    ["TRAIN", "Residual seed 11\n4 × one hour"],
+    ["SELECT", "Validation only\nsteps 2 and 4"],
+    ["TEST", "15 matched cases\n3 completed seeds"],
+    ["REPORT", "Seed sensitivity\nBounded status"],
   ];
   s.addShape(pptx.ShapeType.line, { x: 1.45, y: 3.0, w: 10.25, h: 0, line: { color: C.navy, width: 3 } });
   labels.forEach((d, i) => {
@@ -147,33 +147,33 @@ function metric(slide, value, label, x, y, color = C.navy) {
 
 // 8
 {
-  const s = pptx.addSlide("MASTER"); title(s, "Learning varies across training seeds");
-  s.addImage({ path: img("results/danang_protocol_v1/summary/validation-learning-curves.png"), x: 0.8, y: 1.25, w: 8.55, h: 5.05 });
-  body(s, "Base DQN", 9.65, 1.55, 2.65, 0.35, { fontSize: 16, bold: true, color: C.gray, align: "center" });
-  body(s, "81.43", 9.65, 2.0, 2.65, 0.65, { fontSize: 32, bold: true, color: C.navy, align: "center" });
-  body(s, "seed 11 best validation queue", 9.65, 2.67, 2.65, 0.6, { fontSize: 13, color: C.gray, align: "center" });
-  body(s, "Dueling + 3-step", 9.65, 3.55, 2.65, 0.35, { fontSize: 16, bold: true, color: C.gray, align: "center" });
-  body(s, "71.71", 9.65, 4.0, 2.65, 0.65, { fontSize: 32, bold: true, color: C.coral, align: "center" });
-  body(s, "same budget, seed 11", 9.65, 4.67, 2.65, 0.5, { fontSize: 13, color: C.gray, align: "center" });
-  body(s, "Selected checkpoint per seed, then froze all policies.", 9.55, 5.55, 2.9, 0.75, { fontSize: 16, bold: true, color: C.navy, align: "center" });
-  note(s, "Source: results/danang_protocol_v1/training/*/train-log.json. Architecture ablation combines dueling and 3-step changes and uses seed 11 only.");
+  const s = pptx.addSlide("MASTER"); title(s, "Learning varies across confirmation seeds");
+  s.addImage({ path: img("results/haichau_network_v2/final15-seed-sensitivity.png"), x: 0.8, y: 1.25, w: 8.55, h: 5.05 });
+  body(s, "Seed 14", 9.65, 1.55, 2.65, 0.35, { fontSize: 16, bold: true, color: C.gray, align: "center" });
+  body(s, "6.12%", 9.65, 2.0, 2.65, 0.65, { fontSize: 32, bold: true, color: C.teal, align: "center" });
+  body(s, "largest bounded reduction", 9.65, 2.67, 2.65, 0.6, { fontSize: 13, color: C.gray, align: "center" });
+  body(s, "Seed 12", 9.65, 3.55, 2.65, 0.35, { fontSize: 16, bold: true, color: C.gray, align: "center" });
+  body(s, "0.78%", 9.65, 4.0, 2.65, 0.65, { fontSize: 32, bold: true, color: C.coral, align: "center" });
+  body(s, "AM peak regression", 9.65, 4.67, 2.65, 0.5, { fontSize: 13, color: C.gray, align: "center" });
+  body(s, "Seed 15: 0.44% lower. Checkpoint and seed selection remain necessary.", 9.55, 5.55, 2.9, 0.75, { fontSize: 16, bold: true, color: C.navy, align: "center" });
+  note(s, "Source: results/haichau_network_v2/final15-three-seed-summary.json and final15-seed-sensitivity.png. Bounded 15-case matrix; seeds 13 and 16 are not yet eligible under the strict selector.");
 }
 
 // 9 native chart
 {
-  const s = pptx.addSlide("MASTER"); title(s, "Held-out result: benefit depends on traffic regime");
+  const s = pptx.addSlide("MASTER"); title(s, "Hai Chau bounded result by regime");
   const chart = s.addChart(pptx.ChartType.bar, [
-    { name: "Published fixed", labels: ["Normal 13:00", "AM peak 08:00", "PM peak 17:00"], values: [9.86, 79.20, 152.67] },
-    { name: "Dueling DDQN", labels: ["Normal 13:00", "AM peak 08:00", "PM peak 17:00"], values: [41.50, 78.41, 99.97] },
+    { name: "Tuned fixed", labels: ["Normal", "AM peak", "PM peak"], values: [1816.83, 2421.85, 4100.74] },
+    { name: "Residual DDQN", labels: ["Normal", "AM peak", "PM peak"], values: [1816.83, 2337.65, 3674.77] },
   ], { x: 0.75, y: 1.3, w: 8.4, h: 4.85, catAxisLabelFontFace: "Aptos", catAxisLabelFontSize: 13, valAxisLabelFontFace: "Aptos", valAxisLabelFontSize: 12, showLegend: true, legendFontFace: "Aptos", legendFontSize: 13, legendPos: "b", showTitle: false, showValue: true, dataLabelPosition: "outEnd", chartColors: [C.navy, C.coral], showCatName: false, showValAxisTitle: true, valAxisTitle: "Queue integral (vehicle-hours)", valAxisTitleFontFace: "Aptos", valAxisTitleFontSize: 13, showCatAxisTitle: false, showValue: true, showGridLines: true, gridLine: { color: "D7DEDC", width: 1 }, gapWidthPct: 60, showBorder: false });
-  body(s, "320.7% worse", 9.45, 1.45, 2.75, 0.55, { fontSize: 25, bold: true, color: C.red, align: "center" });
-  body(s, "worse in normal traffic", 9.45, 2.03, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
-  body(s, "1.0% lower", 9.45, 3.0, 2.75, 0.55, { fontSize: 25, bold: true, color: C.gray, align: "center" });
-  body(s, "AM difference unresolved", 9.45, 3.58, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
-  body(s, "34.5% lower", 9.45, 4.55, 2.75, 0.55, { fontSize: 25, bold: true, color: C.teal, align: "center" });
-  body(s, "better at PM peak", 9.45, 5.13, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
-  body(s, "Mean over the correct independent unit; lower is better.", 1.1, 6.38, 10.7, 0.35, { fontSize: 13.5, italic: true, color: C.gray, align: "center" });
-  note(s, "Source: results/danang_protocol_v1/summary/final-summary.json. DDQN 95% paired effect intervals: normal [7.60, 56.14], AM [-9.47, 8.49], PM [-69.55, -35.34] vehicle-hours.");
+  body(s, "0.0%", 9.45, 1.45, 2.75, 0.55, { fontSize: 25, bold: true, color: C.gray, align: "center" });
+  body(s, "normal is exactly tied", 9.45, 2.03, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
+  body(s, "3.5% lower", 9.45, 3.0, 2.75, 0.55, { fontSize: 25, bold: true, color: C.teal, align: "center" });
+  body(s, "AM peak, seed 14", 9.45, 3.58, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
+  body(s, "8.9% lower", 9.45, 4.55, 2.75, 0.55, { fontSize: 25, bold: true, color: C.teal, align: "center" });
+  body(s, "PM peak, seed 14", 9.45, 5.13, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
+  body(s, "Seed-14 bounded matrix: 8,339.43 → 7,829.25 vehicle-hours (6.12% lower).", 1.1, 6.38, 10.7, 0.35, { fontSize: 13.5, italic: true, color: C.gray, align: "center" });
+  note(s, "Source: results/haichau_network_v2/final15-seed14-step4-summary.json. This is bounded 15-case evidence, not the strict confirmatory release.");
   void chart;
 }
 
@@ -181,9 +181,9 @@ function metric(slide, value, label, x, y, color = C.navy) {
 {
   const s = pptx.addSlide("MASTER"); title(s, "Interpretation by regime");
   const rows = [
-    ["NORMAL", "Fixed plan clears sparse arrivals efficiently", "Keep published plan", C.red],
-    ["AM PEAK", "Controller means are nearly equal within uncertainty", "No evidence to switch", C.gray],
-    ["PM PEAK", "Persistent imbalance makes adaptive timing useful", "DDQN reduces queue integral", C.teal],
+    ["NORMAL", "Anchored controller reproduces fixed-time exactly", "Keep published plan", C.gray],
+    ["AM PEAK", "Seed sensitivity includes regressions", "Use fixed-time gate", C.gold],
+    ["PM PEAK", "Residual timing lowers queue in the bounded matrix", "Enable residual policy", C.teal],
   ];
   rows.forEach((r, i) => {
     const y = 1.45 + i * 1.65;
@@ -192,7 +192,7 @@ function metric(slide, value, label, x, y, color = C.navy) {
     body(s, r[1], 3.0, y - 0.03, 5.7, 0.78, { fontSize: 20, color: C.ink });
     body(s, r[2], 9.1, y - 0.03, 3.1, 0.78, { fontSize: 18, bold: true, color: r[3], align: "center" });
   });
-  body(s, "Deployment implication: use demand-gated adaptation with the published plan as fallback.", 1.2, 6.38, 10.8, 0.42, { fontSize: 21, bold: true, color: C.navy, align: "center" });
+  body(s, "Exploratory gated composition: fixed-time in normal/AM, residual policy in PM.", 1.2, 6.38, 10.8, 0.42, { fontSize: 21, bold: true, color: C.navy, align: "center" });
 }
 
 // 11 native line chart
@@ -205,21 +205,21 @@ function metric(slide, value, label, x, y, color = C.navy) {
   metric(s, "181% worse", "DDQN change\nat 0.75×", 9.65, 1.55, C.red);
   metric(s, "48% lower", "DDQN change\nat 1.25×", 9.65, 3.25, C.teal);
   metric(s, "35% lower", "DDQN change\nat 1.50×", 9.65, 4.95, C.teal);
-  body(s, "Only 1.00× is observed. Other levels are explicitly synthetic.", 1.4, 6.5, 7.6, 0.3, { fontSize: 13.5, italic: true, color: C.gray, align: "center" });
-  note(s, "Source: results/danang_protocol_v1/summary/sensitivity-summary.json. Twenty cases per controller family across demand and training seeds at each level.");
+  body(s, "Legacy single-junction sensitivity; only the 1.00× level is tied to the observed profile.", 1.4, 6.5, 7.6, 0.3, { fontSize: 13.5, italic: true, color: C.gray, align: "center" });
+  note(s, "Source: results/danang_protocol_v1/summary/sensitivity-summary.json. This chart is contextual evidence and is separate from the bounded 53-signal network result.");
 }
 
 // 12
 {
   const s = pptx.addSlide("MASTER"); title(s, "Safety and accounting results");
-  metric(s, "0", "collisions in 105\nprimary held-out runs", 1.0, 1.7, C.teal);
-  metric(s, "0", "collisions in 120\nsensitivity runs", 4.0, 1.7, C.teal);
-  metric(s, "4", "emergency-braking events\nin sensitivity runs", 7.0, 1.7, C.gold);
-  metric(s, "1.2 s", "final motorcycle\ntime headway", 10.0, 1.7, C.coral);
+  metric(s, "6.12%", "queue-hour reduction\nseed-14, 15 cases", 1.0, 1.7, C.teal);
+  metric(s, "+1.06 pp", "completion rate\nseed-14 pairs", 4.0, 1.7, C.teal);
+  metric(s, "−16.93", "maximum node queue\nvehicles, mean", 7.0, 1.7, C.gold);
+  metric(s, "53", "controlled signals\nHai Chau topology", 10.0, 1.7, C.coral);
   s.addShape(pptx.ShapeType.rect, { x: 1.05, y: 4.25, w: 11.2, h: 1.45, fill: { color: C.navy }, line: { color: C.navy } });
   body(s, "Queue metric includes vehicles waiting outside the network", 1.45, 4.55, 10.4, 0.42, { fontSize: 23, bold: true, color: C.white, align: "center" });
   body(s, "scheduled = inserted + pending; inserted = arrived + running", 1.45, 5.08, 10.4, 0.35, { fontSize: 15.5, color: "D9E3E5", align: "center" });
-  body(s, "Zero simulated collisions does not establish real-world safety.", 2.35, 6.15, 8.65, 0.4, { fontSize: 17, italic: true, color: C.red, align: "center" });
+  body(s, "These are bounded synthetic-network outcomes; they do not establish field safety.", 2.35, 6.15, 8.65, 0.4, { fontSize: 17, italic: true, color: C.red, align: "center" });
 }
 
 // 13
@@ -228,7 +228,7 @@ function metric(slide, value, label, x, y, color = C.navy) {
   const items = [
     ["ONE DATE", "Departure seeds change timing, not survey days"],
     ["PARTIAL COVERAGE", "Four camera movements do not cover the full junction"],
-    ["ISOLATED MODEL", "No neighboring spillback or signal coordination"],
+    ["SYNTHETIC NETWORK", "53 OSM-derived signals, not field-calibrated operation"],
     ["BEHAVIOR ASSUMPTIONS", "No raw headway, queue, or travel-time calibration"],
     ["FIVE TRAINING SEEDS", "Intervals remain wide under sparse traffic"],
   ];
@@ -237,7 +237,7 @@ function metric(slide, value, label, x, y, color = C.navy) {
     body(s, r[0], 1.0, y, 2.85, 0.45, { fontSize: 16, bold: true, color: i % 2 ? C.coral : C.teal });
     body(s, r[1], 4.0, y - 0.02, 8.1, 0.55, { fontSize: 20, color: C.ink });
   });
-  body(s, "Supported conclusion: conditional performance at this reconstructed junction.", 1.25, 6.55, 10.75, 0.36, { fontSize: 18, bold: true, color: C.navy, align: "center" });
+  body(s, "Supported conclusion: bounded conditional performance on the Hai Chau simulation network.", 1.25, 6.55, 10.75, 0.36, { fontSize: 18, bold: true, color: C.navy, align: "center" });
 }
 
 // 14
@@ -246,29 +246,29 @@ function metric(slide, value, label, x, y, color = C.navy) {
   s.addShape(pptx.ShapeType.rect, { x: 0.95, y: 1.4, w: 7.35, h: 4.95, fill: { color: C.navy }, line: { color: C.navy } });
   body(s, "SYNCHRONIZED A/B REPLAY", 1.35, 1.82, 6.55, 0.4, { fontSize: 17, bold: true, color: C.gold, align: "center" });
   body(s, "Published fixed", 1.45, 2.6, 2.75, 0.45, { fontSize: 23, bold: true, color: C.white, align: "center" });
-  body(s, "Dueling DDQN", 5.05, 2.6, 2.75, 0.45, { fontSize: 23, bold: true, color: C.white, align: "center" });
+  body(s, "Residual DDQN", 5.05, 2.6, 2.75, 0.45, { fontSize: 23, bold: true, color: C.white, align: "center" });
   s.addShape(pptx.ShapeType.line, { x: 4.62, y: 2.45, w: 0, h: 2.75, line: { color: "7E9497", width: 1.2 } });
   body(s, "Same PM demand\nSame clock\nPhase + queue + arrivals", 1.45, 3.35, 2.75, 1.35, { fontSize: 18, color: "D9E3E5", align: "center" });
   body(s, "Same PM demand\nSame clock\nPhase + queue + arrivals", 5.05, 3.35, 2.75, 1.35, { fontSize: 18, color: "D9E3E5", align: "center" });
   body(s, "No live training", 2.1, 5.52, 5.95, 0.38, { fontSize: 19, bold: true, color: C.coral, align: "center" });
   body(s, "Presentation checklist", 8.85, 1.55, 3.25, 0.35, { fontSize: 19, bold: true, color: C.navy });
   body(s, "1. Run one launcher\n2. Verify offline mode\n3. Use pre-exported replay\n4. Keep video fallback\n5. Keep PDF screenshots", 8.85, 2.08, 3.25, 2.5, { fontSize: 18 });
-  body(s, "Aggregate result stays on slide 9. The replay illustrates one predeclared representative case.", 8.85, 5.08, 3.25, 1.15, { fontSize: 15, italic: true, color: C.gray });
+  body(s, "The bundle is bounded and offline. It illustrates six matched Hai Chau replays.", 8.85, 5.08, 3.25, 1.15, { fontSize: 15, italic: true, color: C.gray });
 }
 
 // 15
 {
   const s = pptx.addSlide(); s.background = { color: C.navy };
   s.addText("Conclusion", { x: 0.85, y: 0.62, w: 5.0, h: 0.6, fontFace: "Aptos Display", fontSize: 30, bold: true, color: C.gold, margin: 0 });
-  s.addText("DDQN helps when demand is high enough to justify adaptive phase changes.", { x: 0.85, y: 1.55, w: 11.6, h: 1.1, fontFace: "Aptos Display", fontSize: 31, bold: true, color: C.white, margin: 0.02, align: "center", fit: "shrink" });
+  s.addText("Residual DDQN helps most in the PM peak on the bounded network matrix.", { x: 0.85, y: 1.55, w: 11.6, h: 1.1, fontFace: "Aptos Display", fontSize: 31, bold: true, color: C.white, margin: 0.02, align: "center", fit: "shrink" });
   s.addShape(pptx.ShapeType.line, { x: 2.0, y: 3.0, w: 9.3, h: 0, line: { color: C.coral, width: 2 } });
   body(s, "Normal", 1.1, 3.55, 2.8, 0.4, { fontSize: 18, bold: true, color: "CFDADC", align: "center" });
-  body(s, "Worse", 1.1, 4.05, 2.8, 0.55, { fontSize: 29, bold: true, color: C.coral, align: "center" });
+  body(s, "Tied", 1.1, 4.05, 2.8, 0.55, { fontSize: 29, bold: true, color: "62C6B7", align: "center" });
   body(s, "AM peak", 5.25, 3.55, 2.8, 0.4, { fontSize: 18, bold: true, color: "CFDADC", align: "center" });
-  body(s, "Unresolved", 5.25, 4.05, 2.8, 0.55, { fontSize: 29, bold: true, color: C.gold, align: "center" });
+  body(s, "Variable", 5.25, 4.05, 2.8, 0.55, { fontSize: 29, bold: true, color: C.gold, align: "center" });
   body(s, "PM peak", 9.35, 3.55, 2.8, 0.4, { fontSize: 18, bold: true, color: "CFDADC", align: "center" });
-  body(s, "34.5% better", 9.35, 4.05, 2.8, 0.55, { fontSize: 27, bold: true, color: "62C6B7", align: "center" });
-  body(s, "Recommendation: demand-gated adaptation, published fixed-time fallback, and field shadow testing.", 1.3, 5.65, 10.7, 0.62, { fontSize: 20, color: C.white, align: "center" });
+  body(s, "8.9% lower", 9.35, 4.05, 2.8, 0.55, { fontSize: 27, bold: true, color: "62C6B7", align: "center" });
+  body(s, "Recommendation: preregister the gated campaign, keep fixed-time fallback, and use the offline demo.", 1.3, 5.65, 10.7, 0.62, { fontSize: 20, color: C.white, align: "center" });
   body(s, "Questions and demonstration", 3.35, 6.62, 6.7, 0.4, { fontSize: 18, color: C.gold, bold: true, align: "center" });
 }
 
