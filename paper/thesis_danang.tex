@@ -77,6 +77,8 @@ At the empirical anchor, a \ddqn{} controller is trained for thirty one-hour epi
 
 The empirical-anchor result is regime dependent. Relative to the published fixed plan, \ddqn{} changes the queue integral by $+320.7\%$ in normal demand, $-1.0\%$ in the morning peak, and $-34.5\%$ in the evening peak. The 95\% bootstrap intervals for the absolute paired changes are $[7.60,56.14]$, $[-9.47,8.49]$, and $[-69.55,-35.34]$ vehicle-hours, respectively. These findings support a demand-gated controller with monitored fixed-time fallback at this modelled junction; they do not establish field safety or a city-wide benefit. The 53-signal experiment defines a frozen 30-case split and a five-seed confirmatory protocol. The current thesis reports a separate bounded analysis of the completed matched cases and labels it explicitly; a strict confirmatory release is withheld until its fail-closed verifier passes.
 
+In that bounded 53-signal analysis, a fresh regime gate that retains tuned fixed-time in normal and morning-peak demand and enables the residual policy only in the evening peak reduced the derived full-day queue integral for all five available learning seeds, by 1.03\%--5.62\% (mean 3.48\%). Three seeds have fresh fifteen-case coverage and two have fresh evening-peak coverage only, so this is a reproducible exploratory result rather than a strict confirmatory claim.
+
 \noindent\textbf{Keywords:} traffic signal control; reinforcement learning; Dueling Double DQN; SUMO; CityFlow; Da Nang; reproducibility; mixed traffic.
 
 \tableofcontents
