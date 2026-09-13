@@ -72,6 +72,13 @@ generalization. The two sensitivity summaries are
 `results/haichau_network_v2/final15-seed12-step8-summary.json` and
 `results/haichau_network_v2/final15-seed15-step8-summary.json`.
 
+Treating the three completed learning seeds as the independent unit gives a
+mean aggregate improvement of 2.45% (seed-level range 0.44%--6.12%). The
+corresponding AM mean is −1.32%, while the PM mean is 4.21%. This hierarchical
+summary is stored in `results/haichau_network_v2/final15-three-seed-summary.json`;
+it is a sensitivity result because the preregistered cohort still includes
+seeds 13 and 16.
+
 ## 4.3 Training and validation
 
 The reduced training profile uses three learning seeds (12, 13, and 14), one

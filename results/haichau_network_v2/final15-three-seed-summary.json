@@ -1,0 +1,89 @@
+{
+  "aggregate": {
+    "hierarchical_bootstrap_ci_pct": {
+      "lower_95_pct": 0.44060098964930483,
+      "repeats": 10000,
+      "seed": 20260913,
+      "upper_95_pct": 6.117657654992942
+    },
+    "mean_seed_improvement_pct": 2.4471063636510166,
+    "median_seed_improvement_pct": 0.7830604463108031
+  },
+  "by_regime": {
+    "am_peak": {
+      "hierarchical_bootstrap_ci_pct": {
+        "lower_95_pct": -5.667271274459284,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 3.531767685224613
+      },
+      "mean_across_seeds_pct": -1.3168490048744965,
+      "values_pct": [
+        -5.667271274459284,
+        3.531767685224613,
+        -1.8150434253888181
+      ]
+    },
+    "normal": {
+      "hierarchical_bootstrap_ci_pct": {
+        "lower_95_pct": 0.0,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 0.0
+      },
+      "mean_across_seeds_pct": 0.0,
+      "values_pct": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "pm_peak": {
+      "hierarchical_bootstrap_ci_pct": {
+        "lower_95_pct": 0.47526256025247077,
+        "repeats": 10000,
+        "seed": 20260913,
+        "upper_95_pct": 8.862112821685804
+      },
+      "mean_across_seeds_pct": 4.205626945320231,
+      "values_pct": [
+        3.2795054540224173,
+        8.862112821685804,
+        0.47526256025247077
+      ]
+    }
+  },
+  "case_count": 15,
+  "learning_seed_count": 3,
+  "profile": "bounded_15_case_three_learning_seed_sensitivity",
+  "schema_version": 1,
+  "seed_results": [
+    {
+      "aggregate_improvement_pct": 0.7830604463108031,
+      "by_regime": {
+        "am_peak": -5.667271274459284,
+        "normal": 0.0,
+        "pm_peak": 3.2795054540224173
+      },
+      "learning_seed": 12
+    },
+    {
+      "aggregate_improvement_pct": 6.117657654992942,
+      "by_regime": {
+        "am_peak": 3.531767685224613,
+        "normal": 0.0,
+        "pm_peak": 8.862112821685804
+      },
+      "learning_seed": 14
+    },
+    {
+      "aggregate_improvement_pct": 0.44060098964930483,
+      "by_regime": {
+        "am_peak": -1.8150434253888181,
+        "normal": 0.0,
+        "pm_peak": 0.47526256025247077
+      },
+      "learning_seed": 15
+    }
+  ]
+}
