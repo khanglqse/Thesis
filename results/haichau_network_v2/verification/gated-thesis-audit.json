@@ -67,7 +67,7 @@
   "presentation_ready": true,
   "profile": "exploratory_regime_gated_thesis_audit",
   "schema_version": 1,
-  "source_commit": "a6c784d4f83ef0bbf57a263524043e1359d85a98",
+  "source_commit": "a67987929f94a348bad1c77f5d712cd9ae6fbb0c",
   "strict_confirmatory": {
     "failed_gates": [
       "source_revision",
