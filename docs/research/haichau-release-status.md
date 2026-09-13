@@ -14,6 +14,9 @@ result and must be updated before claiming a frozen release.
 - On the same cases, Max-Pressure reduces queue-hours by 23.89% and
   hysteretic Max-Pressure by 19.19%. These are stronger baselines and remain
   part of the claim boundary.
+- Three completed learned seeds (12, 14 and 15) give aggregate reductions of
+  0.78%, 6.12% and 0.44%; the mean seed-level reduction is 2.45%. The AM
+  mean across these seeds is −1.32%, so seed variance is material.
 - Normal operation is exactly tied to fixed-time by the residual controller's
   anchored policy. AM and PM improvements are 3.53% and 8.86% respectively,
   with individual-case regressions still present.
