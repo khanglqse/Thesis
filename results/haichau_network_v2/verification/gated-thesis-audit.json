@@ -10,17 +10,17 @@
     },
     "gate_summary": {
       "path": "results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json",
-      "sha256": "dd49c6627da73af82a4d8c61008d95161ab43530ad64d673f5c01f34e3e556a6"
+      "sha256": "9eaa8c0dda59987855df5a963d5d0c9a252b8418f998745158c5e5c7c3da5bdd"
     },
     "thesis_pdf": {
       "path": "paper/thesis_danang.pdf",
-      "sha256": "40a296bb38ca49aa1f9567d3c680de11341d4baf3a7af911cc65cb574c52f435"
+      "sha256": "6b53513b764ef437917f29f0c181ad3ef023ae9c6711eff250c0946cc9f52b40"
     }
   },
   "exploratory_gate": {
     "bootstrap_ci95_pct": [
-      2.009994154942915,
-      4.946684339070876
+      2.0099941549429103,
+      4.946684339070871
     ],
     "case_level_regressions": {
       "12": 3,
@@ -31,8 +31,10 @@
     },
     "full_15_case_seeds": [
       12,
+      13,
       14,
-      15
+      15,
+      16
     ],
     "learning_seeds": [
       12,
@@ -41,12 +43,9 @@
       15,
       16
     ],
-    "mean_derived_full_day_improvement_pct": 3.478339247006895,
+    "mean_derived_full_day_improvement_pct": 3.4783392470068906,
     "passed": true,
-    "pm_only_seeds": [
-      13,
-      16
-    ]
+    "pm_only_seeds": []
   },
   "foundation": {
     "evidence": {
@@ -64,11 +63,11 @@
     "passed": true,
     "returncode": 0
   },
-  "interpretation": "The gate is presentation-ready exploratory evidence: fixed-time is retained in normal/AM and the residual policy is enabled in PM. Seeds 13 and 16 have PM-only fresh coverage. The strict verifier remains the authority for a confirmatory release and is intentionally reported separately.",
+  "interpretation": "The gate is presentation-ready exploratory evidence: fixed-time is retained in normal/AM and the residual policy is enabled in PM. Seeds 13 and 16 assemble fresh fixed normal/AM and fresh PM coverage. The strict verifier remains the authority for a confirmatory release and is intentionally reported separately.",
   "presentation_ready": true,
   "profile": "exploratory_regime_gated_thesis_audit",
   "schema_version": 1,
-  "source_commit": "e03563d7badfa42482ebf19d5e17ca398112540c",
+  "source_commit": "28e1da6edf37c40d019784024c7106060ee0d6ba",
   "strict_confirmatory": {
     "failed_gates": [
       "source_revision",
