@@ -60,6 +60,8 @@ controller still improves over fixed-time, but this comparison prevents an
 unsupported claim that DDQN is the best controller for every regime. The
 machine-readable matrix is
 `results/haichau_network_v2/final15-controller-matrix-summary.json`.
+Its network, runtime, checkpoint and case identities are recorded in
+`results/haichau_network_v2/final15-controller-matrix-provenance.json`.
 
 As a checkpoint sensitivity result, seed 12 step 8 over the same 15 cases
 reduced the aggregate metric by only 0.78% and regressed 5.67% in AM peak.
