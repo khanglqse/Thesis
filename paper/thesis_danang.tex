@@ -502,6 +502,28 @@ At the case level, the gate regresses 3/15 cases for seed 12, 1/5 for seed 13,
 1/15 for seed 14, 3/15 for seed 15, and 2/5 for seed 16; the positive aggregate
 does not imply improvement for every demand realization.
 
+\begin{table}[H]
+\centering
+\caption{Direct exploratory regime-gated replay by learning seed.}
+\label{tab:gated-seed-replays}
+\begin{tabular}{lrrrr}
+\toprule
+Seed & Fresh coverage & Full-day reduction & PM reduction & Regressions \\
+\midrule
+12 & 15 cases & 2.36\% & 4.80\% & 3/15 \\
+13 & 5 PM cases & 5.62\% & 11.43\% & 1/5 \\
+14 & 15 cases & 5.11\% & 10.39\% & 1/15 \\
+15 & 15 cases & 1.03\% & 2.09\% & 3/15 \\
+16 & 5 PM cases & 3.27\% & 6.66\% & 2/5 \\
+\bottomrule
+\end{tabular}
+\vspace{-2pt}
+\begin{minipage}{0.92\textwidth}
+\small\textit{Note: the full-day values for seeds 13 and 16 are derived using the
+common fixed normal/AM totals because only the PM cases were replayed fresh.}
+\end{minipage}
+\end{table}
+
 The residual safety margin was also varied in a short, explicitly exploratory
 check using learning seed 13, one held-out demand realization per regime, and a
 900-second horizon. With a score margin of 5, the controller selected the exact
