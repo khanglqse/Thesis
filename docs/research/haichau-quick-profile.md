@@ -56,3 +56,16 @@ PYTHONPATH=src python3 scripts/plot_haichau_short_campaign.py \
   results/haichau_network_v2/pilot-campaign-full9-summary.json \
   --output results/haichau_network_v2/pilot-campaign-full9-improvement.png
 ```
+
+The portable defense demo is built from the completed 15-case seed-14 replay
+and includes one matched normal, AM-peak, and PM-peak case:
+
+```bash
+PYTHONPATH=src python3 scripts/build_haichau_bounded_demo.py
+cd results/haichau_network_v2/demo-bounded
+./launch_demo.command --no-browser
+```
+
+Open the printed loopback URL in a browser. The bundle is self-contained and
+validated for 53 controlled signals; its aggregate label is explicitly marked
+as bounded evidence pending the five-seed release gate.
