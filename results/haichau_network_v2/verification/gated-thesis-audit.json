@@ -2,7 +2,7 @@
   "artifacts": {
     "defense_deck": {
       "path": "presentation/thesis_defense_danang.pptx",
-      "sha256": "a574c802dd432302d4fa17457b8ef4b84ef618a20c55b3bc515da9681534dbe0"
+      "sha256": "8dfe6d3de591875c777a869303f4b15c1105ceec02e1ce2c7efc519bc3ef5c92"
     },
     "demo_manifest": {
       "path": "results/haichau_network_v2/demo-bounded/manifest.json",
@@ -67,7 +67,7 @@
   "presentation_ready": true,
   "profile": "exploratory_regime_gated_thesis_audit",
   "schema_version": 1,
-  "source_commit": "a67987929f94a348bad1c77f5d712cd9ae6fbb0c",
+  "source_commit": "b1fab03ece2648e09b20f963af6a482f899e63e5",
   "strict_confirmatory": {
     "failed_gates": [
       "source_revision",
