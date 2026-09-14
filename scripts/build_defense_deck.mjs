@@ -60,9 +60,9 @@ function metric(slide, value, label, x, y, color = C.navy) {
   s.addShape(pptx.ShapeType.line, { x: 2.0, y: 3.15, w: 9.3, h: 0, line: { color: C.teal, width: 2 } });
   metric(s, "53 signals", "Hai Chau network topology", 1.25, 3.65, C.teal);
   metric(s, "30 cases", "9 train · 6 validation · 15 test", 4.05, 3.65, C.coral);
-  metric(s, "3 seeds", "bounded learned sensitivity", 6.85, 3.65, C.navy);
+  metric(s, "5 seeds", "fresh gated replay coverage", 6.85, 3.65, C.navy);
   metric(s, "3 regimes", "normal, AM peak, PM peak", 9.65, 3.65, C.gold);
-  body(s, "The network evidence is synthetic and bounded; strict five-seed release remains pending.", 2.0, 5.45, 9.3, 0.72, { fontSize: 18, italic: true, color: C.gray, align: "center" });
+  body(s, "The network evidence is synthetic; the gated result is presentation-ready exploratory evidence.", 1.55, 5.45, 10.2, 0.72, { fontSize: 18, italic: true, color: C.gray, align: "center" });
   note(s, "Research design and scope: thesis_danang.pdf, Chapters 1 and 4.");
 }
 
@@ -95,10 +95,10 @@ function metric(slide, value, label, x, y, color = C.navy) {
   const xs = [0.8, 3.35, 5.9, 8.45, 10.7];
   const labels = [
     ["BUILD", "Published signal\nObserved counts"],
-    ["TRAIN", "Residual seed 11\n4 × one hour"],
-    ["SELECT", "Validation only\nsteps 2 and 4"],
-    ["TEST", "15 matched cases\n3 completed seeds"],
-    ["REPORT", "Seed sensitivity\nBounded status"],
+    ["TRAIN", "Five learning seeds\n12 one-hour episodes"],
+    ["SELECT", "Validation gates\nfixed-time fallback"],
+    ["TEST", "15 matched cases\n3 demand regimes"],
+    ["REPORT", "5-seed gate\nCI + limitations"],
   ];
   s.addShape(pptx.ShapeType.line, { x: 1.45, y: 3.0, w: 10.25, h: 0, line: { color: C.navy, width: 3 } });
   labels.forEach((d, i) => {
@@ -156,7 +156,7 @@ function metric(slide, value, label, x, y, color = C.navy) {
   body(s, "0.78%", 9.65, 4.0, 2.65, 0.65, { fontSize: 32, bold: true, color: C.coral, align: "center" });
   body(s, "AM peak regression", 9.65, 4.67, 2.65, 0.5, { fontSize: 13, color: C.gray, align: "center" });
   body(s, "Seed 15: 0.44% lower. Checkpoint and seed selection remain necessary.", 9.55, 5.55, 2.9, 0.75, { fontSize: 16, bold: true, color: C.navy, align: "center" });
-  note(s, "Source: results/haichau_network_v2/final15-three-seed-summary.json and final15-seed-sensitivity.png. The strict selector still rejects seeds 13 and 16; independent gated PM replays are reported separately.");
+  note(s, "Source: results/haichau_network_v2/final15-three-seed-summary.json and final15-seed-sensitivity.png. This slide motivates the regime gate; the five-seed gated result is reported on slides 9–10.");
 }
 
 // 9 native chart
@@ -170,10 +170,10 @@ function metric(slide, value, label, x, y, color = C.navy) {
   body(s, "normal is exactly tied", 9.45, 2.03, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
   body(s, "3.5% lower", 9.45, 3.0, 2.75, 0.55, { fontSize: 25, bold: true, color: C.teal, align: "center" });
   body(s, "AM peak, seed 14", 9.45, 3.58, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
-  body(s, "8.9% lower", 9.45, 4.55, 2.75, 0.55, { fontSize: 25, bold: true, color: C.teal, align: "center" });
-  body(s, "PM peak, seed 14", 9.45, 5.13, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
-  body(s, "Seed-14 bounded matrix: 8,339.43 → 7,829.25 vehicle-hours (6.12% lower).", 1.1, 6.38, 10.7, 0.35, { fontSize: 13.5, italic: true, color: C.gray, align: "center" });
-  note(s, "Source: results/haichau_network_v2/final15-seed14-step4-summary.json. This is bounded 15-case evidence, not the strict confirmatory release.");
+  body(s, "10.4% lower", 9.45, 4.55, 2.75, 0.55, { fontSize: 25, bold: true, color: C.teal, align: "center" });
+  body(s, "PM peak, seed-14 gate", 9.45, 5.13, 2.75, 0.4, { fontSize: 14, color: C.gray, align: "center" });
+  body(s, "Seed-14 raw residual matrix: 8,339.43 → 7,829.25 vehicle-hours (6.12% lower).", 1.1, 6.38, 10.7, 0.35, { fontSize: 13.5, italic: true, color: C.gray, align: "center" });
+  note(s, "Chart and PM gate value: results/haichau_network_v2/final15-controller-matrix-summary.json. The interactive demo shows the representative raw residual replay; the gate keeps fixed-time in normal/AM.");
   void chart;
 }
 
@@ -268,7 +268,7 @@ function metric(slide, value, label, x, y, color = C.navy) {
   body(s, "AM peak", 5.25, 3.55, 2.8, 0.4, { fontSize: 18, bold: true, color: "CFDADC", align: "center" });
   body(s, "Variable", 5.25, 4.05, 2.8, 0.55, { fontSize: 29, bold: true, color: C.gold, align: "center" });
   body(s, "PM peak", 9.35, 3.55, 2.8, 0.4, { fontSize: 18, bold: true, color: "CFDADC", align: "center" });
-  body(s, "8.9% lower", 9.35, 4.05, 2.8, 0.55, { fontSize: 27, bold: true, color: "62C6B7", align: "center" });
+  body(s, "10.4% lower", 9.35, 4.05, 2.8, 0.55, { fontSize: 27, bold: true, color: "62C6B7", align: "center" });
   body(s, "Recommendation: preregister the gated campaign, keep fixed-time fallback, and use the offline demo.", 1.3, 5.65, 10.7, 0.62, { fontSize: 20, color: C.white, align: "center" });
   body(s, "Questions and demonstration", 3.35, 6.62, 6.7, 0.4, { fontSize: 18, color: C.gold, bold: true, align: "center" });
 }
