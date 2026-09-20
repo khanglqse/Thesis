@@ -1,0 +1,12 @@
+{
+  "dir": "/workspace/",
+  "flowFile": "results/haichau_network_v2/final15-seed12-step8-run2/demands/test_pm_peak_demand105_3600s.json",
+  "interval": 1.0,
+  "laneChange": false,
+  "replayLogFile": "results/haichau_network_v2/demo-visual-work/pm-fixed.raw.txt",
+  "rlTrafficLight": true,
+  "roadnetFile": "datasets/haichau_network_v2/roadnet.json",
+  "roadnetLogFile": "results/haichau_network_v2/demo-visual-work/pm-fixed.raw.txt.roadnet.json",
+  "saveReplay": true,
+  "seed": 205
+}

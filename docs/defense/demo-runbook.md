@@ -272,6 +272,26 @@ acceptance gate. If acceptance is negative, say so directly.
   of real camera-count evidence and identify measured district demand/signal plans as future
   work.
 
+### Partial visual telemetry demo
+
+For the geographically faithful vehicle-and-signal walkthrough, use the separate
+`results/haichau_network_v2/demo-visual` bundle. It contains recorded PM-peak telemetry
+from 00:00 through 20:00, sampled every five seconds, for the matched fixed-time and
+schedule-residual controllers. It is a partial visual replay; its displayed final metrics
+come from the stored complete 3,600-second evaluations and are labelled as end-of-run
+records. It does not claim release acceptance or provide Normal/AM telemetry.
+
+Launch it from the repository root:
+
+```sh
+cd results/haichau_network_v2/demo-visual
+python3 launch_demo.py --bundle . --port 8766 --no-browser
+```
+
+Then open `http://127.0.0.1:8766/index.html`. The guided view starts at 15:00, leaving
+five minutes of recorded motion for the presentation. Double-clicking
+`launch_demo.command` is the offline fallback when a fixed port is unnecessary.
+
 ### 53-signal defense-day preflight
 
 1. Run `PYTHONPATH=src python3 scripts/verify_haichau_thesis.py` from the clean frozen copy

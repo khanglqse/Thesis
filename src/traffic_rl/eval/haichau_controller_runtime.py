@@ -241,7 +241,8 @@ def _learned_runtime(project_root, run, roadnet, normalization):
 
 def build_controller_runtime(project_root, run, runtime_dir,
                              engine_factory=CityFlowEngine,
-                             env_class=MultiAgentTrafficEnv):
+                             env_class=MultiAgentTrafficEnv,
+                             raw_replay_path=None):
     """Build one hash-checked environment/controller pair from a frozen run."""
     if not isinstance(run, dict):
         raise ValueError("run manifest must be an object")
@@ -301,6 +302,18 @@ def build_controller_runtime(project_root, run, runtime_dir,
         "flowFile": str(demand_path.relative_to(Path(project_root).resolve())),
         "rlTrafficLight": True, "laneChange": False, "saveReplay": False,
     }
+    if raw_replay_path is not None:
+        replay_path = Path(raw_replay_path).resolve()
+        try:
+            replay_relative = replay_path.relative_to(Path(project_root).resolve())
+        except ValueError:
+            raise ValueError("native replay output must remain inside project root")
+        replay_path.parent.mkdir(parents=True, exist_ok=True)
+        cityflow_config.update({
+            "saveReplay": True,
+            "replayLogFile": str(replay_relative),
+            "roadnetLogFile": str(replay_relative) + ".roadnet.json",
+        })
     engine_config_path = runtime_dir / (run_id + ".json")
     engine_config_path.write_text(
         json.dumps(cityflow_config, indent=2, sort_keys=True) + "\n")
@@ -365,11 +378,12 @@ def build_controller_runtime(project_root, run, runtime_dir,
 def evaluate_run(project_root, run, runtime_dir,
                  engine_factory=CityFlowEngine,
                  env_class=MultiAgentTrafficEnv,
-                 episode_runner=run_episode):
+                 episode_runner=run_episode, raw_replay_path=None):
     """Execute one fresh frozen run and return the campaign result envelope."""
     env, controller = build_controller_runtime(
         project_root, run, runtime_dir,
-        engine_factory=engine_factory, env_class=env_class)
+        engine_factory=engine_factory, env_class=env_class,
+        raw_replay_path=raw_replay_path)
     metrics = episode_runner(env, controller)
     if int(metrics.get("steps", -1)) != int(run["horizon_steps"]):
         raise ValueError("evaluation did not complete the frozen horizon")

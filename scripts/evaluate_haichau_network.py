@@ -16,6 +16,8 @@ def main(argv=None):
     parser.add_argument("--run-manifest", required=True)
     parser.add_argument("--runtime-dir", required=True)
     parser.add_argument("--project-root", default=str(PROJECT_ROOT))
+    parser.add_argument("--raw-replay",
+                        help="optional CityFlow native telemetry output for a visual demo")
     args = parser.parse_args(argv)
 
     project_root = Path(args.project_root).resolve()
@@ -29,7 +31,8 @@ def main(argv=None):
     runtime_dir = Path(args.runtime_dir)
     if not runtime_dir.is_absolute():
         runtime_dir = project_root / runtime_dir
-    result = evaluate_run(project_root, run, runtime_dir)
+    result = evaluate_run(
+        project_root, run, runtime_dir, raw_replay_path=args.raw_replay)
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     return 0
 

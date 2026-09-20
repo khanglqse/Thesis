@@ -1,0 +1,56 @@
+{
+  "acceptance": {
+    "accepted": false,
+    "reason": "partial 0-1200 second visual telemetry; final metrics are stored end-of-run evidence"
+  },
+  "aggregate_path": "summary.json",
+  "bundle_version": 2,
+  "controlled_signals": 53,
+  "demand_label": "synthetic network demand constrained by Da Nang evidence",
+  "files": {
+    "haichau_network_demo.css": "90769e36ab5a2ce580b4c3b67917c16d00a7c159becdd9b62fbf9e754af8f474",
+    "haichau_network_demo.js": "84dc8480c90dcba3da7a74bbc9510795cc9edb9f4bb5043d8c6cafd4c4e8ff2c",
+    "haichau_network_demo_core.js": "fd5c511d706cab7b50862d9e92cd4a9d50d9dd409f92e051285365e4e4682374",
+    "index.html": "0c0680de007817f324b82ed5c0321405d8ff0ff2ad645baf9a8974bc556b6e05",
+    "launch_demo.command": "6b048aa4ff457872e6c251a023f939a4c178fceff0fc140759f942cc7de6f040",
+    "launch_demo.py": "bffaad31625e55b3f831ba2e63604460d739e18442bca9270f739e8fd479e578",
+    "network.json": "2d1d8872f0ddc54f65f6fb26d844a33451d26b45af0b40ebae435d165d29b9ae",
+    "replays/pm_peak__ddqn.json": "0140bfc3a16853dfa15ecde08359753efde73e64575ba7e762b525a7a523070e",
+    "replays/pm_peak__fixed.json": "12a02b524a984c53060cd4ab8efe5071e5473b28dc9e8b145615b6736bcf0565",
+    "summary.json": "044270bdc084b4199b923bed5bb37308c3e810471637dac22591c652d50ef611"
+  },
+  "guided_demo": {
+    "junction_id": "420249521",
+    "time_seconds": 1085
+  },
+  "network_path": "network.json",
+  "queue_color_max": 50,
+  "replays": [
+    {
+      "case_id": "test_pm_peak_demand105",
+      "controller_id": "tuned_fixed",
+      "path": "replays/pm_peak__fixed.json",
+      "regime": "pm_peak",
+      "run_id": "tuned_fixed__test_pm_peak_demand105__3600s"
+    },
+    {
+      "case_id": "test_pm_peak_demand105",
+      "controller_id": "neighbor_phase_ddqn",
+      "path": "replays/pm_peak__ddqn.json",
+      "regime": "pm_peak",
+      "run_id": "schedule_residual_ddqn__test_pm_peak_demand105__3600s",
+      "source_controller_id": "schedule_residual_ddqn"
+    }
+  ],
+  "visual_scope": {
+    "complete_horizon": false,
+    "end_seconds": 1200,
+    "metrics_provenance": "stored complete 3600-second evaluations; separate from partial visual telemetry",
+    "recorded_replay": true,
+    "regimes": [
+      "pm_peak"
+    ],
+    "sample_seconds": 5,
+    "start_seconds": 0
+  }
+}

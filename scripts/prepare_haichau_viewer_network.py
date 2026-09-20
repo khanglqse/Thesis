@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from traffic_rl.network.roadnet import RoadNet
@@ -20,6 +21,86 @@ def _canonical_sha256(value):
     payload = json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _physical_geometry(root, roadnet_path, roadnet, controlled_ids):
+    """Return source-backed street, lane, junction and phase geometry."""
+    sumo_path = root / "datasets/haichau_network_v2/source/danang_haichau.net.xml"
+    names = {}
+    if sumo_path.is_file():
+        for edge in ET.parse(str(sumo_path)).getroot().iter("edge"):
+            edge_id = edge.get("id")
+            if edge_id and edge.get("name"):
+                names[edge_id] = edge.get("name")
+
+    roads = []
+    xs, ys = [], []
+    for road in roadnet.get("roads", ()):
+        points = [[float(point["x"]), float(point["y"])]
+                  for point in road.get("points", ())]
+        for x, y in points:
+            xs.append(x)
+            ys.append(y)
+        lanes = [{
+            "id": "%s_%d" % (road["id"], index),
+            "index": index,
+            "width": float(lane.get("width", 0.0)),
+            "max_speed": float(lane.get("maxSpeed", 0.0)),
+        } for index, lane in enumerate(road.get("lanes", ()))]
+        roads.append({
+            "id": road["id"], "name": names.get(road["id"]),
+            "start": road["startIntersection"],
+            "end": road["endIntersection"], "points": points,
+            "lanes": lanes,
+        })
+
+    junctions = []
+    for inter in roadnet.get("intersections", ()):
+        point = inter.get("point", {})
+        if "x" not in point or "y" not in point:
+            continue
+        light = inter.get("trafficLight", {})
+        movements = []
+        for index, link in enumerate(inter.get("roadLinks", ())):
+            movements.append({
+                "index": index, "type": link.get("type"),
+                "start_road": link.get("startRoad"),
+                "end_road": link.get("endRoad"),
+                "lane_links": [{
+                    "start_lane": "%s_%d" % (
+                        link.get("startRoad"), lane.get("startLaneIndex")),
+                    "end_lane": "%s_%d" % (
+                        link.get("endRoad"), lane.get("endLaneIndex")),
+                    "points": [[float(p["x"]), float(p["y"])]
+                               for p in lane.get("points", ())],
+                } for lane in link.get("laneLinks", ())],
+            })
+        road_by_id = dict((road["id"], road) for road in roads)
+        road_ids = list(inter.get("roads", ()))
+        junctions.append({
+            "id": inter["id"], "x": float(point["x"]),
+            "y": float(point["y"]), "controlled": inter["id"] in controlled_ids,
+            "virtual": bool(inter.get("virtual", False)),
+            "incoming_roads": [road_id for road_id in road_ids
+                               if road_by_id.get(road_id, {}).get("end") == inter["id"]],
+            "outgoing_roads": [road_id for road_id in road_ids
+                               if road_by_id.get(road_id, {}).get("start") == inter["id"]],
+            "movements": movements,
+            "phases": [{
+                "index": index, "duration": float(phase.get("time", 0.0)),
+                "available_movements": list(phase.get("availableRoadLinks", ())),
+            } for index, phase in enumerate(light.get("lightphases", ()))],
+        })
+    return {
+        "source_path": str(roadnet_path.relative_to(root)),
+        "source_sha256": _sha256(roadnet_path),
+        "sumo_source_path": (str(sumo_path.relative_to(root))
+                             if sumo_path.is_file() else None),
+        "sumo_source_sha256": (_sha256(sumo_path) if sumo_path.is_file() else None),
+        "coordinate_units": "CityFlow local metres",
+        "bounds": [min(xs), min(ys), max(xs), max(ys)],
+        "roads": roads, "junctions": junctions,
+    }
 
 
 def build_viewer(project_root, manifest_path, output_path):
@@ -79,6 +160,7 @@ def build_viewer(project_root, manifest_path, output_path):
         "nodes": nodes,
         "links": [{"source": source, "target": target}
                   for source, target in sorted(links)],
+        "geometry": _physical_geometry(root, roadnet_path, roadnet, known),
     }
     encoded = json.dumps(document, indent=2, sort_keys=True) + "\n"
     target = (root / output_path).resolve()

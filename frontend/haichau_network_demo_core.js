@@ -77,6 +77,37 @@
     }
     return selected;
   }
+  function geometryPoints(network) {
+    const roads = network && network.geometry && network.geometry.roads;
+    if (!Array.isArray(roads)) return [];
+    return roads.flatMap(road => Array.isArray(road.points) ? road.points : [])
+      .filter(point => Array.isArray(point) && point.length >= 2)
+      .map(point => ({ x: Number(point[0]), y: Number(point[1]) }))
+      .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+  }
+  function viewTransform(points, width, height, padding) {
+    if (!Array.isArray(points) || !points.length) throw new Error("view has no geometry");
+    padding = Number(padding) || 0;
+    const xs = points.map(point => Number(point.x));
+    const ys = points.map(point => Number(point.y));
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const rangeX = Math.max(maxX - minX, 1), rangeY = Math.max(maxY - minY, 1);
+    const scale = Math.min((width - 2 * padding) / rangeX, (height - 2 * padding) / rangeY);
+    const offsetX = (width - rangeX * scale) / 2;
+    const offsetY = (height - rangeY * scale) / 2;
+    return { scale, x: value => offsetX + (Number(value) - minX) * scale,
+      y: value => height - offsetY - (Number(value) - minY) * scale };
+  }
+  function countVehicles(frame) {
+    if (frame && frame.counts) return frame.counts;
+    const vehicles = frame && Array.isArray(frame.vehicles) ? frame.vehicles : [];
+    if (!vehicles.length) return null;
+    const count = kind => vehicles.filter(vehicle => vehicle.class === kind).length;
+    return { active_total: vehicles.length, rendered: vehicles.length,
+      motorbike: count("motorbike"), car: count("car"),
+      unknown: vehicles.length - count("motorbike") - count("car") };
+  }
   function pairedReplays(entries) {
     const fixed = entries.filter(entry => entry.controller_id === "tuned_fixed");
     const learned = entries.filter(entry => entry.controller_id === "neighbor_phase_ddqn");
@@ -112,6 +143,9 @@
     validateNetwork,
     networkTransform,
     nearestNode,
+    geometryPoints,
+    viewTransform,
+    countVehicles,
     pairedReplays,
     provenanceRows,
   };

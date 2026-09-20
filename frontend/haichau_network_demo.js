@@ -1,246 +1,58 @@
-(function () {
-  "use strict";
-  const core = window.HaiChauNetworkDemo;
-  const base = document.documentElement.dataset.bundle || ".";
-  const element = id => document.getElementById(id);
-  const state = {
-    manifest: null, network: null, summary: null,
-    fixed: null, learned: null, selected: null,
-    playing: false, lastTick: null,
-  };
-
-  function pathFor(relative) { return base.replace(/\/$/, "") + "/" + relative; }
-  async function sha256(buffer) {
-    const digest = await crypto.subtle.digest("SHA-256", buffer);
-    return Array.from(new Uint8Array(digest))
-      .map(value => value.toString(16).padStart(2, "0")).join("");
-  }
-  async function fetchJson(relative, verify) {
-    const response = await fetch(pathFor(relative), { cache: "no-store" });
-    if (!response.ok) throw new Error(`Missing bundle file: ${relative}`);
-    const bytes = await response.arrayBuffer();
-    if (verify) {
-      const expected = state.manifest.files[relative];
-      if (!expected || await sha256(bytes) !== expected)
-        throw new Error(`Hash mismatch: ${relative}`);
-    }
-    return JSON.parse(new TextDecoder().decode(bytes));
-  }
-  function formatTime(seconds) {
-    const value = Math.max(0, Math.floor(Number(seconds) || 0));
-    return `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
-  }
-  function formatNumber(value, digits) {
-    return value == null ? "—" : Number(value).toLocaleString(undefined, {
-      maximumFractionDigits: digits == null ? 1 : digits,
-    });
-  }
-  function metricMarkup(metrics) {
-    const values = [
-      [formatNumber(metrics.queue_integral_vehicle_seconds), "queue veh-s"],
-      [formatNumber(metrics.completion_rate == null ? null : metrics.completion_rate * 100, 1) + (metrics.completion_rate == null ? "" : "%"), "completion"],
-      [formatNumber(metrics.arrived, 0), "arrived"],
-      [formatNumber(metrics.running, 0), "active"],
-    ];
-    return values.map(([value, label]) => `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`).join("");
-  }
-  function escapeMarkup(value) {
-    return String(value).replace(/[&<>"']/g, character => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-    }[character]));
-  }
-  function bundleAcceptance() {
-    const fromManifest = state.manifest && state.manifest.acceptance;
-    const fromSummary = state.summary && state.summary.acceptance;
-    if (!fromManifest || !fromSummary ||
-        typeof fromManifest.accepted !== "boolean" ||
-        fromManifest.accepted !== fromSummary.accepted) return {};
-    return fromManifest;
-  }
-  function provenanceMarkup(title, replay, acceptance) {
-    const rows = core.provenanceRows(replay, acceptance);
-    const fields = [
-      ["Run", rows.run_id], ["Case", rows.case_id], ["Controller", rows.controller],
-      ["Checkpoint SHA-256", rows.checkpoint],
-      ["Contract SHA-256", rows.checkpoint_contract],
-      ["Learning seed", rows.learning_seed],
-      ["Terminal pending demand", rows.terminal_pending],
-      ["Pending-demand integral", rows.pending_integral],
-    ];
-    return `<article class="provenance-record"><h3>${escapeMarkup(title)}</h3><dl>${fields.map(
-      ([label, value]) => `<dt>${escapeMarkup(label)}</dt><dd>${escapeMarkup(value)}</dd>`
-    ).join("")}</dl></article>`;
-  }
-  function renderProvenance() {
-    const acceptance = bundleAcceptance();
-    const rows = core.provenanceRows(state.learned, acceptance);
-    element("acceptanceStatus").textContent = `Acceptance status: ${rows.acceptance}`;
-    element("acceptanceStatus").className = rows.acceptance === "Accepted" ? "good" :
-      rows.acceptance === "Not accepted" ? "bad" : "";
-    element("replayProvenance").innerHTML =
-      provenanceMarkup("Tuned fixed replay", state.fixed, acceptance) +
-      provenanceMarkup("DDQN replay", state.learned, acceptance);
-  }
-  function draw(canvas, replay, seconds) {
-    const context = canvas.getContext("2d");
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    const transform = core.networkTransform(state.network.nodes, canvas.width, canvas.height, 34);
-    const nodes = new Map(state.network.nodes.map(node => [node.id, node]));
-    context.strokeStyle = "#496872";
-    context.lineWidth = 1.2;
-    for (const link of state.network.links || []) {
-      const source = nodes.get(link.source), target = nodes.get(link.target);
-      if (!source || !target) continue;
-      context.beginPath();
-      context.moveTo(transform.x(source.x), transform.y(source.y));
-      context.lineTo(transform.x(target.x), transform.y(target.y));
-      context.stroke();
-    }
-    const frame = replay.frames[core.frameIndexAt(replay.frames, seconds)];
-    for (const vehicle of frame.vehicles || []) {
-      context.fillStyle = "rgba(237,244,241,.42)";
-      context.fillRect(transform.x(vehicle.x) - 1, transform.y(vehicle.y) - 1, 2, 2);
-    }
-    for (const node of state.network.nodes) {
-      const reading = frame.nodes[node.id];
-      const radius = 4 + Math.min(7, Math.sqrt(Number(reading.queue) || 0));
-      const x = transform.x(node.x), y = transform.y(node.y);
-      context.beginPath(); context.arc(x, y, radius, 0, Math.PI * 2);
-      context.fillStyle = core.queueColor(reading.queue, state.manifest.queue_color_max || 50);
-      context.fill();
-      if (state.selected === node.id) {
-        context.beginPath(); context.arc(x, y, radius + 4, 0, Math.PI * 2);
-        context.strokeStyle = "#edf4f1"; context.lineWidth = 2; context.stroke();
-      }
-    }
-    return frame;
-  }
-  function nodeState(replay, seconds, nodeId) {
-    const frame = replay.frames[core.frameIndexAt(replay.frames, seconds)];
-    return frame.nodes[nodeId];
-  }
-  function renderDetail(seconds) {
-    if (!state.selected) return;
-    const node = state.network.nodes.find(value => value.id === state.selected);
-    const fixed = nodeState(state.fixed, seconds, node.id);
-    const learned = nodeState(state.learned, seconds, node.id);
-    const neighbors = (node.neighbors || []).map(id => {
-      const left = nodeState(state.fixed, seconds, id);
-      const right = nodeState(state.learned, seconds, id);
-      return `<li><span>${id}</span><strong>${formatNumber(left.queue, 0)} / ${formatNumber(right.queue, 0)} veh</strong></li>`;
-    }).join("") || "<li><span>No signal neighbors recorded</span></li>";
-    element("selectionHint").textContent = "Fixed / DDQN at the synchronized time";
-    element("nodeDetail").innerHTML = `
-      <div class="node-heading"><strong>${node.id}</strong><span>${node.name || "controlled signal"}</span></div>
-      <div class="node-pair">
-        <div class="node-reading"><span>Fixed queue · phase</span><strong>${formatNumber(fixed.queue, 0)} · ${fixed.phase}</strong></div>
-        <div class="node-reading"><span>DDQN queue · phase</span><strong>${formatNumber(learned.queue, 0)} · ${learned.phase}</strong></div>
-      </div>
-      <p class="context">Neighbor queues · fixed / DDQN</p><ul class="neighbors">${neighbors}</ul>`;
-  }
-  function render() {
-    if (!state.fixed || !state.learned) return;
-    const seconds = Number(element("seek").value);
-    draw(element("fixedCanvas"), state.fixed, seconds);
-    draw(element("learnedCanvas"), state.learned, seconds);
-    element("fixedMetrics").innerHTML = metricMarkup(state.fixed.metrics);
-    element("learnedMetrics").innerHTML = metricMarkup(state.learned.metrics);
-    element("clock").textContent = formatTime(seconds);
-    renderDetail(seconds);
-    renderProvenance();
-  }
-  function renderAggregate(regime) {
-    const document = state.summary.summary || state.summary;
-    const result = document.neighbor_phase_ddqn && document.neighbor_phase_ddqn[regime];
-    const effect = result && result.queue_difference_vs_tuned_fixed;
-    const target = element("aggregateEffect");
-    if (!effect) {
-      target.textContent = "No aggregate result";
-      target.className = "bad";
-      element("aggregateInterval").textContent = "The frozen summary has no matched effect for this regime.";
-      return;
-    }
-    const relative = effect.relative_change_percent;
-    target.textContent = `${relative > 0 ? "+" : ""}${formatNumber(relative, 1)}% vs tuned fixed`;
-    target.className = relative <= 0 ? "good" : "bad";
-    element("aggregateInterval").textContent = `95% paired CI: ${formatNumber(effect.bootstrap_ci95[0])} to ${formatNumber(effect.bootstrap_ci95[1])} vehicle-seconds · n=${effect.n_independent}`;
-  }
-  async function loadScenario(regime) {
-    state.playing = false;
-    element("play").textContent = "Play";
-    element("status").textContent = "Verifying matched replay…";
-    const pair = core.pairedReplays(state.manifest.replays.filter(entry => entry.regime === regime));
-    [state.fixed, state.learned] = await Promise.all([
-      fetchJson(pair.fixed.path, true), fetchJson(pair.learned.path, true),
-    ]);
-    const maximum = Math.min(
-      state.fixed.frames[state.fixed.frames.length - 1].t,
-      state.learned.frames[state.learned.frames.length - 1].t,
-    );
-    element("seek").max = maximum;
-    element("seek").value = 0;
-    state.selected = state.network.nodes[0].id;
-    element("status").textContent = "Verified bundle loaded";
-    renderAggregate(regime);
-    render();
-  }
-  function selectFromCanvas(canvas, event) {
-    const rect = canvas.getBoundingClientRect();
-    const transform = core.networkTransform(state.network.nodes, canvas.width, canvas.height, 34);
-    const mapped = state.network.nodes.map(node => ({
-      id: node.id, x: transform.x(node.x), y: transform.y(node.y),
-    }));
-    const x = (event.clientX - rect.left) * canvas.width / rect.width;
-    const y = (event.clientY - rect.top) * canvas.height / rect.height;
-    const selected = core.nearestNode(mapped, x, y, 18);
-    if (selected) { state.selected = selected.id; render(); }
-  }
-  function tick(timestamp) {
-    if (!state.playing) return;
-    if (state.lastTick == null) state.lastTick = timestamp;
-    const elapsed = (timestamp - state.lastTick) / 1000 * Number(element("speed").value);
-    if (elapsed >= 1) {
-      state.lastTick = timestamp;
-      element("seek").value = Math.min(Number(element("seek").max), Number(element("seek").value) + elapsed);
-      if (Number(element("seek").value) >= Number(element("seek").max)) {
-        state.playing = false; element("play").textContent = "Play";
-      }
-      render();
-    }
-    if (state.playing) requestAnimationFrame(tick);
-  }
-  async function start() {
-    state.manifest = await fetchJson("manifest.json", false);
-    if (state.manifest.controlled_signals !== 53 || state.manifest.demand_label !== element("provenance").textContent)
-      throw new Error("Bundle scope or synthetic-demand label is invalid");
-    [state.network, state.summary] = await Promise.all([
-      fetchJson(state.manifest.network_path, true),
-      fetchJson(state.manifest.aggregate_path, true),
-    ]);
-    if (state.network.controlled_signals !== 53)
-      throw new Error("Network must contain exactly 53 controlled signals");
-    core.validateNetwork(state.network.nodes);
-    const regimes = [...new Set(state.manifest.replays.map(entry => entry.regime))];
-    element("scenario").innerHTML = regimes.map(regime => `<option value="${regime}">${regime.replace(/_/g, " ")}</option>`).join("");
-    await loadScenario(regimes[0]);
-  }
-
-  element("scenario").addEventListener("change", event => loadScenario(event.target.value).catch(fail));
-  element("seek").addEventListener("input", render);
-  element("play").addEventListener("click", () => {
-    state.playing = !state.playing;
-    element("play").textContent = state.playing ? "Pause" : "Play";
-    state.lastTick = null;
-    if (state.playing) requestAnimationFrame(tick);
-  });
-  element("reset").addEventListener("click", () => { element("seek").value = 0; render(); });
-  for (const id of ["fixedCanvas", "learnedCanvas"])
-    element(id).addEventListener("click", event => selectFromCanvas(element(id), event));
-  function fail(error) {
-    state.playing = false;
-    element("status").textContent = error.message;
-    element("status").className = "bad";
-    console.error(error);
-  }
-  start().catch(fail);
+(function(){"use strict";
+const core=window.HaiChauNetworkDemo,base=document.documentElement.dataset.bundle||".",el=id=>document.getElementById(id);
+const state={manifest:null,network:null,summary:null,fixed:null,learned:null,selected:null,playing:false,lastTick:null,timer:null,viewMode:"single",guidedTime:1800,view:{zoom:1,dx:0,dy:0},drag:null};
+const pathFor=p=>base.replace(/\/$/,"")+"/"+p;
+async function sha256(buffer){const digest=await crypto.subtle.digest("SHA-256",buffer);return Array.from(new Uint8Array(digest)).map(v=>v.toString(16).padStart(2,"0")).join("")}
+async function fetchJson(path,verify){const response=await fetch(pathFor(path),{cache:"no-store"});if(!response.ok)throw new Error(`Missing bundle file: ${path}`);const bytes=await response.arrayBuffer();if(verify){const expected=state.manifest.files[path];if(!expected||await sha256(bytes)!==expected)throw new Error(`Hash mismatch: ${path}`)}return JSON.parse(new TextDecoder().decode(bytes))}
+const esc=value=>String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=(value,digits=0)=>value==null||!Number.isFinite(Number(value))?"Unavailable":Number(value).toLocaleString(undefined,{maximumFractionDigits:digits});
+function formatTime(seconds){const v=Math.max(0,Math.floor(Number(seconds)||0));return `${String(Math.floor(v/60)).padStart(2,"0")}:${String(v%60).padStart(2,"0")}`}
+function frameAt(replay,seconds){return replay.frames[core.frameIndexAt(replay.frames,seconds)]}
+function visualFrameAt(replay,seconds){const frames=replay.frames,index=core.frameIndexAt(frames,seconds),first=frames[index],second=frames[index+1];if(!second||seconds<=first.t)return first;const ratio=Math.max(0,Math.min(1,(seconds-first.t)/(second.t-first.t))),nextById=new Map((second.vehicles||[]).map(vehicle=>[vehicle.id,vehicle]));return{...first,vehicles:(first.vehicles||[]).map(vehicle=>{const next=nextById.get(vehicle.id);if(!next)return vehicle;return{...vehicle,x:Number(vehicle.x)+(Number(next.x)-Number(vehicle.x))*ratio,y:Number(vehicle.y)+(Number(next.y)-Number(vehicle.y))*ratio,heading:Number(vehicle.heading)+(Number(next.heading)-Number(vehicle.heading))*ratio}})}}
+function nodeReading(frame,id){return frame&&frame.nodes&&frame.nodes[id]||{queue:null,phase:null}}
+function totalQueue(frame){if(!frame||!frame.nodes)return null;const values=Object.values(frame.nodes).map(v=>Number(v.queue)).filter(Number.isFinite);return values.length?values.reduce((a,b)=>a+b,0):null}
+function delta(value,reference){return value==null||reference==null?"":` · Δ ${value-reference>0?"+":""}${num(value-reference)}`}
+function viewNodeIds(){const node=state.network.nodes.find(n=>n.id===state.selected);return state.viewMode==="network"?state.network.nodes.map(n=>n.id):state.viewMode==="cluster"?[state.selected,...(node&&node.neighbors||[])]:[state.selected]}
+function viewQueue(frame){const ids=viewNodeIds(),values=ids.map(id=>Number(nodeReading(frame,id).queue)).filter(Number.isFinite);return values.length?values.reduce((a,b)=>a+b,0):null}
+function metricMarkup(frame,reference,isLearned,visible,otherVisible){const counts=core.countVehicles(frame),other=core.countVehicles(reference),queue=viewQueue(frame),otherQueue=viewQueue(reference),scope=state.viewMode==="network"?"network":state.viewMode==="cluster"?"linked junctions":"junction";if(state.viewMode==="network"){visible=(frame.vehicles||[]).length;otherVisible=(reference.vehicles||[]).length}const values=[[counts&&counts.active_total,other&&other.active_total,"whole-network active"],[counts&&counts.motorbike,other&&other.motorbike,"whole-network motorcycles"],[counts&&counts.car,other&&other.car,"whole-network cars"],[visible,otherVisible,state.viewMode==="network"?"telemetry vehicle dots":"visible in camera"],[queue,otherQueue,`${scope} queue`]];return values.map(([value,ref,label])=>`<div class="metric${isLearned?" delta":""}"><strong>${num(value)}</strong><span>${label}${isLearned?delta(value,ref):""}</span></div>`).join("")}
+function allPoints(){const geometry=core.geometryPoints(state.network);return geometry.length?geometry:state.network.nodes}
+function cameraTransform(transform,canvas){const view=state.view,cx=canvas.width/2,cy=canvas.height/2;return{scale:transform.scale*view.zoom,x:value=>cx+(transform.x(value)-cx)*view.zoom+view.dx,y:value=>cy+(transform.y(value)-cy)*view.zoom+view.dy}}
+function overviewTransform(canvas){return cameraTransform(core.viewTransform(allPoints(),canvas.width,canvas.height,34),canvas)}
+function roadMap(){return new Map(((state.network.geometry||{}).roads||[]).map(road=>[road.id,road]))}
+function selectedJunction(){const list=(state.network.geometry||{}).junctions||[];return list.find(j=>j.id===state.selected)||state.network.nodes.find(n=>n.id===state.selected)}
+function detailRoads(){const junction=selectedJunction(),roads=roadMap();if(!junction)return[];const ids=[...(junction.incoming_roads||[]),...(junction.outgoing_roads||[])];return [...new Set(ids)].map(id=>roads.get(id)).filter(Boolean)}
+function pointSegmentDistance(x,y,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],length=dx*dx+dy*dy;if(!length)return Math.hypot(x-a[0],y-a[1]);const ratio=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/length));return Math.hypot(x-(a[0]+ratio*dx),y-(a[1]+ratio*dy))}
+function cameraRoads(){const junction=selectedJunction(),roads=((state.network.geometry||{}).roads||[]);if(!junction)return[];const radius=165;return roads.filter(road=>(road.points||[]).some((point,index,points)=>index>0&&pointSegmentDistance(junction.x,junction.y,points[index-1],point)<=radius))}
+function clusterJunctions(){const ids=new Set(viewNodeIds());return ((state.network.geometry||{}).junctions||[]).filter(j=>ids.has(j.id))}
+function clusterRoads(){const roads=roadMap(),ids=clusterJunctions().flatMap(j=>[...(j.incoming_roads||[]),...(j.outgoing_roads||[])]);return [...new Set(ids)].map(id=>roads.get(id)).filter(Boolean)}
+function detailTransform(canvas){const junction=selectedJunction(),radius=165,points=cameraRoads().flatMap(r=>(r.points||[]).map(p=>({x:p[0],y:p[1]}))).filter(p=>!junction||Math.hypot(p.x-junction.x,p.y-junction.y)<=radius);if(junction)points.push({x:junction.x-radius,y:junction.y-radius},{x:junction.x+radius,y:junction.y+radius});return points.length?cameraTransform(core.viewTransform(points,canvas.width,canvas.height,55),canvas):overviewTransform(canvas)}
+function clusterTransform(canvas){const points=clusterRoads().flatMap(r=>(r.points||[]).map(p=>({x:p[0],y:p[1]})));return points.length?cameraTransform(core.viewTransform(points,canvas.width,canvas.height,45),canvas):overviewTransform(canvas)}
+function polyline(ctx,points,t){if(!points||points.length<2)return;ctx.beginPath();ctx.moveTo(t.x(points[0][0]),t.y(points[0][1]));for(const p of points.slice(1))ctx.lineTo(t.x(p[0]),t.y(p[1]));ctx.stroke()}
+function drawRoads(ctx,t,roads,labels){ctx.lineCap="round";const seen=new Set();for(const road of roads){const width=Math.max(3,Math.min(15,((road.lanes||[]).length||1)*2.2));ctx.strokeStyle="#c6ccca";ctx.lineWidth=width+3;polyline(ctx,road.points,t);ctx.strokeStyle="#68757b";ctx.lineWidth=width;polyline(ctx,road.points,t);ctx.strokeStyle="rgba(255,255,255,.55)";ctx.lineWidth=1;ctx.setLineDash([8,8]);polyline(ctx,road.points,t);ctx.setLineDash([]);const name=road.name||road.street_name;if(labels&&name&&!seen.has(name)&&road.points&&road.points.length){seen.add(name);const p=road.points[Math.floor(road.points.length/2)];ctx.font="600 10px sans-serif";ctx.textAlign="center";ctx.fillStyle="#22323a";ctx.strokeStyle="rgba(255,255,255,.9)";ctx.lineWidth=3;ctx.strokeText(name,t.x(p[0]),t.y(p[1])-7);ctx.fillText(name,t.x(p[0]),t.y(p[1])-7)}}}
+function drawAdjacency(ctx,t){const nodes=new Map(state.network.nodes.map(n=>[n.id,n]));ctx.strokeStyle="#9aa5a6";ctx.lineWidth=1;ctx.setLineDash([4,5]);for(const link of state.network.links||[]){const a=nodes.get(link.source),b=nodes.get(link.target);if(a&&b){ctx.beginPath();ctx.moveTo(t.x(a.x),t.y(a.y));ctx.lineTo(t.x(b.x),t.y(b.y));ctx.stroke()}}ctx.setLineDash([])}
+function drawSignals(ctx,frame,t){if(!frame.signals)return;const junctions=state.viewMode==="cluster"?clusterJunctions():[selectedJunction()],roads=roadMap();for(const junction of junctions.filter(Boolean)){const ids=[...(junction.incoming_roads||[]),...(junction.outgoing_roads||[])];for(const id of new Set(ids)){const road=roads.get(id);if(!road||!road.points||road.points.length<2)continue;const statuses=frame.signals[road.id];if(!Array.isArray(statuses))continue;const incoming=(junction.incoming_roads||[]).includes(road.id),point=incoming?road.points[road.points.length-1]:road.points[0],other=incoming?road.points[road.points.length-2]:road.points[1],dx=t.x(point[0])-t.x(other[0]),dy=t.y(point[1])-t.y(other[1]),length=Math.hypot(dx,dy)||1,nx=-dy/length,ny=dx/length;statuses.forEach((status,i)=>{const offset=(i-(statuses.length-1)/2)*13,x=t.x(point[0])+nx*offset,y=t.y(point[1])+ny*offset,code=String(status).toLowerCase();ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fillStyle=code==="g"?"#198754":code==="r"?"#d12f38":"#7d878c";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=2.5;ctx.stroke()})}}}
+function drawVehicle(ctx,vehicle,t){if(!Number.isFinite(Number(vehicle.x))||!Number.isFinite(Number(vehicle.y)))return;const kind=vehicle.class||"unknown",scale=Math.max(1,Math.min(t.scale,3)),length=Math.max(kind==="motorbike"?18:28,Number(vehicle.length||3)*scale),width=Math.max(kind==="motorbike"?9:14,Number(vehicle.width||1.5)*scale),x=t.x(vehicle.x),y=t.y(vehicle.y),heading=-Number(vehicle.heading||0);ctx.save();ctx.translate(x,y);ctx.rotate(heading);ctx.fillStyle=kind==="motorbike"?"#176b9b":kind==="car"?"#bf741d":"#6e5b85";ctx.fillRect(-length/2,-width/2,length,width);ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.strokeRect(-length/2,-width/2,length,width);ctx.fillStyle="#fff";ctx.font="700 9px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(kind==="motorbike"?"M":kind==="car"?"C":"?",0,0);ctx.restore()}
+function drawVehicleDots(ctx,vehicles,t){for(const vehicle of vehicles||[]){const x=t.x(vehicle.x),y=t.y(vehicle.y);if(x<0||x>960||y<0||y>610)continue;ctx.beginPath();ctx.arc(x,y,vehicle.class==="car"?2.3:1.8,0,Math.PI*2);ctx.fillStyle=vehicle.class==="motorbike"?"#176b9b":vehicle.class==="car"?"#bf741d":"#6e5b85";ctx.fill()}}
+function drawNodes(ctx,frame,t){for(const node of state.network.nodes){const reading=nodeReading(frame,node.id),q=Number(reading.queue)||0,r=(state.viewMode==="network"?7:4)+Math.min(7,Math.sqrt(q)),x=t.x(node.x),y=t.y(node.y);ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=core.queueColor(q,state.manifest.queue_color_max||50);ctx.fill();ctx.strokeStyle=node.id===state.selected?"#173a54":"#fff";ctx.lineWidth=node.id===state.selected?3:1;ctx.stroke()}}
+function draw(canvas,replay,seconds,emptyId){const ctx=canvas.getContext("2d"),frame=visualFrameAt(replay,seconds),geometry=((state.network.geometry||{}).roads||[]),camera=state.viewMode!=="network"&&state.selected,t=state.viewMode==="single"?detailTransform(canvas):state.viewMode==="cluster"?clusterTransform(canvas):overviewTransform(canvas),roads=state.viewMode==="single"?cameraRoads():state.viewMode==="cluster"?clusterRoads():geometry;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#edf0ec";ctx.fillRect(0,0,canvas.width,canvas.height);if(geometry.length)drawRoads(ctx,t,roads,state.viewMode!=="single");else drawAdjacency(ctx,t);let visible=0;if(camera){drawSignals(ctx,frame,t);for(const vehicle of frame.vehicles||[]){const x=t.x(vehicle.x),y=t.y(vehicle.y);if(x>=-30&&x<=canvas.width+30&&y>=-30&&y<=canvas.height+30){drawVehicle(ctx,vehicle,t);visible++}}drawNodes(ctx,frame,t)}else{drawVehicleDots(ctx,frame.vehicles,t);drawNodes(ctx,frame,t)}const empty=el(emptyId);let message="";if(!geometry.length)message="Street geometry unavailable in this legacy bundle; dashed lines show signal adjacency only.";else if(camera&&!frame.signals)message="Per-lane signal telemetry unavailable for this replay.";if(camera&&!(frame.vehicles||[]).length)message+=(message?" ":"")+"Vehicle trajectories unavailable; no vehicles are inferred from queues.";empty.textContent=message;empty.hidden=!message;return{frame,visible}}
+function signalSummary(frame){if(!frame.signals)return"Lane signal telemetry unavailable";const roads=detailRoads(),states=roads.flatMap(r=>frame.signals[r.id]||[]).map(s=>String(s).toLowerCase());if(!states.length)return"No recorded lane signals at this junction";const green=states.filter(s=>s==="g").length,red=states.filter(s=>s==="r").length,implicit=states.length-green-red;return `${green} green · ${red} red${implicit?` · ${implicit} implicit/uncontrolled`:""}`}
+function renderDetail(seconds){if(!state.selected){el("selectionHint").textContent="Select a queue marker to open the junction camera.";el("nodeDetail").innerHTML="";return}const node=state.network.nodes.find(n=>n.id===state.selected)||selectedJunction(),fixed=frameAt(state.fixed,seconds),learned=frameAt(state.learned,seconds),a=nodeReading(fixed,state.selected),b=nodeReading(learned,state.selected),difference=Number(a.queue)-Number(b.queue),effect=Number.isFinite(difference)?difference>0?`DDQN has cleared ${num(difference)} more queued vehicles here.`:difference<0?`DDQN has ${num(-difference)} more queued vehicles here.`:"Same queue at this moment.":"Queue comparison unavailable.",effectClass=difference>0?"good":difference<0?"bad":"",linked=state.viewMode==="cluster"?viewNodeIds().slice(1).map(id=>{const n=state.network.nodes.find(v=>v.id===id);return `<li>${esc(n&&n.name||id)}</li>`}).join(""):"";el("selectionHint").textContent=state.viewMode==="cluster"?"Selected signal with recorded upstream/downstream neighbors":"Fixed / DDQN at the synchronized time";el("nodeDetail").innerHTML=`<div class="node-heading"><strong>${esc(state.selected)}</strong><span>${esc(node&&node.name||"controlled intersection")}</span></div><div class="node-pair"><div class="node-reading"><span>Fixed queue · phase</span><strong>${num(a.queue)} · ${a.phase==null?"—":esc(a.phase)}</strong></div><div class="node-reading"><span>DDQN queue · phase</span><strong>${num(b.queue)} · ${b.phase==null?"—":esc(b.phase)}</strong></div></div><p class="junction-effect ${effectClass}">${effect}</p><p class="signal-state">Fixed: ${signalSummary(fixed)}<br>DDQN: ${signalSummary(learned)}</p>${linked?`<p class="availability">Linked controlled signals</p><ul class="neighbors">${linked}</ul>`:""}`}
+function render(){if(!state.fixed||!state.learned)return;const seconds=Number(el("seek").value),fixed=draw(el("fixedCanvas"),state.fixed,seconds,"fixedEmpty"),learned=draw(el("learnedCanvas"),state.learned,seconds,"learnedEmpty");el("fixedMetrics").innerHTML=metricMarkup(fixed.frame,learned.frame,false,fixed.visible,learned.visible);el("learnedMetrics").innerHTML=metricMarkup(learned.frame,fixed.frame,true,learned.visible,fixed.visible);el("clock").textContent=formatTime(seconds);renderDetail(seconds)}
+function provenanceMarkup(title,replay,acceptance){const rows=core.provenanceRows(replay,acceptance),metrics=replay.metrics||{},fields=[["Run",rows.run_id],["Case",rows.case_id],["Controller",rows.controller],["Checkpoint",rows.checkpoint],["Learning seed",rows.learning_seed],["Final arrived",num(metrics.arrived)],["Final queue veh-s",num(metrics.queue_integral_vehicle_seconds,1)]];return `<article class="provenance-record"><h3>${esc(title)} · end-of-run record</h3><dl>${fields.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl></article>`}
+function renderProvenance(){const a=state.manifest.acceptance||{},accepted=a.accepted;el("acceptanceStatus").textContent=`Acceptance status: ${accepted===true?"Accepted":accepted===false?"Not accepted":"N/A"}`;el("acceptanceStatus").className=accepted===true?"good":accepted===false?"bad":"";el("replayProvenance").innerHTML=provenanceMarkup("Tuned fixed replay",state.fixed,a)+provenanceMarkup("DDQN replay",state.learned,a)}
+function renderAggregate(regime){const doc=state.summary.summary||state.summary,result=doc.neighbor_phase_ddqn&&doc.neighbor_phase_ddqn[regime],effect=result&&result.queue_difference_vs_tuned_fixed,target=el("aggregateEffect");if(!effect){target.textContent="No aggregate result";target.className="bad";el("aggregateInterval").textContent="No matched frozen effect for this scenario.";return}const relative=effect.relative_change_percent;target.textContent=`${relative>0?"+":""}${num(relative,1)}% vs fixed`;target.className=relative<=0?"good":"bad";el("aggregateInterval").textContent=`95% paired CI: ${num(effect.bootstrap_ci95[0],1)} to ${num(effect.bootstrap_ci95[1],1)} vehicle-seconds · n=${effect.n_independent}`}
+function updateZoomLabel(){el("zoomLevel").textContent=`${Math.round(state.view.zoom*100)}%`}
+function resetView(){state.view={zoom:1,dx:0,dy:0};updateZoomLabel()}
+function setViewMode(mode){state.viewMode=mode;resetView();for(const id of ["single","cluster","network"])el(id+"View").setAttribute("aria-pressed",String(mode===id));const node=state.network.nodes.find(n=>n.id===state.selected),neighbors=node&&node.neighbors||[];el("viewTitle").textContent=mode==="single"?`Single junction · ${state.selected}`:mode==="cluster"?`Linked junctions · ${1+neighbors.length} signals`:"Whole modeled network · 53 signals";el("viewCaption").textContent=(mode==="single"?"Selected controlled junction · actual lanes, vehicles and lamps":mode==="cluster"?`Selected signal plus ${neighbors.length} upstream/downstream neighbors · actual road geometry`:"Whole modeled Hai Chau signal area · click a colored signal circle to open its junction camera")+" · drag to pan, scroll to zoom";el("dataNote").textContent="Vehicle glyphs are the exported subset within 140 m of the 53 controlled signals; Active, motorcycle and car counts cover the whole network.";render()}
+function guidedStart(maximum){return Math.min(Number(state.manifest.guided_demo&&state.manifest.guided_demo.time_seconds||state.guidedTime),maximum)}
+function busiestAt(seconds){const a=frameAt(state.fixed,seconds),b=frameAt(state.learned,seconds);return state.network.nodes.reduce((best,node)=>{const score=(Number(nodeReading(a,node.id).queue)||0)+(Number(nodeReading(b,node.id).queue)||0);return !best||score>best.score?{id:node.id,score}:best},null).id}
+async function loadScenario(regime){stopPlayback();el("status").textContent="Verifying matched replay…";const pair=core.pairedReplays(state.manifest.replays.filter(e=>e.regime===regime));[state.fixed,state.learned]=await Promise.all([fetchJson(pair.fixed.path,true),fetchJson(pair.learned.path,true)]);const maximum=Math.min(state.fixed.frames.at(-1).t,state.learned.frames.at(-1).t);el("seek").max=maximum;el("seek").step=.1;el("seek").value=regime==="pm_peak"?guidedStart(maximum):0;const guided=state.manifest.guided_demo||{},chosen=guided.junction_id&&state.network.nodes.some(n=>n.id===guided.junction_id)?guided.junction_id:busiestAt(Number(el("seek").value));state.selected=chosen;state.viewMode="single";state.view={zoom:1,dx:0,dy:0};el("status").textContent="Verified replay loaded";el("statusDot").className="status-dot ready";const enriched=((state.network.geometry||{}).roads||[]).length&&state.fixed.frames.some(f=>(f.vehicles||[]).length||f.signals);el("dataNote").textContent=enriched?"Road geometry and telemetry are replayed from the simulation export.":"Legacy replay: queues and phases available; street geometry, vehicles and movement lamps are unavailable.";renderAggregate(regime);renderProvenance();setViewMode("single")}
+function selectFromCanvas(canvas,event){if(state.viewMode!=="network")return;const rect=canvas.getBoundingClientRect(),t=overviewTransform(canvas),mapped=state.network.nodes.map(n=>({id:n.id,x:t.x(n.x),y:t.y(n.y)})),x=(event.clientX-rect.left)*canvas.width/rect.width,y=(event.clientY-rect.top)*canvas.height/rect.height,hit=core.nearestNode(mapped,x,y,38);if(hit){state.selected=hit.id;setViewMode("single")}}
+function stopPlayback(){state.playing=false;if(state.timer!=null)clearInterval(state.timer);state.timer=null;state.lastTick=null;el("play").textContent="Play"}
+function tick(){if(!state.playing)return;const now=performance.now(),elapsed=Math.min(.25,(now-state.lastTick)/1000)*Number(el("speed").value),next=Math.min(Number(el("seek").max),Number(el("seek").value)+elapsed);state.lastTick=now;el("seek").value=next;render();if(next>=Number(el("seek").max))stopPlayback()}
+function startPlayback(){state.playing=true;state.lastTick=performance.now();el("play").textContent="Pause";state.timer=setInterval(tick,33)}
+function fail(error){state.playing=false;el("status").textContent=error.message;el("statusDot").className="status-dot error";console.error(error)}
+async function start(){state.manifest=await fetchJson("manifest.json",false);if(state.manifest.controlled_signals!==53)throw new Error("Bundle must identify 53 controlled signals");[state.network,state.summary]=await Promise.all([fetchJson(state.manifest.network_path,true),fetchJson(state.manifest.aggregate_path,true)]);core.validateNetwork(state.network.nodes);const regimes=[...new Set(state.manifest.replays.map(e=>e.regime))],ordered=["pm_peak","am_peak","normal"].filter(r=>regimes.includes(r)).concat(regimes.filter(r=>!["pm_peak","am_peak","normal"].includes(r)));el("scenario").innerHTML=ordered.map(r=>`<option value="${esc(r)}">${esc(r.replace(/_/g," "))}</option>`).join("");await loadScenario(ordered[0])}
+function zoomBy(factor){state.view.zoom=Math.max(.7,Math.min(6,state.view.zoom*factor));updateZoomLabel();render()}
+el("scenario").addEventListener("change",e=>loadScenario(e.target.value).catch(fail));el("seek").addEventListener("input",()=>{state.lastTick=performance.now();render()});el("speed").addEventListener("change",()=>{state.lastTick=performance.now()});el("play").addEventListener("click",()=>state.playing?stopPlayback():startPlayback());el("reset").addEventListener("click",()=>{stopPlayback();el("seek").value=el("scenario").value==="pm_peak"?guidedStart(Number(el("seek").max)):0;setViewMode("single")});for(const mode of ["single","cluster","network"])el(mode+"View").addEventListener("click",()=>setViewMode(mode));el("zoomIn").addEventListener("click",()=>zoomBy(1.5));el("zoomOut").addEventListener("click",()=>zoomBy(2/3));el("viewReset").addEventListener("click",()=>{resetView();render()});for(const id of ["fixedCanvas","learnedCanvas"]){const canvas=el(id);canvas.addEventListener("click",e=>{if(!state.drag||!state.drag.moved)selectFromCanvas(canvas,e)});canvas.addEventListener("wheel",e=>{e.preventDefault();zoomBy(e.deltaY<0?1.25:.8)},{passive:false});canvas.addEventListener("pointerdown",e=>{canvas.setPointerCapture(e.pointerId);state.drag={x:e.clientX,y:e.clientY,moved:false}});canvas.addEventListener("pointermove",e=>{if(!state.drag)return;const rect=canvas.getBoundingClientRect(),dx=(e.clientX-state.drag.x)*canvas.width/rect.width,dy=(e.clientY-state.drag.y)*canvas.height/rect.height;if(Math.abs(dx)+Math.abs(dy)>6)state.drag.moved=true;state.view.dx+=dx;state.view.dy+=dy;state.drag.x=e.clientX;state.drag.y=e.clientY;render()});canvas.addEventListener("pointerup",()=>{setTimeout(()=>{state.drag=null},0)})}start().catch(fail);
 })();
