@@ -1,334 +1,48 @@
-# RL for Multi-Intersection Traffic Signal Control — Hải Châu, Đà Nẵng
+# RL Traffic Signal Control for Hải Châu, Đà Nẵng
 
-A master's-thesis study of **reinforcement learning for urban traffic signal control**.
-The empirical study reconstructs one published Da Nang intersection in SUMO. The spatial
-extension evaluates 53 signals on an **OpenStreetMap-derived Hải Châu topology** in
-[CityFlow](https://cityflow-project.github.io/) with synthetic demand constrained by the
-available Da Nang evidence. It does not claim observed district-wide flows or signal plans.
+This repository contains the thesis implementation for adaptive traffic-signal
+control on an OpenStreetMap-derived 53-signal Hải Châu network in CityFlow.
+Demand is synthetic and constrained by Da Nang evidence; it is not a claim of
+observed district-wide flows, routes, or signal plans.
 
-> **Current thesis:** `paper/thesis_danang.tex`.
-> **Evidence limits:** `docs/research/foundation-handoff.md` and
-> `docs/research/legacy-claims-audit.md`.
+The current thesis source is `paper/thesis_danang.tex`. The current demo guide
+is `docs/defense/demo-runbook.md`.
 
-## Evidence namespaces
+## Presentation demo
 
-The checked-in results described below are the legacy study. They remain available for
-reproduction and defense use, but they do not count as evidence for the new 53-signal
-neighbor-aware DDQN extension.
-
-The extension uses the separate `haichau_network_v2` namespace. Its demand label is always
-**synthetic network demand constrained by Da Nang evidence**. A result becomes releasable
-only when `scripts/verify_haichau_thesis.py` reports `"complete": true`; a failed acceptance
-outcome is still reported as a valid negative result once every evidence gate is complete.
-Final training artifacts now exist for seeds 12--16, and fresh direct regime-gated summaries
-are available in `results/haichau_network_v2/final15-regime-gated-*`. The strict verifier still
-fails closed because the preregistered residual selector rejects seeds 13 and 16 and the
-frozen confirmatory campaign has not been released. Do not relabel the gated exploratory
-summaries as a strict five-seed release.
-
-The presentation-ready gated result covers **5 learning seeds × 15 held-out cases = 75
-fresh one-hour replays**. It keeps tuned fixed-time in normal and AM-peak demand and enables
-the residual DDQN only in PM peak, giving a positive full-day reduction for every seed
-(range 1.03%--5.62%, mean 3.48%, bootstrap 95% CI 2.01%--4.95%). Normal and AM are exact
-fixed-time ties; case-level regressions remain reported in the seed table.
-
-The exact campaign, thesis, offline-demo and clean-checkout procedure is in
-`docs/defense/demo-runbook.md`.
-
-To reproduce the exploratory five-seed gate table from the compact, hash-bound
-summaries:
+The only supported browser demo is the self-contained visual replay:
 
 ```sh
-python3 scripts/summarize_regime_gated_direct.py
+cd results/haichau_network_v2/demo-visual
+python3 launch_demo.py --no-browser --port 8766
 ```
 
-To emit the scoped readiness audit (including the strict verifier result):
+Open `http://127.0.0.1:8766/index.html`, wait for **Verified replay loaded**,
+then press **Reset to guided view**. The guided frame compares the matched
+Fixed-time and DDQN runs at junction `420249521`; the panel states the queue
+difference directly.
 
-```sh
-python3 scripts/audit_gated_thesis.py
+The replay is a recorded PM-peak visualisation. It illustrates controller
+behaviour and does not replace the full-horizon evaluation evidence.
+
+## Project layout
+
+```text
+src/traffic_rl/                         controller, CityFlow and evaluation code
+datasets/haichau_network_v2/            topology inputs
+results/haichau_network_v2/             frozen data, replays and results
+results/haichau_network_v2/demo-visual/ portable browser demo
+scripts/                                data preparation, training, evaluation and packaging
+paper/thesis_danang.tex                 thesis source
+docs/defense/                           presentation materials
 ```
 
-### Preregistered V3 robustness appendix
-
-After the primary 53-signal protocol, campaign, and summary are complete and committed, the
-exploratory appendix freezes four additional conditions: a 20% demand-rate increase,
-Gaussian sensor noise ($\sigma=0.15$), keyed 10% sensor dropout, and a topology-selected
-restriction of 50% of the selected road's lanes from simulation seconds 1200--2400. This is
-an operational lane restriction and does not claim an exact 50% reduction in macroscopic
-road capacity. It evaluates tuned fixed-time,
-Max-Pressure, and the already selected `neighbor_phase_ddqn` checkpoints. Seeds are derived
-from the primary frozen protocol and must be exactly 12--16; seed 11 and all CLI overrides
-are rejected. The matrix contains exactly 420 fresh one-hour episodes in the separate
-`results/haichau_network_v2/robustness` namespace. Primary results receive zero fresh-episode
-credit and serve only as a hash-bound reference.
-Freezing and every later campaign expansion revalidate the primary V3 schedule selection,
-all validation-eligible checkpoints, the exact completed 120-run primary campaign, and its
-recomputed summary before any appendix test flow is read or materialized.
-
-```sh
-PYTHONPATH=src python3 scripts/freeze_haichau_robustness.py
-PYTHONPATH=src python3 scripts/run_haichau_robustness.py --prepare-only
-PYTHONPATH=src python3 scripts/run_haichau_robustness.py
-PYTHONPATH=src python3 scripts/run_haichau_robustness.py --verify-only
-PYTHONPATH=src python3 scripts/summarize_haichau_robustness.py
-```
-
-The appendix is descriptive and has no pass/fail or model-selection role. Its two-sided 95%
-intervals use 10,000 paired bootstrap resamples with seed 20260908. For the learned policy,
-matched cases are averaged within each learning seed before the five seed-level effects are
-resampled. The legacy `scripts/run_robustness.py` cannot produce V3 evidence.
-
-## Legacy-study headline finding
-
-The learned controller's advantage tracks **network saturation**, and we report the whole
-spectrum rather than a single flattering point:
-
-| Regime (measured load) | DQN vs tuned Fixed-Time | Reading |
-|---|---|---|
-| `haichau_rush` — legacy synthetic load (~50k scheduled departures, ~2.9k concurrent, 42% stopped) | **best legacy improvement** | historical result; not empirical calibration |
-| `haichau_calib` — moderately heavy (51% stopped) | positive | |
-| `haichau_peak` / `haichau` — (grossly) oversaturated (65–68% stopped) | **degrades, can lose to Fixed** | no local policy can drain a gridlocked network |
-
-Two robust, honestly-reported conclusions:
-1. The legacy DQN **clears Fixed-Time and Random and converges to roughly Max-Pressure-level
-   performance at one synthetic load — but never beats Max-Pressure** on this arterial
-   network, where local pressure is nearly sufficient (Max-Pressure is throughput-optimal on
-   the local information a single agent sees).
-2. Under **gross oversaturation** the local value-based controller **degrades below Fixed-Time**
-   — reported as a limitation, not hidden.
-
-Archived legacy multi-seed means ± 95% CI remain in
-`paper/chapter4_experiments_results.tex` (`tab:waiting`, `tab:queue`); that file is
-explicitly legacy material and is not the current thesis or v2 evidence. Those historical
-runs did not implement neighbor-aware coordination. The `haichau_network_v2` extension now implements a mean-pooled neighbor
-phase-scoring DDQN as a separate candidate; it does not implement learned graph attention,
-and it has no releasable performance claim until the final verifier passes.
-
-## Repository map
-
-```
-src/traffic_rl/        core library (pure Python, container-safe)
-  agents/              controllers: DQN, Max-Pressure, Fixed-Time, Random
-  network/             OSM -> CityFlow roadnet building, arterial scoping, neighbors
-  sim/                 CityFlow engine wrapper, state encoder, reward, perturbations
-  train/               from-scratch NumPy DQN + trainer (replay, target net, greedy-eval)
-  eval/                comparison, multi-seed CI, agreement, cumulative-waiting metric
-  report/              plots & presentation figures
-scripts/               entry points (train, eval, aggregate, batch experiments, demo server)
-data/danang/           roadnets + flow scenarios (haichau_rush, _calib, _peak, haichau, ...)
-results/<scenario>/    comparison.json, training curves, demo replays, exp_* variant runs
-frontend/              browser demo (CityFlow viewer + preset launcher + HUD)
-paper/                 current LaTeX thesis (thesis_danang.tex); archived legacy sources and references
-docs/                  results write-ups, ablation, scenario framing, analysis
-configs/               network.yaml, training.yaml
-tests/                 33 test files (host + container-marked)
-Makefile               cf-run / test / cf-test / cf-smoke targets
-```
-
-## Environment
-
-CityFlow ships as an x86 Python-3.6 image and is run via Docker. On Apple Silicon we use
-**Colima** (Virtualization.Framework) as the Docker runtime; the container runs under x86
-emulation (slow but correct, and it survives host sleep).
-
-```sh
-# one-time: start the Docker runtime (Colima) and pull the image
-colima start
-docker pull cityflowproject/cityflow:latest
-make cf-smoke          # -> "cityflow OK"
-
-# host-side tooling (reporting, dashboard, aggregation) uses Python 3.13
-pip install -r requirements-host.txt
-```
-
-All simulator work runs inside the container through one wrapper:
-
-```sh
-make cf-run CMD="PYTHONPATH=src python3 scripts/<script>.py <args>"
-```
-
-## Reproduce the legacy results
-
-Scenarios live in `data/danang/` as `roadnet_<scen>.json` + `flow_<scen>.json`
-(`haichau_rush`, `haichau_calib`, `haichau_peak`, `haichau`). Each result is written to
-`results/<scen>/comparison.json` (and `exp_<tag>/` for variants), never overwriting frozen
-baselines in `results/references/`.
-
-**1. Baselines + a single DQN, one scenario:**
-```sh
-make cf-run CMD="PYTHONPATH=src python3 scripts/run_comparison.py haichau_rush"
-```
-
-**2. Train the best-config DQN and evaluate it (fixed report-horizon checkpoint selection):**
-```sh
-make cf-run CMD="EXP_TAG=best REWARD_TYPE=queue_norm REWARD_SCALE=0.5 COUNT_NORM=5 \
-  EPISODES=120 EVAL_EVERY=5 PYTHONPATH=src python3 scripts/train_dqn.py haichau_rush"
-make cf-run CMD="EXP_TAG=best MAX_STEPS=1000 PYTHONPATH=src python3 scripts/run_experiment_eval.py haichau_rush"
-```
-Per-scenario best configs are in `scripts/exp_multiseed_tier2.sh::cfg_for` and in Chapter 4
-`tab:dqncfg`.
-
-**3. Multi-seed CI (the headline numbers) — retrain best config × K seeds, then aggregate:**
-```sh
-# detached, resumable (skips seeds whose exp_ms<k>/comparison.json exists)
-docker run -d --name ms -v "$PWD":/work -w /work cityflowproject/cityflow:latest \
-  sh -lc 'sh scripts/exp_multiseed_tier2.sh'
-# when done, on the host:
-PYTHONPATH=src python3 scripts/aggregate_multiseed.py haichau_rush   # -> results/multiseed/*.json
-PYTHONPATH=src python3 scripts/emit_ch4_tables.py                    # -> LaTeX rows (+CI), stale-guarded
-```
-
-**4. Robustness (sensor noise / incidents / demand shift) and DQN↔Max-Pressure agreement:**
-```sh
-make cf-run CMD="PYTHONPATH=src python3 scripts/run_robustness.py haichau_rush"
-make cf-run CMD="PYTHONPATH=src python3 scripts/run_agreement.py haichau_rush"
-```
-
-## Legacy live demo
-
-A browser demo replays recorded episodes and lets you switch (scenario × controller) live,
-with an always-on projector-legible HUD and a cumulative-waiting scoreboard.
-
-```sh
-# serve the repo root; demo at http://localhost:8080/frontend/index.html
-nohup python3 -m http.server 8080 --directory "$PWD" >/tmp/demo.log 2>&1 &
-```
-Pick a legacy preset and a controller; the view
-auto-zooms to the busiest signalized junction so moving vehicles and switching lights are
-visible. Preset/HUD logic: `frontend/demo-presets.js`. Treat the displayed demand as a
-synthetic simulator scenario; scheduled departures, concurrent vehicles, and completed
-vehicles are separate quantities.
-
-## Tests
-
-```sh
-make test        # host unit tests (no CityFlow needed): pytest -m 'not docker'
-make cf-test     # engine integration tests inside the CityFlow container
-```
-
-The fail-closed audit for the 53-signal extension is:
+## Verification
 
 ```sh
 PYTHONPATH=src python3 scripts/verify_haichau_thesis.py
+node --test tests/replay_ab/haichau_network_demo_core.test.cjs
 ```
 
-It writes `results/haichau_network_v2/verification/final-report.json` and exits nonzero
-until the network, split, five eligible checkpoint bundles for the selected
-`schedule_residual_ddqn` family, fresh matched runs, statistics, paper, offline demo and
-clean-checkout record are all hash-valid.
-
-### Pre-final Hai Chau capacity calibration
-
-Before final learning, prepare and run the pre-registered validation-only capacity checks.
-Preparation is the CLI default and does not import or start CityFlow:
-
-```sh
-PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py \
-  --stage scale1 \
-  --output results/haichau_network_v2/diagnostics/capacity-scale1
-PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py \
-  --stage ladder \
-  --output results/haichau_network_v2/diagnostics/capacity-ladder
-```
-
-Execute those immutable inputs in the pinned research image. Repeating either command resumes
-only missing or failed runs after checking all bound hashes:
-
-```sh
-docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
-  traffic-rl-cityflow-research:v2 sh -lc \
-  'PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py --stage scale1 --output results/haichau_network_v2/diagnostics/capacity-scale1 --execute'
-docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
-  traffic-rl-cityflow-research:v2 sh -lc \
-  'PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py --stage ladder --output results/haichau_network_v2/diagnostics/capacity-ladder --execute'
-```
-
-After reviewing only the ladder's validation diagnostics, prepare stage D with one or more of
-the registered scales `0.25`, `0.30`, and `0.35`. This exact example advances `0.25` and
-`0.30`; replace both occurrences together if the recorded validation decision selects a
-different registered set:
-
-```sh
-PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py \
-  --stage stage-d --chosen-scales 0.25,0.30 \
-  --output results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030
-docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
-  traffic-rl-cityflow-research:v2 sh -lc \
-  'PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py --stage stage-d --chosen-scales 0.25,0.30 --output results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030 --execute'
-```
-
-The optional extended drain probe is a separate immutable stage directory:
-
-```sh
-docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work \
-  traffic-rl-cityflow-research:v2 sh -lc \
-  'PYTHONPATH=src python3 scripts/calibrate_haichau_capacity.py --stage scale1 --drain-horizon 7200 --output results/haichau_network_v2/diagnostics/capacity-scale1-drain7200 --execute'
-```
-
-Every output is marked diagnostic and ineligible for release or test evaluation. The runner
-filters the case manifest to the six validation records before opening flows; it never reads
-the test flow paths. Passing calibration authorizes a later pre-final scale decision, not a
-thesis result by itself.
-
-Promote a completed Stage-D campaign through the fail-closed bridge. First validate without
-changing the checkout, then commit the diagnostic evidence so the application command starts
-from a clean tree. Replace the Stage-D path with the completed campaign directory:
-
-```sh
-PYTHONPATH=src python3 scripts/apply_haichau_capacity_decision.py \
-  --stage-d results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030 \
-  --validate-only
-git add results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030
-git commit -m "data: record Hai Chau Stage-D capacity evidence"
-PYTHONPATH=src python3 scripts/apply_haichau_capacity_decision.py \
-  --stage-d results/haichau_network_v2/diagnostics/capacity-stage-d-s025-s030 \
-  --new-version
-```
-
-The bridge verifies the exact six validation cases, both seeds and both controllers for every
-registered Stage-D candidate. It recomputes individual and aggregate gates from hash-bound
-results and selects the highest passing candidate. It records the exact rational value of
-`72 / scale`, stages `prepare_haichau_network_v2 --new-version` in a temporary tree, and only
-then installs the updated generator config, regenerated manifest/flows and immutable decision.
-It refuses a dirty checkout, changed evidence or inputs, incomplete matrices, non-diagnostic
-provenance, missing `--new-version`, and an existing decision path. Validation opens only the
-bound validation flows; the source test-flow contents remain sealed.
-
-The verifier recomputes the numeric summary and acceptance decision from the hash-verified
-run metrics. It also requires exact frozen run identity (flow hash, simulator seed,
-checkpoint, code commit, inspected Docker image and resolved config). Final training is
-authorized only by the fail-closed V3 schedule-pilot decision. Pilot seed 11 selects between
-the preregistered rehearsal and no-rehearsal arms using validation checkpoints 4, 8 and 12,
-then remains excluded from confirmation. The selected `neighbor_phase_ddqn` configuration is
-trained at seeds 12--16 for exactly 12 one-hour episodes with validation every four episodes.
-Each confirmatory seed must contain the exact tuned-fixed
-demand/simulator cells, with at least two cells in every gated regime. The current checkout
-must be clean, descend from the frozen
-40-character commit and leave `src/`, `scripts/`, `frontend/`, `docker/` and build config
-unchanged. Paper/demo artifacts are content-hashed; `pdfinfo`/`pdftoppm`, `ffprobe` and a
-full `ffmpeg -xerror` decode must parse/render the PDFs, PNGs and MP4, and replays cover the
-full horizon. `scripts/attest_haichau_release.py` generates the clean-checkout evidence with
-exact command results, tool versions and hashed stdout/stderr logs; the final verifier
-rejects hand-written summary records, reads artifacts from the attested Git commit and
-directly re-runs the release command contract. Campaign release verification also requires
-the stopped Docker containers so it can inspect their real image/config/exit state and logs.
-Release execution uses detached `docker run` plus `docker wait`: `stdout.log` and
-`stderr.log` come only from `docker logs`, while Docker CLI/daemon stderr (such as the
-Apple Silicon x86-image platform warning) is hashed separately in
-`docker-cli-diagnostics.json`.
-
-## Scope: empirical anchor vs scale experiment
-
-The empirical evidence supports a **single demand-matched SUMO junction** reconstructed from
-four camera movement lines, a published timing plan and audited geometry. Its findings are
-site- and regime-specific.
-
-The `haichau_network_v2` work is a **53-signal synthetic CityFlow scale experiment**. The
-V3 release evaluates the schedule-selected mean-pooled neighbor-aware phase-scoring DDQN
-against validation-tuned fixed-time and two Max-Pressure baselines. The implementation keeps
-the legacy parameter-shared vector DDQN for historical experiments, but V3 release inputs
-cannot select it. The experiment can test software scalability and coordination behavior
-inside the frozen task family. It is not empirical validation of district-wide traffic,
-signal timing or field performance, and its result section remains conditional until
-`scripts/verify_haichau_thesis.py` reports `"complete": true`. Learned graph attention,
-measured district OD demand and field-calibrated multi-signal operation remain future work.
+The strict verifier reports the evidence status. Do not turn an exploratory or
+partial replay result into a deployment claim.

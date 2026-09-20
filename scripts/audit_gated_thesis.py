@@ -50,7 +50,7 @@ def main():
     artifact_paths = {
         "thesis_pdf": ROOT / "paper/thesis_danang.pdf",
         "defense_deck": ROOT / "presentation/thesis_defense_danang.pptx",
-        "demo_manifest": ROOT / "results/haichau_network_v2/demo-bounded/manifest.json",
+        "demo_manifest": ROOT / "results/haichau_network_v2/demo-visual/manifest.json",
         "gate_summary": SUMMARY,
     }
     artifacts = {

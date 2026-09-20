@@ -31,7 +31,7 @@ def build(output):
         ROOT / "frontend/haichau_network_demo_core.js": output / "haichau_network_demo_core.js",
         ROOT / "scripts/haichau_demo_launcher.py": output / "launch_demo.py",
         ROOT / "results/haichau_network_v2/release-inputs/viewer-network-enriched.json": output / "network.json",
-        ROOT / "results/haichau_network_v2/demo-bounded/summary.json": output / "summary.json",
+        ROOT / "results/haichau_network_v2/demo-visual-work/summary.json": output / "summary.json",
         ROOT / "results/haichau_network_v2/demo-visual-work/pm_peak__fixed.json": output / "replays/pm_peak__fixed.json",
         ROOT / "results/haichau_network_v2/demo-visual-work/pm_peak__ddqn.json": output / "replays/pm_peak__ddqn.json",
     }
