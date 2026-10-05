@@ -8,6 +8,16 @@ observed district-wide flows, routes, or signal plans.
 The current thesis source is `paper/thesis_danang.tex`. The current demo guide
 is `docs/defense/demo-runbook.md`.
 
+## Thesis evidence review (23 September 2026)
+
+The [evidence ledger](docs/research/thesis-evidence-ledger.md) traces published
+tables/figures, digitized values, modelling assumptions and reported results.
+The [Vietnamese defense questions](docs/defense/committee-questions-evidence-vi.md)
+give evidence-backed answers and identify unresolved confirmation requirements.
+Run `python3 scripts/audit_thesis_evidence.py` to reconcile the retained inputs
+and calculations. An arithmetic pass does not mean strict release acceptance:
+the PM gate is post hoc, and residual seeds 13 and 16 failed original selection.
+
 ## Presentation demo
 
 The only supported browser demo is the self-contained visual replay:

@@ -1,0 +1,265 @@
+{
+  "baseline": {
+    "controller": "validation_tuned_fixed",
+    "search_green_durations": [
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      60
+    ]
+  },
+  "baseline_tuning_sha256": "ecab4a43546650fb50c51cac1124aa2c855095d015aa1cc4911ee47ff6686312",
+  "controller_family": "schedule_residual_ddqn",
+  "critic_units": {
+    "components": [
+      "network_queue_integral_vehicle_seconds",
+      "pending_integral_vehicle_seconds"
+    ],
+    "excluded": [
+      "future_unreleased_vehicles"
+    ],
+    "raw_objective": "queue_integral_vehicle_seconds",
+    "sign": "negative_cost",
+    "vehicle_seconds_per_unit": 100000.0
+  },
+  "exploration": {
+    "epsilon": 0.15
+  },
+  "final_release": {
+    "selection": {
+      "checkpoint_artifacts": {
+        "contract_path": "checkpoints/step-0004/contract.json",
+        "contract_sha256": "255c5b8e6392a060ac157664fb5ba84a75bf5ba29d9f1bc5dd4f1314acfdfe1e",
+        "weights_path": "checkpoints/step-0004/weights.npz",
+        "weights_sha256": "1f6f9735e419298cac1eb37172d750f484422e4b7bb8da2b4b8372527ad8c6bf"
+      },
+      "controller_family": "schedule_residual_ddqn",
+      "decision": {
+        "path": "results/haichau_network_v2/training/v3b-residual-pilot-decision.json",
+        "sha256": "31cf40a70dd157c90412e38765eaf297c9e153593d69dc377bfa90270ae80e46"
+      },
+      "decision_type": "haichau_residual_pilot_selection",
+      "schema_version": 1,
+      "selected_checkpoint": "step-4",
+      "selected_config": {
+        "path": "results/haichau_network_v2/training/haichau-v3b-residual-selected.yaml",
+        "sha256": "9bce49f14d2cb7ff3eb5b32b3a6b570fb3db251b10a2a66528ec2db320cbbea6"
+      },
+      "selector_spec": {
+        "path": "configs/haichau_residual_pilot_selection_v1.yaml",
+        "sha256": "537eb7a89f9bd82a4f08b28a6d7ca6c0cc6c90bbb8687bba3e2f3ad0cd23a849"
+      },
+      "test_split_accessed": false,
+      "training_step": 4
+    }
+  },
+  "learning_seed": 15,
+  "macro": {
+    "baseline_green_seconds": 25,
+    "duration_seconds": 300,
+    "shift_seconds": 10
+  },
+  "manifest_sha256": "c286ea57f67c3a6d4ec3b309ec99c86cab12aa2f73b050e6b2f829cd002bd999",
+  "mode": "final",
+  "model": {
+    "feature_dim": 27,
+    "gamma_per_macro": 0.99,
+    "hidden": 64,
+    "lr": 0.0003
+  },
+  "operational_mode": {
+    "forbidden_features": [
+      "case_id",
+      "learning_seed",
+      "demand_seed",
+      "simulator_seed",
+      "filename",
+      "future_flow"
+    ],
+    "input": "declared_time_of_day",
+    "normal": "exact_executed_fixed25_from_reset",
+    "peaks": "raw_greedy_prevalidated_macro"
+  },
+  "optimizer": {
+    "batch_size": 128,
+    "buffer_capacity": 20000,
+    "grad_clip": 10.0,
+    "huber_delta": 1.0,
+    "target_sync": 64,
+    "train_start": 53,
+    "updates_per_macro": 8
+  },
+  "pilot_selection": {
+    "checkpoint_artifacts": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0004/contract.json",
+        "contract_sha256": "255c5b8e6392a060ac157664fb5ba84a75bf5ba29d9f1bc5dd4f1314acfdfe1e",
+        "weights_path": "checkpoints/step-0004/weights.npz",
+        "weights_sha256": "1f6f9735e419298cac1eb37172d750f484422e4b7bb8da2b4b8372527ad8c6bf"
+      },
+      "validation": {
+        "path": "results/haichau_network_v2/training/pilot-v3b-residual-seed11/validation-step-0004.json",
+        "sha256": "f0dcd57067c1d01c43680030dc996b3723e178cd464705a2efdf3fba71cb3758"
+      }
+    },
+    "committed_config": {
+      "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+      "path": "configs/haichau_training_v3b_residual.yaml",
+      "sha256": "8195782b5d099bd7a04de03bfebfd5206957e7d76ada354047c971cbb3d6e75a"
+    },
+    "decision": {
+      "path": "results/haichau_network_v2/training/v3b-residual-pilot-decision.json"
+    },
+    "decision_type": "haichau_residual_pilot_selection",
+    "frozen_source_inputs": {
+      "baseline_tuning": {
+        "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+        "path": "results/haichau_network_v2/training/final-baseline-tuning.json",
+        "sha256": "d7ed9659dc4a1907a01a554b050dd87bf82903083924873894ecd4f20e25b43d"
+      },
+      "manifest": {
+        "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+        "path": "results/haichau_network_v2/experiment-manifest.json",
+        "sha256": "c3aa508483364b200145246042d9bd482d2f43408eb9ff48ca0bd985db6f7b7b"
+      },
+      "selector_spec": {
+        "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+        "path": "configs/haichau_residual_pilot_selection_v1.yaml",
+        "sha256": "537eb7a89f9bd82a4f08b28a6d7ca6c0cc6c90bbb8687bba3e2f3ad0cd23a849"
+      },
+      "simulation_inputs": {
+        "network": {
+          "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+          "path": "datasets/haichau_network_v2/roadnet.json",
+          "sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1"
+        },
+        "phase_contract": {
+          "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+          "path": "datasets/haichau_network_v2/phase-contract.json",
+          "sha256": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae"
+        },
+        "validation_flows": [
+          {
+            "case_id": "validation_normal_demand31",
+            "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+            "path": "results/haichau_network_v2/demands/validation_normal_demand31.json",
+            "sha256": "f69b0e960e61f7eb4f064d229a0e7cafcd2333642b483d6d3bb78d2ba7b4d363"
+          },
+          {
+            "case_id": "validation_am_peak_demand31",
+            "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+            "path": "results/haichau_network_v2/demands/validation_am_peak_demand31.json",
+            "sha256": "367cbf6e93b3643459e856a00a25d10762b9f029eae5e128f6a9e9cca76ff8ec"
+          },
+          {
+            "case_id": "validation_pm_peak_demand31",
+            "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+            "path": "results/haichau_network_v2/demands/validation_pm_peak_demand31.json",
+            "sha256": "713f05afb6d8f6836e1e52cfeb939f553ddf4ebc83f53c68c86399ccd069ed0d"
+          },
+          {
+            "case_id": "validation_normal_demand32",
+            "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+            "path": "results/haichau_network_v2/demands/validation_normal_demand32.json",
+            "sha256": "110a2f6e7bbdd3d3036f550314c3cb518bf2df0d710b42f4cba0e66fed2b44bc"
+          },
+          {
+            "case_id": "validation_am_peak_demand32",
+            "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+            "path": "results/haichau_network_v2/demands/validation_am_peak_demand32.json",
+            "sha256": "31dc30feb950c80eb8e76412a1f28d79104d87d38926cf5f669062cf44cca103"
+          },
+          {
+            "case_id": "validation_pm_peak_demand32",
+            "git_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+            "path": "results/haichau_network_v2/demands/validation_pm_peak_demand32.json",
+            "sha256": "63c83913fd0be0933e937d810043bc64f88cc25aa8c23c048c8c24d6832e1975"
+          }
+        ]
+      }
+    },
+    "gates": {
+      "checkpoint_traffic_feature_response_required": true,
+      "forced_macro0_counterfactual_exact_fixed25": true,
+      "learned_macros_required_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "mean_peak_queue_regret_percent_max": -1.0,
+      "minimum_distinct_nonzero_macro_nodes": 2,
+      "normal_exact_fixed_per_case": true,
+      "normal_timeline_zero": [
+        "phase_divergence_seconds",
+        "service_divergence_seconds",
+        "state_divergence_seconds",
+        "nonzero_macros",
+        "illegal_requests",
+        "anchor_violations",
+        "unlogged_divergence_seconds"
+      ],
+      "peak_regime_mean_queue_regret_percent_max": 0.0,
+      "peak_timeline_zero": [
+        "illegal_requests",
+        "anchor_violations",
+        "unlogged_divergence_seconds"
+      ],
+      "per_case_completion_loss_max": 0.02,
+      "per_case_insertion_loss_max": 0.02
+    },
+    "mean_peak_queue_regret_percent": -5.195558536156279,
+    "pilot_run_dir": "results/haichau_network_v2/training/pilot-v3b-residual-seed11",
+    "pilot_status": {
+      "path": "results/haichau_network_v2/training/pilot-v3b-residual-seed11/status.json",
+      "sha256": "de7ad40b8c15842c89020d89b602ca74897d953cc54c2e17c296d219ef9efb6d"
+    },
+    "ranking": [
+      "mean_peak_queue_regret_percent_ascending",
+      "training_step_ascending"
+    ],
+    "schema_version": 1,
+    "selected_checkpoint": "step-4",
+    "selector_spec": {
+      "path": "configs/haichau_residual_pilot_selection_v1.yaml",
+      "sha256": "537eb7a89f9bd82a4f08b28a6d7ca6c0cc6c90bbb8687bba3e2f3ad0cd23a849"
+    },
+    "source_commit": "d69834709d6264495e01611f353af7338af1e3a2",
+    "test_split_accessed": false,
+    "training_step": 4,
+    "validation_rerun": {
+      "path": "results/haichau_network_v2/training/v3b-residual-pilot-rerun.json",
+      "sha256": "1d66f8a18ce4b7933c362fe31f57f3d4c5fa4759d5ac19c1108bca72bab294ef"
+    }
+  },
+  "reward": {
+    "type": "negative_network_queue_plus_pending_integral"
+  },
+  "run": {
+    "episodes": 12,
+    "eval_every": 4,
+    "horizon_seconds": 3600
+  },
+  "schema_version": 1,
+  "source_tree": {
+    "git_commit": "aa59e3df9d723aa7e7be354d7451713662f1d5d1",
+    "index": "clean",
+    "schema_version": 1,
+    "tracked_worktree": "clean",
+    "untracked_files_policy": "allowed"
+  },
+  "tiers": {
+    "pilot": {
+      "episodes": 4,
+      "eval_every": 2,
+      "horizon_seconds": 3600
+    },
+    "smoke": {
+      "episodes": 2,
+      "eval_every": 2,
+      "horizon_seconds": 600
+    }
+  }
+}

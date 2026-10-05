@@ -1,0 +1,1883 @@
+{
+  "checked_on": "2026-09-23",
+  "scope": "49 Crossref DOI/title checks, author-surname/year screening, and 19 primary-source identity checks; not a full-text verification of every literature claim",
+  "entries": [
+    {
+      "key": "phan2025danang",
+      "title": "Application of Dueling Double Deep Q-Network for Dynamic Traffic Signal Optimization: A Case Study in Danang City, Vietnam",
+      "doi": "10.3390/make7030065",
+      "url": null,
+      "year": "2025",
+      "status": "matched",
+      "registered_title": "Application of Dueling Double Deep Q-Network for Dynamic Traffic Signal Optimization: A Case Study in Danang City, Vietnam",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.3390%2Fmake7030065",
+      "registered_authors": [
+        "Tho Cao Phan",
+        "Viet Dinh Le",
+        "Teron Nguyen"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2025,
+            7,
+            14
+          ]
+        ]
+      },
+      "registered_container": [
+        "Machine Learning and Knowledge Extraction"
+      ],
+      "registered_pages": "65",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "lopez2018sumo",
+      "title": "Microscopic Traffic Simulation using SUMO",
+      "doi": "10.1109/ITSC.2018.8569938",
+      "url": null,
+      "year": "2018",
+      "status": "matched",
+      "registered_title": "Microscopic Traffic Simulation using SUMO",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FITSC.2018.8569938",
+      "registered_authors": [
+        "Pablo Alvarez Lopez",
+        "Evamarie Wiessner",
+        "Michael Behrisch",
+        "Laura Bieker-Walz",
+        "Jakob Erdmann",
+        "Yun-Pang Flotterod",
+        "Robert Hilbrich",
+        "Leonhard Lucken",
+        "Johannes Rummel",
+        "Peter Wagner"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2018,
+            11
+          ]
+        ]
+      },
+      "registered_container": [
+        "2018 21st International Conference on Intelligent Transportation Systems (ITSC)"
+      ],
+      "registered_pages": "2575-2582",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "mnih2015dqn",
+      "title": "Human-level control through deep reinforcement learning",
+      "doi": "10.1038/nature14236",
+      "url": null,
+      "year": "2015",
+      "status": "matched",
+      "registered_title": "Human-level control through deep reinforcement learning",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1038%2Fnature14236",
+      "registered_authors": [
+        "Volodymyr Mnih",
+        "Koray Kavukcuoglu",
+        "David Silver",
+        "Andrei A. Rusu",
+        "Joel Veness",
+        "Marc G. Bellemare",
+        "Alex Graves",
+        "Martin Riedmiller",
+        "Andreas K. Fidjeland",
+        "Georg Ostrovski",
+        "Stig Petersen",
+        "Charles Beattie",
+        "Amir Sadik",
+        "Ioannis Antonoglou",
+        "Helen King",
+        "Dharshan Kumaran",
+        "Daan Wierstra",
+        "Shane Legg",
+        "Demis Hassabis"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2015,
+            2,
+            25
+          ]
+        ]
+      },
+      "registered_container": [
+        "Nature"
+      ],
+      "registered_pages": "529-533",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "hasselt2016double",
+      "title": "Deep Reinforcement Learning with Double Q-Learning",
+      "doi": "10.1609/aaai.v30i1.10295",
+      "url": null,
+      "year": "2016",
+      "status": "matched",
+      "registered_title": "Deep Reinforcement Learning with Double Q-Learning",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1609%2Faaai.v30i1.10295",
+      "registered_authors": [
+        "Hado Van Hasselt",
+        "Arthur Guez",
+        "David Silver"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2016,
+            3,
+            2
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the AAAI Conference on Artificial Intelligence"
+      ],
+      "registered_pages": null,
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "wang2016dueling",
+      "title": "Dueling Network Architectures for Deep Reinforcement Learning",
+      "doi": null,
+      "url": "https://proceedings.mlr.press/v48/wangf16.html",
+      "year": "2016",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://proceedings.mlr.press/v48/wangf16.html",
+      "resolved_url": "https://proceedings.mlr.press/v48/wangf16.html",
+      "primary_content_bytes": 16694,
+      "primary_titles": [
+        "Dueling Network Architectures for Deep Reinforcement Learning",
+        "Dueling Network Architectures for Deep Reinforcement Learning",
+        "Dueling Network Architectures for Deep Reinforcement Learning"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "sutton2018rl",
+      "title": "Reinforcement Learning: An Introduction",
+      "doi": null,
+      "url": "http://incompleteideas.net/book/the-book-2nd.html",
+      "year": "2018",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://incompleteideas.net/book/the-book-2nd.html",
+      "primary_check_status": "access_failed",
+      "primary_error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate (_ssl.c:1032)>",
+      "primary_check": {
+        "status": "manually_verified_primary_identity",
+        "source": "https://mitpress.mit.edu/9780262039246/reinforcement-learning/",
+        "evidence": "Publisher lists Sutton, Barto; second edition, 2018.",
+        "checked_on": "2026-09-23"
+      }
+    },
+    {
+      "key": "varaiya2013maxpressure",
+      "title": "Max pressure control of a network of signalized intersections",
+      "doi": "10.1016/j.trc.2013.08.014",
+      "url": null,
+      "year": "2013",
+      "status": "matched",
+      "registered_title": "Max pressure control of a network of signalized intersections",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1016%2Fj.trc.2013.08.014",
+      "registered_authors": [
+        "Pravin Varaiya"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2013,
+            11
+          ]
+        ]
+      },
+      "registered_container": [
+        "Transportation Research Part C: Emerging Technologies"
+      ],
+      "registered_pages": "177-195",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "wei2019presslight",
+      "title": "PressLight: Learning Max Pressure Control to Coordinate Traffic Signals in Arterial Network",
+      "doi": "10.1145/3292500.3330949",
+      "url": null,
+      "year": "2019",
+      "status": "matched_title_and_subtitle",
+      "registered_title": "PressLight",
+      "title_similarity": 0.2247,
+      "source": "https://api.crossref.org/works/10.1145%2F3292500.3330949",
+      "registered_authors": [
+        "Hua Wei",
+        "Chacha Chen",
+        "Guanjie Zheng",
+        "Kan Wu",
+        "Vikash Gayah",
+        "Kai Xu",
+        "Zhenhui Li"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2019,
+            7,
+            25
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining"
+      ],
+      "registered_pages": "1290-1298",
+      "registered_subtitle": [
+        "Learning Max Pressure Control to Coordinate Traffic Signals in Arterial Network"
+      ]
+    },
+    {
+      "key": "zhang2019cityflow",
+      "title": "CityFlow: A Multi-Agent Reinforcement Learning Environment for Large Scale City Traffic Scenario",
+      "doi": "10.1145/3308558.3314139",
+      "url": null,
+      "year": "2019",
+      "status": "matched",
+      "registered_title": "CityFlow: A Multi-Agent Reinforcement Learning Environment for Large Scale City Traffic Scenario",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1145%2F3308558.3314139",
+      "registered_authors": [
+        "Huichu Zhang",
+        "Siyuan Feng",
+        "Chang Liu",
+        "Yaoyao Ding",
+        "Yichen Zhu",
+        "Zihan Zhou",
+        "Weinan Zhang",
+        "Yong Yu",
+        "Haiming Jin",
+        "Zhenhui Li"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2019,
+            5,
+            13
+          ]
+        ]
+      },
+      "registered_container": [
+        "The World Wide Web Conference"
+      ],
+      "registered_pages": "3620-3624",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "ault2021resco",
+      "title": "Reinforcement Learning Benchmarks for Traffic Signal Control",
+      "doi": null,
+      "url": "https://openreview.net/forum?id=LqRSh6V0vR",
+      "year": "2021",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://openreview.net/forum?id=LqRSh6V0vR",
+      "resolved_url": "https://openreview.net/challenge?redirect=%2Fforum%3Fid%3DLqRSh6V0vR",
+      "primary_content_bytes": 4787,
+      "primary_titles": [
+        "Verifying your browser | OpenReview"
+      ],
+      "primary_check_status": "manual_review",
+      "primary_check": {
+        "status": "manually_verified_primary_identity",
+        "source": "https://datasets-benchmarks-proceedings.neurips.cc/paper_files/paper/2021/hash/f0935e4cd5920aa6c7c996a5ee53a70f-Abstract-round1.html",
+        "evidence": "NeurIPS proceedings title, authors James Ault and Guni Sharon, year 2021.",
+        "checked_on": "2026-09-23"
+      }
+    },
+    {
+      "key": "agarwal2021precipice",
+      "title": "Deep Reinforcement Learning at the Edge of the Statistical Precipice",
+      "doi": null,
+      "url": "https://papers.nips.cc/paper/2021/hash/f514cec81cb148559cf475e7426eed5e-Abstract.html",
+      "year": "2021",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://papers.nips.cc/paper/2021/hash/f514cec81cb148559cf475e7426eed5e-Abstract.html",
+      "resolved_url": "https://papers.nips.cc/paper/2021/hash/f514cec81cb148559cf475e7426eed5e-Abstract.html",
+      "primary_content_bytes": 10367,
+      "primary_titles": [
+        "Deep Reinforcement Learning at the Edge of the Statistical Precipice",
+        "Deep Reinforcement Learning at the Edge of the Statistical Precipice"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "henderson2018matters",
+      "title": "Deep Reinforcement Learning that Matters",
+      "doi": "10.1609/aaai.v32i1.11694",
+      "url": null,
+      "year": "2018",
+      "status": "matched",
+      "registered_title": "Deep Reinforcement Learning That Matters",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1609%2Faaai.v32i1.11694",
+      "registered_authors": [
+        "Peter Henderson",
+        "Riashat Islam",
+        "Philip Bachman",
+        "Joelle Pineau",
+        "Doina Precup",
+        "David Meger"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2018,
+            4,
+            29
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the AAAI Conference on Artificial Intelligence"
+      ],
+      "registered_pages": null,
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "haklay2008osm",
+      "title": "OpenStreetMap: User-Generated Street Maps",
+      "doi": "10.1109/MPRV.2008.80",
+      "url": null,
+      "year": "2008",
+      "status": "matched",
+      "registered_title": "OpenStreetMap: User-Generated Street Maps",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FMPRV.2008.80",
+      "registered_authors": [
+        "M. Haklay",
+        "P. Weber"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2008,
+            10
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Pervasive Computing"
+      ],
+      "registered_pages": "12-18",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "jica2014tiensa",
+      "title": "The Study for Tien Sa--Da Nang Port Improvement Project Phase 2",
+      "doi": null,
+      "url": "https://openjicareport.jica.go.jp/pdf/12250627.pdf",
+      "year": "2014",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://openjicareport.jica.go.jp/pdf/12250627.pdf",
+      "resolved_url": "https://openjicareport.jica.go.jp/pdf/12250627.pdf",
+      "primary_content_bytes": 7348173,
+      "primary_check_status": "pdf_downloaded_for_manual_check",
+      "primary_check": {
+        "status": "manually_verified_primary_identity",
+        "source": "https://openjicareport.jica.go.jp/pdf/12250627.pdf",
+        "evidence": "PDF cover: Tien Sa–Da Nang Port Improvement Project Phase 2, Final Report, December 2014, JICA/Japan Port Consultants/OCDI.",
+        "checked_on": "2026-09-23",
+        "download_sha256": "96ce5a844b400f2fad585fcd9d2950fda4271da20122e29c1c736363324ba232",
+        "download_bytes": 7348173
+      }
+    },
+    {
+      "key": "dacriss2010danang",
+      "title": "The Study on the Integrated Development Strategy for Danang City and Its Neighboring Area in the Socialist Republic of Vietnam (DaCRISS): Final Report, Part 4, Danang City Development Master Plan",
+      "doi": null,
+      "url": "https://openjicareport.jica.go.jp/pdf/12014940_02.pdf",
+      "year": "2010",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://openjicareport.jica.go.jp/pdf/12014940_02.pdf",
+      "resolved_url": "https://openjicareport.jica.go.jp/pdf/12014940_02.pdf",
+      "primary_content_bytes": 2906229,
+      "primary_check_status": "pdf_downloaded_for_manual_check",
+      "primary_check": {
+        "status": "manually_verified_primary_identity",
+        "source": "https://openjicareport.jica.go.jp/618/618/618_123_12014940.html",
+        "evidence": "Official JICA catalogue: Part IV title, JICA/ALMEC/IDCJ, 2010.12; linked _02.pdf starts at printed p. 5-42.",
+        "checked_on": "2026-09-23",
+        "download_sha256": "6ebd5568a10265af22e2f437251cbf29aaa8056f90e1f9b5293552deb766f875",
+        "download_bytes": 2906229
+      }
+    },
+    {
+      "key": "chu2020marl",
+      "title": "Multi-Agent Deep Reinforcement Learning for Large-Scale Traffic Signal Control",
+      "doi": "10.1109/TITS.2019.2901791",
+      "url": null,
+      "year": "2020",
+      "status": "matched",
+      "registered_title": "Multi-Agent Deep Reinforcement Learning for Large-Scale Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FTITS.2019.2901791",
+      "registered_authors": [
+        "Tianshu Chu",
+        "Jie Wang",
+        "Lara Codeca",
+        "Zhaojian Li"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2020,
+            3
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Transactions on Intelligent Transportation Systems"
+      ],
+      "registered_pages": "1086-1095",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "wei2019colight",
+      "title": "CoLight: Learning Network-level Cooperation for Traffic Signal Control",
+      "doi": "10.1145/3357384.3357902",
+      "url": null,
+      "year": "2019",
+      "status": "matched_title_and_subtitle",
+      "registered_title": "CoLight",
+      "title_similarity": 0.2059,
+      "source": "https://api.crossref.org/works/10.1145%2F3357384.3357902",
+      "registered_authors": [
+        "Hua Wei",
+        "Nan Xu",
+        "Huichu Zhang",
+        "Guanjie Zheng",
+        "Xinshi Zang",
+        "Chacha Chen",
+        "Weinan Zhang",
+        "Yanmin Zhu",
+        "Kai Xu",
+        "Zhenhui Li"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2019,
+            11,
+            3
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the 28th ACM International Conference on Information and Knowledge Management"
+      ],
+      "registered_pages": "1913-1922",
+      "registered_subtitle": [
+        "Learning Network-level Cooperation for Traffic Signal Control"
+      ]
+    },
+    {
+      "key": "zheng2019frap",
+      "title": "Learning Phase Competition for Traffic Signal Control",
+      "doi": "10.1145/3357384.3357900",
+      "url": null,
+      "year": "2019",
+      "status": "matched",
+      "registered_title": "Learning Phase Competition for Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1145%2F3357384.3357900",
+      "registered_authors": [
+        "Guanjie Zheng",
+        "Yuanhao Xiong",
+        "Xinshi Zang",
+        "Jie Feng",
+        "Hua Wei",
+        "Huichu Zhang",
+        "Yong Li",
+        "Kai Xu",
+        "Zhenhui Li"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2019,
+            11,
+            3
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the 28th ACM International Conference on Information and Knowledge Management"
+      ],
+      "registered_pages": "1963-1972",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "chen2020mplight",
+      "title": "Toward A Thousand Lights: Decentralized Deep Reinforcement Learning for Large-Scale Traffic Signal Control",
+      "doi": "10.1609/aaai.v34i04.5744",
+      "url": null,
+      "year": "2020",
+      "status": "matched",
+      "registered_title": "Toward A Thousand Lights: Decentralized Deep Reinforcement Learning for Large-Scale Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1609%2Faaai.v34i04.5744",
+      "registered_authors": [
+        "Chacha Chen",
+        "Hua Wei",
+        "Nan Xu",
+        "Guanjie Zheng",
+        "Ming Yang",
+        "Yuanhao Xiong",
+        "Kai Xu",
+        "Zhenhui Li"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2020,
+            4,
+            3
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the AAAI Conference on Artificial Intelligence"
+      ],
+      "registered_pages": "3414-3421",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "oroojlooy2020attendlight",
+      "title": "AttendLight: Universal Attention-Based Reinforcement Learning Model for Traffic Signal Control",
+      "doi": null,
+      "url": "https://proceedings.neurips.cc/paper/2020/hash/29e48b79ae6fc68e9b6480b677453586-Abstract.html",
+      "year": "2020",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://proceedings.neurips.cc/paper/2020/hash/29e48b79ae6fc68e9b6480b677453586-Abstract.html",
+      "resolved_url": "https://proceedings.neurips.cc/paper/2020/hash/29e48b79ae6fc68e9b6480b677453586-Abstract.html",
+      "primary_content_bytes": 10095,
+      "primary_titles": [
+        "AttendLight: Universal Attention-Based Reinforcement Learning Model for Traffic Signal Control",
+        "AttendLight: Universal Attention-Based Reinforcement Learning Model for Traffic Signal Control"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "wu2021efficientpressure",
+      "title": "Efficient Pressure: Improving Efficiency for Signalized Intersections",
+      "doi": "10.48550/arXiv.2112.02336",
+      "url": null,
+      "year": "2021",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://arxiv.org/abs/2112.02336",
+      "resolved_url": "https://arxiv.org/abs/2112.02336",
+      "primary_content_bytes": 44158,
+      "primary_titles": [
+        "[2112.02336] Efficient Pressure: Improving efficiency for signalized intersections",
+        "Efficient Pressure: Improving efficiency for signalized intersections",
+        "Efficient Pressure: Improving efficiency for signalized intersections"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "jayawardana2022underspecification",
+      "title": "The Impact of Task Underspecification in Evaluating Deep Reinforcement Learning",
+      "doi": null,
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2022/hash/96ca792fddef7c1e3366c405022463cb-Abstract-Conference.html",
+      "year": "2022",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://proceedings.neurips.cc/paper_files/paper/2022/hash/96ca792fddef7c1e3366c405022463cb-Abstract-Conference.html",
+      "resolved_url": "https://proceedings.neurips.cc/paper_files/paper/2022/hash/96ca792fddef7c1e3366c405022463cb-Abstract-Conference.html",
+      "primary_content_bytes": 10207,
+      "primary_titles": [
+        "The Impact of Task Underspecification in Evaluating Deep Reinforcement Learning",
+        "The Impact of Task Underspecification in Evaluating Deep Reinforcement Learning"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "webster1958signals",
+      "title": "Traffic Signal Settings",
+      "doi": null,
+      "url": null,
+      "year": "1958",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check": {
+        "status": "original_report_not_obtained",
+        "source": "https://ops.fhwa.dot.gov/arterial_mgmt/rpt/sig_tim_proc/sect_4.htm",
+        "supporting_source": "https://ops.fhwa.dot.gov/publications/signal_timing/03.htm",
+        "evidence": "FHWA names Webster 1958 Road Research Paper 39 and describes the classical equation. This is agency secondary confirmation, not direct inspection of the 1958 original."
+      }
+    },
+    {
+      "key": "robertson1991scoot",
+      "title": "Optimizing Networks of Traffic Signals in Real Time---the {SCOOT} Method",
+      "doi": "10.1109/25.69966",
+      "url": null,
+      "year": "1991",
+      "status": "matched",
+      "registered_title": "Optimizing networks of traffic signals in real time-the SCOOT method",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2F25.69966",
+      "registered_authors": [
+        "D.I. Robertson",
+        "R.D. Bretherton"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            1991,
+            2
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Transactions on Vehicular Technology"
+      ],
+      "registered_pages": "11-15",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "sims1980scat",
+      "title": "The {Sydney} Coordinated Adaptive Traffic ({SCAT}) System Philosophy and Benefits",
+      "doi": "10.1109/T-VT.1980.23833",
+      "url": null,
+      "year": "1980",
+      "status": "matched",
+      "registered_title": "The Sydney coordinated adaptive traffic (SCAT) system philosophy and benefits",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FT-VT.1980.23833",
+      "registered_authors": [
+        "A.G. Sims",
+        "K.W. Dobinson"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            1980,
+            5
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Transactions on Vehicular Technology"
+      ],
+      "registered_pages": "130-137",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "krajzewicz2010sumo",
+      "title": "Traffic Simulation with {SUMO}---Simulation of Urban Mobility",
+      "doi": "10.1007/978-1-4419-6142-6_7",
+      "url": null,
+      "year": "2010",
+      "status": "matched",
+      "registered_title": "Traffic Simulation with SUMO – Simulation of Urban Mobility",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1007%2F978-1-4419-6142-6_7",
+      "registered_authors": [
+        "Daniel Krajzewicz"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2010
+          ]
+        ]
+      },
+      "registered_container": [
+        "International Series in Operations Research &amp; Management Science",
+        "Fundamentals of Traffic Simulation"
+      ],
+      "registered_pages": "269-293",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "smith2013surtrac",
+      "title": "Smart Urban Signal Networks: Initial Application of the SURTRAC Adaptive Traffic Signal Control System",
+      "doi": null,
+      "url": "https://publications.ri.cmu.edu/smart-urban-signal-networks-initial-application-of-the-surtrac-adaptive-traffic-signal-control-system",
+      "year": "2013",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check": {
+        "status": "manually_verified_primary_identity",
+        "source": "https://publications.ri.cmu.edu/smart-urban-signal-networks-initial-application-of-the-surtrac-adaptive-traffic-signal-control-system",
+        "evidence": "CMU record verifies corrected title, ICAPS 2013, pp. 434–442. Author PDF first page verifies full names. Repository PDF carries a 2014 copyright line; citation year follows CMU conference record.",
+        "checked_on": "2026-09-23"
+      },
+      "previous_incorrect_metadata": {
+        "title": "Real-Time Traffic Signal Control with {Surtrac}",
+        "venue": "27th AAAI Conference on Artificial Intelligence",
+        "author_error": "Xie, Xiaoyuan"
+      }
+    },
+    {
+      "key": "pumir2015modifiedpressure",
+      "title": "Stability of Modified Max Pressure Controller with Application to Signalized Traffic Networks",
+      "doi": "10.1109/ACC.2015.7171007",
+      "url": null,
+      "year": "2015",
+      "status": "matched",
+      "registered_title": "Stability of modified max pressure controller with application to signalized traffic networks",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FACC.2015.7171007",
+      "registered_authors": [
+        "Thomas Pumir",
+        "Leah Anderson",
+        "Dimitrios Triantafyllos",
+        "Alexandre M. Bayen"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2015,
+            7
+          ]
+        ]
+      },
+      "registered_container": [
+        "2015 American Control Conference (ACC)"
+      ],
+      "registered_pages": "1879-1886",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "abdulhai2003adaptive",
+      "title": "Reinforcement Learning for True Adaptive Traffic Signal Control",
+      "doi": "10.1061/(ASCE)0733-947X(2003)129:3(278)",
+      "url": null,
+      "year": "2003",
+      "status": "matched",
+      "registered_title": "Reinforcement Learning for\n                    <i>True</i>\n                    Adaptive Traffic Signal Control",
+      "title_similarity": 0.9825,
+      "source": "https://api.crossref.org/works/10.1061%2F%28ASCE%290733-947X%282003%29129%3A3%28278%29",
+      "registered_authors": [
+        "Baher Abdulhai",
+        "Rob Pringle",
+        "Grigoris J. Karakoulas"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2003,
+            5
+          ]
+        ]
+      },
+      "registered_container": [
+        "Journal of Transportation Engineering"
+      ],
+      "registered_pages": "278-285",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "arel2010marl",
+      "title": "Reinforcement Learning-Based Multi-Agent System for Network Traffic Signal Control",
+      "doi": "10.1049/iet-its.2009.0070",
+      "url": null,
+      "year": "2010",
+      "status": "matched",
+      "registered_title": "Reinforcement learning-based multi-agent system for network traffic signal control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1049%2Fiet-its.2009.0070",
+      "registered_authors": [
+        "I. Arel",
+        "C. Liu",
+        "T. Urbanik",
+        "A.G. Kohls"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2010,
+            6,
+            4
+          ]
+        ]
+      },
+      "registered_container": [
+        "IET Intelligent Transport Systems"
+      ],
+      "registered_pages": "128-135",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "wei2018intellilight",
+      "title": "{IntelliLight}: A Reinforcement Learning Approach for Intelligent Traffic Light Control",
+      "doi": "10.1145/3219819.3220096",
+      "url": null,
+      "year": "2018",
+      "status": "matched_title_and_subtitle",
+      "registered_title": "IntelliLight",
+      "title_similarity": 0.2759,
+      "source": "https://api.crossref.org/works/10.1145%2F3219819.3220096",
+      "registered_authors": [
+        "Hua Wei",
+        "Guanjie Zheng",
+        "Huaxiu Yao",
+        "Zhenhui Li"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2018,
+            7,
+            19
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining"
+      ],
+      "registered_pages": "2496-2505",
+      "registered_subtitle": [
+        "A Reinforcement Learning Approach for Intelligent Traffic Light Control"
+      ]
+    },
+    {
+      "key": "zeng2019conditions",
+      "title": "Training Reinforcement Learning Agent for Traffic Signal Control under Different Traffic Conditions",
+      "doi": "10.1109/ITSC.2019.8917342",
+      "url": null,
+      "year": "2019",
+      "status": "matched",
+      "registered_title": "Training Reinforcement Learning Agent for Traffic Signal Control under Different Traffic Conditions",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FITSC.2019.8917342",
+      "registered_authors": [
+        "Jinghong Zeng",
+        "Jianming Hu",
+        "Yi Zhang"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2019,
+            10
+          ]
+        ]
+      },
+      "registered_container": [
+        "2019 IEEE Intelligent Transportation Systems Conference (ITSC)"
+      ],
+      "registered_pages": "4248-4254",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "devailly2022igrl",
+      "title": "{IG-RL}: Inductive Graph Reinforcement Learning for Massive-Scale Traffic Signal Control",
+      "doi": "10.1109/TITS.2021.3070835",
+      "url": null,
+      "year": "2022",
+      "status": "matched",
+      "registered_title": "IG-RL: Inductive Graph Reinforcement Learning for Massive-Scale Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FTITS.2021.3070835",
+      "registered_authors": [
+        "Francois-Xavier Devailly",
+        "Denis Larocque",
+        "Laurent Charlin"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2022,
+            7
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Transactions on Intelligent Transportation Systems"
+      ],
+      "registered_pages": "7496-7507",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "ma2024partition",
+      "title": "Learning to Coordinate Traffic Signals With Adaptive Network Partition",
+      "doi": "10.1109/TITS.2023.3308594",
+      "url": null,
+      "year": "2024",
+      "status": "matched",
+      "registered_title": "Learning to Coordinate Traffic Signals With Adaptive Network Partition",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FTITS.2023.3308594",
+      "registered_authors": [
+        "Jinming Ma",
+        "Feng Wu"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2024,
+            1
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Transactions on Intelligent Transportation Systems"
+      ],
+      "registered_pages": "263-274",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "zeng2021graphlight",
+      "title": "{GraphLight}: Graph-Based Reinforcement Learning for Traffic Signal Control",
+      "doi": "10.1109/ICCCS52626.2021.9449147",
+      "url": null,
+      "year": "2021",
+      "status": "matched",
+      "registered_title": "GraphLight: Graph-based Reinforcement Learning for Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FICCCS52626.2021.9449147",
+      "registered_authors": [
+        "Zheng Zeng"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2021,
+            4,
+            23
+          ]
+        ]
+      },
+      "registered_container": [
+        "2021 IEEE 6th International Conference on Computer and Communication Systems (ICCCS)"
+      ],
+      "registered_pages": "645-650",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "zhang2024heterolight",
+      "title": "{HeteroLight}: A General and Efficient Learning Approach for Heterogeneous Traffic Signal Control",
+      "doi": "10.1109/IROS58592.2024.10801524",
+      "url": null,
+      "year": "2024",
+      "status": "matched",
+      "registered_title": "HeteroLight: A General and Efficient Learning Approach for Heterogeneous Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FIROS58592.2024.10801524",
+      "registered_authors": [
+        "Yifeng Zhang",
+        "Peizhuo Li",
+        "Mingfeng Fan",
+        "Guillaume Sartoretti"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2024,
+            10,
+            14
+          ]
+        ]
+      },
+      "registered_container": [
+        "2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)"
+      ],
+      "registered_pages": "1010-1017",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "du2023safelight",
+      "title": "{SafeLight}: A Reinforcement Learning Method toward Collision-Free Traffic Signal Control",
+      "doi": "10.1609/aaai.v37i12.26729",
+      "url": null,
+      "year": "2023",
+      "status": "matched",
+      "registered_title": "SafeLight: A Reinforcement Learning Method toward Collision-Free Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1609%2Faaai.v37i12.26729",
+      "registered_authors": [
+        "Wenlu Du",
+        "Junyi Ye",
+        "Jingyi Gu",
+        "Jing Li",
+        "Hua Wei",
+        "Guiling Wang"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2023,
+            6,
+            26
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the AAAI Conference on Artificial Intelligence"
+      ],
+      "registered_pages": "14801-14810",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "miletic2022review",
+      "title": "A Review of Reinforcement Learning Applications in Adaptive Traffic Signal Control",
+      "doi": "10.1049/itr2.12208",
+      "url": null,
+      "year": "2022",
+      "status": "matched",
+      "registered_title": "A review of reinforcement learning applications in adaptive traffic signal control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1049%2Fitr2.12208",
+      "registered_authors": [
+        "Mladen Miletić",
+        "Edouard Ivanjko",
+        "Martin Gregurić",
+        "Krešimir Kušić"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2022,
+            6,
+            9
+          ]
+        ]
+      },
+      "registered_container": [
+        "IET Intelligent Transport Systems"
+      ],
+      "registered_pages": "1269-1285",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "rashid2018qmix",
+      "title": "{QMIX}: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning",
+      "doi": null,
+      "url": "https://proceedings.mlr.press/v80/rashid18a.html",
+      "year": "2018",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://proceedings.mlr.press/v80/rashid18a.html",
+      "resolved_url": "https://proceedings.mlr.press/v80/rashid18a.html",
+      "primary_content_bytes": 16315,
+      "primary_titles": [
+        "QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning",
+        "QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning",
+        "QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "sunehag2017vdn",
+      "title": "Value-Decomposition Networks for Cooperative Multi-Agent Learning",
+      "doi": null,
+      "url": "https://arxiv.org/abs/1706.05296",
+      "year": "2017",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://arxiv.org/abs/1706.05296",
+      "resolved_url": "https://arxiv.org/abs/1706.05296",
+      "primary_content_bytes": 42569,
+      "primary_titles": [
+        "[1706.05296] Value-Decomposition Networks For Cooperative Multi-Agent Learning",
+        "Value-Decomposition Networks For Cooperative Multi-Agent Learning",
+        "Value-Decomposition Networks For Cooperative Multi-Agent Learning"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "foerster2018coma",
+      "title": "Counterfactual Multi-Agent Policy Gradients",
+      "doi": "10.1609/aaai.v32i1.11794",
+      "url": null,
+      "year": "2018",
+      "status": "matched",
+      "registered_title": "Counterfactual Multi-Agent Policy Gradients",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1609%2Faaai.v32i1.11794",
+      "registered_authors": [
+        "Jakob Foerster",
+        "Gregory Farquhar",
+        "Triantafyllos Afouras",
+        "Nantas Nardelli",
+        "Shimon Whiteson"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2018,
+            4,
+            29
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the AAAI Conference on Artificial Intelligence"
+      ],
+      "registered_pages": null,
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "ngoc2009vietnam",
+      "title": "A Simulation Model for the Mixed Traffic System in Vietnam",
+      "doi": "10.1504/IJSPM.2009.031097",
+      "url": null,
+      "year": "2009",
+      "status": "matched",
+      "registered_title": "A simulation model for the mixed traffic system in Vietnam",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1504%2FIJSPM.2009.031097",
+      "registered_authors": [
+        "Quynh Lam Le Ngoc",
+        "Ngoc Hien Do",
+        "Ki Chan Nam"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2009
+          ]
+        ]
+      },
+      "registered_container": [
+        "International Journal of Simulation and Process Modelling"
+      ],
+      "registered_pages": "233",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "nguyen2012motorcycle",
+      "title": "Describing Non-Lane-Based Motorcycle Movements in Motorcycle-Only Traffic Flow",
+      "doi": "10.3141/2281-10",
+      "url": null,
+      "year": "2012",
+      "status": "matched",
+      "registered_title": "Describing Non–Lane-Based Motorcycle Movements in Motorcycle-Only Traffic Flow",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.3141%2F2281-10",
+      "registered_authors": [
+        "Long Xuan Nguyen",
+        "Shinya Hanaoka",
+        "Tomoya Kawasaki"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2012,
+            1
+          ]
+        ]
+      },
+      "registered_container": [
+        "Transportation Research Record: Journal of the Transportation Research Board"
+      ],
+      "registered_pages": "76-82",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "da2023sim2real",
+      "title": "Sim2Real Transfer for Traffic Signal Control",
+      "doi": "10.1109/CASE56687.2023.10260398",
+      "url": null,
+      "year": "2023",
+      "status": "matched",
+      "registered_title": "Sim2Real Transfer for Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FCASE56687.2023.10260398",
+      "registered_authors": [
+        "Longchao Da",
+        "Hao Mei",
+        "Romir Sharma",
+        "Hua Wei"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2023,
+            8,
+            26
+          ]
+        ]
+      },
+      "registered_container": [
+        "2023 IEEE 19th International Conference on Automation Science and Engineering (CASE)"
+      ],
+      "registered_pages": "1-2",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "muller2023realitygap",
+      "title": "Bridging the Reality Gap of Reinforcement Learning Based Traffic Signal Control Using Domain Randomization and Meta Learning",
+      "doi": "10.1109/ITSC57777.2023.10421987",
+      "url": null,
+      "year": "2023",
+      "status": "matched",
+      "registered_title": "Bridging the Reality Gap of Reinforcement Learning based Traffic Signal Control using Domain Randomization and Meta Learning",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FITSC57777.2023.10421987",
+      "registered_authors": [
+        "Arthur Müller",
+        "Matthia Sabatelli"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2023,
+            9,
+            24
+          ]
+        ]
+      },
+      "registered_container": [
+        "2023 IEEE 26th International Conference on Intelligent Transportation Systems (ITSC)"
+      ],
+      "registered_pages": "5271-5278",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "korecki2023disruptions",
+      "title": "How Well Do Reinforcement Learning Approaches Cope With Disruptions? The Case of Traffic Signal Control",
+      "doi": "10.1109/ACCESS.2023.3266644",
+      "url": null,
+      "year": "2023",
+      "status": "matched",
+      "registered_title": "How Well Do Reinforcement Learning Approaches Cope With Disruptions? The Case of Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FACCESS.2023.3266644",
+      "registered_authors": [
+        "Marcin Korecki",
+        "Damian Dailisan",
+        "Dirk Helbing"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2023
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Access"
+      ],
+      "registered_pages": "36504-36515",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "peng2018dynamics",
+      "title": "Sim-to-Real Transfer of Robotic Control with Dynamics Randomization",
+      "doi": "10.1109/ICRA.2018.8460528",
+      "url": null,
+      "year": "2018",
+      "status": "matched",
+      "registered_title": "Sim-to-Real Transfer of Robotic Control with Dynamics Randomization",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FICRA.2018.8460528",
+      "registered_authors": [
+        "Xue Bin Peng",
+        "Marcin Andrychowicz",
+        "Wojciech Zaremba",
+        "Pieter Abbeel"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2018,
+            5
+          ]
+        ]
+      },
+      "registered_container": [
+        "2018 IEEE International Conference on Robotics and Automation (ICRA)"
+      ],
+      "registered_pages": "3803-3810",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "tobin2017domainrandomization",
+      "title": "Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World",
+      "doi": "10.1109/IROS.2017.8202133",
+      "url": null,
+      "year": "2017",
+      "status": "matched",
+      "registered_title": "Domain randomization for transferring deep neural networks from simulation to the real world",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FIROS.2017.8202133",
+      "registered_authors": [
+        "Josh Tobin",
+        "Rachel Fong",
+        "Alex Ray",
+        "Jonas Schneider",
+        "Wojciech Zaremba",
+        "Pieter Abbeel"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2017,
+            9
+          ]
+        ]
+      },
+      "registered_container": [
+        "2017 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)"
+      ],
+      "registered_pages": "23-30",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "dulacarnold2019challenges",
+      "title": "Challenges of Real-World Reinforcement Learning",
+      "doi": null,
+      "url": "https://arxiv.org/abs/1904.12901",
+      "year": "2019",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://arxiv.org/abs/1904.12901",
+      "resolved_url": "https://arxiv.org/abs/1904.12901",
+      "primary_content_bytes": 42139,
+      "primary_titles": [
+        "[1904.12901] Challenges of Real-World Reinforcement Learning",
+        "Challenges of Real-World Reinforcement Learning",
+        "Challenges of Real-World Reinforcement Learning"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "pineau2021reproducibility",
+      "title": "Improving Reproducibility in Machine Learning Research: A Report from the {NeurIPS} 2019 Reproducibility Program",
+      "doi": null,
+      "url": "https://jmlr.org/papers/v22/20-303.html",
+      "year": "2021",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://jmlr.org/papers/v22/20-303.html",
+      "resolved_url": "https://jmlr.org/papers/v22/20-303.html",
+      "primary_content_bytes": 6617,
+      "primary_titles": [
+        "Improving Reproducibility in Machine Learning Research(A Report from the NeurIPS 2019 Reproducibility Program)",
+        "Improving Reproducibility in Machine Learning Research(A Report from the NeurIPS 2019 Reproducibility Program)"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "gundersen2018reproducibility",
+      "title": "State of the Art: Reproducibility in Artificial Intelligence",
+      "doi": "10.1609/aaai.v32i1.11503",
+      "url": null,
+      "year": "2018",
+      "status": "matched",
+      "registered_title": "State of the Art: Reproducibility in Artificial Intelligence",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1609%2Faaai.v32i1.11503",
+      "registered_authors": [
+        "Odd Erik Gundersen",
+        "Sigbjørn Kjensmo"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2018,
+            4,
+            25
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the AAAI Conference on Artificial Intelligence"
+      ],
+      "registered_pages": null,
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "colas2019hitchhiker",
+      "title": "A Hitchhiker's Guide to Statistical Comparisons of Reinforcement Learning Algorithms",
+      "doi": null,
+      "url": "https://arxiv.org/abs/1904.06979",
+      "year": "2019",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://arxiv.org/abs/1904.06979",
+      "resolved_url": "https://arxiv.org/abs/1904.06979",
+      "primary_content_bytes": 40871,
+      "primary_titles": [
+        "[1904.06979] A Hitchhiker's Guide to Statistical Comparisons of Reinforcement Learning Algorithms",
+        "A Hitchhiker's Guide to Statistical Comparisons of Reinforcement Learning Algorithms",
+        "A Hitchhiker's Guide to Statistical Comparisons of Reinforcement Learning Algorithms"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "fadilah2024routechoice",
+      "title": "Identifying the Role of Route Choice Behavior of Motorcycle Riders in Microscopic Simulation Modeling under Mixed Traffic Conditions",
+      "doi": "10.1016/j.trip.2024.101247",
+      "url": null,
+      "year": "2024",
+      "status": "matched",
+      "registered_title": "Identifying the role of route choice behavior of motorcycle riders in microscopic simulation modeling under mixed traffic conditions",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1016%2Fj.trip.2024.101247",
+      "registered_authors": [
+        "Siti Raudhatul Fadilah",
+        "Hiroaki Nishiuchi",
+        "An Minh Ngoc"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2024,
+            11
+          ]
+        ]
+      },
+      "registered_container": [
+        "Transportation Research Interdisciplinary Perspectives"
+      ],
+      "registered_pages": "101247",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "wang2026motorcycletrajectories",
+      "title": "Vehicle-Level Speed Stability and Driving Style Clustering in Motorcycle-Dominated Mixed Traffic Using Roadside Video Trajectories",
+      "doi": "10.3390/vehicles8080185",
+      "url": null,
+      "year": "2026",
+      "status": "matched",
+      "registered_title": "Vehicle-Level Speed Stability and Driving Style Clustering in Motorcycle-Dominated Mixed Traffic Using Roadside Video Trajectories",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.3390%2Fvehicles8080185",
+      "registered_authors": [
+        "Jingjing Wang",
+        "Xiayun Liu",
+        "Hongli Deng",
+        "Rongchuan Yu",
+        "Wanting Yang"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2026,
+            8,
+            10
+          ]
+        ]
+      },
+      "registered_container": [
+        "Vehicles"
+      ],
+      "registered_pages": "185",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "vu2025motorcyclesignal",
+      "title": "Integration of Computer Vision, Microscopic Traffic Simulation and Heuristics for Optimizing Motorcycle-Dominated Signalized Intersections",
+      "doi": "10.58845/jstt.utt.2025.en.5.4.141-155",
+      "url": null,
+      "year": "2025",
+      "status": "matched",
+      "registered_title": "Integration of Computer Vision, Microscopic Traffic Simulation and Heuristics for Optimizing Motorcycle-Dominated Signalized Intersections",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.58845%2Fjstt.utt.2025.en.5.4.141-155",
+      "registered_authors": [
+        "Tam Vu",
+        "Ngoc Viet Pham",
+        "Ngoc Son Nguyen",
+        "Quang Thai Pham",
+        "Thanh Hieu Pham",
+        "Viet Phuong Nguyen"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2025,
+            12,
+            21
+          ]
+        ]
+      },
+      "registered_container": [
+        "Journal of Science and Transport Technology"
+      ],
+      "registered_pages": "141-155",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "trinh2025isolatedrl",
+      "title": "Utilizing Reinforcement Learning in Traffic Light Management at an Isolated Intersection",
+      "doi": "10.55228/JTST140609",
+      "url": null,
+      "year": "2025",
+      "status": "matched",
+      "registered_title": "Utilizing Reinforcement Learning in Traffic Light Management at an Isolated Intersection",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.55228%2FJTST140609",
+      "registered_authors": [
+        "Hung Tuan Trinh",
+        "Van Bac Nguyen",
+        "Duy Quang Tran"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2025,
+            11,
+            15
+          ]
+        ]
+      },
+      "registered_container": [
+        "Journal of Transportation Science and Technology"
+      ],
+      "registered_pages": "92-105",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "nguyen2016saturation",
+      "title": "Saturation Flow Rate Analysis at Signalized Intersections for Mixed Traffic Conditions in Motorcycle Dependent Cities",
+      "doi": "10.1016/j.trpro.2016.06.058",
+      "url": null,
+      "year": "2016",
+      "status": "matched_title_and_subtitle",
+      "source": "https://api.crossref.org/works/10.1016%2Fj.trpro.2016.06.058",
+      "error": "HTTP Error 429: Too Many Requests",
+      "registered_subtitle": []
+    },
+    {
+      "key": "cao2012capacity",
+      "title": "Estimating Capacity and Motorcycle Equivalent Units on Urban Roads in Hanoi, Vietnam",
+      "doi": "10.1061/(ASCE)TE.1943-5436.0000382",
+      "url": null,
+      "year": "2012",
+      "status": "matched",
+      "registered_title": "Estimating Capacity and Motorcycle Equivalent Units on Urban Roads in Hanoi, Vietnam",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1061%2F%28ASCE%29TE.1943-5436.0000382",
+      "registered_authors": [
+        "Nguyen Y. Cao",
+        "Kazushi Sano"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2012,
+            6
+          ]
+        ]
+      },
+      "registered_container": [
+        "Journal of Transportation Engineering"
+      ],
+      "registered_pages": "776-785",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "lan2016scooters",
+      "title": "Optimizing Signals for Arterials Experiencing Heavy Mixed Scooter-Vehicle Flows",
+      "doi": "10.1016/j.trc.2016.09.011",
+      "url": null,
+      "year": "2016",
+      "status": "matched",
+      "registered_title": "Optimizing signals for arterials experiencing heavy mixed scooter-vehicle flows",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1016%2Fj.trc.2016.09.011",
+      "registered_authors": [
+        "Chien-Lun Lan",
+        "Gang-Len Chang"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2016,
+            11
+          ]
+        ]
+      },
+      "registered_container": [
+        "Transportation Research Part C: Emerging Technologies"
+      ],
+      "registered_pages": "182-201",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "kuo2023ptwsim",
+      "title": "A Comparison of Microscopic Traffic Simulation Systems for Powered-Two-Wheeler Traffic",
+      "doi": null,
+      "url": "https://easts.info/on-line/proceedings/vol.14/pdf/PP3613.pdf",
+      "year": "2023",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://easts.info/on-line/proceedings/vol.14/pdf/PP3613.pdf",
+      "primary_check_status": "access_failed",
+      "primary_error": "The read operation timed out",
+      "primary_check": {
+        "status": "manually_verified_primary_identity",
+        "source": "https://easts.info/on-line/proceedings/vol.14/pdf/PP3613.pdf",
+        "evidence": "Publisher PDF p. 1 verifies title, P.F. Kuo/J.D. Chen/K.I. Wong, Vol. 14, 2023. This overrides a P.K. typo in conference programme. Abstract supports PTW-facility modelling limitation.",
+        "checked_on": "2026-09-23"
+      }
+    },
+    {
+      "key": "rodrigues2019robust",
+      "title": "Towards Robust Deep Reinforcement Learning for Traffic Signal Control: Demand Surges, Incidents and Sensor Failures",
+      "doi": "10.1109/ITSC.2019.8917451",
+      "url": null,
+      "year": "2019",
+      "status": "matched",
+      "registered_title": "Towards Robust Deep Reinforcement Learning for Traffic Signal Control: Demand Surges, Incidents and Sensor Failures",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FITSC.2019.8917451",
+      "registered_authors": [
+        "Filipe Rodrigues",
+        "Carlos Lima Azevedo"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2019,
+            10
+          ]
+        ]
+      },
+      "registered_container": [
+        "2019 IEEE Intelligent Transportation Systems Conference (ITSC)"
+      ],
+      "registered_pages": "3559-3566",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "tan2020robust",
+      "title": "Robust Deep Reinforcement Learning for Traffic Signal Control",
+      "doi": "10.1007/s42421-020-00029-6",
+      "url": null,
+      "year": "2020",
+      "status": "matched",
+      "registered_title": "Robust Deep Reinforcement Learning for Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1007%2Fs42421-020-00029-6",
+      "registered_authors": [
+        "Kai Liang Tan",
+        "Anuj Sharma",
+        "Soumik Sarkar"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2020,
+            12
+          ]
+        ]
+      },
+      "registered_container": [
+        "Journal of Big Data Analytics in Transportation"
+      ],
+      "registered_pages": "263-274",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "jiang2024scenarioagnostic",
+      "title": "A General Scenario-Agnostic Reinforcement Learning for Traffic Signal Control",
+      "doi": "10.1109/TITS.2024.3377106",
+      "url": null,
+      "year": "2024",
+      "status": "matched",
+      "registered_title": "A General Scenario-Agnostic Reinforcement Learning for Traffic Signal Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FTITS.2024.3377106",
+      "registered_authors": [
+        "Haoyuan Jiang",
+        "Ziyue Li",
+        "Zhishuai Li",
+        "Lei Bai",
+        "Hangyu Mao",
+        "Wolfgang Ketter",
+        "Rui Zhao"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2024,
+            9
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Transactions on Intelligent Transportation Systems"
+      ],
+      "registered_pages": "11330-11344",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "chen2024difflight",
+      "title": "{DiffLight}: A Partial Rewards Conditioned Diffusion Model for Traffic Signal Control with Missing Data",
+      "doi": "10.52202/079017-3921",
+      "url": null,
+      "year": "2024",
+      "status": "matched",
+      "registered_title": "DiffLight: A Partial Rewards Conditioned Diffusion Model for Traffic Signal Control with Missing Data",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.52202%2F079017-3921",
+      "registered_authors": [
+        "Hanyang Chen",
+        "Yang Jiang",
+        "Shengnan Guo",
+        "Xiaowei Mao",
+        "Youfang Lin",
+        "Huaiyu Wan"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2024
+          ]
+        ]
+      },
+      "registered_container": [
+        "Advances in Neural Information Processing Systems 37"
+      ],
+      "registered_pages": "123353-123378",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "li2025robustlight",
+      "title": "{RobustLight}: Improving Robustness via Diffusion Reinforcement Learning for Traffic Signal Control",
+      "doi": null,
+      "url": "https://proceedings.mlr.press/v267/li25cs.html",
+      "year": "2025",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://proceedings.mlr.press/v267/li25cs.html",
+      "resolved_url": "https://proceedings.mlr.press/v267/li25cs.html",
+      "primary_content_bytes": 16319,
+      "primary_titles": [
+        "RobustLight: Improving Robustness via Diffusion Reinforcement Learning for Traffic Signal Control",
+        "RobustLight: Improving Robustness via Diffusion Reinforcement Learning for Traffic Signal Control",
+        "RobustLight: Improving Robustness via Diffusion Reinforcement Learning for Traffic Signal Control"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "ross2011dagger",
+      "title": "A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning",
+      "doi": null,
+      "url": "https://proceedings.mlr.press/v15/ross11a.html",
+      "year": "2011",
+      "status": "not_checked_crossref",
+      "reason": "no Crossref DOI; primary URL/manual check required",
+      "primary_check_url": "https://proceedings.mlr.press/v15/ross11a.html",
+      "resolved_url": "https://proceedings.mlr.press/v15/ross11a.html",
+      "primary_content_bytes": 17497,
+      "primary_titles": [
+        "A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning",
+        "A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning",
+        "A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning"
+      ],
+      "primary_check_status": "title_found"
+    },
+    {
+      "key": "hester2018dqfd",
+      "title": "Deep {Q}-Learning from Demonstrations",
+      "doi": "10.1609/aaai.v32i1.11757",
+      "url": "https://ojs.aaai.org/index.php/AAAI/article/view/11757",
+      "year": "2018",
+      "status": "matched",
+      "registered_title": "Deep Q-learning From Demonstrations",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1609%2Faaai.v32i1.11757",
+      "registered_authors": [
+        "Todd Hester",
+        "Matej Vecerik",
+        "Olivier Pietquin",
+        "Marc Lanctot",
+        "Tom Schaul",
+        "Bilal Piot",
+        "Dan Horgan",
+        "John Quan",
+        "Andrew Sendonaris",
+        "Ian Osband",
+        "Gabriel Dulac-Arnold",
+        "John Agapiou",
+        "Joel Leibo",
+        "Audrunas Gruslys"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2018,
+            4,
+            29
+          ]
+        ]
+      },
+      "registered_container": [
+        "Proceedings of the AAAI Conference on Artificial Intelligence"
+      ],
+      "registered_pages": null,
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "johannink2019residual",
+      "title": "Residual Reinforcement Learning for Robot Control",
+      "doi": "10.1109/ICRA.2019.8794127",
+      "url": "https://ieeexplore.ieee.org/document/8794127/",
+      "year": "2019",
+      "status": "matched",
+      "registered_title": "Residual Reinforcement Learning for Robot Control",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2FICRA.2019.8794127",
+      "registered_authors": [
+        "Tobias Johannink",
+        "Shikhar Bahl",
+        "Ashvin Nair",
+        "Jianlan Luo",
+        "Avinash Kumar",
+        "Matthias Loskyll",
+        "Juan Aparicio Ojea",
+        "Eugen Solowjow",
+        "Sergey Levine"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2019,
+            5
+          ]
+        ]
+      },
+      "registered_container": [
+        "2019 International Conference on Robotics and Automation (ICRA)"
+      ],
+      "registered_pages": "6023-6029",
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    }
+  ],
+  "bibliography_sha256": "0f9a890f5c32e6b27339e68a01cb06ae7164f5726cd406fd380fb2df02b57f3a",
+  "summary": {
+    "entries": 68,
+    "crossref_doi_title_matched": 49,
+    "other_primary_identities_checked": 18,
+    "original_reports_not_obtained": [
+      "webster1958signals"
+    ],
+    "corrected_entries": [
+      "smith2013surtrac"
+    ],
+    "limits": [
+      "Primary title identity alone does not establish support for every claim.",
+      "Full-text data-source review and exact locators are in thesis-evidence-ledger.md."
+    ]
+  }
+}

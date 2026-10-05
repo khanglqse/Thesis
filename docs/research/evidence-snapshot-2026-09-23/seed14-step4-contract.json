@@ -1,0 +1,123 @@
+{
+  "baseline_tuning_sha256": "ecab4a43546650fb50c51cac1124aa2c855095d015aa1cc4911ee47ff6686312",
+  "code_commit": "aa59e3df9d723aa7e7be354d7451713662f1d5d1",
+  "controller_family": "schedule_residual_ddqn",
+  "critic_units": {
+    "components": [
+      "network_queue_integral_vehicle_seconds",
+      "pending_integral_vehicle_seconds"
+    ],
+    "excluded": [
+      "future_unreleased_vehicles"
+    ],
+    "raw_objective": "queue_integral_vehicle_seconds",
+    "sign": "negative_cost",
+    "vehicle_seconds_per_unit": 100000.0
+  },
+  "feature_dim": 27,
+  "feature_order": [
+    "source_incoming_queue_mean",
+    "source_incoming_queue_max",
+    "source_incoming_running_mean",
+    "source_outgoing_queue_mean",
+    "source_outgoing_remaining_capacity_mean",
+    "source_pressure",
+    "source_is_current_phase",
+    "source_elapsed_green",
+    "source_upstream_queue_mean",
+    "source_downstream_queue_mean",
+    "source_time_since_service",
+    "source_movement_count",
+    "target_incoming_queue_mean",
+    "target_incoming_queue_max",
+    "target_incoming_running_mean",
+    "target_outgoing_queue_mean",
+    "target_outgoing_remaining_capacity_mean",
+    "target_pressure",
+    "target_is_current_phase",
+    "target_elapsed_green",
+    "target_upstream_queue_mean",
+    "target_downstream_queue_mean",
+    "target_time_since_service",
+    "target_movement_count",
+    "boundary_fraction",
+    "shift_fraction",
+    "is_baseline"
+  ],
+  "hidden_size": 64,
+  "learning_seed": 14,
+  "macro": {
+    "baseline_green_seconds": 25,
+    "duration_seconds": 300,
+    "shift_seconds": 10
+  },
+  "max_macros": 59,
+  "mode": "final",
+  "network_sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1",
+  "normal_policy": "exact_executed_fixed25_from_reset",
+  "normalization": {
+    "capacity_norm": 40.0,
+    "count_norm": 20.0
+  },
+  "peak_policy": "raw_greedy_prevalidated_macro_with_baseline_tie_break",
+  "phase_contract_sha256": "41c10aa7de5da3c7cd215577a7929ee8495ba3317d8e094a9d92cdb90611acae",
+  "policy_input_schema": {
+    "excluded_features": [
+      "case_id",
+      "learning_seed",
+      "demand_seed",
+      "simulator_seed",
+      "filename",
+      "future_flow"
+    ],
+    "learned_features": [
+      "source_incoming_queue_mean",
+      "source_incoming_queue_max",
+      "source_incoming_running_mean",
+      "source_outgoing_queue_mean",
+      "source_outgoing_remaining_capacity_mean",
+      "source_pressure",
+      "source_is_current_phase",
+      "source_elapsed_green",
+      "source_upstream_queue_mean",
+      "source_downstream_queue_mean",
+      "source_time_since_service",
+      "source_movement_count",
+      "target_incoming_queue_mean",
+      "target_incoming_queue_max",
+      "target_incoming_running_mean",
+      "target_outgoing_queue_mean",
+      "target_outgoing_remaining_capacity_mean",
+      "target_pressure",
+      "target_is_current_phase",
+      "target_elapsed_green",
+      "target_upstream_queue_mean",
+      "target_downstream_queue_mean",
+      "target_time_since_service",
+      "target_movement_count",
+      "boundary_fraction",
+      "shift_fraction",
+      "is_baseline"
+    ],
+    "operational_context": {
+      "time_of_day": [
+        "normal",
+        "am_peak",
+        "pm_peak"
+      ]
+    },
+    "runtime_signals": [
+      "current_signal_state",
+      "elapsed_seconds"
+    ]
+  },
+  "schema_version": 1,
+  "simulation": {
+    "action_interval": 10,
+    "maximum_red": 180,
+    "min_green": 20,
+    "yellow_time": 3
+  },
+  "training_config_sha256": "0040cde7aa55789650c9678c0842d9bcaa2d00cb2f4802269b02a78e9c93812d",
+  "training_step": 4
+}

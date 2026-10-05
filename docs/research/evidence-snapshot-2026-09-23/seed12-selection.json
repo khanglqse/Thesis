@@ -1,0 +1,396 @@
+{
+  "checkpoints": {
+    "step-12": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0012/contract.json",
+        "contract_sha256": "2570ca86ff5408a4d9adf957a2eeab828c2e8bdfdde84521bb15ac3cf61178bc",
+        "weights_path": "checkpoints/step-0012/weights.npz",
+        "weights_sha256": "9e2f1ce319211a0453f995edea861eb33801ce971d287c07af1abf1df0d028b4"
+      },
+      "distinct_nonzero_macro_nodes": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249146",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_10925625407_3070396769_3070396791",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335"
+      ],
+      "eligible": true,
+      "gates": {
+        "checkpoint_traffic_feature_response": true,
+        "forced_macro0_counterfactual_exact_fixed25": true,
+        "learned_macros_in_both_peak_regimes": true,
+        "mean_peak_queue_improvement": true,
+        "minimum_distinct_nonzero_macro_nodes": true,
+        "normal_exact_fixed_per_case": true,
+        "normal_timeline_zero": true,
+        "peak_regime_queue_noninferiority": true,
+        "peak_timeline_zero": true,
+        "per_case_completion_safety": true,
+        "per_case_insertion_safety": true
+      },
+      "learned_macro_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "maximum_completion_loss": 0.010058999903278854,
+      "maximum_insertion_loss": 0.0,
+      "mean_peak_queue_regret_percent": -1.144363687142779,
+      "mean_queue_regret_percent_by_peak_regime": {
+        "am_peak": -1.3299393248393856,
+        "pm_peak": -0.958788049446172
+      },
+      "normal_exact_case_ids": [
+        "validation_normal_demand31",
+        "validation_normal_demand32"
+      ],
+      "traffic_feature_response": {
+        "maximum_absolute_score_response": 12.97407341003418,
+        "responsive_feature_count": 16,
+        "responsive_features": [
+          "source_incoming_queue_mean",
+          "source_incoming_queue_max",
+          "source_incoming_running_mean",
+          "source_outgoing_queue_mean",
+          "source_outgoing_remaining_capacity_mean",
+          "source_pressure",
+          "source_upstream_queue_mean",
+          "source_downstream_queue_mean",
+          "target_incoming_queue_mean",
+          "target_incoming_queue_max",
+          "target_incoming_running_mean",
+          "target_outgoing_queue_mean",
+          "target_outgoing_remaining_capacity_mean",
+          "target_pressure",
+          "target_upstream_queue_mean",
+          "target_downstream_queue_mean"
+        ]
+      },
+      "training_step": 12,
+      "validation": {
+        "path": "results/haichau_network_v2/training/final-seed12/validation-step-0012.json",
+        "sha256": "1c81a7b7556cf5ecaa2362586b5b8bf9089315180e9d18c0837e1ec0607502ef"
+      }
+    },
+    "step-4": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0004/contract.json",
+        "contract_sha256": "4f5b87ce25316c0b87b0a1567e618933caec53592b3abc76cc1bee18b6b2932b",
+        "weights_path": "checkpoints/step-0004/weights.npz",
+        "weights_sha256": "8bbbaa8c909a470cf9db0d6d0f5d0e81eb42ac63591d21721caf6aab58222e86"
+      },
+      "distinct_nonzero_macro_nodes": [
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_6164917307_6164917332_6164917334_6164917335"
+      ],
+      "eligible": false,
+      "gates": {
+        "checkpoint_traffic_feature_response": true,
+        "forced_macro0_counterfactual_exact_fixed25": true,
+        "learned_macros_in_both_peak_regimes": true,
+        "mean_peak_queue_improvement": false,
+        "minimum_distinct_nonzero_macro_nodes": true,
+        "normal_exact_fixed_per_case": true,
+        "normal_timeline_zero": true,
+        "peak_regime_queue_noninferiority": false,
+        "peak_timeline_zero": true,
+        "per_case_completion_safety": true,
+        "per_case_insertion_safety": true
+      },
+      "learned_macro_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "maximum_completion_loss": 0.01450817293742146,
+      "maximum_insertion_loss": 0.003191798046232708,
+      "mean_peak_queue_regret_percent": -0.15431618356422394,
+      "mean_queue_regret_percent_by_peak_regime": {
+        "am_peak": -1.241445659472426,
+        "pm_peak": 0.9328132923439783
+      },
+      "normal_exact_case_ids": [
+        "validation_normal_demand31",
+        "validation_normal_demand32"
+      ],
+      "traffic_feature_response": {
+        "maximum_absolute_score_response": 2.1454591751098633,
+        "responsive_feature_count": 16,
+        "responsive_features": [
+          "source_incoming_queue_mean",
+          "source_incoming_queue_max",
+          "source_incoming_running_mean",
+          "source_outgoing_queue_mean",
+          "source_outgoing_remaining_capacity_mean",
+          "source_pressure",
+          "source_upstream_queue_mean",
+          "source_downstream_queue_mean",
+          "target_incoming_queue_mean",
+          "target_incoming_queue_max",
+          "target_incoming_running_mean",
+          "target_outgoing_queue_mean",
+          "target_outgoing_remaining_capacity_mean",
+          "target_pressure",
+          "target_upstream_queue_mean",
+          "target_downstream_queue_mean"
+        ]
+      },
+      "training_step": 4,
+      "validation": {
+        "path": "results/haichau_network_v2/training/final-seed12/validation-step-0004.json",
+        "sha256": "3b3f9429c44efacad94bb691badc5261ed3fe5627187891dc12d233745eafc15"
+      }
+    },
+    "step-8": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0008/contract.json",
+        "contract_sha256": "5d5be2ce1246547bfc469f05ae255dfdf0849dd85e3ca716f3f2876030b61250",
+        "weights_path": "checkpoints/step-0008/weights.npz",
+        "weights_sha256": "080870774638807fb0297650291cff6dca2ea17535cf39d11bc5c190ca1bc586"
+      },
+      "distinct_nonzero_macro_nodes": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249146",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_10925625407_3070396769_3070396791",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335"
+      ],
+      "eligible": true,
+      "gates": {
+        "checkpoint_traffic_feature_response": true,
+        "forced_macro0_counterfactual_exact_fixed25": true,
+        "learned_macros_in_both_peak_regimes": true,
+        "mean_peak_queue_improvement": true,
+        "minimum_distinct_nonzero_macro_nodes": true,
+        "normal_exact_fixed_per_case": true,
+        "normal_timeline_zero": true,
+        "peak_regime_queue_noninferiority": true,
+        "peak_timeline_zero": true,
+        "per_case_completion_safety": true,
+        "per_case_insertion_safety": true
+      },
+      "learned_macro_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "maximum_completion_loss": 0.004832056570418408,
+      "maximum_insertion_loss": 0.005185621685326991,
+      "mean_peak_queue_regret_percent": -1.7609620009981795,
+      "mean_queue_regret_percent_by_peak_regime": {
+        "am_peak": -1.1596225373249305,
+        "pm_peak": -2.3623014646714284
+      },
+      "normal_exact_case_ids": [
+        "validation_normal_demand31",
+        "validation_normal_demand32"
+      ],
+      "traffic_feature_response": {
+        "maximum_absolute_score_response": 6.674522399902344,
+        "responsive_feature_count": 16,
+        "responsive_features": [
+          "source_incoming_queue_mean",
+          "source_incoming_queue_max",
+          "source_incoming_running_mean",
+          "source_outgoing_queue_mean",
+          "source_outgoing_remaining_capacity_mean",
+          "source_pressure",
+          "source_upstream_queue_mean",
+          "source_downstream_queue_mean",
+          "target_incoming_queue_mean",
+          "target_incoming_queue_max",
+          "target_incoming_running_mean",
+          "target_outgoing_queue_mean",
+          "target_outgoing_remaining_capacity_mean",
+          "target_pressure",
+          "target_upstream_queue_mean",
+          "target_downstream_queue_mean"
+        ]
+      },
+      "training_step": 8,
+      "validation": {
+        "path": "results/haichau_network_v2/training/final-seed12/validation-step-0008.json",
+        "sha256": "6b5312462a5972f42df1ee8a0b2bb32d8d7b9eeee1e16c2a4cef5fb561eca614"
+      }
+    }
+  },
+  "decision_type": "haichau_residual_final_per_seed_selection",
+  "final_status_before_selection": {
+    "path": "results/haichau_network_v2/training/final-seed12/status.json",
+    "sha256": "b55f35f692d5eb062439e9ebba9a1d93ba8d70e370cead812584c74e1c489ad2"
+  },
+  "gates": {
+    "checkpoint_traffic_feature_response_required": true,
+    "forced_macro0_counterfactual_exact_fixed25": true,
+    "learned_macros_required_regimes": [
+      "am_peak",
+      "pm_peak"
+    ],
+    "mean_peak_queue_regret_percent_max": -1.0,
+    "minimum_distinct_nonzero_macro_nodes": 2,
+    "normal_exact_fixed_per_case": true,
+    "normal_timeline_zero": [
+      "phase_divergence_seconds",
+      "service_divergence_seconds",
+      "state_divergence_seconds",
+      "nonzero_macros",
+      "illegal_requests",
+      "anchor_violations",
+      "unlogged_divergence_seconds"
+    ],
+    "peak_regime_mean_queue_regret_percent_max": 0.0,
+    "peak_timeline_zero": [
+      "illegal_requests",
+      "anchor_violations",
+      "unlogged_divergence_seconds"
+    ],
+    "per_case_completion_loss_max": 0.02,
+    "per_case_insertion_loss_max": 0.02
+  },
+  "learning_seed": 12,
+  "ranking": [
+    "mean_peak_queue_regret_percent_ascending",
+    "training_step_ascending"
+  ],
+  "run_manifest": {
+    "path": "results/haichau_network_v2/training/final-seed12/run-manifest.json",
+    "sha256": "54fb9bc55e22506a05fbd0bfb03ba45529b1bca2ef5f53a8d4a245ad514fb267"
+  },
+  "schema_version": 1,
+  "source_tree": {
+    "git_commit": "aa59e3df9d723aa7e7be354d7451713662f1d5d1",
+    "index": "clean",
+    "schema_version": 1,
+    "tracked_worktree": "clean",
+    "untracked_files_policy": "allowed"
+  },
+  "status": "selected",
+  "test_split_accessed": false,
+  "validation_rerun": {
+    "path": "results/haichau_network_v2/training/final-seed12/validation-rerun.json",
+    "sha256": "09b6031b8ab9624024b3cde5416f6594c381c95248bcec0c9286dcc988164301"
+  },
+  "winner": {
+    "checkpoint": "step-8",
+    "checkpoint_artifacts": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0008/contract.json",
+        "contract_sha256": "5d5be2ce1246547bfc469f05ae255dfdf0849dd85e3ca716f3f2876030b61250",
+        "weights_path": "checkpoints/step-0008/weights.npz",
+        "weights_sha256": "080870774638807fb0297650291cff6dca2ea17535cf39d11bc5c190ca1bc586"
+      },
+      "validation": {
+        "path": "results/haichau_network_v2/training/final-seed12/validation-step-0008.json",
+        "sha256": "6b5312462a5972f42df1ee8a0b2bb32d8d7b9eeee1e16c2a4cef5fb561eca614"
+      }
+    },
+    "mean_peak_queue_regret_percent": -1.7609620009981795,
+    "training_step": 8
+  }
+}

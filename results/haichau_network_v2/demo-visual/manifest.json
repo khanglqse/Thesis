@@ -9,9 +9,9 @@
   "demand_label": "synthetic network demand constrained by Da Nang evidence",
   "files": {
     "haichau_network_demo.css": "bc90980b1ed59bf519bbb374ebc1e324f139e8460f24949a6271569990d7610a",
-    "haichau_network_demo.js": "fd75e5806656b0345387b3e1c0915306e1c1edbed6ba4c1b31ae36ac5ea15a66",
+    "haichau_network_demo.js": "25ad52acbd03a14a0ede6aa76ba1a71c0cbe037146c09d805bff763e64fc26f0",
     "haichau_network_demo_core.js": "fd5c511d706cab7b50862d9e92cd4a9d50d9dd409f92e051285365e4e4682374",
-    "index.html": "514c778bdbc7b84f635d8ab30cc7b8b01e1f2c83512f76cd420eaf13efc8d12c",
+    "index.html": "71e01ef865d5007acb84d5af31e66bb155b50ac33d8e9307c6379ada68c195ed",
     "launch_demo.command": "6b048aa4ff457872e6c251a023f939a4c178fceff0fc140759f942cc7de6f040",
     "launch_demo.py": "bffaad31625e55b3f831ba2e63604460d739e18442bca9270f739e8fd479e578",
     "network.json": "2d1d8872f0ddc54f65f6fb26d844a33451d26b45af0b40ebae435d165d29b9ae",

@@ -1,0 +1,435 @@
+{"kind":"deck","id":"pr/nza0dd","name":"Deck"}
+{"kind":"layout","layoutId":"286319c7-8847-4381-8c4b-f75e0721b481","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"ca3b38f2-a720-4c78-bf0c-bfebd0dbe061","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/drldh0","slide":1,"title":"CÂU HỎI NGHIÊN CỨU","textShapes":10}
+{"kind":"shape","id":"sh/s7618b6x","slide":1,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/r6x0f6pc","slide":1,"text":"CÂU HỎI NGHIÊN CỨU","textPreview":"CÂU HỎI NGHIÊN CỨU","textChars":18,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/65oz618r","slide":1,"text":"Điều khiển thích nghi có giảm hàng chờ?","textPreview":"Điều khiển thích nghi có giảm hàng chờ?","textChars":39,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/54fidg76","slide":1,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/436h4bql","slide":1,"text":"Defense cue deck • theo kịch bản 30 phút, mục 21","textPreview":"Defense cue deck • theo kịch bản 30 phút, mục 21","textChars":48,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/j2x0b6p0","slide":1,"text":"01 / 18","textPreview":"01 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/ihoz218v","slide":1,"text":"Đánh giá bằng chứng trong mô phỏng ở hai quy mô:","textPreview":"Đánh giá bằng chứng trong mô phỏng ở hai quy mô:","textChars":48,"textLines":1,"bbox":[72,176,820,40]}
+{"kind":"textbox","id":"sh/hgvi9w7a","slide":1,"text":"1 nút giao","textPreview":"1 nút giao","textChars":10,"textLines":1,"bbox":[72,248,450,68]}
+{"kind":"textbox","id":"sh/wfmh0rqp","slide":1,"text":"53 nút giao","textPreview":"53 nút giao","textChars":11,"textLines":1,"bbox":[72,348,520,72]}
+{"kind":"shape","id":"sh/el0v6tkb","slide":1,"bbox":[72,330,630,1]}
+{"kind":"textbox","id":"sh/z69cfy1w","slide":1,"text":"Ba câu cần trả lời","textPreview":"Ba câu cần trả lời","textChars":18,"textLines":1,"bbox":[720,224,440,32]}
+{"kind":"textbox","id":"sh/07id832h","slide":1,"text":"Khi nào RL giúp?\nSo với baseline nào?\nBằng chứng đủ chắc đến đâu?","textPreview":"Khi nào RL giúp? | So với baseline nào? | Bằng chứng đủ chắc đến đâu?","textChars":65,"textLines":3,"bbox":[720,274,470,190]}
+{"kind":"shape","id":"sh/18ruh8jm","slide":1,"bbox":[1000,495,42,42]}
+{"kind":"shape","id":"sh/qhgv2tkz","slide":1,"bbox":[1055,495,42,42]}
+{"kind":"shape","id":"sh/ripcby1k","slide":1,"bbox":[1110,495,42,42]}
+{"kind":"textbox","id":"sh/cjyd4j25","slide":1,"text":"Claim cuối cùng giới hạn trong phạm vi simulator và các test hiện có.","textPreview":"Claim cuối cùng giới hạn trong phạm vi simulator và các test hiện có.","textChars":69,"textLines":1,"bbox":[72,548,1080,48]}
+{"kind":"notes","id":"nt/drldh0","slide":1,"text":"Mở đầu bằng câu hỏi nghiên cứu, không mở bằng lời hứa rằng RL luôn tốt hơn. Ba câu hỏi dẫn dắt phần còn lại: lợi ích theo regime, đối chiếu baseline, rồi mức độ tin cậy và giới hạn. Kết quả là bằng chứng mô phỏng, chưa phải hiệu quả ngoài hiện trường.\n\nNguồn: docs/defense/thesis-understanding-guide-vi.md, mục 21.1; docs/research/thesis-evidence-ledger.md, E11–E15."}
+{"kind":"slide","id":"sl/g7shbx","slide":2,"title":"THIẾT KẾ NGHIÊN CỨU","textShapes":11}
+{"kind":"shape","id":"sh/zm1c3il4","slide":2,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/k7udcn2p","slide":2,"text":"THIẾT KẾ NGHIÊN CỨU","textPreview":"THIẾT KẾ NGHIÊN CỨU","textChars":19,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/l83u5s3a","slide":2,"text":"Hai simulator, hai câu hỏi thực nghiệm","textPreview":"Hai simulator, hai câu hỏi thực nghiệm","textChars":38,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/m9cvedkf","slide":2,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/7alc7il0","slide":2,"text":"Không chuyển trọng số giữa SUMO và CityFlow","textPreview":"Không chuyển trọng số giữa SUMO và CityFlow","textChars":43,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/8budgn2l","slide":2,"text":"02 / 18","textPreview":"02 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/9c3u9s36","slide":2,"text":"SUMO","textPreview":"SUMO","textChars":4,"textLines":1,"bbox":[80,190,470,72]}
+{"kind":"textbox","id":"sh/2d8b2tkb","slide":2,"text":"1 giao lộ","textPreview":"1 giao lộ","textChars":9,"textLines":1,"bbox":[80,262,470,48]}
+{"kind":"textbox","id":"sh/nehcvylw","slide":2,"text":"Có điểm neo dữ liệu công bố\n3 chế độ nhu cầu • 3 pha xanh\nDueling Double DQN","textPreview":"Có điểm neo dữ liệu công bố | 3 chế độ nhu cầu • 3 pha xanh | Dueling Double DQN","textChars":76,"textLines":3,"bbox":[80,328,510,145]}
+{"kind":"shape","id":"sh/z29on6l8","slide":2,"bbox":[628,180,1,386]}
+{"kind":"textbox","id":"sh/y107u14n","slide":2,"text":"CityFlow","textPreview":"CityFlow","textChars":8,"textLines":1,"bbox":[690,190,500,72]}
+{"kind":"textbox","id":"sh/l4b6pg3e","slide":2,"text":"53 nút điều khiển","textPreview":"53 nút điều khiển","textChars":17,"textLines":1,"bbox":[690,262,500,48]}
+{"kind":"textbox","id":"sh/k32pwbmt","slide":2,"text":"Topology từ OpenStreetMap\nNhu cầu mạng được dựng tổng hợp\nResidual Double DQN","textPreview":"Topology từ OpenStreetMap | Nhu cầu mạng được dựng tổng hợp | Residual Double DQN","textChars":77,"textLines":3,"bbox":[690,328,510,145]}
+{"kind":"shape","id":"sh/be9ojmlc","slide":2,"bbox":[80,518,1110,2]}
+{"kind":"textbox","id":"sh/ad0nqh4r","slide":2,"text":"Đọc như hai thí nghiệm bổ sung nhau, không phải một model được phóng từ 1 lên 53 nút.","textPreview":"Đọc như hai thí nghiệm bổ sung nhau, không phải một model được phóng từ 1 lên 53 nút.","textChars":85,"textLines":1,"bbox":[80,542,1090,64]}
+{"kind":"notes","id":"nt/g7shbx","slide":2,"text":"Giải thích ngay từ đầu rằng SUMO và CityFlow dùng hai thiết kế, feature sets, action spaces và model khác nhau. Một giao lộ có empirical anchor ở mức profile nhu cầu công bố; mạng 53 nút có topology OSM nhưng nhu cầu là synthetic. Không nói là transfer learning hay cùng một policy được mở rộng.\n\nNguồn: docs/defense/thesis-understanding-guide-vi.md, mục 2, 7, 9–10; docs/research/thesis-evidence-ledger.md, E11, E13, E15."}
+{"kind":"slide","id":"sl/7exomc","slide":3,"title":"DỮ LIỆU VÀ PHẠM VI","textShapes":8}
+{"kind":"shape","id":"sh/dcby9onm","slide":3,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/q9kzy94v","slide":3,"text":"DỮ LIỆU VÀ PHẠM VI","textPreview":"DỮ LIỆU VÀ PHẠM VI","textChars":18,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/ratg7e5g","slide":3,"text":"Nguồn dữ liệu: quan sát công bố, không phải trajectory","textPreview":"Nguồn dữ liệu: quan sát công bố, không phải trajectory","textChars":54,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/472hwz65","slide":3,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/58by54na","slide":3,"text":"Nguồn: paper/figures/camera-profile.png • số liệu số hóa gần đúng","textPreview":"Nguồn: paper/figures/camera-profile.png • số liệu số hóa gần đúng","textChars":65,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/i50zupoz","slide":3,"text":"03 / 18","textPreview":"03 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/o3mh83m9","slide":3,"text":"01/04/2025","textPreview":"01/04/2025","textChars":10,"textLines":1,"bbox":[820,188,360,44]}
+{"kind":"textbox","id":"sh/94vi18nu","slide":3,"text":"Một ngày\nBốn movement\nCamera đếm tổng hợp","textPreview":"Một ngày | Bốn movement | Camera đếm tổng hợp","textChars":41,"textLines":3,"bbox":[820,244,360,135]}
+{"kind":"shape","id":"sh/pc3alcnm","slide":3,"bbox":[820,398,340,3]}
+{"kind":"textbox","id":"sh/4buts761","slide":3,"text":"Raw video / detector export\nkhông có trong bộ nghiên cứu","textPreview":"Raw video / detector export | không có trong bộ nghiên cứu","textChars":56,"textLines":2,"bbox":[820,420,350,92]}
+{"kind":"textbox","id":"sh/3alsj25g","slide":3,"text":"Đường cong là digitization xấp xỉ từ biểu đồ công bố, không phải dữ liệu xe từng giây.","textPreview":"Đường cong là digitization xấp xỉ từ biểu đồ công bố, không phải dữ liệu xe từng giây.","textChars":86,"textLines":1,"bbox":[72,590,1090,48]}
+{"kind":"image","id":"im/etwv2l0v","slide":3,"name":"","alt":"Hồ sơ nhu cầu được số hóa gần đúng từ bốn hướng camera ngày 1/4/2025","bbox":[72,175,690,405]}
+{"kind":"notes","id":"nt/7exomc","slide":3,"text":"Nêu rõ provenance: nghiên cứu nguồn báo cáo camera trong một ngày và bốn counting lines/movements. Repo giữ profile đã số hóa từ hình, không có raw video, detector exports hay trajectory. Sai số đọc đồ thị chưa được truyền qua toàn bộ thí nghiệm như một confidence interval. Tránh gọi các route mô phỏng là real trips.\n\nNguồn: paper/figures/camera-profile.png; docs/research/data-feasibility.md; docs/research/danang-data-claim-audit.md; docs/research/thesis-evidence-ledger.md, E01–E06."}
+{"kind":"slide","id":"sl/w7zk1k","slide":4,"title":"DỮ LIỆU VÀ PHẠM VI","textShapes":17}
+{"kind":"shape","id":"sh/hk7y9grq","slide":4,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/uhwzy1sz","slide":4,"text":"DỮ LIỆU VÀ PHẠM VI","textPreview":"DỮ LIỆU VÀ PHẠM VI","textChars":18,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/vi5g769k","slide":4,"text":"Từ nguồn dữ liệu đến traffic mô phỏng","textPreview":"Từ nguồn dữ liệu đến traffic mô phỏng","textChars":37,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/47yh4va1","slide":4,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/587ydgrm","slide":4,"text":"Topology có nguồn; dòng xe toàn mạng là tổng hợp","textPreview":"Topology có nguồn; dòng xe toàn mạng là tổng hợp","textChars":48,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/ilgz2lsv","slide":4,"text":"04 / 18","textPreview":"04 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/36pgbq9g","slide":4,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[92,192,72,40]}
+{"kind":"textbox","id":"sh/kbuxsrax","slide":4,"text":"Bản đồ","textPreview":"Bản đồ","textChars":6,"textLines":1,"bbox":[92,245,280,52]}
+{"kind":"textbox","id":"sh/lcny1wri","slide":4,"text":"OSM","textPreview":"OSM","textChars":3,"textLines":1,"bbox":[92,307,300,45]}
+{"kind":"textbox","id":"sh/twbuhcre","slide":4,"text":"Hình học và kết nối\nđường trong mạng","textPreview":"Hình học và kết nối | đường trong mạng","textChars":36,"textLines":2,"bbox":[92,372,300,90]}
+{"kind":"textbox","id":"sh/sv2to7qt","slide":4,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[455,192,72,40]}
+{"kind":"textbox","id":"sh/rutcfm98","slide":4,"text":"Nhu cầu","textPreview":"Nhu cầu","textChars":7,"textLines":1,"bbox":[455,245,280,52]}
+{"kind":"textbox","id":"sh/69kbmh8n","slide":4,"text":"Camera profile","textPreview":"Camera profile","textChars":14,"textLines":1,"bbox":[455,307,300,45]}
+{"kind":"textbox","id":"sh/10vulwra","slide":4,"text":"Profile công bố được\ndùng để dựng flows","textPreview":"Profile công bố được | dùng để dựng flows","textChars":39,"textLines":2,"bbox":[455,372,300,90]}
+{"kind":"textbox","id":"sh/gz2tsrqp","slide":4,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[818,192,72,40]}
+{"kind":"textbox","id":"sh/fytcjm94","slide":4,"text":"Kịch bản","textPreview":"Kịch bản","textChars":8,"textLines":1,"bbox":[818,245,280,52]}
+{"kind":"textbox","id":"sh/exkbqh8z","slide":4,"text":"Simulator","textPreview":"Simulator","textChars":9,"textLines":1,"bbox":[818,307,300,45]}
+{"kind":"textbox","id":"sh/p4vupwrm","slide":4,"text":"Tái tạo các case\nđể so sánh policy","textPreview":"Tái tạo các case | để so sánh policy","textChars":34,"textLines":2,"bbox":[818,372,300,90]}
+{"kind":"shape","id":"sh/o3mdwbq1","slide":4,"bbox":[345,330,72,3]}
+{"kind":"shape","id":"sh/o7udsfyx","slide":4,"bbox":[409,324,18,15]}
+{"kind":"shape","id":"sh/983e1kfi","slide":4,"bbox":[708,330,72,3]}
+{"kind":"shape","id":"sh/m5cvq5g7","slide":4,"bbox":[772,324,18,15]}
+{"kind":"shape","id":"sh/n6lwzaxs","slide":4,"bbox":[92,520,1096,1]}
+{"kind":"textbox","id":"sh/wbexwfy9","slide":4,"text":"Không có dữ liệu thực địa nhiều ngày để xác nhận hiệu quả mạng 53 nút.","textPreview":"Không có dữ liệu thực địa nhiều ngày để xác nhận hiệu quả mạng 53 nút.","textChars":70,"textLines":1,"bbox":[92,550,1090,46]}
+{"kind":"notes","id":"nt/w7zk1k","slide":4,"text":"Đi theo chuỗi: topology từ OSM, nhu cầu được tạo từ các profile công bố, sau đó simulator chạy các case đối chứng. Profile một giao lộ không biến mạng lớn thành quan sát thực địa đã hiệu chỉnh. Hiện chưa có bộ đo nhiều ngày cho hành lang để xác nhận demand và controller toàn mạng.\n\nNguồn: datasets/haichau_network_v2/provenance.json; docs/research/data-feasibility.md; docs/defense/thesis-understanding-guide-vi.md, mục 2, 4, 18."}
+{"kind":"slide","id":"sl/g93hso","slide":5,"title":"PHƯƠNG PHÁP","textShapes":17}
+{"kind":"shape","id":"sh/lg3u9sbi","slide":5,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/ytcvedc7","slide":5,"text":"PHƯƠNG PHÁP","textPreview":"PHƯƠNG PHÁP","textChars":11,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/zulc7its","slide":5,"text":"Vòng lặp RL: quan sát, chọn pha, nhận chi phí","textPreview":"Vòng lặp RL: quan sát, chọn pha, nhận chi phí","textChars":45,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/crudcnu1","slide":5,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/xs3u5sbm","slide":5,"text":"Reward âm queue: ít hàng chờ hơn nghĩa là reward cao hơn","textPreview":"Reward âm queue: ít hàng chờ hơn nghĩa là reward cao hơn","textChars":56,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/apsvadcv","slide":5,"text":"05 / 18","textPreview":"05 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"shape","id":"sh/bq1c3itg","slide":5,"bbox":[160,190,64,64]}
+{"kind":"textbox","id":"sh/onad83u5","slide":5,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[160,204,64,34]}
+{"kind":"textbox","id":"sh/poju18ba","slide":5,"text":"Quan sát","textPreview":"Quan sát","textChars":8,"textLines":1,"bbox":[80,284,224,45]}
+{"kind":"textbox","id":"sh/t8fu1cvu","slide":5,"text":"Features về pha\nvà hàng xe","textPreview":"Features về pha | và hàng xe","textChars":26,"textLines":2,"bbox":[80,345,224,82]}
+{"kind":"shape","id":"sh/s76ts7e9","slide":5,"bbox":[285,222,64,3]}
+{"kind":"shape","id":"sh/76xcz2do","slide":5,"bbox":[341,216,18,15]}
+{"kind":"shape","id":"sh/65obqxw3","slide":5,"bbox":[450,190,64,64]}
+{"kind":"textbox","id":"sh/54fuxsvi","slide":5,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[450,204,64,34]}
+{"kind":"textbox","id":"sh/k36tonex","slide":5,"text":"Chọn action","textPreview":"Chọn action","textChars":11,"textLines":1,"bbox":[370,284,224,45]}
+{"kind":"textbox","id":"sh/j2dcvids","slide":5,"text":"Policy chọn trong\ncác action hợp lệ","textPreview":"Policy chọn trong | các action hợp lệ","textChars":35,"textLines":2,"bbox":[370,345,224,82]}
+{"kind":"shape","id":"sh/ih4bmdw7","slide":5,"bbox":[575,222,64,3]}
+{"kind":"shape","id":"sh/xgvatsvm","slide":5,"bbox":[631,216,18,15]}
+{"kind":"shape","id":"sh/wfmtkne1","slide":5,"bbox":[740,190,64,64]}
+{"kind":"textbox","id":"sh/8valw7q9","slide":5,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[740,204,64,34]}
+{"kind":"textbox","id":"sh/9wj2pc7e","slide":5,"text":"Mô phỏng","textPreview":"Mô phỏng","textChars":8,"textLines":1,"bbox":[660,284,224,45]}
+{"kind":"textbox","id":"sh/mt83uh83","slide":5,"text":"Simulator tiến\ntheo thời gian","textPreview":"Simulator tiến | theo thời gian","textChars":29,"textLines":2,"bbox":[660,345,224,82]}
+{"kind":"shape","id":"sh/nu1knmpo","slide":5,"bbox":[865,222,64,3]}
+{"kind":"shape","id":"sh/07qls7qx","slide":5,"bbox":[921,216,18,15]}
+{"kind":"shape","id":"sh/l8z2lc7i","slide":5,"bbox":[1030,190,64,64]}
+{"kind":"textbox","id":"sh/y583qx8r","slide":5,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[1030,204,64,34]}
+{"kind":"textbox","id":"sh/z6hkj2pc","slide":5,"text":"Reward / update","textPreview":"Reward / update","textChars":15,"textLines":1,"bbox":[950,284,224,45]}
+{"kind":"textbox","id":"sh/k3ul4rq1","slide":5,"text":"Đo queue rồi\ncập nhật Q-value","textPreview":"Đo queue rồi | cập nhật Q-value","textChars":29,"textLines":2,"bbox":[950,345,224,82]}
+{"kind":"shape","id":"sh/543mxw7m","slide":5,"bbox":[80,500,1115,84]}
+{"kind":"textbox","id":"sh/fy5o3q94","slide":5,"text":"Q(s,a)  ≈  reward hiện tại  +  giá trị tương lai","textPreview":"Q(s,a)  ≈  reward hiện tại  +  giá trị tương lai","textChars":48,"textLines":1,"bbox":[104,522,1050,44]}
+{"kind":"notes","id":"nt/g93hso","slide":5,"text":"Giải thích ngắn: state/observation là tóm tắt, action là lựa chọn điều khiển, reward là chi phí sau khi simulator tiến một đoạn. Q-value ước lượng reward chiết khấu nếu chọn action rồi tiếp tục policy. Reward âm queue khiến ít queue có giá trị cao hơn. Nêu rằng observations là features tóm tắt, không phải toàn bộ trạng thái xe; giả định Markov chỉ là xấp xỉ.\n\nNguồn: docs/defense/thesis-understanding-guide-vi.md, mục 5–6, 11; src/traffic_rl/agents/dqn.py; src/traffic_rl/agents/schedule_residual.py."}
+{"kind":"slide","id":"sl/4lmhyz","slide":6,"title":"PHƯƠNG PHÁP","textShapes":12}
+{"kind":"shape","id":"sh/8nq1gvyh","slide":6,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/nmhk7qhw","slide":6,"text":"PHƯƠNG PHÁP","textPreview":"PHƯƠNG PHÁP","textChars":11,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/ml8jelgb","slide":6,"text":"Double DQN và dueling trả lời hai vấn đề khác nhau","textPreview":"Double DQN và dueling trả lời hai vấn đề khác nhau","textChars":50,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/lkz25gz6","slide":6,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/0jq1cvyl","slide":6,"text":"SUMO dùng cả hai; CityFlow residual dùng Double DQN, không có dueling heads","textPreview":"SUMO dùng cả hai; CityFlow residual dùng Double DQN, không có dueling heads","textChars":75,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/zih03qh0","slide":6,"text":"06 / 18","textPreview":"06 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/exojalgf","slide":6,"text":"DOUBLE DQN","textPreview":"DOUBLE DQN","textChars":10,"textLines":1,"bbox":[88,195,470,44]}
+{"kind":"textbox","id":"sh/5g32hkza","slide":6,"text":"Chọn action bằng\nonline network","textPreview":"Chọn action bằng | online network","textChars":31,"textLines":2,"bbox":[88,252,490,90]}
+{"kind":"shape","id":"sh/kfa18fyp","slide":6,"bbox":[88,375,102,3]}
+{"kind":"shape","id":"sh/65s3q9wf","slide":6,"bbox":[182,369,18,15]}
+{"kind":"textbox","id":"sh/r6l4jed0","slide":6,"text":"Đánh giá action đó\nbằng target network","textPreview":"Đánh giá action đó | bằng target network","textChars":38,"textLines":2,"bbox":[88,408,480,90]}
+{"kind":"shape","id":"sh/s7ulsjel","slide":6,"bbox":[633,180,1,375]}
+{"kind":"textbox","id":"sh/ts3mlovq","slide":6,"text":"DUELING","textPreview":"DUELING","textChars":7,"textLines":1,"bbox":[695,195,430,44]}
+{"kind":"textbox","id":"sh/i1s3mpw3","slide":6,"text":"Tách giá trị\ntrạng thái V(s)","textPreview":"Tách giá trị | trạng thái V(s)","textChars":28,"textLines":2,"bbox":[695,252,420,90]}
+{"kind":"textbox","id":"sh/j21kfudo","slide":6,"text":"+ lợi thế từng action A(s,a)","textPreview":"+ lợi thế từng action A(s,a)","textChars":28,"textLines":1,"bbox":[695,364,450,42]}
+{"kind":"shape","id":"sh/43aloze9","slide":6,"bbox":[695,424,102,3]}
+{"kind":"shape","id":"sh/54j2h4vu","slide":6,"bbox":[789,418,18,15]}
+{"kind":"textbox","id":"sh/2xw3ytwn","slide":6,"text":"Gộp lại thành Q-value","textPreview":"Gộp lại thành Q-value","textChars":21,"textLines":1,"bbox":[695,458,440,48]}
+{"kind":"textbox","id":"sh/3y54ryd8","slide":6,"text":"Một kỹ thuật đổi cách học target; một kỹ thuật đổi kiến trúc output.","textPreview":"Một kỹ thuật đổi cách học target; một kỹ thuật đổi kiến trúc output.","textChars":68,"textLines":1,"bbox":[88,560,1070,48]}
+{"kind":"notes","id":"nt/4lmhyz","slide":6,"text":"Double DQN tách chọn action tốt nhất và đánh giá action đó, giảm overestimation do cùng một estimator vừa chọn vừa chấm. Dueling chia state value và action advantage rồi gộp thành Q. Hai kỹ thuật giải quyết khía cạnh khác nhau. SUMO dùng dueling Double DQN; CityFlow residual dùng scalar scoring MLP và Double target nhưng không có V/A heads.\n\nNguồn: docs/defense/thesis-understanding-guide-vi.md, mục 6, 7.2, 10; src/traffic_rl/agents/dqn.py; src/traffic_rl/agents/phase_ddqn.py."}
+{"kind":"slide","id":"sl/302j4m","slide":7,"title":"MÔ HÌNH SUMO","textShapes":17}
+{"kind":"shape","id":"sh/2hcf2tcf","slide":7,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/pk3ed8bq","slide":7,"text":"MÔ HÌNH SUMO","textPreview":"MÔ HÌNH SUMO","textChars":12,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/4jux43ul","slide":7,"text":"SUMO: chọn một trong ba pha xanh mỗi 10 giây","textPreview":"SUMO: chọn một trong ba pha xanh mỗi 10 giây","textChars":44,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/rm5gfitw","slide":7,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/qlcf6dcb","slide":7,"text":"Reward cuối tick là proxy; headline metric được tích phân từng giây","textPreview":"Reward cuối tick là proxy; headline metric được tích phân từng giây","textChars":67,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/d8nyh8b2","slide":7,"text":"07 / 18","textPreview":"07 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"shape","id":"sh/cnex83uh","slide":7,"bbox":[84,220,172,82]}
+{"kind":"textbox","id":"sh/za5gjit8","slide":7,"text":"16 features","textPreview":"16 features","textChars":11,"textLines":1,"bbox":[89,243,162,38]}
+{"kind":"shape","id":"sh/e9wfadsn","slide":7,"bbox":[268,260,35,2]}
+{"kind":"shape","id":"sh/cbepc3qt","slide":7,"bbox":[295,254,18,15]}
+{"kind":"shape","id":"sh/dcnql8re","slide":7,"bbox":[314,220,166,82]}
+{"kind":"textbox","id":"sh/q9w7at8n","slide":7,"text":"64 units","textPreview":"64 units","textChars":8,"textLines":1,"bbox":[319,243,156,38]}
+{"kind":"shape","id":"sh/ba58jy98","slide":7,"bbox":[492,260,35,2]}
+{"kind":"shape","id":"sh/0fepg3qp","slide":7,"bbox":[519,254,18,15]}
+{"kind":"shape","id":"sh/lgnqp8ra","slide":7,"bbox":[535,220,166,82]}
+{"kind":"textbox","id":"sh/ydw7ed8j","slide":7,"text":"64 units","textPreview":"64 units","textChars":8,"textLines":1,"bbox":[540,243,156,38]}
+{"kind":"shape","id":"sh/ze58ni94","slide":7,"bbox":[713,260,35,2]}
+{"kind":"shape","id":"sh/8jypknq1","slide":7,"bbox":[740,254,18,15]}
+{"kind":"shape","id":"sh/947qtsrm","slide":7,"bbox":[754,220,178,82]}
+{"kind":"textbox","id":"sh/xojyhofe","slide":7,"text":"V / A heads","textPreview":"V / A heads","textChars":11,"textLines":1,"bbox":[759,243,168,38]}
+{"kind":"shape","id":"sh/wnah8jet","slide":7,"bbox":[944,260,35,2]}
+{"kind":"shape","id":"sh/vm1gfex8","slide":7,"bbox":[971,254,18,15]}
+{"kind":"shape","id":"sh/alsf69wn","slide":7,"bbox":[976,220,208,82]}
+{"kind":"textbox","id":"sh/5s3yl8fa","slide":7,"text":"3 Q-values","textPreview":"3 Q-values","textChars":10,"textLines":1,"bbox":[981,243,198,38]}
+{"kind":"textbox","id":"sh/kruhc3ep","slide":7,"text":"Quan sát pha + queue","textPreview":"Quan sát pha + queue","textChars":20,"textLines":1,"bbox":[86,337,270,36]}
+{"kind":"textbox","id":"sh/jqlgjyxk","slide":7,"text":"Min green 20s • yellow 7s","textPreview":"Min green 20s • yellow 7s","textChars":25,"textLines":1,"bbox":[385,337,410,36]}
+{"kind":"textbox","id":"sh/ipszatwz","slide":7,"text":"Action ở mỗi tick 10s","textPreview":"Action ở mỗi tick 10s","textChars":21,"textLines":1,"bbox":[857,337,340,36]}
+{"kind":"shape","id":"sh/lwzy94f6","slide":7,"bbox":[84,418,1115,1]}
+{"kind":"textbox","id":"sh/0vqxgzel","slide":7,"text":"Reward","textPreview":"Reward","textChars":6,"textLines":1,"bbox":[84,446,160,35]}
+{"kind":"textbox","id":"sh/q1ova5cj","slide":7,"text":"− queue cuối tick × 0,01","textPreview":"− queue cuối tick × 0,01","textChars":24,"textLines":1,"bbox":[248,436,450,52]}
+{"kind":"textbox","id":"sh/r2xwjad4","slide":7,"text":"Kiểm tra metric","textPreview":"Kiểm tra metric","textChars":15,"textLines":1,"bbox":[84,518,190,35]}
+{"kind":"textbox","id":"sh/c36dcfup","slide":7,"text":"Queue được cộng mỗi giây trong cả horizon","textPreview":"Queue được cộng mỗi giây trong cả horizon","textChars":41,"textLines":1,"bbox":[278,510,850,48]}
+{"kind":"textbox","id":"sh/dofelkvu","slide":7,"text":"Khác cách lấy mẫu → reward và metric cuối không trùng định nghĩa.","textPreview":"Khác cách lấy mẫu → reward và metric cuối không trùng định nghĩa.","textChars":65,"textLines":1,"bbox":[84,584,1100,40]}
+{"kind":"notes","id":"nt/302j4m","slide":7,"text":"State SUMO có 16 features; network 64–64 tách V và A rồi cho ba Q-value, tương ứng ba pha xanh. Agent ra quyết định mỗi 10 giây; môi trường giữ minimum green 20 giây và áp dụng yellow 7 giây khi chuyển. Reward train là âm queue ở cuối tick nhân 0,01; metric báo cáo tích phân queue mỗi giây. Đây là proxy mismatch cần thừa nhận.\n\nNguồn: docs/defense/thesis-understanding-guide-vi.md, mục 7; configs/danang_pilot.yaml; src/traffic_rl/sim/sumo_single_junction.py; docs/research/thesis-evidence-ledger.md, E11."}
+{"kind":"slide","id":"sl/l2np34","slide":8,"title":"MÔ HÌNH SUMO","textShapes":13}
+{"kind":"shape","id":"sh/nadwvmps","slide":8,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/8bmx4rqx","slide":8,"text":"MÔ HÌNH SUMO","textPreview":"MÔ HÌNH SUMO","textChars":12,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/9wvexw7i","slide":8,"text":"SUMO: train theo AM, đánh giá trên ba regime","textPreview":"SUMO: train theo AM, đánh giá trên ba regime","textChars":44,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/y5kvyh8v","slide":8,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/z6twrmpg","slide":8,"text":"Test được dùng để sửa tau sau một failure; do đó đây là development-informed test","textPreview":"Test được dùng để sửa tau sau một failure; do đó đây là development-informed test","textChars":81,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/072d0rq1","slide":8,"text":"08 / 18","textPreview":"08 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/l8vetw7m","slide":8,"text":"30","textPreview":"30","textChars":2,"textLines":1,"bbox":[78,192,190,100]}
+{"kind":"textbox","id":"sh/q1kvux8z","slide":8,"text":"episodes / seed","textPreview":"episodes / seed","textChars":15,"textLines":1,"bbox":[80,292,240,36]}
+{"kind":"textbox","id":"sh/b2twn2pk","slide":8,"text":"× 5","textPreview":"× 5","textChars":3,"textLines":1,"bbox":[365,198,210,74]}
+{"kind":"textbox","id":"sh/beh4fa9o","slide":8,"text":"learning seeds","textPreview":"learning seeds","textChars":14,"textLines":1,"bbox":[366,277,240,36]}
+{"kind":"shape","id":"sh/qd8n65s3","slide":8,"bbox":[578,249,92,3]}
+{"kind":"shape","id":"sh/dgzmhkru","slide":8,"bbox":[662,243,18,15]}
+{"kind":"textbox","id":"sh/cfq58fa9","slide":8,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[726,192,170,100]}
+{"kind":"textbox","id":"sh/z2h4ja9k","slide":8,"text":"matched test cases","textPreview":"matched test cases","textChars":18,"textLines":1,"bbox":[728,292,300,36]}
+{"kind":"textbox","id":"sh/yh8na5sf","slide":8,"text":"Normal • AM • PM","textPreview":"Normal • AM • PM","textChars":16,"textLines":1,"bbox":[80,396,1070,54]}
+{"kind":"shape","id":"sh/l4j6lkrq","slide":8,"bbox":[80,478,1110,3]}
+{"kind":"textbox","id":"sh/03a5cfa5","slide":8,"text":"Checkpoint theo validation; số episode có hạn, chưa chứng minh hội tụ tối ưu.","textPreview":"Checkpoint theo validation; số episode có hạn, chưa chứng minh hội tụ tối ưu.","textChars":77,"textLines":1,"bbox":[80,505,1080,44]}
+{"kind":"textbox","id":"sh/f6x47q9g","slide":8,"text":"Tái dùng failure test để chỉnh simulator làm yếu tính độc lập của test.","textPreview":"Tái dùng failure test để chỉnh simulator làm yếu tính độc lập của test.","textChars":71,"textLines":1,"bbox":[80,559,1080,44]}
+{"kind":"notes","id":"nt/l2np34","slide":8,"text":"Nói rõ 30 episode cho mỗi learning seed, năm learning seeds, một bộ 15 case matched ở Normal/AM/PM. Checkpoint dựa validation chứ không phải minimum training loss. Budget thực nghiệm không chứng minh hội tụ tối ưu. Một held-out failure dẫn đến đổi motorcycle headway tau từ 1,0 lên 1,2 và làm lại các run phụ thuộc; vì vậy test đã thông tin cho quá trình phát triển.\n\nNguồn: docs/research/thesis-evidence-ledger.md, E11; results/research_pilot/calibration/tau_sensitivity.json; docs/defense/thesis-understanding-guide-vi.md, mục 8, 17."}
+{"kind":"slide","id":"sl/to0yay","slide":9,"title":"MÔ HÌNH CITYFLOW","textShapes":15}
+{"kind":"shape","id":"sh/6ps7yd8j","slide":9,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/tsj6t87a","slide":9,"text":"MÔ HÌNH CITYFLOW","textPreview":"MÔ HÌNH CITYFLOW","textChars":16,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/8rap03qp","slide":9,"text":"Residual policy chỉ dịch nhỏ quanh lịch tham chiếu","textPreview":"Residual policy chỉ dịch nhỏ quanh lịch tham chiếu","textChars":50,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/j21onyp8","slide":9,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/y187ut8n","slide":9,"text":"Đổi độ linh hoạt lấy phạm vi can thiệp hẹp và dễ kiểm tra hơn","textPreview":"Đổi độ linh hoạt lấy phạm vi can thiệp hẹp và dễ kiểm tra hơn","textChars":61,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/loj6p87y","slide":9,"text":"09 / 18","textPreview":"09 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/k3apw3qt","slide":9,"text":"Lịch cố định","textPreview":"Lịch cố định","textChars":12,"textLines":1,"bbox":[85,199,250,40]}
+{"kind":"shape","id":"sh/3yl8z2pc","slide":9,"bbox":[95,285,150,72]}
+{"kind":"textbox","id":"sh/ixc76xor","slide":9,"text":"pha 1","textPreview":"pha 1","textChars":5,"textLines":1,"bbox":[95,305,147,32]}
+{"kind":"shape","id":"sh/8j654zu9","slide":9,"bbox":[250,285,150,72]}
+{"kind":"textbox","id":"sh/tkf6d4vu","slide":9,"text":"pha 2","textPreview":"pha 2","textChars":5,"textLines":1,"bbox":[250,305,147,32]}
+{"kind":"shape","id":"sh/6hon29w3","slide":9,"bbox":[405,285,150,72]}
+{"kind":"textbox","id":"sh/7ixobedo","slide":9,"text":"pha 3","textPreview":"pha 3","textChars":5,"textLines":1,"bbox":[405,305,147,32]}
+{"kind":"shape","id":"sh/kf650zed","slide":9,"bbox":[560,285,150,72]}
+{"kind":"textbox","id":"sh/lgfm94vy","slide":9,"text":"pha 4","textPreview":"pha 4","textChars":5,"textLines":1,"bbox":[560,305,147,32]}
+{"kind":"shape","id":"sh/yt4nypw7","slide":9,"bbox":[715,285,150,72]}
+{"kind":"textbox","id":"sh/jux47uds","slide":9,"text":"pha 5","textPreview":"pha 5","textChars":5,"textLines":1,"bbox":[715,305,147,32]}
+{"kind":"shape","id":"sh/wrm5wfe1","slide":9,"bbox":[870,285,150,72]}
+{"kind":"textbox","id":"sh/xsvm5kvm","slide":9,"text":"pha 6","textPreview":"pha 6","textChars":5,"textLines":1,"bbox":[870,305,147,32]}
+{"kind":"textbox","id":"sh/dc3udcje","slide":9,"text":"Request tại boundary 300 giây","textPreview":"Request tại boundary 300 giây","textChars":29,"textLines":1,"bbox":[95,392,430,38]}
+{"kind":"shape","id":"sh/sbutkr2t","slide":9,"bbox":[610,410,104,3]}
+{"kind":"shape","id":"sh/ralcbm18","slide":9,"bbox":[706,404,18,15]}
+{"kind":"textbox","id":"sh/q9cbihkn","slide":9,"text":"Chọn dịch −10s, 0, hoặc +10s","textPreview":"Chọn dịch −10s, 0, hoặc +10s","textChars":28,"textLines":1,"bbox":[754,392,420,38]}
+{"kind":"shape","id":"sh/583u9cj2","slide":9,"bbox":[95,484,1080,1]}
+{"kind":"textbox","id":"sh/47utg72h","slide":9,"text":"Macro 0 = giữ nguyên","textPreview":"Macro 0 = giữ nguyên","textChars":20,"textLines":1,"bbox":[95,515,400,44]}
+{"kind":"textbox","id":"sh/36lc721w","slide":9,"text":"Policy không tự viết lại toàn bộ timing plan.","textPreview":"Policy không tự viết lại toàn bộ timing plan.","textChars":45,"textLines":1,"bbox":[565,515,610,44]}
+{"kind":"notes","id":"nt/to0yay","slide":9,"text":"Residual giữ reference schedule làm macro 0. Ở boundary block, policy chọn một request hợp lệ dịch một planned request boundary tối đa ±10 giây; không học lịch tín hiệu hoàn toàn mới. Giới hạn này giúp kiểm tra hành vi và safety contract, nhưng đồng thời giới hạn lợi ích khả dĩ. Không gọi một adjustment mỗi 10 giây: quyết định residual theo block 300 giây.\n\nNguồn: docs/research/haichau-v3b-residual-protocol.md; src/traffic_rl/sim/schedule_residual.py; src/traffic_rl/agents/schedule_residual.py; docs/defense/thesis-understanding-guide-vi.md, mục 9."}
+{"kind":"slide","id":"sl/focvnc","slide":10,"title":"MÔ HÌNH CITYFLOW","textShapes":12}
+{"kind":"shape","id":"sh/p876hcn2","slide":10,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/25gn6h4r","slide":10,"text":"MÔ HÌNH CITYFLOW","textPreview":"MÔ HÌNH CITYFLOW","textChars":16,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/36pofm5c","slide":10,"text":"Một macro 300 giây; tín hiệu khớp lại ở cuối block","textPreview":"Một macro 300 giây; tín hiệu khớp lại ở cuối block","textChars":50,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/gje547ml","slide":10,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/14n6dcn6","slide":10,"text":"Anchor chỉ khớp trạng thái tín hiệu; không reset xe hay queue","textPreview":"Anchor chỉ khớp trạng thái tín hiệu; không reset xe hay queue","textChars":61,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/ehwn2x4f","slide":10,"text":"10 / 18","textPreview":"10 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/fi5ob250","slide":10,"text":"0 giây","textPreview":"0 giây","textChars":6,"textLines":1,"bbox":[82,200,130,32]}
+{"kind":"textbox","id":"sh/sfe50nmp","slide":10,"text":"300 giây","textPreview":"300 giây","textChars":8,"textLines":1,"bbox":[1070,200,130,32]}
+{"kind":"shape","id":"sh/tgnm9sna","slide":10,"bbox":[105,268,1055,8]}
+{"kind":"shape","id":"sh/pgrehg76","slide":10,"bbox":[105,255,3,34]}
+{"kind":"shape","id":"sh/ofidobql","slide":10,"bbox":[140.17,255,2,19]}
+{"kind":"shape","id":"sh/nu9cf6p0","slide":10,"bbox":[175.33,255,2,19]}
+{"kind":"shape","id":"sh/2t0vm18f","slide":10,"bbox":[210.5,255,2,19]}
+{"kind":"shape","id":"sh/1srudw7u","slide":10,"bbox":[245.67,255,2,19]}
+{"kind":"shape","id":"sh/0rydkbqp","slide":10,"bbox":[280.83,255,3,34]}
+{"kind":"shape","id":"sh/fqpcb6p4","slide":10,"bbox":[316,255,2,19]}
+{"kind":"shape","id":"sh/epgvi18j","slide":10,"bbox":[351.17,255,2,19]}
+{"kind":"shape","id":"sh/do7u9w7y","slide":10,"bbox":[386.33,255,2,19]}
+{"kind":"shape","id":"sh/snydgrqd","slide":10,"bbox":[421.5,255,2,19]}
+{"kind":"shape","id":"sh/472dwry9","slide":10,"bbox":[456.67,255,3,34]}
+{"kind":"shape","id":"sh/58bepwfu","slide":10,"bbox":[491.83,255,2,19]}
+{"kind":"shape","id":"sh/i5kvuhg3","slide":10,"bbox":[527,255,2,19]}
+{"kind":"shape","id":"sh/j6tcnmxo","slide":10,"bbox":[562.17,255,2,19]}
+{"kind":"shape","id":"sh/w3idsryd","slide":10,"bbox":[597.33,255,2,19]}
+{"kind":"shape","id":"sh/h4rulwfi","slide":10,"bbox":[632.5,255,3,34]}
+{"kind":"shape","id":"sh/u10vqhg7","slide":10,"bbox":[667.67,255,2,19]}
+{"kind":"shape","id":"sh/v29cjmxs","slide":10,"bbox":[702.83,255,2,19]}
+{"kind":"shape","id":"sh/gzmd4byh","slide":10,"bbox":[738,255,2,19]}
+{"kind":"shape","id":"sh/10vexgf2","slide":10,"bbox":[773.17,255,2,19]}
+{"kind":"shape","id":"sh/buxgnah4","slide":10,"bbox":[808.33,255,3,34]}
+{"kind":"shape","id":"sh/qtofu50j","slide":10,"bbox":[843.5,255,2,19]}
+{"kind":"shape","id":"sh/dwzypkza","slide":10,"bbox":[878.67,255,2,19]}
+{"kind":"shape","id":"sh/cv6hwfip","slide":10,"bbox":[913.83,255,2,19]}
+{"kind":"shape","id":"sh/zyhgruh0","slide":10,"bbox":[949,255,2,19]}
+{"kind":"shape","id":"sh/yx8zyp0v","slide":10,"bbox":[984.17,255,3,34]}
+{"kind":"shape","id":"sh/lkzyt4z6","slide":10,"bbox":[1019.33,255,2,19]}
+{"kind":"shape","id":"sh/0zqh0zil","slide":10,"bbox":[1054.5,255,2,19]}
+{"kind":"shape","id":"sh/f2dgfqhw","slide":10,"bbox":[1089.67,255,2,19]}
+{"kind":"shape","id":"sh/e14fml0b","slide":10,"bbox":[1124.83,255,2,19]}
+{"kind":"shape","id":"sh/658z2587","slide":10,"bbox":[1160,255,3,34]}
+{"kind":"textbox","id":"sh/76hgbqps","slide":10,"text":"30 control ticks × 10 giây","textPreview":"30 control ticks × 10 giây","textChars":26,"textLines":1,"bbox":[210,321,850,38]}
+{"kind":"shape","id":"sh/s7qh4vqd","slide":10,"bbox":[1093,249,28,28]}
+{"kind":"shape","id":"sh/t8zyd07y","slide":10,"bbox":[105,404,1055,1]}
+{"kind":"textbox","id":"sh/u98z658j","slide":10,"text":"Shadow signal","textPreview":"Shadow signal","textChars":13,"textLines":1,"bbox":[105,440,310,36]}
+{"kind":"textbox","id":"sh/fa1gfapo","slide":10,"text":"Tính lịch thay thế trong block","textPreview":"Tính lịch thay thế trong block","textChars":30,"textLines":1,"bbox":[105,481,430,70]}
+{"kind":"textbox","id":"sh/gbah8fq9","slide":10,"text":"Anchor","textPreview":"Anchor","textChars":6,"textLines":1,"bbox":[585,440,240,36]}
+{"kind":"textbox","id":"sh/hcjyhk7u","slide":10,"text":"Khớp signal state với reference","textPreview":"Khớp signal state với reference","textChars":31,"textLines":1,"bbox":[585,481,550,70]}
+{"kind":"textbox","id":"sh/2dszap8f","slide":10,"text":"Traffic state vẫn tiếp tục qua boundary.","textPreview":"Traffic state vẫn tiếp tục qua boundary.","textChars":40,"textLines":1,"bbox":[105,585,1060,38]}
+{"kind":"notes","id":"nt/focvnc","slide":10,"text":"Mỗi macro kéo dài 300 giây; 30 ticks giả lập/điều khiển 10 giây. Shadow signal thử lịch ứng viên mà chưa thay signal thật. Ở cuối block, anchor đưa trạng thái điều khiển tín hiệu về reference state. Xe, queue, vị trí xe và ảnh hưởng giao thông tiếp tục; anchor không rollback simulator. Đây là lý do điều chỉnh trong block vẫn có thể làm khác kết quả sau đó.\n\nNguồn: src/traffic_rl/sim/schedule_residual.py; docs/research/haichau-v3b-residual-protocol.md; docs/defense/thesis-understanding-guide-vi.md, mục 9.2–9.4."}
+{"kind":"slide","id":"sl/z2qtal","slide":11,"title":"MÔ HÌNH CITYFLOW","textShapes":12}
+{"kind":"shape","id":"sh/e1o3axon","slide":11,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/1ofmls7y","slide":11,"text":"MÔ HÌNH CITYFLOW","textPreview":"MÔ HÌNH CITYFLOW","textChars":16,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/gn6lcn6d","slide":11,"text":"53 nút dùng chung một MLP chấm macro","textPreview":"53 nút dùng chung một MLP chấm macro","textChars":36,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/ryx4fipw","slide":11,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/6x436dob","slide":11,"text":"Neighbor features có trong input; kiến trúc không phải GNN","textPreview":"Neighbor features có trong input; kiến trúc không phải GNN","textChars":58,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/t0fmhs72","slide":11,"text":"11 / 18","textPreview":"11 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/sz6l8n6h","slide":11,"text":"53","textPreview":"53","textChars":2,"textLines":1,"bbox":[86,205,270,132]}
+{"kind":"textbox","id":"sh/buh4rm50","slide":11,"text":"nút giao","textPreview":"nút giao","textChars":8,"textLines":1,"bbox":[96,340,240,42]}
+{"kind":"shape","id":"sh/qt83ihov","slide":11,"bbox":[345,288,120,4]}
+{"kind":"shape","id":"sh/cju10j2l","slide":11,"bbox":[457,282,18,15]}
+{"kind":"textbox","id":"sh/d4329o36","slide":11,"text":"12 + 12 + 3","textPreview":"12 + 12 + 3","textChars":11,"textLines":1,"bbox":[520,211,340,68]}
+{"kind":"textbox","id":"sh/qhcjytkf","slide":11,"text":"27 features / macro","textPreview":"27 features / macro","textChars":19,"textLines":1,"bbox":[520,284,340,35]}
+{"kind":"shape","id":"sh/bilk7yl0","slide":11,"bbox":[528,348,315,66]}
+{"kind":"shape","id":"sh/ofu1wj29","slide":11,"bbox":[528,348,315,66]}
+{"kind":"textbox","id":"sh/pg325o3u","slide":11,"text":"64  →  64  →  1 Q","textPreview":"64  →  64  →  1 Q","textChars":17,"textLines":1,"bbox":[545,365,280,38]}
+{"kind":"shape","id":"sh/2dsju9kj","slide":11,"bbox":[870,288,120,4]}
+{"kind":"shape","id":"sh/3e1k3elo","slide":11,"bbox":[982,282,18,15]}
+{"kind":"textbox","id":"sh/gba1sz2d","slide":11,"text":"Một scalar\ncho mỗi macro","textPreview":"Một scalar | cho mỗi macro","textChars":24,"textLines":2,"bbox":[1010,232,190,84]}
+{"kind":"shape","id":"sh/1cj2143y","slide":11,"bbox":[86,465,1110,1]}
+{"kind":"textbox","id":"sh/h8bi50vm","slide":11,"text":"Không có dueling heads • không có graph message passing","textPreview":"Không có dueling heads • không có graph message passing","textChars":55,"textLines":1,"bbox":[86,493,1110,45]}
+{"kind":"textbox","id":"sh/g72hwvu1","slide":11,"text":"Reward toàn mạng cho 53 nút → credit assignment khó.","textPreview":"Reward toàn mạng cho 53 nút → credit assignment khó.","textChars":52,"textLines":1,"bbox":[86,557,1100,42]}
+{"kind":"notes","id":"nt/z2qtal","slide":11,"text":"Một shared scalar MLP xử lý macro candidates của mọi nút. Mỗi macro có 27 features: 12 source-phase features + 12 target-phase features + 3 macro descriptors. Hidden layers 64 và 64; output scalar Q cho mỗi macro. Có neighbor summaries trong features, nhưng không có GNN/attention/message passing. Reward toàn mạng tạo mục tiêu hợp tác nhưng khó xác định đóng góp action từng nút; chưa chứng minh neighbor feature có lợi nếu thiếu ablation.\n\nNguồn: docs/defense/thesis-understanding-guide-vi.md, mục 10–11; src/traffic_rl/agents/phase_ddqn.py; docs/research/thesis-evidence-ledger.md, E15."}
+{"kind":"slide","id":"sl/1hmekk","slide":12,"title":"MÔ HÌNH CITYFLOW","textShapes":20}
+{"kind":"shape","id":"sh/94jqhg7a","slide":12,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/mhsrm18j","slide":12,"text":"MÔ HÌNH CITYFLOW","textPreview":"MÔ HÌNH CITYFLOW","textChars":16,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/ni18f6p4","slide":12,"text":"CityFlow: budget ngắn, chọn checkpoint bằng validation","textPreview":"CityFlow: budget ngắn, chọn checkpoint bằng validation","textChars":54,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/0fapkbqd","slide":12,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/1gjqdg7y","slide":12,"text":"Transitions trong cùng episode/block có tương quan; không phải 7.632 mẫu độc lập","textPreview":"Transitions trong cùng episode/block có tương quan; không phải 7.632 mẫu độc lập","textChars":80,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/ed87i18n","slide":12,"text":"12 / 18","textPreview":"12 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/ze18b6p8","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[78,205,170,74]}
+{"kind":"textbox","id":"sh/sbqpgrqh","slide":12,"text":"episodes × 1h","textPreview":"episodes × 1h","textChars":13,"textLines":1,"bbox":[78,282,170,48]}
+{"kind":"textbox","id":"sh/dczq9w72","slide":12,"text":"6","textPreview":"6","textChars":1,"textLines":1,"bbox":[289,205,180,74]}
+{"kind":"textbox","id":"sh/5kfmxsja","slide":12,"text":"peak cases","textPreview":"peak cases","textChars":10,"textLines":1,"bbox":[289,282,180,48]}
+{"kind":"textbox","id":"sh/4j6l4nip","slide":12,"text":"2×","textPreview":"2×","textChars":2,"textLines":1,"bbox":[510,205,155,74]}
+{"kind":"textbox","id":"sh/jix4vi14","slide":12,"text":"mỗi case","textPreview":"mỗi case","textChars":8,"textLines":1,"bbox":[510,282,155,48]}
+{"kind":"textbox","id":"sh/iho32d0j","slide":12,"text":"7.632","textPreview":"7.632","textChars":5,"textLines":1,"bbox":[706,205,225,74]}
+{"kind":"textbox","id":"sh/hgfmt8jy","slide":12,"text":"transitions","textPreview":"transitions","textChars":11,"textLines":1,"bbox":[706,282,225,48]}
+{"kind":"textbox","id":"sh/wf6l03id","slide":12,"text":"1.152","textPreview":"1.152","textChars":5,"textLines":1,"bbox":[972,205,250,74]}
+{"kind":"textbox","id":"sh/vex4ri1s","slide":12,"text":"optimizer updates","textPreview":"optimizer updates","textChars":17,"textLines":1,"bbox":[972,282,250,48]}
+{"kind":"shape","id":"sh/ad43yd0n","slide":12,"bbox":[80,371,1110,1]}
+{"kind":"textbox","id":"sh/9cvmp8j2","slide":12,"text":"Validation","textPreview":"Validation","textChars":10,"textLines":1,"bbox":[80,402,220,34]}
+{"kind":"textbox","id":"sh/8bmlw32h","slide":12,"text":"episode 4  →  8  →  12","textPreview":"episode 4  →  8  →  12","textChars":22,"textLines":1,"bbox":[300,393,830,47]}
+{"kind":"textbox","id":"sh/0vqlc3ad","slide":12,"text":"Selected","textPreview":"Selected","textChars":8,"textLines":1,"bbox":[80,474,190,34]}
+{"kind":"textbox","id":"sh/1wzm58ry","slide":12,"text":"3 / 5 seeds","textPreview":"3 / 5 seeds","textChars":11,"textLines":1,"bbox":[300,465,340,48]}
+{"kind":"textbox","id":"sh/et83ats7","slide":12,"text":"Seeds 13 và 16 bị reject; chỉ giữ ở mức diagnostic","textPreview":"Seeds 13 và 16 bị reject; chỉ giữ ở mức diagnostic","textChars":50,"textLines":1,"bbox":[655,473,515,54]}
+{"kind":"textbox","id":"sh/zuh43y9s","slide":12,"text":"Checkpoint báo cáo seed14 = episode 4","textPreview":"Checkpoint báo cáo seed14 = episode 4","textChars":37,"textLines":1,"bbox":[80,554,1090,42]}
+{"kind":"notes","id":"nt/1hmekk","slide":12,"text":"Nêu con số theo guide: 12 episodes một giờ, sáu peak cases được thấy hai lần, 144 network blocks và budget 7.632 correlated transitions cùng 1.152 optimizer updates. Validation ở episode 4, 8, 12. Selector nhận ba trong năm learning seeds: 12/14/15; 13 và 16 bị reject và nếu nhắc checkpoint của chúng thì gọi diagnostic, không phải eligible. Policy dùng làm headline CityFlow là seed14 episode4. Không suy luận convergence từ loss hay 12 episodes.\n\nNguồn: docs/defense/thesis-understanding-guide-vi.md, mục 12, 16.4; docs/research/evidence-snapshot-2026-09-23/seed14-selection.json; docs/research/thesis-evidence-ledger.md, E14–E15."}
+{"kind":"slide","id":"sl/e7bo8p","slide":13,"title":"ĐỊNH NGHĨA KẾT QUẢ","textShapes":12}
+{"kind":"shape","id":"sh/vilkjixo","slide":13,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/w3ulcny9","slide":13,"text":"ĐỊNH NGHĨA KẾT QUẢ","textPreview":"ĐỊNH NGHĨA KẾT QUẢ","textChars":18,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/h432lsfu","slide":13,"text":"Queue integral đo hàng chờ tích lũy theo thời gian","textPreview":"Queue integral đo hàng chờ tích lũy theo thời gian","textChars":50,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/mdsj6tg7","slide":13,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/7e1kfyxs","slide":13,"text":"veh-h là vehicle-hours; không phải thời gian chờ trung bình mỗi xe","textPreview":"veh-h là vehicle-hours; không phải thời gian chờ trung bình mỗi xe","textChars":66,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/8fa183yd","slide":13,"text":"13 / 18","textPreview":"13 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/9gj2h8fy","slide":13,"text":"queue + due pending","textPreview":"queue + due pending","textChars":19,"textLines":1,"bbox":[88,194,465,58]}
+{"kind":"textbox","id":"sh/69w3ixgb","slide":13,"text":"đo từng giây","textPreview":"đo từng giây","textChars":12,"textLines":1,"bbox":[88,257,420,38]}
+{"kind":"shape","id":"sh/ra5kr2xw","slide":13,"bbox":[510,259,100,3]}
+{"kind":"shape","id":"sh/by9ob6d4","slide":13,"bbox":[602,253,18,15]}
+{"kind":"textbox","id":"sh/ax0721wz","slide":13,"text":"tích phân","textPreview":"tích phân","textChars":9,"textLines":1,"bbox":[652,245,290,54]}
+{"kind":"shape","id":"sh/x0b6dgva","slide":13,"bbox":[922,259,90,3]}
+{"kind":"shape","id":"sh/wzip4bep","slide":13,"bbox":[1004,253,18,15]}
+{"kind":"textbox","id":"sh/j2tofqdg","slide":13,"text":"veh-h","textPreview":"veh-h","textChars":5,"textLines":1,"bbox":[1050,245,150,54]}
+{"kind":"shape","id":"sh/y1k76lcv","slide":13,"bbox":[88,348,1104,1]}
+{"kind":"textbox","id":"sh/l4b6h0vm","slide":13,"text":"Ví dụ","textPreview":"Ví dụ","textChars":5,"textLines":1,"bbox":[88,382,180,32]}
+{"kind":"textbox","id":"sh/k32p8vu1","slide":13,"text":"10 xe × 60 giây = 600 xe-giây = 0,167 xe-giờ","textPreview":"10 xe × 60 giây = 600 xe-giây = 0,167 xe-giờ","textChars":44,"textLines":1,"bbox":[88,425,1030,50]}
+{"kind":"textbox","id":"sh/7qtojqdc","slide":13,"text":"pending chỉ tính xe đã đến hạn nhưng chưa vào mạng; loại xe chưa phát hành.","textPreview":"pending chỉ tính xe đã đến hạn nhưng chưa vào mạng; loại xe chưa phát hành.","textChars":75,"textLines":1,"bbox":[88,501,1080,40]}
+{"kind":"textbox","id":"sh/6pk7alc7","slide":13,"text":"Đối chiếu fixed • Max-Pressure • Hysteretic Max-Pressure","textPreview":"Đối chiếu fixed • Max-Pressure • Hysteretic Max-Pressure","textChars":56,"textLines":1,"bbox":[88,564,1080,39]}
+{"kind":"notes","id":"nt/e7bo8p","slide":13,"text":"Primary metric là tích phân số xe stopped trong network cộng due-but-not-inserted pending, đo mỗi giây rồi chia 3600. Pending chỉ gồm xe đã đến hạn nhưng chưa được đưa vào, không cộng toàn bộ demand tương lai. Queue integral không bằng average per-vehicle delay. CityFlow so với tuned fixed và hai baseline pressure; SUMO còn published fixed. Secondary metrics completion, insertion, travel-time và spillback cần đọc kèm vì giảm queue có thể có trade-off.\n\nNguồn: src/traffic_rl/eval/network_metrics.py; src/traffic_rl/sim/multi_agent_env.py; docs/research/thesis-evidence-ledger.md, E11, E13; docs/defense/thesis-understanding-guide-vi.md, mục 13."}
+{"kind":"slide","id":"sl/6ddskd","slide":14,"title":"KẾT QUẢ SUMO","textShapes":20}
+{"kind":"shape","id":"sh/2h8ri1c7","slide":14,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/pkzadgvy","slide":14,"text":"KẾT QUẢ SUMO","textPreview":"KẾT QUẢ SUMO","textChars":12,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/4jq9kbud","slide":14,"text":"SUMO: hiệu quả phụ thuộc regime nhu cầu","textPreview":"SUMO: hiệu quả phụ thuộc regime nhu cầu","textChars":39,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/fuxs76dw","slide":14,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/utore1wb","slide":14,"text":"Δ = learned − published fixed • paired 95% CI trên chênh lệch, đơn vị veh-h","textPreview":"Δ = learned − published fixed • paired 95% CI trên chênh lệch, đơn vị veh-h","textChars":75,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/hgza9wv2","slide":14,"text":"14 / 18","textPreview":"14 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"shape","id":"sh/gf69gruh","slide":14,"bbox":[78,200,328,8]}
+{"kind":"textbox","id":"sh/zq1sjqd0","slide":14,"text":"NORMAL","textPreview":"NORMAL","textChars":6,"textLines":1,"bbox":[78,222,325,30]}
+{"kind":"textbox","id":"sh/epsbqlcf","slide":14,"text":"+320,7%","textPreview":"+320,7%","textChars":7,"textLines":1,"bbox":[78,270,325,78]}
+{"kind":"textbox","id":"sh/wbytg7ix","slide":14,"text":"9,86 → 41,50","textPreview":"9,86 → 41,50","textChars":12,"textLines":1,"bbox":[78,365,325,34]}
+{"kind":"textbox","id":"sh/xc7upcji","slide":14,"text":"Δ 95% CI  [7,60; 56,14]","textPreview":"Δ 95% CI  [7,60; 56,14]","textChars":23,"textLines":1,"bbox":[78,419,325,55]}
+{"kind":"textbox","id":"sh/a9gbex07","slide":14,"text":"xấu hơn rõ","textPreview":"xấu hơn rõ","textChars":10,"textLines":1,"bbox":[78,502,325,45]}
+{"kind":"shape","id":"sh/vapsn21c","slide":14,"bbox":[465,200,328,8]}
+{"kind":"textbox","id":"sh/87ytc7i1","slide":14,"text":"AM PEAK","textPreview":"AM PEAK","textChars":7,"textLines":1,"bbox":[465,222,325,30]}
+{"kind":"textbox","id":"sh/987alsjm","slide":14,"text":"−1,0%","textPreview":"−1,0%","textChars":5,"textLines":1,"bbox":[465,270,325,78]}
+{"kind":"textbox","id":"sh/mlwbax0v","slide":14,"text":"79,20 → 78,41","textPreview":"79,20 → 78,41","textChars":13,"textLines":1,"bbox":[465,365,325,34]}
+{"kind":"textbox","id":"sh/n6psj21g","slide":14,"text":"Δ 95% CI  [−9,47; 8,49]","textPreview":"Δ 95% CI  [−9,47; 8,49]","textChars":23,"textLines":1,"bbox":[465,419,325,55]}
+{"kind":"textbox","id":"sh/0jet8n2p","slide":14,"text":"chưa phân biệt được","textPreview":"chưa phân biệt được","textChars":19,"textLines":1,"bbox":[465,502,325,45]}
+{"kind":"shape","id":"sh/lknahsja","slide":14,"bbox":[852,200,328,8]}
+{"kind":"textbox","id":"sh/10fqlobe","slide":14,"text":"PM PEAK","textPreview":"PM PEAK","textChars":7,"textLines":1,"bbox":[852,222,325,30]}
+{"kind":"textbox","id":"sh/gz69cjut","slide":14,"text":"−34,5%","textPreview":"−34,5%","textChars":6,"textLines":1,"bbox":[852,270,325,78]}
+{"kind":"textbox","id":"sh/fex8jet8","slide":14,"text":"152,67 → 99,97","textPreview":"152,67 → 99,97","textChars":14,"textLines":1,"bbox":[852,365,325,34]}
+{"kind":"textbox","id":"sh/edora9cn","slide":14,"text":"Δ 95% CI  [−69,55; −35,34]","textPreview":"Δ 95% CI  [−69,55; −35,34]","textChars":26,"textLines":1,"bbox":[852,419,325,55]}
+{"kind":"textbox","id":"sh/tcfqh4b2","slide":14,"text":"giảm hàng chờ","textPreview":"giảm hàng chờ","textChars":13,"textLines":1,"bbox":[852,502,325,45]}
+{"kind":"shape","id":"sh/sb698zuh","slide":14,"bbox":[440,206,1,360]}
+{"kind":"shape","id":"sh/rax8futw","slide":14,"bbox":[827,206,1,360]}
+{"kind":"textbox","id":"sh/694r69cr","slide":14,"text":"PM là lợi ích nổi bật; Normal là regression. Không gộp ba regime thành một claim “RL tốt hơn”.","textPreview":"PM là lợi ích nổi bật; Normal là regression. Không gộp ba regime thành một claim “RL tốt hơn”.","textChars":94,"textLines":1,"bbox":[78,586,1110,42]}
+{"kind":"notes","id":"nt/6ddskd","slide":14,"text":"Ba regime trên cùng 15 matched cases, 5 learning seeds; bảng cho mean queue veh-h và relative change. AM gần như bằng fixed nhưng paired 95% interval của chênh lệch chứa 0: không xác lập superiority hay equivalence. PM giảm 34,5%, CI chênh lệch hoàn toàn âm. Normal tăng 320,7%, CI chênh lệch dương. Đây là hiệu quả không đồng đều. Change là phần trăm so với fixed; CI là paired absolute difference, không phải CI phần trăm.\n\nNguồn: docs/research/thesis-evidence-ledger.md, E11; results/danang_protocol_v1/summary/final-summary.json; docs/defense/thesis-understanding-guide-vi.md, mục 15."}
+{"kind":"slide","id":"sl/ebvdom","slide":15,"title":"KẾT QUẢ MẠNG 53 NÚT","textShapes":11}
+{"kind":"shape","id":"sh/dob6dcnm","slide":15,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/q10nixob","slide":15,"text":"KẾT QUẢ MẠNG 53 NÚT","textPreview":"KẾT QUẢ MẠNG 53 NÚT","textChars":19,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/b29ob25w","slide":15,"text":"CityFlow: residual giảm 6,12%; Max-Pressure giảm nhiều hơn","textPreview":"CityFlow: residual giảm 6,12%; Max-Pressure giảm nhiều hơn","textChars":58,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/ozi5gn65","slide":15,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/p0r69snq","slide":15,"text":"15 matched cases × 3.600s • seed14 / episode4 • tổng queue+pending, veh-h","textPreview":"15 matched cases × 3.600s • seed14 / episode4 • tổng queue+pending, veh-h","textChars":73,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/2x0nexoz","slide":15,"text":"15 / 18","textPreview":"15 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/8vm5srm9","slide":15,"text":"so với tuned fixed","textPreview":"so với tuned fixed","textChars":18,"textLines":1,"bbox":[862,205,300,32]}
+{"kind":"textbox","id":"sh/9wv6lwnu","slide":15,"text":"−23,89%","textPreview":"−23,89%","textChars":7,"textLines":1,"bbox":[862,259,300,54]}
+{"kind":"textbox","id":"sh/psbyd4ja","slide":15,"text":"Max-Pressure","textPreview":"Max-Pressure","textChars":12,"textLines":1,"bbox":[862,311,300,30]}
+{"kind":"textbox","id":"sh/or2hkjip","slide":15,"text":"−19,19%","textPreview":"−19,19%","textChars":7,"textLines":1,"bbox":[862,373,300,54]}
+{"kind":"textbox","id":"sh/3qtgbe14","slide":15,"text":"Hysteretic MP","textPreview":"Hysteretic MP","textChars":13,"textLines":1,"bbox":[862,425,300,30]}
+{"kind":"textbox","id":"sh/2p0zi90j","slide":15,"text":"−6,12%","textPreview":"−6,12%","textChars":6,"textLines":1,"bbox":[862,487,300,54]}
+{"kind":"textbox","id":"sh/1ory94jy","slide":15,"text":"Residual DDQN","textPreview":"Residual DDQN","textChars":13,"textLines":1,"bbox":[862,539,300,30]}
+{"kind":"chart","id":"ch/j29wf6t4","slide":15,"name":"","chartType":"bar","bbox":[64,184,760,420]}
+{"kind":"notes","id":"nt/ebvdom","slide":15,"text":"Đọc số CityFlow đúng phạm vi: một policy seed14, checkpoint episode4, trên 15 matched reset one-hour cases. Tổng queue+pending: fixed 8,339.43; Max-Pressure 6,347.00; Hysteretic MP 6,739.13; residual 7,829.25 veh-h. Pooled reduction so với fixed lần lượt 23,89%, 19,19%, 6,12%. Residual tốt hơn fixed trong aggregate này nhưng thua cả hai pressure baselines. Không coi 15 cases là 15 learning seeds hoặc CI policy population.\n\nNguồn: results/haichau_network_v2/final15-controller-matrix-summary.json; docs/research/thesis-evidence-ledger.md, E13; docs/defense/thesis-understanding-guide-vi.md, mục 16.3."}
+{"kind":"slide","id":"sl/c7k1e6","slide":16,"title":"KẾT QUẢ VÀ GIỚI HẠN","textShapes":14}
+{"kind":"shape","id":"sh/pozilc76","slide":16,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/2lojqx8f","slide":16,"text":"KẾT QUẢ VÀ GIỚI HẠN","textPreview":"KẾT QUẢ VÀ GIỚI HẠN","textChars":19,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/nmh0j2p0","slide":16,"text":"PM-only gate: tín hiệu tích cực nhưng còn hậu nghiệm","textPreview":"PM-only gate: tín hiệu tích cực nhưng còn hậu nghiệm","textChars":52,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/cbq1wr6h","slide":16,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/xcz2pw72","slide":16,"text":"Gate được chọn sau khi đã xem test; CI không loại bỏ selection bias","textPreview":"Gate được chọn sau khi đã xem test; CI không loại bỏ selection bias","textChars":67,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/ap8juhor","slide":16,"text":"16 / 18","textPreview":"16 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/bahknmpw","slide":16,"text":"+3,48%","textPreview":"+3,48%","textChars":6,"textLines":1,"bbox":[82,205,500,110]}
+{"kind":"textbox","id":"sh/kfa10r6t","slide":16,"text":"trung bình pooled trên 5 seeds","textPreview":"trung bình pooled trên 5 seeds","textChars":30,"textLines":1,"bbox":[87,315,490,38]}
+{"kind":"textbox","id":"sh/lgj2tw7e","slide":16,"text":"95% seed-bootstrap CI","textPreview":"95% seed-bootstrap CI","textChars":21,"textLines":1,"bbox":[87,378,360,30]}
+{"kind":"textbox","id":"sh/9g3q5czy","slide":16,"text":"[2,01%; 4,95%]","textPreview":"[2,01%; 4,95%]","textChars":14,"textLines":1,"bbox":[87,416,460,47]}
+{"kind":"shape","id":"sh/8fupw7yt","slide":16,"bbox":[620,194,1,360]}
+{"kind":"textbox","id":"sh/7el832h8","slide":16,"text":"PM cases","textPreview":"PM cases","textChars":8,"textLines":1,"bbox":[684,207,430,36]}
+{"kind":"textbox","id":"sh/mdc7uxgn","slide":16,"text":"15 cải thiện","textPreview":"15 cải thiện","textChars":12,"textLines":1,"bbox":[684,268,440,48]}
+{"kind":"textbox","id":"sh/h43q9wza","slide":16,"text":"10 xấu hơn","textPreview":"10 xấu hơn","textChars":10,"textLines":1,"bbox":[684,326,440,48]}
+{"kind":"textbox","id":"sh/w3up0ryp","slide":16,"text":"3 / 5 seed được chọn","textPreview":"3 / 5 seed được chọn","textChars":20,"textLines":1,"bbox":[684,410,465,44]}
+{"kind":"textbox","id":"sh/v2l87mh4","slide":16,"text":"seed13, seed16: rejected / diagnostic","textPreview":"seed13, seed16: rejected / diagnostic","textChars":37,"textLines":1,"bbox":[684,464,490,55]}
+{"kind":"shape","id":"sh/u1c7yhgj","slide":16,"bbox":[82,540,1110,63]}
+{"kind":"textbox","id":"sh/x8j6xszq","slide":16,"text":"Cần test mới độc lập; không gọi đây là kết quả xác nhận.","textPreview":"Cần test mới độc lập; không gọi đây là kết quả xác nhận.","textChars":56,"textLines":1,"bbox":[105,556,1060,34]}
+{"kind":"notes","id":"nt/c7k1e6","slide":16,"text":"Gate dùng fixed cho normal/AM và residual cho PM; được hình thành sau khi quan sát kết quả regime-specific. Mean 3,48%; bootstrap interval 2,01–4,95% dựa năm seed effects. Trong 25 PM seed-case cells, 15 cải thiện và 10 xấu hơn. 50 Normal/AM cells bằng fixed theo thiết kế. Chỉ 3/5 seeds được selector chọn; seed13 và seed16 là rejected/diagnostic, không tăng eligibility vì gate dương. Vì gate post hoc, CI có điều kiện trên lựa chọn này và không sửa selection bias. Cần test mới với gate/policy khóa trước.\n\nNguồn: docs/research/thesis-evidence-ledger.md, E14; results/haichau_network_v2/final15-regime-gated-direct-multi-seed-summary.json; docs/defense/thesis-understanding-guide-vi.md, mục 16.4."}
+{"kind":"slide","id":"sl/pikbby","slide":17,"title":"DEMO CÓ TRUY VẾT","textShapes":16}
+{"kind":"shape","id":"sh/7y9sju5w","slide":17,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/8zi9cf6h","slide":17,"text":"DEMO CÓ TRUY VẾT","textPreview":"DEMO CÓ TRUY VẾT","textChars":16,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/90ra5kn2","slide":17,"text":"Demo là recorded replay, không phải lần chạy simulator mới","textPreview":"Demo là recorded replay, không phải lần chạy simulator mới","textChars":58,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/u10repon","slide":17,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/v29s7u58","slide":17,"text":"Visual telemetry 0–1.200s • headline evaluation là horizon riêng 3.600s","textPreview":"Visual telemetry 0–1.200s • headline evaluation là horizon riêng 3.600s","textChars":71,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/w3i9gz6t","slide":17,"text":"17 / 18","textPreview":"17 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/hoba94ne","slide":17,"text":"CÙNG CASE PM","textPreview":"CÙNG CASE PM","textChars":12,"textLines":1,"bbox":[82,194,280,31]}
+{"kind":"textbox","id":"sh/ipkri9oj","slide":17,"text":"seed14 • episode4 • demand105 / sim205","textPreview":"seed14 • episode4 • demand105 / sim205","textChars":38,"textLines":1,"bbox":[82,231,610,34]}
+{"kind":"textbox","id":"sh/jqtsbe54","slide":17,"text":"1.085 giây • nút 420249521","textPreview":"1.085 giây • nút 420249521","textChars":26,"textLines":1,"bbox":[82,281,500,34]}
+{"kind":"textbox","id":"sh/7qdsfu58","slide":17,"text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[92,354,208,98]}
+{"kind":"textbox","id":"sh/6p4rmp4n","slide":17,"text":"fixed • xe đang chờ","textPreview":"fixed • xe đang chờ","textChars":19,"textLines":1,"bbox":[92,457,220,44]}
+{"kind":"textbox","id":"sh/tsfah4ne","slide":17,"text":"vs","textPreview":"vs","textChars":2,"textLines":1,"bbox":[327,381,80,43]}
+{"kind":"textbox","id":"sh/8rmtozmt","slide":17,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[436,354,190,98]}
+{"kind":"textbox","id":"sh/j2dsbu5w","slide":17,"text":"residual • xe đang chờ","textPreview":"residual • xe đang chờ","textChars":22,"textLines":1,"bbox":[408,457,248,44]}
+{"kind":"shape","id":"sh/y14rip4r","slide":17,"bbox":[705,197,1,360]}
+{"kind":"textbox","id":"sh/lovad4n2","slide":17,"text":"Đọc đúng","textPreview":"Đọc đúng","textChars":8,"textLines":1,"bbox":[758,210,360,36]}
+{"kind":"textbox","id":"sh/k3m9kzmh","slide":17,"text":"Một frame minh họa hành vi\ntại một nút và một thời điểm.","textPreview":"Một frame minh họa hành vi | tại một nút và một thời điểm.","textChars":56,"textLines":2,"bbox":[758,267,405,92]}
+{"kind":"textbox","id":"sh/3yxsne5g","slide":17,"text":"Không suy ra 13 xe đã thoát mạng.","textPreview":"Không suy ra 13 xe đã thoát mạng.","textChars":33,"textLines":1,"bbox":[758,393,405,70]}
+{"kind":"textbox","id":"sh/2xobu94v","slide":17,"text":"Kết luận dựa vào bảng aggregate, không dựa screenshot.","textPreview":"Kết luận dựa vào bảng aggregate, không dựa screenshot.","textChars":54,"textLines":1,"bbox":[82,558,1090,44]}
+{"kind":"notes","id":"nt/pikbby","slide":17,"text":"Demo bundle phát recorded visual replay; browser không train hoặc chạy một simulator mới. Ví dụ guided frame ở phút 18:05 = 1.085 giây cho node 420249521 trong case PM demand105/sim205; seed14 checkpoint episode4. Hiển thị 14 xe so với 1 xe đang queue. Đây chỉ là snapshot tại một nút/thời điểm; không chứng minh throughput hay toàn mạng. Telemetry demo chỉ có 0–1.200 s, còn metric aggregate lấy từ evaluation horizon riêng 3.600 s.\n\nNguồn: results/haichau_network_v2/demo-visual/index.html; results/haichau_network_v2/demo-visual/manifest.json; docs/defense/demo-runbook.md; docs/defense/thesis-understanding-guide-vi.md, mục 20."}
+{"kind":"slide","id":"sl/xm6zf3","slide":18,"title":"KẾT LUẬN","textShapes":10}
+{"kind":"shape","id":"sh/mdgn29c3","slide":18,"bbox":[0,0,14,720]}
+{"kind":"textbox","id":"sh/9g76dovu","slide":18,"text":"KẾT LUẬN","textPreview":"KẾT LUẬN","textChars":8,"textLines":1,"bbox":[72,30,760,28]}
+{"kind":"textbox","id":"sh/8fyp4ju9","slide":18,"text":"Residual giảm queue nhưng thua Max-Pressure","textPreview":"Residual giảm queue nhưng thua Max-Pressure","textChars":43,"textLines":1,"bbox":[72,70,1125,72]}
+{"kind":"shape","id":"sh/zq5o7eds","slide":18,"bbox":[72,660,1136,1]}
+{"kind":"textbox","id":"sh/ypwny9c7","slide":18,"text":"Không suy rộng từ mô phỏng sang hiệu quả thực địa","textPreview":"Không suy rộng từ mô phỏng sang hiệu quả thực địa","textChars":49,"textLines":1,"bbox":[72,674,1040,24]}
+{"kind":"textbox","id":"sh/lc769ovi","slide":18,"text":"18 / 18","textPreview":"18 / 18","textChars":7,"textLines":1,"bbox":[1120,674,88,24]}
+{"kind":"textbox","id":"sh/0be50jux","slide":18,"text":"Bằng chứng","textPreview":"Bằng chứng","textChars":10,"textLines":1,"bbox":[82,194,280,36]}
+{"kind":"textbox","id":"sh/bm5o3udg","slide":18,"text":"RL giảm queue ở một số regime / case; không đồng đều.","textPreview":"RL giảm queue ở một số regime / case; không đồng đều.","textChars":53,"textLines":1,"bbox":[82,243,1080,62]}
+{"kind":"shape","id":"sh/qlwnupcv","slide":18,"bbox":[82,329,1100,1]}
+{"kind":"textbox","id":"sh/kvq9orid","slide":18,"text":"Giới hạn","textPreview":"Giới hạn","textChars":8,"textLines":1,"bbox":[82,357,250,35]}
+{"kind":"textbox","id":"sh/lwzahwzy","slide":18,"text":"Dữ liệu mạng tổng hợp • residual thua Max-Pressure • PM gate hậu nghiệm","textPreview":"Dữ liệu mạng tổng hợp • residual thua Max-Pressure • PM gate hậu nghiệm","textChars":71,"textLines":1,"bbox":[82,404,1100,48]}
+{"kind":"shape","id":"sh/yt8rm10n","slide":18,"bbox":[82,477,1100,1]}
+{"kind":"textbox","id":"sh/juhsfmh8","slide":18,"text":"Bước kế","textPreview":"Bước kế","textChars":7,"textLines":1,"bbox":[82,502,250,35]}
+{"kind":"textbox","id":"sh/wrq9krih","slide":18,"text":"Khóa policy và gate → test demand độc lập → bổ sung calibration / ablation","textPreview":"Khóa policy và gate → test demand độc lập → bổ sung calibration / ablation","textChars":74,"textLines":1,"bbox":[82,549,1100,48]}
+{"kind":"notes","id":"nt/xm6zf3","slide":18,"text":"Câu chốt khoảng 30 giây: kết quả cho thấy RL có thể giảm hàng chờ ở một số chế độ mô phỏng, nhưng lợi ích không đồng đều và residual hiện tại chưa thắng baseline mạnh nhất ở ma trận 53 nút. Đóng góp là hai lớp thí nghiệm bổ sung nhau, residual policy với hành vi kiểm tra được, và truy vết nguồn/số liệu. Bước tiếp theo là khóa policy và gate trước, test demand mới độc lập, rồi bổ sung calibration thực địa và ablation. Tránh claim deploy hoặc validation field.\n\nNguồn: docs/research/thesis-evidence-ledger.md, E11–E15; docs/research/thesis-review-verification.md; docs/defense/thesis-understanding-guide-vi.md, mục 16.5, 21.5."}

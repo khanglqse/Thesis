@@ -1,5 +1,7 @@
 # Da Nang data and claim boundary audit
 
+> Source interpretation updated 2026-09-23: see [the current evidence ledger](thesis-evidence-ledger.md). In particular, street spelling varies in the source; the 2025 camera estimation statement does not establish row-level provenance for the 2022 table. Historical wording below is retained as an audit record.
+
 **Audit date:** 2026-09-09  
 **Purpose:** make the evidence boundary usable in the thesis and defense deck. This
 audit reports repository evidence only; it does not infer missing counts.

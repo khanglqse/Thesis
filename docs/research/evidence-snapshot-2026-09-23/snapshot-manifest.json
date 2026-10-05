@@ -1,0 +1,61 @@
+{
+  "purpose": "Byte-identical copies of local selection evidence; not a replacement for complete checkpoint/runtime release.",
+  "captured_on": "2026-09-23",
+  "files": [
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed12/selection.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed12-selection.json",
+      "sha256": "ffa8938c3bb4e30ed43602b50eeec25206164467e36a2571bd004b268afeef26"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed12/resolved-config.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed12-resolved-config.json",
+      "sha256": "496ee25174a60653fc6e415c68547d2472629f14b0871ea58b39db47c742e4b9"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed13/selection.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed13-selection.json",
+      "sha256": "75aeb84733b2b79c222b22b527f5ec85af4522aca5ad40300d88500fde8fefcb"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed13/resolved-config.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed13-resolved-config.json",
+      "sha256": "74b1c7e5c037a4c1f4d24d3327539e47e1263e89af5305aed15a5b91574f22d8"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed14/selection.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed14-selection.json",
+      "sha256": "0b0b2ebe4dfb462da907a6de0a47bd5361ff5ca61dd8e011d7e616d450dbb7a5"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed14/resolved-config.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed14-resolved-config.json",
+      "sha256": "d444dc8d91ce6879ebcd154269857ce49001dc56fe25bebba164eb2f4d60d78b"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed15/selection.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed15-selection.json",
+      "sha256": "a41df1a87e8d2b6a67539cccdbf9d39454c226fdfb457b8700e519a774ceb8ff"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed15/resolved-config.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed15-resolved-config.json",
+      "sha256": "adec46ca1a786e3c62f860f9879e1ab214f23c0a26e3ae0f63cfb2f9583e8bfb"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed16/selection.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed16-selection.json",
+      "sha256": "a0053a12728c3eb8da1a0b32caba66025964dc7d3fdb99e1c4ad9e0717652723"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed16/resolved-config.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed16-resolved-config.json",
+      "sha256": "a1fab9a2af3ce6fc3ce9a83f09615e99a95f01d37ab5bea9d76d8a7b4ec096b9"
+    },
+    {
+      "source_path": "results/haichau_network_v2/training/final-seed14/checkpoints/step-0004/contract.json",
+      "snapshot_path": "docs/research/evidence-snapshot-2026-09-23/seed14-step4-contract.json",
+      "sha256": "7b0c5649c76305dda4bfe9b4fbbad8b00376f54af91a4eab913555d3aa7bc74e"
+    }
+  ]
+}

@@ -56,7 +56,7 @@ A held-out explicit realization later exposed one lane-model rear-end collision
 with the default 1.0 s motorcycle headway. A one-parameter reproduction showed
 that `tau=1.2` removed the collision. Because this changed capacity and policy
 dynamics, every tau=1.0 training/evaluation artifact was invalidated and the
-complete protocol was rerun. Across the final 105 held-out controller runs,
+complete protocol was rerun. Across the final 120 held-out controller runs,
 collision output recorded zero collisions. The safety change raised congestion
 in several scenarios; the before/after diagnostic is retained in
 `results/research_pilot/calibration/tau_sensitivity.json`.
@@ -73,3 +73,7 @@ headway, saturation-flow, queue-length or travel-time ground truth for this
 junction. The pilot is therefore **demand-matched and geometry-audited**, not
 fully behavior-calibrated. Final claims must preserve that wording and report
 digitization uncertainty, pending vehicles, residual queues and completion.
+
+## Audit clarification — 2026-09-23
+
+The held-out-triggered headway correction makes the reused test cases development-informed. Rerunning all controllers restores configuration consistency but does not create an untouched confirmatory evaluation. Source spellings, camera coverage and Table 1 provenance are clarified in [the current evidence ledger](thesis-evidence-ledger.md).

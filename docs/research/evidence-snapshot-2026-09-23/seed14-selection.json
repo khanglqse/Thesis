@@ -1,0 +1,428 @@
+{
+  "checkpoints": {
+    "step-12": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0012/contract.json",
+        "contract_sha256": "6bb2ad4d45911c8e550e18c2d33b9d62c5659ade21d74bf990edf92d26bcc4aa",
+        "weights_path": "checkpoints/step-0012/weights.npz",
+        "weights_sha256": "9d5f302cc39414fd65081c9b2d3c51bbf30d20b7e061db764c081a17365e3afb"
+      },
+      "distinct_nonzero_macro_nodes": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249146",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_10925625407_3070396769_3070396791",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335"
+      ],
+      "eligible": false,
+      "gates": {
+        "checkpoint_traffic_feature_response": true,
+        "forced_macro0_counterfactual_exact_fixed25": true,
+        "learned_macros_in_both_peak_regimes": true,
+        "mean_peak_queue_improvement": true,
+        "minimum_distinct_nonzero_macro_nodes": true,
+        "normal_exact_fixed_per_case": true,
+        "normal_timeline_zero": true,
+        "peak_regime_queue_noninferiority": false,
+        "peak_timeline_zero": true,
+        "per_case_completion_safety": false,
+        "per_case_insertion_safety": true
+      },
+      "learned_macro_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "maximum_completion_loss": 0.02224586517071281,
+      "maximum_insertion_loss": 0.011026211432440203,
+      "mean_peak_queue_regret_percent": -3.57016082545612,
+      "mean_queue_regret_percent_by_peak_regime": {
+        "am_peak": -12.258285247400401,
+        "pm_peak": 5.11796359648816
+      },
+      "normal_exact_case_ids": [
+        "validation_normal_demand31",
+        "validation_normal_demand32"
+      ],
+      "traffic_feature_response": {
+        "maximum_absolute_score_response": 14.54837417602539,
+        "responsive_feature_count": 16,
+        "responsive_features": [
+          "source_incoming_queue_mean",
+          "source_incoming_queue_max",
+          "source_incoming_running_mean",
+          "source_outgoing_queue_mean",
+          "source_outgoing_remaining_capacity_mean",
+          "source_pressure",
+          "source_upstream_queue_mean",
+          "source_downstream_queue_mean",
+          "target_incoming_queue_mean",
+          "target_incoming_queue_max",
+          "target_incoming_running_mean",
+          "target_outgoing_queue_mean",
+          "target_outgoing_remaining_capacity_mean",
+          "target_pressure",
+          "target_upstream_queue_mean",
+          "target_downstream_queue_mean"
+        ]
+      },
+      "training_step": 12,
+      "validation": {
+        "path": "results/haichau_network_v2/training/final-seed14/validation-step-0012.json",
+        "sha256": "d4a8b97cbbabb18f4a8142622293667f36cd7537ab432dff08786037dbf13e97"
+      }
+    },
+    "step-4": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0004/contract.json",
+        "contract_sha256": "7b0c5649c76305dda4bfe9b4fbbad8b00376f54af91a4eab913555d3aa7bc74e",
+        "weights_path": "checkpoints/step-0004/weights.npz",
+        "weights_sha256": "34c5a31b954a9423167d7653ca8aa4f59b53337d3b7969a79c7bc39fa3ee59b1"
+      },
+      "distinct_nonzero_macro_nodes": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249146",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_10925625407_3070396769_3070396791",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335",
+        "cluster_6521341372_6521341373_6521341380"
+      ],
+      "eligible": true,
+      "gates": {
+        "checkpoint_traffic_feature_response": true,
+        "forced_macro0_counterfactual_exact_fixed25": true,
+        "learned_macros_in_both_peak_regimes": true,
+        "mean_peak_queue_improvement": true,
+        "minimum_distinct_nonzero_macro_nodes": true,
+        "normal_exact_fixed_per_case": true,
+        "normal_timeline_zero": true,
+        "peak_regime_queue_noninferiority": true,
+        "peak_timeline_zero": true,
+        "per_case_completion_safety": true,
+        "per_case_insertion_safety": true
+      },
+      "learned_macro_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "maximum_completion_loss": 0.004938032532920245,
+      "maximum_insertion_loss": 0.0,
+      "mean_peak_queue_regret_percent": -5.1642994548873,
+      "mean_queue_regret_percent_by_peak_regime": {
+        "am_peak": -9.851440518123848,
+        "pm_peak": -0.4771583916507507
+      },
+      "normal_exact_case_ids": [
+        "validation_normal_demand31",
+        "validation_normal_demand32"
+      ],
+      "traffic_feature_response": {
+        "maximum_absolute_score_response": 2.2990221977233887,
+        "responsive_feature_count": 16,
+        "responsive_features": [
+          "source_incoming_queue_mean",
+          "source_incoming_queue_max",
+          "source_incoming_running_mean",
+          "source_outgoing_queue_mean",
+          "source_outgoing_remaining_capacity_mean",
+          "source_pressure",
+          "source_upstream_queue_mean",
+          "source_downstream_queue_mean",
+          "target_incoming_queue_mean",
+          "target_incoming_queue_max",
+          "target_incoming_running_mean",
+          "target_outgoing_queue_mean",
+          "target_outgoing_remaining_capacity_mean",
+          "target_pressure",
+          "target_upstream_queue_mean",
+          "target_downstream_queue_mean"
+        ]
+      },
+      "training_step": 4,
+      "validation": {
+        "path": "results/haichau_network_v2/training/final-seed14/validation-step-0004.json",
+        "sha256": "e4d78dbca7c68be6618f042c3385d0f00a3ad579a41a0dd230fdce242a41dd48"
+      }
+    },
+    "step-8": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0008/contract.json",
+        "contract_sha256": "7a666901ccef9526a578d6c717533942d9a192844e59f0a09f9c3de9145f036b",
+        "weights_path": "checkpoints/step-0008/weights.npz",
+        "weights_sha256": "78e7453daad070c516cdba8e2e44c7f8247b13ea08a57be14edfeeaa0f449da6"
+      },
+      "distinct_nonzero_macro_nodes": [
+        "1333258672",
+        "1333258675",
+        "1333258678",
+        "1333303403",
+        "1333730385",
+        "1333762614",
+        "1334170383",
+        "3761464424",
+        "420248538",
+        "420248590",
+        "420248766",
+        "420248835",
+        "420248842",
+        "420248975",
+        "420248999",
+        "420249023",
+        "420249060",
+        "420249080",
+        "420249146",
+        "420249151",
+        "420249236",
+        "420249421",
+        "420249521",
+        "420249525",
+        "5896811072",
+        "cluster_10925625407_3070396769_3070396791",
+        "cluster_11568485806_420249005_6513691661",
+        "cluster_1261738019_3070396244_3070396254_6522135551",
+        "cluster_1261738236_2996178189",
+        "cluster_1333246087_3078041918",
+        "cluster_1333246117_2991183833",
+        "cluster_1333258669_1333279736",
+        "cluster_1334202699_3080182071",
+        "cluster_1334305553_420249257",
+        "cluster_1616276760_2991819238",
+        "cluster_1726781971_1726781974",
+        "cluster_2623083098_2988146967_2988146972_9662761813",
+        "cluster_2988146960_2988146981",
+        "cluster_2988146980_3068684702",
+        "cluster_2991011701_2991011702_2991011708_2991816816_#6more",
+        "cluster_2991183849_2996178213_6524846354_6524846355_#2more",
+        "cluster_2991183856_2991183859_2991183862_6548202094",
+        "cluster_2991819236_420249033",
+        "cluster_3065559064_3065559065",
+        "cluster_3070269464_3070269465",
+        "cluster_3501206652_420248485_6531294016",
+        "cluster_420249139_6525355442",
+        "cluster_420249144_6524986722",
+        "cluster_420249414_6521321780_6521321783_6521363256_#2more",
+        "cluster_420249565_6525355441",
+        "cluster_6164917307_6164917332_6164917334_6164917335"
+      ],
+      "eligible": false,
+      "gates": {
+        "checkpoint_traffic_feature_response": true,
+        "forced_macro0_counterfactual_exact_fixed25": true,
+        "learned_macros_in_both_peak_regimes": true,
+        "mean_peak_queue_improvement": true,
+        "minimum_distinct_nonzero_macro_nodes": true,
+        "normal_exact_fixed_per_case": true,
+        "normal_timeline_zero": true,
+        "peak_regime_queue_noninferiority": false,
+        "peak_timeline_zero": true,
+        "per_case_completion_safety": false,
+        "per_case_insertion_safety": true
+      },
+      "learned_macro_regimes": [
+        "am_peak",
+        "pm_peak"
+      ],
+      "maximum_completion_loss": 0.022826192088209685,
+      "maximum_insertion_loss": 0.010542605667859584,
+      "mean_peak_queue_regret_percent": -3.3888970871858537,
+      "mean_queue_regret_percent_by_peak_regime": {
+        "am_peak": -10.021871889029512,
+        "pm_peak": 3.2440777146578053
+      },
+      "normal_exact_case_ids": [
+        "validation_normal_demand31",
+        "validation_normal_demand32"
+      ],
+      "traffic_feature_response": {
+        "maximum_absolute_score_response": 7.320230484008789,
+        "responsive_feature_count": 16,
+        "responsive_features": [
+          "source_incoming_queue_mean",
+          "source_incoming_queue_max",
+          "source_incoming_running_mean",
+          "source_outgoing_queue_mean",
+          "source_outgoing_remaining_capacity_mean",
+          "source_pressure",
+          "source_upstream_queue_mean",
+          "source_downstream_queue_mean",
+          "target_incoming_queue_mean",
+          "target_incoming_queue_max",
+          "target_incoming_running_mean",
+          "target_outgoing_queue_mean",
+          "target_outgoing_remaining_capacity_mean",
+          "target_pressure",
+          "target_upstream_queue_mean",
+          "target_downstream_queue_mean"
+        ]
+      },
+      "training_step": 8,
+      "validation": {
+        "path": "results/haichau_network_v2/training/final-seed14/validation-step-0008.json",
+        "sha256": "a6ed5ff5075f2090e9eae36082de90d44faeb2330e96fd107e8300efc532f780"
+      }
+    }
+  },
+  "decision_type": "haichau_residual_final_per_seed_selection",
+  "final_status_before_selection": {
+    "path": "results/haichau_network_v2/training/final-seed14/status.json",
+    "sha256": "141b0ea26a7476f585f3e03a4a9d3766402b696df2108cc003d5769dbb7c9aaf"
+  },
+  "gates": {
+    "checkpoint_traffic_feature_response_required": true,
+    "forced_macro0_counterfactual_exact_fixed25": true,
+    "learned_macros_required_regimes": [
+      "am_peak",
+      "pm_peak"
+    ],
+    "mean_peak_queue_regret_percent_max": -1.0,
+    "minimum_distinct_nonzero_macro_nodes": 2,
+    "normal_exact_fixed_per_case": true,
+    "normal_timeline_zero": [
+      "phase_divergence_seconds",
+      "service_divergence_seconds",
+      "state_divergence_seconds",
+      "nonzero_macros",
+      "illegal_requests",
+      "anchor_violations",
+      "unlogged_divergence_seconds"
+    ],
+    "peak_regime_mean_queue_regret_percent_max": 0.0,
+    "peak_timeline_zero": [
+      "illegal_requests",
+      "anchor_violations",
+      "unlogged_divergence_seconds"
+    ],
+    "per_case_completion_loss_max": 0.02,
+    "per_case_insertion_loss_max": 0.02
+  },
+  "learning_seed": 14,
+  "ranking": [
+    "mean_peak_queue_regret_percent_ascending",
+    "training_step_ascending"
+  ],
+  "run_manifest": {
+    "path": "results/haichau_network_v2/training/final-seed14/run-manifest.json",
+    "sha256": "ec6b084888e2146c7af152f9254dc3e56aae38e99dfee55537eeca65f9afb611"
+  },
+  "schema_version": 1,
+  "source_tree": {
+    "git_commit": "aa59e3df9d723aa7e7be354d7451713662f1d5d1",
+    "index": "clean",
+    "schema_version": 1,
+    "tracked_worktree": "clean",
+    "untracked_files_policy": "allowed"
+  },
+  "status": "selected",
+  "test_split_accessed": false,
+  "validation_rerun": {
+    "path": "results/haichau_network_v2/training/final-seed14/validation-rerun.json",
+    "sha256": "35d0bb0e988e4d5e34edb596efe8b8fdfb4ac9356920e13b72cf0ebb93e5a8eb"
+  },
+  "winner": {
+    "checkpoint": "step-4",
+    "checkpoint_artifacts": {
+      "checkpoint": {
+        "contract_path": "checkpoints/step-0004/contract.json",
+        "contract_sha256": "7b0c5649c76305dda4bfe9b4fbbad8b00376f54af91a4eab913555d3aa7bc74e",
+        "weights_path": "checkpoints/step-0004/weights.npz",
+        "weights_sha256": "34c5a31b954a9423167d7653ca8aa4f59b53337d3b7969a79c7bc39fa3ee59b1"
+      },
+      "validation": {
+        "path": "results/haichau_network_v2/training/final-seed14/validation-step-0004.json",
+        "sha256": "e4d78dbca7c68be6618f042c3385d0f00a3ad579a41a0dd230fdce242a41dd48"
+      }
+    },
+    "mean_peak_queue_regret_percent": -5.1642994548873,
+    "training_step": 4
+  }
+}

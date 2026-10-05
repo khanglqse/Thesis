@@ -1,5 +1,7 @@
 # Da Nang data feasibility and pilot decision
 
+> Source interpretation updated 2026-09-23: see [the current evidence ledger](thesis-evidence-ledger.md). In particular, street spelling varies in the source; the 2025 camera estimation statement does not establish row-level provenance for the 2022 table. Historical wording below is retained as an audit record.
+
 ## Chosen public-data pilot
 
 The signalized junction formed by Nguyen Thanh Nghi, Cach Mang Thang 8 and 2/9 streets is the strongest immediately reproducible candidate. Phan, Le and Nguyen (2025) publish a 103-second, three-phase fixed plan and 12 turning-movement peak volumes collected by the Da Nang Department of Transport in 2022. The movements total 6171 passenger-car-equivalent vehicles per hour. This is adequate to construct a disclosed observed-peak demand case and to check the published baseline geometry/plan.
