@@ -1,4 +1,4 @@
-# Thesis evidence ledger — 2026-09-23
+# Thesis evidence ledger — 2026-09-23 (updated 2026-10-11)
 
 This ledger is the current interpretation of the retained evidence. It supersedes conflicting source descriptions in older research notes. A checksum proves file identity; it does not prove field validity. An arithmetic audit pass does not mean that the strict release, independent confirmation, or university assessment has passed.
 
@@ -21,6 +21,8 @@ The [archived publisher PDF](../../datasets/danang_published/sources/phan2025_ma
 | E07 | Partial coverage, inferred other directions | pp. 16, 20–21 | Explicit boundary on camera-derived demand | Applies to 2025 camera expansion; does not prove which 2022 Table 1 rows were estimated |
 | E08 | Raw data unavailable publicly | Data Availability Statement p. 23 | Archived source statement | This thesis did not collect the original camera data or acquire the authority raw data |
 | E09 | 53-signal topology | `datasets/haichau_network_v2/provenance.json`, source OSM/SUMO artifacts and `phase-contract.json` | `roadnet.json`, topology normalization, source hashes and control-agent mapping | Original OSM retrieval date/tool versions unrecorded; inferred signal plans are not field plans |
+| E16 | Public-camera YOLO counts (Tay Cau Rong, 2026-07-11 17:16–17:31) | YouTube `31Fhtgcq_fc`, channel @0511.VietNam; overlay date 11 Jul 2026 (title says 1/07/2026) | `results/camera_counts/caurong_20260711_1716/` (`meta.json`, `entries_exits.csv`, `only_car/`), realtime check `realtime_check_m1280_s4/timing.json`; thesis §3.6, audit-bound | Feasibility only: no hand count, far-field motorcycles under-counted, pedestrian/bicycle classes folded into motorcycle; one camera, 15 min; no simulator input |
+| E17 | Green-wave context (Tran & Phan 2007) | UDN record https://scv.udn.vn/trantrungviet/BBao/5864: Tạp chí Cầu Đường Việt Nam no. 10/2007, pp. 23–28 | Abstract only | Local framing only; no timing value or count; do not identify its Phan Cao Thọ with the 2025 author |
 | E10 | District demand | `configs/haichau_network_v2.yaml`, generator code and `results/haichau_network_v2/experiment-manifest.json` | 1,290 route families partitioned 644/323/323; 500 route streams per case; 30 cases | OD, routes, scale, vehicle parameters and 90% motorcycle share are synthetic |
 
 ### Source discrepancies and uncertainty
@@ -88,6 +90,10 @@ Mean **3.4783%**, bootstrap 95% **[2.0100%, 4.9467%]** from five seed effects, 1
 
 The gate was chosen after inspecting test behavior. Its apparent positive interval is conditional and does not correct selection bias. Seeds 13/16 do not become eligible merely because the gate helps. Exact selection files and resolved configs are copied byte-for-byte into [the evidence snapshot](evidence-snapshot-2026-09-23/snapshot-manifest.json). Seed 13's diagnostic step 12 fails peak-regime queue noninferiority and per-case completion; seed 16's step 4 fails the same categories.
 
+### E15b — Baseline Monte-Carlo (added 2026-10-11)
+
+`results/danang_baseline_mc/` (`runs.jsonl`, `summary.json`): 9,000 paired SUMO runs, 1,000 realizations per regime (demand seed 100000+k, SUMO seed 200000+k, disjoint from the protocol), three non-learning baselines. Fixed < raw MP in 3,000/3,000 and < hysteretic MP in 2,999/3,000; hysteretic < raw MP 1,000 / 758 / 884 of 1,000 (normal / AM / PM). Realizations of one observed profile, not independent days. **Collisions were not recorded** in this batch (script key bug, fixed afterwards); make no safety claim from it. Thesis §6.3, audit-bound.
+
 ### E15 — Actual model identity
 
 The SUMO agent is dueling Double DQN with a three-step return. The CityFlow residual agent is `ResidualDDQN`, based on `PhaseScoringDDQN`: two 64-unit hidden layers, shared scalar score, 27 macro features, **no dueling heads**, semi-Markov macro target, raw network-plus-pending queue reward scaled by 100,000 for critic units. The snapshot of seed 14's resolved config and contract is the evidence for the reported model; later v3c/v3d YAMLs do not retroactively change that model.
@@ -96,7 +102,7 @@ Normal/AM gating uses an externally declared regime. No learned traffic-regime c
 
 ## 3. Bibliographic source identity
 
-[bibliography-metadata-audit.json](bibliography-metadata-audit.json) records checks for all 68 bibliography entries. Forty-nine DOI/title pairs match Crossref metadata; cited author surnames and publication years were also screened. Eighteen other entries have publisher, proceedings, author-repository or official-report identity evidence. These checks establish source identity, not verification of every full-text literature claim.
+[bibliography-metadata-audit.json](bibliography-metadata-audit.json) records checks for all 71 bibliography entries (re-screened 2026-10-11). Fifty-one DOI/title pairs match Crossref metadata; cited author surnames and publication years were also screened. Nineteen other entries have publisher, proceedings, author-repository or official-report identity evidence. These checks establish source identity, not verification of every full-text literature claim.
 
 The SURTRAC entry was corrected against the [CMU conference record](https://publications.ri.cmu.edu/smart-urban-signal-networks-initial-application-of-the-surtrac-adaptive-traffic-signal-control-system): the title is *Smart Urban Signal Networks: Initial Application of the SURTRAC Adaptive Traffic Signal Control System*, ICAPS 2013, pp. 434–442; Xiao-Feng Xie's name was also corrected. The CMU PDF has a 2014 copyright line; the citation follows the repository's 2013 conference record. JICA documents are planning context only. Their report identities do not establish current traffic counts.
 

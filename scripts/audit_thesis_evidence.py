@@ -7,6 +7,7 @@ change experiment artifacts, or infer unavailable field observations.
 import argparse
 from collections import Counter
 import csv
+import datetime
 import hashlib
 import json
 import math
@@ -283,7 +284,7 @@ def audit(root):
     except (ValueError, IndexError):
         strict["error"] = (process.stdout + process.stderr)[-1500:]
     # Expected strict failures are evidence limitations, not arithmetic failures.
-    return {"schema_version": 1, "audit_date": "2026-09-23",
+    return {"schema_version": 1, "audit_date": datetime.date.today().isoformat(),
         "scope": "retained_source_identity_and_summary_arithmetic; not confirmatory acceptance",
         "audit_passed": all(r["passed"] for r in checks), "checks": checks,
         "camera": {"rows": len(camera), "hourly_four_movement_totals_veh_per_h": totals,

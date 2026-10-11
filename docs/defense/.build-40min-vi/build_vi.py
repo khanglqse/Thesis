@@ -442,7 +442,7 @@ slide("Dữ liệu", "Điểm xuất phát: trục chính Đà Nẵng, tính đ�
 <div class="row" style="gap:30px;margin-top:22px">
  <div class="col panel go"><h3>Ý tưởng em kế thừa</h3><ul class="small" style="margin-left:18px">
   <li>Bài toán đèn ở Đà Nẵng bắt đầu từ <b>dòng xe khảo sát</b> trên <b>trục chính có đèn</b>, không phải một thành phố chung chung.</li>
-  <li>Tầng mạng <b>bỏ đường dân cư</b> (OSM highway.residential) để bám các trục chính.</li>
+  <li>Tầng mạng cũng <b>bám trục chính</b>: bỏ đường dân cư (OSM highway.residential).</li>
   <li>Phương pháp của bài là lịch <b>cố định có phối hợp</b>: chu kỳ, thời gian xanh, băng thời gian tính offline từ số đếm.</li></ul></div>
  <div class="col panel stop"><h3>Điều em không lấy</h3><ul class="small" style="margin-left:18px">
   <li><b>Không lấy số liệu.</b> Em chỉ đọc tên bài và tóm tắt; chưa có toàn văn và dữ liệu khảo sát.</li>
@@ -450,7 +450,7 @@ slide("Dữ liệu", "Điểm xuất phát: trục chính Đà Nẵng, tính đ�
   <li>RL ở đây <b>thích ứng</b>: phản ứng theo hàng chờ quan sát, không theo băng tính sẵn.</li></ul></div>
 </div>''', secs=55, source="https://scv.udn.vn/trantrungviet/BBao/5864 (chỉ tóm tắt; chưa có toàn văn)", notes=N(
     "Trước nguồn năm 2025, em xin nêu một điểm xuất phát tại địa phương. Năm 2007, tác giả Trần Trung Việt và TS. Phan Cao Thọ đăng trên Tạp chí Cầu Đường Việt Nam nghiên cứu điều khiển phối hợp “Làn sóng xanh” cho các trục giao thông chính ở Đà Nẵng. Bài toán được xây dựng trên cơ sở bài toán băng thời gian và số liệu khảo sát thực tế dòng xe trên các trục có đèn tín hiệu, kèm phần mềm Green Wave Design. "
-    "Em kế thừa ý tưởng, không kế thừa số liệu: ở Đà Nẵng, bài toán đèn nằm trên trục chính và bắt đầu từ dòng xe khảo sát. Vì vậy tầng mạng bỏ đường dân cư và bám trục chính, và nguồn tiếp theo, bài báo 2025, là một nút có số đếm công bố. "
+    "Em kế thừa ý tưởng, không kế thừa số liệu: ở Đà Nẵng, bài toán đèn nằm trên trục chính và bắt đầu từ dòng xe khảo sát. Tầng mạng nhất quán với hướng trục chính đó, vì nó bỏ đường dân cư và bám trục chính, và nguồn tiếp theo, bài báo 2025, là một nút có số đếm công bố. "
     "Hai giới hạn em nói thẳng: em mới đọc tên bài và tóm tắt nên không trích số nào; và baseline cố định của em không có offset, nên không phải làn sóng xanh. Lịch phối hợp sẽ là một baseline cố định mạnh hơn mà em chưa thử.",
     ["2007: trục chính + khảo sát + làn sóng xanh", "Chỉ ý tưởng, không số liệu (chỉ tóm tắt)", "Baseline cố định ≠ làn sóng xanh"],
     ["Không nói luận văn dùng dữ liệu của bài 2007.", "Không khẳng định liên hệ giữa tác giả bài 2007 và bài 2025."],
@@ -567,7 +567,7 @@ slide("Dữ liệu", "Mở rộng: tự trích số xe và hướng đi từ cam
 <div class="row" style="gap:18px;margin-top:10px;align-items:stretch">
  <div style="width:250px;flex:none">{stat("4.323", "lượt qua vạch / 15 phút", "ink", 28)}<div style="height:6px"></div>{stat("75%", "ô tô trục chính lên Cầu Rồng; lệch vào–ra 4% / 17%", "go", 28)}</div>
  <div class="panel go col" style="padding:10px 14px;font-size:13.5px;line-height:1.38"><b>Realtime, đã đo.</b> <b>Một nút:</b> YOLOv8m (ảnh 1280) + theo vết + đếm vạch xử lý <b>180 giây video trong 169 giây</b> trên một laptop Apple M4 Pro (7,5 khung/giây). Ô tô gần camera lệch +8%, xe máy −10% so với bản chính xác. Độ trễ khoảng 0,13 giây ≪ nhịp quyết định 10 giây của SUMO. <b>Mạng 53 nút:</b> mỗi nút một thiết bị biên như vậy, chỉ gửi số đếm mỗi 10 giây (<i>chưa thử ở quy mô mạng</i>).</div>
- <div class="note stop" style="width:250px;flex:none;font-size:13.5px;line-height:1.38"><b>Minh họa khả thi, chưa phải dữ liệu luận văn:</b> một camera, 15 phút, chưa đếm tay; xe máy ở xa bị đếm thiếu. Không dùng để dựng nhu cầu mô phỏng.</div>
+ <div class="note stop" style="width:250px;flex:none;font-size:13.5px;line-height:1.38"><b>Minh họa khả thi, không làm đầu vào mô phỏng:</b> một camera, 15 phút, chưa đếm tay; xe máy ở xa bị đếm thiếu. Không dùng để dựng nhu cầu mô phỏng.</div>
 </div>''', secs=60, source="scripts/count_camera_vehicles.py · scripts/analyze_camera_routes.py · results/camera_counts/README.md", notes=N(
     "Một giới hạn của dữ liệu là video gốc của bài báo không công khai. Em thử xem có tự lấy được số liệu từ camera công khai không. "
     "Em dùng camera của trang 0511.vn tại nút Tây Cầu Rồng, 15 phút cao điểm chiều 11 tháng 7. Mô hình YOLO huấn luyện trên ảnh nhìn từ trên cao nhận dạng từng xe, ByteTrack giữ ID của xe qua các khung hình, và bảy vạch đếm ghi xe vào, xe ra và loại xe. "
@@ -575,7 +575,7 @@ slide("Dữ liệu", "Mở rộng: tự trích số xe và hướng đi từ cam
     "Hai kiểm tra độc lập: số ô tô vào và ra ở mỗi nút lệch 4 và 17 phần trăm, và chiều một chiều trên OpenStreetMap khớp với chiều xe đếm được. "
     "Về realtime, em đã đo: với model nhỏ hơn, cả chuỗi xử lý 180 giây video trong 169 giây trên một laptop, nhanh hơn thời gian thực, trong khi bộ điều khiển chỉ cần trạng thái mỗi 10 giây. Ở mức mạng, mỗi nút cần một thiết bị như vậy và chỉ gửi số đếm; phần này em chưa thử. "
     "Giới hạn: đây là minh họa khả thi, một camera và 15 phút, chưa đếm tay đối chiếu, xe máy ở xa camera bị đếm thiếu, nên em không dùng nó để dựng nhu cầu mô phỏng.",
-    ["Camera công khai → YOLO → ByteTrack → vạch đếm → Markov", "4.323 lượt / 15 phút; 75% ô tô trục chính lên cầu", "Realtime 1 nút: 180 giây video trong 169 giây (laptop M4 Pro)", "Mạng: một thiết bị biên mỗi nút — chưa thử", "Minh họa, không phải dữ liệu luận văn"],
+    ["Camera công khai → YOLO → ByteTrack → vạch đếm → Markov", "4.323 lượt / 15 phút; 75% ô tô trục chính lên cầu", "Realtime 1 nút: 180 giây video trong 169 giây (laptop M4 Pro)", "Mạng: một thiết bị biên mỗi nút — chưa thử", "Minh họa, không làm đầu vào mô phỏng"],
     ["Không nói đây là dữ liệu nhu cầu đã dùng trong SUMO hay CityFlow.", "Không đưa tổng số xe máy: lối xa bị đếm thiếu.", "Không nói “chính xác 95%”: chưa có đếm tay.", "Không nói “đã chạy realtime cho cả mạng”: mới đo một camera."],
     [("Độ chính xác của YOLO là bao nhiêu?", "Em chưa đo bằng đếm tay. Bằng chứng hiện có là cân bằng vào–ra của ô tô (lệch 4% và 17%) và chiều một chiều khớp OSM. Xe máy ở xa camera bị đếm thiếu nên em không báo tổng xe máy."),
      ("Sao không dùng nó cho mô phỏng?", "Chỉ có 15 phút ở một nút khác nút trong bài báo và chưa kiểm chứng. Bước tiếp là đếm tay một đoạn, chạy nhiều ngày, rồi mới hiệu chuẩn nhu cầu."),
@@ -1121,11 +1121,11 @@ slide(B, "B6 · Công nghệ và bản đồ mã", f'''
 
 slide(B, "B7 · Tái lập: cái đã có và cái còn thiếu", f'''
 <div class="row" style="gap:30px">
- <div class="col"><h3 class="go">Đã có</h3><ul class="dots small"><li>Manifest, cấu hình đã giải, hợp đồng checkpoint, JSON chọn</li><li>Lộ trình SUMO, mạng, CSV và JSON tổng kết</li><li>Ảnh chụp bằng chứng ngày 23/9 và script kiểm (63 / 63 kiểm nguồn và số học đều qua)</li><li>Điểm vào: chuẩn bị → học → đánh giá → tổng kết; học / chọn residual; chiến dịch; demo</li></ul></div>
- <div class="col"><h3 class="stop">Còn thiếu</h3><ul class="dots stop small"><li>Thiếu <span class="mono">scripts/build_danang_pilot.py</span>, nên bản sao mới không dựng lại được đường ống SUMO</li><li>Chiến dịch thô và checkpoint lớn nằm ngoài Git</li><li>Phát hành chặt: còn 14 cổng mở</li><li>File NPZ không có bộ nhớ, Adam và trạng thái số ngẫu nhiên, nên không học tiếp đúng chỗ</li><li>Provenance OSM ghi ngày tải và phiên bản công cụ là <span class="mono">unknown_not_recorded</span></li></ul></div>
+ <div class="col"><h3 class="go">Đã có</h3><ul class="dots small"><li>Manifest, cấu hình đã giải, hợp đồng checkpoint, JSON chọn</li><li>Lộ trình SUMO, mạng, CSV và JSON tổng kết</li><li>Ảnh chụp bằng chứng ngày 23/9 và script kiểm (84 / 84 kiểm nguồn và số học đều qua)</li><li>Điểm vào: chuẩn bị → học → đánh giá → tổng kết; học / chọn residual; chiến dịch; demo</li></ul></div>
+ <div class="col"><h3 class="stop">Còn thiếu</h3><ul class="dots stop small"><li>Chiến dịch thô và checkpoint lớn nằm ngoài Git</li><li>Phát hành chặt: còn 14 cổng mở</li><li>File NPZ không có bộ nhớ, Adam và trạng thái số ngẫu nhiên, nên không học tiếp đúng chỗ</li><li>Provenance OSM ghi ngày tải và phiên bản công cụ là <span class="mono">unknown_not_recorded</span></li></ul></div>
 </div>
 <div class="panel dark" style="margin-top:24px">Câu đúng: <b style="color:#6FD3B0">nhiều phần hỗ trợ tái lập, và các lỗ còn lại đã được chỉ ra</b>. Không phải “ai sao chép kho cũng tái lập được mọi thứ”.</div>''',
-      secs=0, kind="backup", source="docs/research/thesis-review-verification.md · docs/research/thesis-evidence-audit.json", notes=N("Dùng cho câu hỏi tái lập.", ["Kiểm 63 / 63 khác phát hành chặt", "Thiếu build_danang_pilot.py", "Nói thẳng"]))
+      secs=0, kind="backup", source="docs/research/thesis-review-verification.md · docs/research/thesis-evidence-audit.json", notes=N("Dùng cho câu hỏi tái lập.", ["Kiểm 84 / 84 khác phát hành chặt", "Phát hành chặt: còn 14 cổng mở", "Nói thẳng"]))
 
 slide(B, "B8 · Độ nhạy nhu cầu trong SUMO", f'''
 <div class="row" style="gap:30px">

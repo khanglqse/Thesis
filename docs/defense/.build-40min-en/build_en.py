@@ -442,7 +442,7 @@ slide("Data", "Starting point: Da Nang main roads, timed from field surveys", f'
 <div class="row" style="gap:30px;margin-top:22px">
  <div class="col panel go"><h3>Idea I take from it</h3><ul class="small" style="margin-left:18px">
   <li>Signal timing in Da Nang starts from <b>surveyed flows</b> on <b>signalised arterials</b>, not from a generic city.</li>
-  <li>The network tier <b>drops residential streets</b> (OSM highway.residential) to stay on the main-road corridors.</li>
+  <li>The network tier likewise <b>stays on arterials</b>: residential streets (OSM highway.residential) are dropped.</li>
   <li>Its method is a <b>coordinated fixed-time</b> plan: cycle, green split and time band set offline from counts.</li></ul></div>
  <div class="col panel stop"><h3>What I do not take</h3><ul class="small" style="margin-left:18px">
   <li><b>No numbers.</b> Only the title and abstract were read; the full text and survey data were not obtained.</li>
@@ -450,7 +450,7 @@ slide("Data", "Starting point: Da Nang main roads, timed from field surveys", f'
   <li>RL here is <b>adaptive</b>: it reacts to observed queues instead of a precomputed band.</li></ul></div>
 </div>''', secs=55, source="https://scv.udn.vn/trantrungviet/BBao/5864 (abstract only; full text not obtained)", notes=N(
     "Before the 2025 source, one local starting point. In 2007, Tran Trung Viet and Phan Cao Tho published a study in the Vietnam Bridge and Road journal on green-wave coordination for Da Nang's main arterials. They built the timing problem on the time-band method and on field surveys of traffic flow on signalised arterials, and wrote software called Green Wave Design. "
-    "I take the idea, not the data: in Da Nang the signal problem lives on arterials and starts from surveyed flows. That is why the network tier drops residential streets and stays on main roads, and why the next source, the 2025 paper, is a junction with published counts. "
+    "I take the idea, not the data: in Da Nang the signal problem lives on arterials and starts from surveyed flows. The network tier is consistent with that arterial focus, since it drops residential streets and stays on main roads, and the next source, the 2025 paper, is a junction with published counts. "
     "Two honest limits: I have only read the title and abstract, so I quote no numbers from it. And my fixed baseline has no offsets, so it is not a green wave; a coordinated plan would be a stronger fixed-time baseline that I did not test.",
     ["2007: arterials + field surveys + green wave", "Idea only, no numbers (abstract only)", "Fixed baseline ≠ green wave"],
     ["Never say the thesis uses data from the 2007 study.", "Do not claim any link between the 2007 and 2025 authors."],
@@ -567,7 +567,7 @@ slide("Data", "Extension: vehicle counts and turning paths from a public camera"
 <div class="row" style="gap:18px;margin-top:10px;align-items:stretch">
  <div style="width:250px;flex:none">{stat("4,323", "line crossings / 15 min", "ink", 28)}<div style="height:6px"></div>{stat("75%", "of main-axis cars go onto the bridge; in–out gap 4% / 17%", "go", 28)}</div>
  <div class="panel go col" style="padding:10px 14px;font-size:13.5px;line-height:1.38"><b>Realtime, measured.</b> <b>One junction:</b> YOLOv8m (1280 input) + tracking + line counting processed <b>180 s of video in 169 s</b> on one Apple M4 Pro laptop (7.5 fps). Near-field cars +8%, motorbikes −10% vs the accurate run. Latency about 0.13 s ≪ the 10 s SUMO decision step. <b>53-junction network:</b> one such edge device per junction, sending only counts every 10 s (<i>not tested at network scale</i>).</div>
- <div class="note stop" style="width:250px;flex:none;font-size:13.5px;line-height:1.38"><b>Feasibility demo, not thesis data:</b> one camera, 15 minutes, no hand count; far-field motorbikes under-counted. Not used to build simulation demand.</div>
+ <div class="note stop" style="width:250px;flex:none;font-size:13.5px;line-height:1.38"><b>Feasibility demo, not simulator input:</b> one camera, 15 minutes, no hand count; far-field motorbikes under-counted. Not used to build simulation demand.</div>
 </div>''', secs=60, source="scripts/count_camera_vehicles.py · scripts/analyze_camera_routes.py · results/camera_counts/README.md", notes=N(
     "One limit of the data is that the paper's raw video is not public. So I tested whether counts can be extracted automatically from a public camera. "
     "I used the 0511.vn camera at the Tay Cau Rong junction, 15 minutes of the evening peak on 11 July. A YOLO model trained on top-down imagery detects each vehicle, ByteTrack keeps the vehicle's ID across frames, and seven count lines record entries, exits and vehicle class. "
@@ -575,7 +575,7 @@ slide("Data", "Extension: vehicle counts and turning paths from a public camera"
     "Two independent checks: car entries and exits at each junction differ by 4 and 17 percent, and the one-way streets in OpenStreetMap match the counted directions. "
     "On realtime, I measured it: with a smaller model the whole chain processed 180 seconds of video in 169 seconds on one laptop, faster than real time, while the controller only needs a new state every 10 seconds. At network level each junction would need one such device sending only counts; I have not tested that. "
     "Limits: it is a feasibility demo, one camera and 15 minutes, with no hand count yet, and motorbikes far from the camera are under-counted, so I do not use it to build simulation demand.",
-    ["Public camera → YOLO → ByteTrack → count lines → Markov", "4,323 crossings / 15 min; 75% main-axis cars to the bridge", "Realtime, one junction: 180 s of video in 169 s (M4 Pro laptop)", "Network: one edge device per junction — not tested", "Demo, not thesis data"],
+    ["Public camera → YOLO → ByteTrack → count lines → Markov", "4,323 crossings / 15 min; 75% main-axis cars to the bridge", "Realtime, one junction: 180 s of video in 169 s (M4 Pro laptop)", "Network: one edge device per junction — not tested", "Demo, not simulator input"],
     ["Do not say this demand was used in SUMO or CityFlow.", "Do not quote a motorbike total: far legs are under-counted.", "Do not claim an accuracy figure: there is no hand count yet.", "Do not say it already runs in realtime for the whole network: only one camera was measured."],
     [("How accurate is YOLO here?", "Not measured against a hand count yet. Current evidence is the car in–out balance (4% and 17% gaps) and agreement with OSM one-way streets. Far-field motorbikes are under-counted, so I report no motorbike total."),
      ("Why not use it in the simulation?", "It is 15 minutes at a different junction from the paper, and unverified. The next step is a hand count, several days of video, then demand calibration."),
@@ -1118,11 +1118,11 @@ slide(B, "B6 · Technology stack and code map", f'''
 
 slide(B, "B7 · Reproducibility: what exists and what is missing", f'''
 <div class="row" style="gap:30px">
- <div class="col"><h3 class="go">Available</h3><ul class="dots small"><li>Manifests, resolved configs, checkpoint contracts, selection JSON</li><li>SUMO routes, network, summary CSV and JSON</li><li>Evidence snapshot of 23 Sep and the audit script (63 / 63 source and arithmetic checks pass)</li><li>Entry points: prepare → train → evaluate → summarise; train / select residual; campaign; demo</li></ul></div>
- <div class="col"><h3 class="stop">Gaps</h3><ul class="dots stop small"><li><span class="mono">scripts/build_danang_pilot.py</span> is missing, so a fresh clone cannot rebuild the SUMO pipeline</li><li>Large raw campaigns and checkpoints live outside Git</li><li>Strict release: 14 gates open</li><li>NPZ files lack replay, Adam and RNG state, so training cannot resume exactly</li><li>OSM provenance records download date and tool versions as <span class="mono">unknown_not_recorded</span></li></ul></div>
+ <div class="col"><h3 class="go">Available</h3><ul class="dots small"><li>Manifests, resolved configs, checkpoint contracts, selection JSON</li><li>SUMO routes, network, summary CSV and JSON</li><li>Evidence snapshot of 23 Sep and the audit script (84 / 84 source and arithmetic checks pass)</li><li>Entry points: prepare → train → evaluate → summarise; train / select residual; campaign; demo</li></ul></div>
+ <div class="col"><h3 class="stop">Gaps</h3><ul class="dots stop small"><li>Large raw campaigns and checkpoints live outside Git</li><li>Strict release: 14 gates open</li><li>NPZ files lack replay, Adam and RNG state, so training cannot resume exactly</li><li>OSM provenance records download date and tool versions as <span class="mono">unknown_not_recorded</span></li></ul></div>
 </div>
 <div class="panel dark" style="margin-top:24px">The correct statement: <b style="color:#6FD3B0">many parts support reproduction, and the remaining gaps are identified</b>. Not “anyone who clones the repo can reproduce everything”.</div>''',
-      secs=0, kind="backup", source="docs/research/thesis-review-verification.md · docs/research/thesis-evidence-audit.json", notes=N("Use for reproducibility questions.", ["Audit 63 / 63 ≠ strict release", "build_danang_pilot.py missing", "Say it plainly"]))
+      secs=0, kind="backup", source="docs/research/thesis-review-verification.md · docs/research/thesis-evidence-audit.json", notes=N("Use for reproducibility questions.", ["Audit 84 / 84 ≠ strict release", "Strict release: 14 gates open", "Say it plainly"]))
 
 slide(B, "B8 · SUMO demand sensitivity", f'''
 <div class="row" style="gap:30px">
