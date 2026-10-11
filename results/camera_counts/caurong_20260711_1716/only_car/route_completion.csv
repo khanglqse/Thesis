@@ -1,0 +1,8 @@
+junction,entry_leg,category,completed,lost,inconsistent,too_slow,completion_rate
+J1,west_road,car,123,45,0,0,0.732
+J1,boulevard_south,car,133,27,0,0,0.831
+J1,boulevard_mid,car,115,37,0,0,0.757
+J2,boulevard_mid,car,204,119,0,0,0.632
+J2,riverside_east,car,59,123,0,0,0.324
+J2,bridge,car,55,49,0,0,0.529
+J2,northwest_road,car,0,3,0,0,0.0

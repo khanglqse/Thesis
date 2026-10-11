@@ -1,0 +1,53 @@
+{
+  "window": "17:15:59 + 15.0 min",
+  "vehicles_entering_cordon": {
+    "motorcycle": 174,
+    "car": 617,
+    "truck": 2,
+    "bus": 5,
+    "total": 798
+  },
+  "vehicles_leaving_cordon": {
+    "motorcycle": 703,
+    "car": 761,
+    "truck": 7,
+    "bus": 8,
+    "total": 1479
+  },
+  "entering_veh_per_h": 3190,
+  "junction_in_out": {
+    "J1": {
+      "in": 1174,
+      "out": 2146
+    },
+    "J2": {
+      "in": 1634,
+      "out": 1343
+    }
+  },
+  "completed_routes": 909,
+  "route_completion_rate": 0.324,
+  "enter_outcomes": {
+    "completed": 909,
+    "lost": 1899,
+    "inconsistent": 0,
+    "too_slow": 0
+  },
+  "quality": {
+    "jitter_pairs_dropped": 18,
+    "crossings_raw": 4323,
+    "crossings_clean": 4287
+  },
+  "cordon_lines": [
+    "west_road",
+    "boulevard_south",
+    "southeast_road",
+    "riverside_east",
+    "bridge",
+    "northwest_road"
+  ],
+  "far_field_lines": [
+    "bridge",
+    "northwest_road"
+  ]
+}

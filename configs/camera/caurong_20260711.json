@@ -1,0 +1,248 @@
+{
+  "recording_date": "2026-07-11",
+  "camera": "Nut giao Tay Cau Rong (Da Nang), camera 0511.vn - view of the 2026-07-11 PM recording (YouTube 31Fhtgcq_fc)",
+  "source": "YouTube channel @0511.VietNam (Phat Trien Da Nang)",
+  "frame_size": [
+    1280,
+    720
+  ],
+  "note": "Pixel coordinates in the 1280x720 frame; the camera view differs between recordings, so lines are per-recording. Horizontal lines run A=left->B=right, so 'pos' = crossed moving down the image; vertical lines run A=top->B=bottom, so 'pos' = crossed moving left. 'legs' maps each junction the line bounds to the direction that enters it; the other direction leaves it. Lines with cordon=true form the closed boundary of the observed area.",
+  "lines": [
+    {
+      "name": "west_road",
+      "label": "West road",
+      "a": [
+        230,
+        330
+      ],
+      "b": [
+        230,
+        470
+      ],
+      "pos": "outbound",
+      "neg": "inbound",
+      "legs": {
+        "J1": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "boulevard_south",
+      "label": "Main axis, south",
+      "a": [
+        230,
+        600
+      ],
+      "b": [
+        510,
+        600
+      ],
+      "pos": "outbound",
+      "neg": "inbound",
+      "legs": {
+        "J1": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "southeast_road",
+      "label": "South-east road",
+      "a": [
+        700,
+        515
+      ],
+      "b": [
+        700,
+        620
+      ],
+      "pos": "inbound",
+      "neg": "outbound",
+      "legs": {
+        "J1": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "boulevard_mid",
+      "label": "Main axis between junctions",
+      "a": [
+        390,
+        300
+      ],
+      "b": [
+        660,
+        300
+      ],
+      "pos": "southbound",
+      "neg": "northbound",
+      "legs": {
+        "J1": "southbound",
+        "J2": "northbound"
+      },
+      "cordon": false
+    },
+    {
+      "name": "riverside_east",
+      "label": "Bach Dang riverside (east)",
+      "a": [
+        1000,
+        150
+      ],
+      "b": [
+        1000,
+        290
+      ],
+      "pos": "inbound",
+      "neg": "outbound",
+      "legs": {
+        "J2": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "bridge",
+      "label": "Dragon Bridge ramp",
+      "a": [
+        570,
+        80
+      ],
+      "b": [
+        720,
+        80
+      ],
+      "pos": "inbound",
+      "neg": "outbound",
+      "legs": {
+        "J2": "inbound"
+      },
+      "cordon": true,
+      "far_field": true
+    },
+    {
+      "name": "northwest_road",
+      "label": "North-west road",
+      "a": [
+        480,
+        85
+      ],
+      "b": [
+        480,
+        145
+      ],
+      "pos": "outbound",
+      "neg": "inbound",
+      "legs": {
+        "J2": "inbound"
+      },
+      "cordon": true,
+      "far_field": true
+    }
+  ],
+  "class_map": {
+    "motorcycle": [
+      "motor",
+      "bicycle",
+      "pedestrian",
+      "people",
+      "tricycle",
+      "awning-tricycle"
+    ],
+    "car": [
+      "car",
+      "van"
+    ],
+    "truck": [
+      "truck"
+    ],
+    "bus": [
+      "bus"
+    ]
+  },
+  "pcu": {
+    "motorcycle": 0.3,
+    "car": 1.0,
+    "truck": 2.5,
+    "bus": 2.0
+  },
+  "pcu_source": "Phan, Le & Nguyen (2025), p.19 (same factors as datasets/danang_published)",
+  "junctions": {
+    "J1": "Lower junction (south of the Bach Dang crossing)",
+    "J2": "Upper junction at the Dragon Bridge west ramp"
+  },
+  "map": {
+    "note": "Geographic placement for scripts/plot_camera_markov_map.py. The camera looks east: image left = north. One-way directions in OSM (Tran Phu southbound, Trung Nu Vuong outbound, Bach Dang north of the bridge northbound) match the one-directional line counts.",
+    "bbox": [
+      108.2213,
+      16.0593,
+      108.2258,
+      16.0629
+    ],
+    "junctions": {
+      "J1": [
+        16.06103,
+        108.22314
+      ],
+      "J2": [
+        16.06106,
+        108.22398
+      ]
+    },
+    "legs": {
+      "west_road": {
+        "street": "Trần Phú",
+        "anchor": [
+          16.0621,
+          108.22323
+        ]
+      },
+      "boulevard_south": {
+        "street": "Nguyễn Văn Linh (west)",
+        "anchor": [
+          16.06104,
+          108.22195
+        ]
+      },
+      "southeast_road": {
+        "street": "Trưng Nữ Vương",
+        "anchor": [
+          16.06022,
+          108.2225
+        ]
+      },
+      "boulevard_mid": {
+        "street": "Nguyễn Văn Linh (link)",
+        "anchor": [
+          16.06105,
+          108.22356
+        ]
+      },
+      "riverside_east": {
+        "street": "2 Tháng 9",
+        "anchor": [
+          16.05985,
+          108.22386
+        ]
+      },
+      "bridge": {
+        "street": "Cầu Rồng (Dragon Bridge)",
+        "anchor": [
+          16.06112,
+          108.22525
+        ]
+      },
+      "northwest_road": {
+        "street": "Bạch Đằng (north)",
+        "anchor": [
+          16.0622,
+          108.2241
+        ]
+      }
+    },
+    "slide_bbox": [
+      108.2208,
+      16.05955,
+      108.2261,
+      16.06275
+    ]
+  }
+}

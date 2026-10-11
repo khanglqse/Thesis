@@ -109,3 +109,7 @@ paper/thesis_danang.out
 paper/thesis_danang.toc
 presentation/rendered/
 results/defense_bundle/v1/.video_frames/
+
+# YOLO camera counts: annotated check videos and run logs stay local
+results/camera_counts/*/annotated.mp4
+results/camera_counts/*.log

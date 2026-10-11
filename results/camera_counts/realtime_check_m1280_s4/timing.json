@@ -1,0 +1,16 @@
+{
+  "hardware": "Apple M4 Pro laptop, PyTorch MPS backend, no other heavy jobs running",
+  "measured": "2026-10-05",
+  "video_seconds": 180,
+  "wall_seconds_end_to_end": 169.4,
+  "includes": "model load, video decode, YOLOv8m-VisDrone imgsz 1280, nested-box filter, ByteTrack, line counting, CSV output",
+  "processed_fps": 7.5,
+  "realtime_factor": 1.06,
+  "per_frame_ms_detector_only": {"yolov8x_2560": 470, "yolov8m_2560": 192, "yolov8m_1920": 125, "yolov8m_1280": 68},
+  "count_agreement_vs_reference_run": {
+    "reference": "caurong_20260711_1716 (yolov8x, imgsz 2560, 10 fps), first 180 s",
+    "near_field_cars": "180 ref vs 194 fast (+8%)",
+    "near_field_motorcycles": "439 ref vs 394 fast (-10%)",
+    "note": "the reference itself has no hand-count validation"
+  }
+}

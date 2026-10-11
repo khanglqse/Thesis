@@ -1,0 +1,164 @@
+{
+  "video": "data/camera/caurong_20260711_pm_peak.mp4",
+  "config": "configs/camera/caurong_20260711.json",
+  "model": "data/camera/models/yolov8x-visdrone.pt",
+  "model_source": "https://huggingface.co/mshamrai/yolov8m-visdrone/resolve/main/best.pt",
+  "imgsz": 2560,
+  "conf": 0.15,
+  "stride": 3,
+  "fps_source": 30.0,
+  "fps_processed": 10.0,
+  "line_margin_px": 8.0,
+  "agnostic_nms": true,
+  "nms_iou": 0.3,
+  "nested_box_filter": 0.6,
+  "tracker": "bytetrack",
+  "track_buffer": 60,
+  "track_scale": 3.0,
+  "match_thresh": 0.9,
+  "duration_s": 900.5,
+  "start_clock": "17:15:59",
+  "lines": [
+    {
+      "name": "west_road",
+      "label": "West road",
+      "a": [
+        230,
+        330
+      ],
+      "b": [
+        230,
+        470
+      ],
+      "pos": "outbound",
+      "neg": "inbound",
+      "legs": {
+        "J1": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "boulevard_south",
+      "label": "Main axis, south",
+      "a": [
+        230,
+        600
+      ],
+      "b": [
+        510,
+        600
+      ],
+      "pos": "outbound",
+      "neg": "inbound",
+      "legs": {
+        "J1": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "southeast_road",
+      "label": "South-east road",
+      "a": [
+        700,
+        515
+      ],
+      "b": [
+        700,
+        620
+      ],
+      "pos": "inbound",
+      "neg": "outbound",
+      "legs": {
+        "J1": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "boulevard_mid",
+      "label": "Main axis between junctions",
+      "a": [
+        390,
+        300
+      ],
+      "b": [
+        660,
+        300
+      ],
+      "pos": "southbound",
+      "neg": "northbound",
+      "legs": {
+        "J1": "southbound",
+        "J2": "northbound"
+      },
+      "cordon": false
+    },
+    {
+      "name": "riverside_east",
+      "label": "Bach Dang riverside (east)",
+      "a": [
+        1000,
+        150
+      ],
+      "b": [
+        1000,
+        290
+      ],
+      "pos": "inbound",
+      "neg": "outbound",
+      "legs": {
+        "J2": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "bridge",
+      "label": "Dragon Bridge ramp",
+      "a": [
+        570,
+        80
+      ],
+      "b": [
+        720,
+        80
+      ],
+      "pos": "inbound",
+      "neg": "outbound",
+      "legs": {
+        "J2": "inbound"
+      },
+      "cordon": true
+    },
+    {
+      "name": "northwest_road",
+      "label": "North-west road",
+      "a": [
+        480,
+        85
+      ],
+      "b": [
+        480,
+        145
+      ],
+      "pos": "outbound",
+      "neg": "inbound",
+      "legs": {
+        "J2": "inbound"
+      },
+      "cordon": true
+    }
+  ],
+  "crossings_by_class": {
+    "motorcycle": 2420,
+    "car": 1873,
+    "truck": 11,
+    "bus": 19
+  },
+  "total_crossings": 4323,
+  "pcu_factors": {
+    "motorcycle": 0.3,
+    "car": 1.0,
+    "truck": 2.5,
+    "bus": 2.0
+  },
+  "pcu_source": "Phan, Le & Nguyen (2025), p.19 (same factors as datasets/danang_published)"
+}

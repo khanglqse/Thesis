@@ -1,0 +1,17 @@
+line,junction,flow,motorcycle,car,truck,bus,total,veh_per_h
+west_road,J1,in,118,168,1,1,288,1151
+west_road,J1,out,4,3,0,0,7,28
+boulevard_south,J1,in,53,160,1,2,216,864
+boulevard_south,J1,out,318,126,1,0,445,1779
+southeast_road,J1,in,1,0,0,0,1,4
+southeast_road,J1,out,303,49,1,0,353,1411
+boulevard_mid,J1,in,517,152,0,0,669,2675
+boulevard_mid,J1,out,1010,323,2,6,1341,5361
+boulevard_mid,J2,in,1010,323,2,6,1341,5361
+boulevard_mid,J2,out,517,152,0,0,669,2675
+riverside_east,J2,in,2,182,0,2,186,744
+riverside_east,J2,out,6,101,2,2,111,444
+bridge,J2,in,0,104,0,0,104,416
+bridge,J2,out,16,246,1,5,268,1071
+northwest_road,J2,in,0,3,0,0,3,12
+northwest_road,J2,out,56,236,2,1,295,1179
