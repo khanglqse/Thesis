@@ -77,12 +77,12 @@
       "sha256": "811db0583fa9aca037b8c4bdbefd48377826a583cf2bff7ed230a8ce0f9da936"
     },
     "paper/thesis_danang.pdf": {
-      "bytes": 772456,
-      "sha256": "d6cf6d5747e5841679aaf66d4aff8df6ea62db79c2361f260b4f9e1c5e6d2a01"
+      "bytes": 772450,
+      "sha256": "be596a65f6f26964abe0b2e90bce393fe8297121a0c14914bd06e88e8d0a1ef1"
     },
     "paper/thesis_danang.tex": {
-      "bytes": 95925,
-      "sha256": "7d1984620f0d29912bd73fe655de98faa75959fbad54e6d3accaa019ca6bfde1"
+      "bytes": 95927,
+      "sha256": "fb75a5d2d434c36cf74d4dc60a93cd937de7e8faa020580b8e78315862014efb"
     },
     "results/camera_counts/caurong_20260711_1716/entries_exits.csv": {
       "bytes": 694,

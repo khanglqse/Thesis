@@ -297,16 +297,16 @@ The demand evidence above is limited by access: the raw video behind the publish
 
 \textbf{Pipeline.} A YOLOv8x detector fine-tuned on the drone-view VisDrone data~\cite{zhu2022visdrone} runs at input size 2,560 and confidence 0.15.\footnote{Ultralytics YOLOv8, \url{https://github.com/ultralytics/ultralytics}; VisDrone weights \url{https://huggingface.co/mshamrai/yolov8x-visdrone}.} A COCO-trained detector found almost no motorcycles from this camera height. VisDrone labels a rider separately from the motorcycle, so the motor, bicycle, tricycle, pedestrian, and people classes are all merged into one motorcycle class, and boxes nested inside another box (a rider on a bike) are removed. ByteTrack~\cite{zhang2022bytetrack} keeps vehicle identities at 10 processed frames per second. Seven count lines record each track once per line and direction, and a track's class is its confidence-weighted vote over its life. Consecutive entry and exit crossings of one track give its turning movement at a junction, and the two junctions are chained through their connecting link as an absorbing Markov chain of $P(\text{exit leg}\mid\text{entry leg})$. Volumes always come from line counts; completed routes supply proportions only.
 
-\begin{figure}[H]
+\begin{figure}[tbp]
 \centering
 \begin{subfigure}[t]{\textwidth}
 \centering
-\includegraphics[width=0.72\textwidth]{../results/camera_counts/caurong_20260711_1716/camera_annotated_frame.jpg}
+\includegraphics[width=0.62\textwidth]{../results/camera_counts/caurong_20260711_1716/camera_annotated_frame.jpg}
 \caption{Detections, track identities, and count lines.}
 \end{subfigure}\\[4pt]
 \begin{subfigure}[t]{\textwidth}
 \centering
-\includegraphics[width=0.8\textwidth]{../results/camera_counts/caurong_20260711_1716/only_car/markov_map_bare.pdf}
+\includegraphics[width=0.7\textwidth]{../results/camera_counts/caurong_20260711_1716/only_car/markov_map_bare.pdf}
 \caption{Car turning probabilities at J1 (blue) and J2 (orange).}
 \end{subfigure}
 \caption{Public-camera counting demonstration at Tay Cau Rong, 11 July 2026, 17:16--17:31. Camera image from 0511.vn; base map \textcopyright{} OpenStreetMap contributors. Arrows below 5\% are hidden.}\label{fig:camera}
