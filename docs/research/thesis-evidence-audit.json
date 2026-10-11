@@ -21,8 +21,8 @@
       "sha256": "a65a6edea00a44ea9e51da75db47aa88c08025a725e1dd07cf2f908093607ca1"
     },
     "docs/research/bibliography-metadata-audit.json": {
-      "bytes": 71289,
-      "sha256": "73d63e9f92652663627cc90ca4bab085d41e204d9df108e672e8c0a00cc013d5"
+      "bytes": 75495,
+      "sha256": "d9945f341678e9ad5d070736e736e4b5c6e090345e5ac934f09560e9451052e3"
     },
     "docs/research/evidence-snapshot-2026-09-23/seed12-resolved-config.json": {
       "bytes": 9740,
@@ -73,16 +73,44 @@
       "sha256": "03527e3464b53088ed2e4adb15518990b8e552d633d5f8f060593d0dc9b3132b"
     },
     "paper/references_verified.bib": {
-      "bytes": 26098,
-      "sha256": "0f9a890f5c32e6b27339e68a01cb06ae7164f5726cd406fd380fb2df02b57f3a"
+      "bytes": 27532,
+      "sha256": "811db0583fa9aca037b8c4bdbefd48377826a583cf2bff7ed230a8ce0f9da936"
     },
     "paper/thesis_danang.pdf": {
-      "bytes": 321841,
-      "sha256": "ad66b2c625ebe9ae7133a29f4f21186429f740a87b5b3175a6f9f0f5fdd74954"
+      "bytes": 772219,
+      "sha256": "73b02e44e738616fb81c09b8b70b1fd0011d4e47698e2da4276f698f15c6c8c0"
     },
     "paper/thesis_danang.tex": {
-      "bytes": 78214,
-      "sha256": "54b0a03477ca2577c32981b7ba4332244bbdd897260ccab5e0cccca36a2bd2dd"
+      "bytes": 95690,
+      "sha256": "b5cebb6eb3eac52aa6c184020233da14c96d89acbfe26ecdb88506be3ca6a39d"
+    },
+    "results/camera_counts/caurong_20260711_1716/entries_exits.csv": {
+      "bytes": 694,
+      "sha256": "4979ac12be1ded3da569d0652530a5701e66d89f8a18eede670cfb53b8ae61e3"
+    },
+    "results/camera_counts/caurong_20260711_1716/meta.json": {
+      "bytes": 3013,
+      "sha256": "ce68cb12fa2e5a23b0a09c8d4fd7c58467e85c4a9af3b80e5a89604027b204a5"
+    },
+    "results/camera_counts/caurong_20260711_1716/only_car/routes_summary.json": {
+      "bytes": 923,
+      "sha256": "351ddace98c13edaf702d8173274cbbdca42e4bd08fd3dbb661e8dbf44b92cd8"
+    },
+    "results/camera_counts/caurong_20260711_1716/only_car/turning_movements.csv": {
+      "bytes": 1841,
+      "sha256": "f2c994893d259737381b863888b6437be7977ee19edc09f82ce328da4b411f3f"
+    },
+    "results/camera_counts/caurong_20260711_1716/routes_summary.json": {
+      "bytes": 933,
+      "sha256": "9985243835a7ec31a2aadc5cbbdc044ed45f824ba5a643736dc4f38de04407dc"
+    },
+    "results/camera_counts/realtime_check_m1280_s4/timing.json": {
+      "bytes": 780,
+      "sha256": "5feb9bea1be6e274db4801b6b80aefd288955b5815ae806d3ca282cb62717d70"
+    },
+    "results/danang_baseline_mc/summary.json": {
+      "bytes": 4788,
+      "sha256": "23896f296b12e8479baf909b71cb446b253329a120f452eccd2579caebd33d9c"
     },
     "results/danang_protocol_v1/evaluation/dueling_n3_seed11.json": {
       "bytes": 80444,
@@ -349,8 +377,8 @@
       "sha256": "a11067e8bcd0145c208a10c2c0ffcc350c128838ff20fe7f81399a1dd788703c"
     },
     "scripts/audit_thesis_evidence.py": {
-      "bytes": 16901,
-      "sha256": "094c217971517d0c0ef1a777df37da81f123a65a9a39fb0afb45f7a84f0bc26b"
+      "bytes": 20890,
+      "sha256": "00473a40f04b99904688ac2d88d37cbb56de801cdda8d4877973df3670b49114"
     }
   },
   "audit_date": "2026-09-23",
@@ -601,6 +629,90 @@
     },
     {
       "name": "all_thesis_citation_keys_exist",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_1000_realizations_normal",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_normal_hysteretic_mp_lower_than_max_pressure",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_normal_published_fixed_lower_than_hysteretic_mp",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_normal_published_fixed_lower_than_max_pressure",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_1000_realizations_am_peak",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_am_peak_hysteretic_mp_lower_than_max_pressure",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_am_peak_published_fixed_lower_than_hysteretic_mp",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_am_peak_published_fixed_lower_than_max_pressure",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_1000_realizations_pm_peak",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_pm_peak_hysteretic_mp_lower_than_max_pressure",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_pm_peak_published_fixed_lower_than_hysteretic_mp",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_win_count_in_thesis_pm_peak_published_fixed_lower_than_max_pressure",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_table_cells_in_thesis",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_peak_hysteretic_rates_in_thesis",
+      "passed": true
+    },
+    {
+      "name": "baseline_mc_abstract_totals",
+      "passed": true
+    },
+    {
+      "name": "camera_yolo_crossing_totals_in_thesis",
+      "passed": true
+    },
+    {
+      "name": "camera_yolo_main_axis_in_thesis",
+      "passed": true
+    },
+    {
+      "name": "camera_yolo_car_balance_in_thesis",
+      "passed": true
+    },
+    {
+      "name": "camera_yolo_bridge_share_in_thesis",
+      "passed": true
+    },
+    {
+      "name": "camera_yolo_motorcycle_cordon_in_thesis",
+      "passed": true
+    },
+    {
+      "name": "camera_yolo_realtime_in_thesis",
       "passed": true
     },
     {

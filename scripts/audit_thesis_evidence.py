@@ -195,6 +195,62 @@ def audit(root):
              for key in group.split(",")}
     bibkeys = set(re.findall(r"@\w+\{([^,]+),", bib))
     check("all_thesis_citation_keys_exist", cited <= bibkeys)
+    mc = load(Path("results/danang_baseline_mc/summary.json"))
+    mc_cells, mc_wins = [], {}
+    for regime in ("normal", "am_peak", "pm_peak"):
+        check("baseline_mc_1000_realizations_" + regime, mc[regime]["n_realizations"] == 1000)
+        for row in mc[regime]["controllers"].values():
+            mc_cells.append(f"{row['median']:.2f} [{row['p2_5']:.2f}, {row['p97_5']:.2f}]")
+        for pair, result in mc[regime]["paired"].items():
+            mc_wins.setdefault(pair, []).append(f"{result['wins']:,}/{result['n']:,}")
+            check("baseline_mc_win_count_in_thesis_" + regime + "_" + pair,
+                  f"{result['wins']:,}/{result['n']:,}" in thesis)
+    check("baseline_mc_table_cells_in_thesis", all(cell in thesis for cell in mc_cells))
+    hyst = mc_wins["hysteretic_mp_lower_than_max_pressure"]
+    check("baseline_mc_peak_hysteretic_rates_in_thesis",
+          all(f"{mc[r]['paired']['hysteretic_mp_lower_than_max_pressure']['rate'] * 100:.1f}\\%" in thesis
+              for r in ("am_peak", "pm_peak")) and len(hyst) == 3)
+    fixed_vs_raw = sum(mc[r]["paired"]["published_fixed_lower_than_max_pressure"]["wins"] for r in mc)
+    fixed_vs_hyst = sum(mc[r]["paired"]["published_fixed_lower_than_hysteretic_mp"]["wins"] for r in mc)
+    check("baseline_mc_abstract_totals", fixed_vs_raw == 3000 and fixed_vs_hyst == 2999 and
+          "all 3,000 comparisons" in thesis and "2,999 of 3,000" in thesis)
+    camera_run = Path("results/camera_counts/caurong_20260711_1716")
+    camera_meta = load(camera_run / "meta.json")
+    by_class = camera_meta["crossings_by_class"]
+    check("camera_yolo_crossing_totals_in_thesis",
+          f"{camera_meta['total_crossings']:,} line crossings: {by_class['motorcycle']:,} motorcycles, "
+          f"{by_class['car']:,} cars and vans, {by_class['truck']} trucks, and {by_class['bus']} buses"
+          in thesis)
+    mid = {(r["junction"], r["flow"]): r
+           for r in csv.DictReader(read(camera_run / "entries_exits.csv").decode().splitlines())
+           if r["line"] == "boulevard_mid"}
+    north, south = mid[("J1", "out")], mid[("J1", "in")]
+    check("camera_yolo_main_axis_in_thesis",
+          f"{int(north['motorcycle']):,} motorcycles and {north['car']} cars northbound and "
+          f"{south['motorcycle']} motorcycles and {south['car']} cars southbound" in thesis)
+    cars = load(camera_run / "only_car/routes_summary.json")
+    j1, j2 = cars["junction_in_out"]["J1"], cars["junction_in_out"]["J2"]
+    check("camera_yolo_car_balance_in_thesis",
+          f"{j1['in']} cars enter J1 and {j1['out']} leave it, and {j2['in']} enter J2 and "
+          f"{j2['out']} leave it" in thesis and
+          f"For {cars['completed_routes']} car entries ({round(100 * cars['route_completion_rate'])}\\%)"
+          in thesis)
+    turns = {(r["junction"], r["from"], r["to"]): r for r in csv.DictReader(
+        read(camera_run / "only_car/turning_movements.csv").decode().splitlines())}
+    to_bridge = int(turns[("J2", "boulevard_mid", "bridge")]["completed_routes"])
+    from_mid = sum(int(r["completed_routes"]) for (j, f, _), r in turns.items()
+                   if j == "J2" and f == "boulevard_mid")
+    check("camera_yolo_bridge_share_in_thesis",
+          f"{round(100 * to_bridge / from_mid)}\\% ({to_bridge} of {from_mid})" in thesis)
+    everyone = load(camera_run / "routes_summary.json")
+    check("camera_yolo_motorcycle_cordon_in_thesis",
+          f"{everyone['vehicles_entering_cordon']['motorcycle']} enter the observed cordon while "
+          f"{everyone['vehicles_leaving_cordon']['motorcycle']} leave it" in thesis)
+    timing = load(Path("results/camera_counts/realtime_check_m1280_s4/timing.json"))
+    check("camera_yolo_realtime_in_thesis",
+          f"processed {timing['video_seconds']} seconds of video in "
+          f"{round(timing['wall_seconds_end_to_end'])} seconds" in thesis and
+          f"about {timing['per_frame_ms_detector_only']['yolov8m_1280']}~ms per frame" in thesis)
     bibliography = load(Path("docs/research/bibliography-metadata-audit.json"))
     check("bibliographic_audit_matches_current_bib", bibliography["bibliography_sha256"] ==
           hashlib.sha256(bib.encode()).hexdigest())

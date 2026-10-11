@@ -1080,7 +1080,8 @@
         "QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning",
         "QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning"
       ],
-      "primary_check_status": "title_found"
+      "primary_check_status": "title_found",
+      "correction_2026_10_11": "Author 'De Witt, Christian' corrected to 'Schroeder de Witt, Christian' (PMLR lists Christian Schroeder [de Witt])."
     },
     {
       "key": "sunehag2017vdn",
@@ -1419,7 +1420,8 @@
         "A Hitchhiker's Guide to Statistical Comparisons of Reinforcement Learning Algorithms",
         "A Hitchhiker's Guide to Statistical Comparisons of Reinforcement Learning Algorithms"
       ],
-      "primary_check_status": "title_found"
+      "primary_check_status": "title_found",
+      "claim_check_2026_10_11": "Full text read: performance per run = mean over E evaluation episodes; seeds/runs are the sample unit. Thesis wording changed from an explicit warning claim to this description."
     },
     {
       "key": "fadilah2024routechoice",
@@ -1513,7 +1515,8 @@
         "Journal of Science and Transport Technology"
       ],
       "registered_pages": "141-155",
-      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+      "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified.",
+      "correction_2026_10_11": "Added volume 5, number 4 from the journal landing page (Vol. 5 No. 4 (2025)); Crossref record has no volume/issue."
     },
     {
       "key": "trinh2025isolatedrl",
@@ -1862,11 +1865,96 @@
       ],
       "registered_pages": "6023-6029",
       "author_year_screen": "Cited surnames present in registered authors (allowing Wießner/Wiessner transliteration); year matches. Full name order and initials not certified."
+    },
+    {
+      "key": "zhu2022visdrone",
+      "title": "Detection and Tracking Meet Drones Challenge",
+      "doi": "10.1109/TPAMI.2021.3119563",
+      "url": null,
+      "year": "2022",
+      "status": "matched",
+      "registered_title": "Detection and Tracking Meet Drones Challenge",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1109%2Ftpami.2021.3119563",
+      "registered_authors": [
+        "Pengfei Zhu",
+        "Longyin Wen",
+        "Dawei Du",
+        "Xiao Bian",
+        "Heng Fan",
+        "Qinghua Hu",
+        "Haibin Ling"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2022,
+            11,
+            1
+          ]
+        ]
+      },
+      "registered_container": [
+        "IEEE Transactions on Pattern Analysis and Machine Intelligence"
+      ],
+      "registered_pages": "7380-7399",
+      "checked_on": "2026-10-11"
+    },
+    {
+      "key": "zhang2022bytetrack",
+      "title": "ByteTrack: Multi-object Tracking by Associating Every Detection Box",
+      "doi": "10.1007/978-3-031-20047-2_1",
+      "url": null,
+      "year": "2022",
+      "status": "matched",
+      "registered_title": "ByteTrack: Multi-object Tracking by Associating Every Detection Box",
+      "title_similarity": 1.0,
+      "source": "https://api.crossref.org/works/10.1007%2F978-3-031-20047-2_1",
+      "registered_authors": [
+        "Yifu Zhang",
+        "Peize Sun",
+        "Yi Jiang",
+        "Dongdong Yu",
+        "Fucheng Weng",
+        "Zehuan Yuan",
+        "Ping Luo",
+        "Wenyu Liu",
+        "Xinggang Wang"
+      ],
+      "registered_published": {
+        "date-parts": [
+          [
+            2022
+          ]
+        ]
+      },
+      "registered_container": [
+        "Lecture Notes in Computer Science",
+        "Computer Vision – ECCV 2022"
+      ],
+      "registered_pages": "1-21",
+      "note": "LNCS volume number not present in Crossref and not verified; omitted from the bib entry.",
+      "checked_on": "2026-10-11"
+    },
+    {
+      "key": "tran2007greenwave",
+      "title": "Nghiên cứu ứng dụng bài toán điều khiển giao thông bằng \"Làn sóng xanh\" trên các trục giao thông chính ở thành phố Đà Nẵng",
+      "doi": null,
+      "url": "https://scv.udn.vn/trantrungviet/BBao/5864",
+      "year": "2007",
+      "status": "not_checked_crossref",
+      "reason": "no DOI; University of Da Nang publication record checked manually",
+      "primary_check_url": "https://scv.udn.vn/trantrungviet/BBao/5864",
+      "primary_check_status": "title_found",
+      "primary_record": "Authors Trần Trung Việt, TS. Phan Cao Thọ; Tạp chí Cầu Đường Việt Nam, Số 10/2007, pp. 23-28, 2007; Vietnamese and English abstracts on the page.",
+      "full_text_obtained": false,
+      "permitted_use": "Local framing only (green-wave coordination from field flow surveys on Da Nang arterials); no timing value or count is cited.",
+      "checked_on": "2026-10-11"
     }
   ],
-  "bibliography_sha256": "0f9a890f5c32e6b27339e68a01cb06ae7164f5726cd406fd380fb2df02b57f3a",
+  "bibliography_sha256": "811db0583fa9aca037b8c4bdbefd48377826a583cf2bff7ed230a8ce0f9da936",
   "summary": {
-    "entries": 68,
+    "entries": 71,
     "crossref_doi_title_matched": 49,
     "other_primary_identities_checked": 18,
     "original_reports_not_obtained": [
@@ -1878,6 +1966,22 @@
     "limits": [
       "Primary title identity alone does not establish support for every claim.",
       "Full-text data-source review and exact locators are in thesis-evidence-ledger.md."
-    ]
-  }
+    ],
+    "recheck_2026_10_11": {
+      "scope": "All 68 entries re-screened: DOI entries against Crossref (title, year, author surnames, volume, pages); arXiv entries against the arXiv API; non-DOI entries against PMLR/NeurIPS/JMLR/CMU/JICA/EASTS primary pages. ault2021resco not re-fetched (OpenReview captcha).",
+      "corrected_entries": [
+        "rashid2018qmix",
+        "vu2025motorcyclesignal"
+      ],
+      "claim_wording_corrected": [
+        "colas2019hitchhiker (thesis line on evaluation episodes vs runs)"
+      ],
+      "added_entries": [
+        "zhu2022visdrone",
+        "zhang2022bytetrack",
+        "tran2007greenwave"
+      ]
+    }
+  },
+  "rechecked_on": "2026-10-11"
 }
