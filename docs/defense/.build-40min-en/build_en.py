@@ -16,6 +16,9 @@ IMG = {
     "curves": ROOT / "results/danang_protocol_v1/summary/validation-learning-curves.png",
     "sensitivity": ROOT / "results/danang_protocol_v1/summary/demand-sensitivity.png",
     "demo": ROOT / "tmp/thesis-evidence/demo-final-review.png",
+    "mc": ROOT / "results/danang_baseline_mc/baseline-mc-boxplot-deck.png",
+    "cam_frame": ROOT / "results/camera_counts/caurong_20260711_1716/camera_annotated_frame.jpg",
+    "cam_map": ROOT / "results/camera_counts/caurong_20260711_1716/only_car/markov_map_bare.png",
 }
 AUTHOR = "Luong Quang Khang"
 C = dict(asphalt="#16212C", ink="#13202B", body="#34434F", muted="#71808C", rule="#D2D8D5",
@@ -348,7 +351,7 @@ slide("Why", "", f'''
     ["Do not open with a promise that RL always wins."]))
 
 # ================================================================== 02 roadmap
-parts = [("Why", "The problem, three research questions, the two-tier design"), ("Data", "Published source, trust levels, demand construction, seeds"),
+parts = [("Why", "The problem, three research questions, the two-tier design"), ("Data", "2007 starting point, published source, trust levels, demand, seeds"),
          ("RL basics", "Q-values, Double DQN, dueling heads"), ("SUMO", "16-number state, training, metric and baselines"),
          ("CityFlow", "Schedule residual, anchor, 27 features, selector"), ("Results", "Regime effects, strong baselines, multi-seed gate"),
          ("Wrap-up", "Demo, allowed claims, contributions, next steps")]
@@ -408,7 +411,7 @@ two = table(["", "SUMO: one junction", "CityFlow: Hai Chau network"], [
     ["Model", "Dueling <b>Double</b> DQN, 3-step return", "Schedule-residual <b>Double</b> DQN"],
     ["Input → output", "16 numbers → 3 Q-values", "27 numbers per candidate macro → 1 Q"],
     ["Decision clock", "10 s", "300 s macro, requests every 10 s"],
-    ["Reward", "−(queue at end of 10 s step) × 0.01", "−(network queue + pending integral) / 100,000"],
+    ["Reward", "−(queue + pending at end of 10 s step) × 0.01", "−(network queue + pending integral) / 100,000"],
     ["Training", "30 episodes × 3,600 s, seeds 11–15", "12 episodes × 3,600 s, seeds 12–16"],
     ["Fixed baseline", "Published 103 s plan", "25 s nominal green tuned on validation"],
     ["Test", "15 cases (3 regimes × 5)", "15 cases (3 regimes × 5)"],
@@ -431,7 +434,28 @@ slide("Why", "Two tiers: two simulators, two models, two questions", f'''
     [("How are the two tiers related?", "Same research question and the same camera demand shape; no shared weights.")]))
 
 # ================================================================== DATA
-divider("Data", 2, "Where the data comes from", "What was actually observed, and what did I have to assume?", 6)
+divider("Data", 2, "Where the data comes from", "What was actually observed, and what did I have to assume?", 8)
+
+slide("Data", "Starting point: Da Nang main roads, timed from field surveys", f'''
+<div class="rule-l ink" style="margin-bottom:18px"><div class="small"><b>Trần Trung Việt & Phan Cao Thọ (2007).</b> <i>Nghiên cứu ứng dụng bài toán điều khiển giao thông bằng “Làn sóng xanh” trên các trục giao thông chính ở thành phố Đà Nẵng</i> [Applying “green wave” traffic control on the main arterials of Da Nang — my translation]. Tạp chí Cầu Đường Việt Nam, no. 10/2007, pp. 23–28.</div></div>
+{chain([("2007: arterials", "field flow surveys → green-wave timing"), ("2025: one junction", "Phan, Le & Nguyen: plan, table, cameras"), ("This thesis", "SUMO junction + 53-signal main-road network")])}
+<div class="row" style="gap:30px;margin-top:22px">
+ <div class="col panel go"><h3>Idea I take from it</h3><ul class="small" style="margin-left:18px">
+  <li>Signal timing in Da Nang starts from <b>surveyed flows</b> on <b>signalised arterials</b>, not from a generic city.</li>
+  <li>The network tier <b>drops residential streets</b> (OSM highway.residential) to stay on the main-road corridors.</li>
+  <li>Its method is a <b>coordinated fixed-time</b> plan: cycle, green split and time band set offline from counts.</li></ul></div>
+ <div class="col panel stop"><h3>What I do not take</h3><ul class="small" style="margin-left:18px">
+  <li><b>No numbers.</b> Only the title and abstract were read; the full text and survey data were not obtained.</li>
+  <li>The thesis fixed baseline has <b>no offsets</b>, so it is not a green wave.</li>
+  <li>RL here is <b>adaptive</b>: it reacts to observed queues instead of a precomputed band.</li></ul></div>
+</div>''', secs=55, source="https://scv.udn.vn/trantrungviet/BBao/5864 (abstract only; full text not obtained)", notes=N(
+    "Before the 2025 source, one local starting point. In 2007, Tran Trung Viet and Phan Cao Tho published a study in the Vietnam Bridge and Road journal on green-wave coordination for Da Nang's main arterials. They built the timing problem on the time-band method and on field surveys of traffic flow on signalised arterials, and wrote software called Green Wave Design. "
+    "I take the idea, not the data: in Da Nang the signal problem lives on arterials and starts from surveyed flows. That is why the network tier drops residential streets and stays on main roads, and why the next source, the 2025 paper, is a junction with published counts. "
+    "Two honest limits: I have only read the title and abstract, so I quote no numbers from it. And my fixed baseline has no offsets, so it is not a green wave; a coordinated plan would be a stronger fixed-time baseline that I did not test.",
+    ["2007: arterials + field surveys + green wave", "Idea only, no numbers (abstract only)", "Fixed baseline ≠ green wave"],
+    ["Never say the thesis uses data from the 2007 study.", "Do not claim any link between the 2007 and 2025 authors."],
+    [("Did you compare against green-wave coordination?", "No. The fixed baseline is an uncoordinated plan (published 103 s in SUMO, validation-tuned in CityFlow) with no offsets. Green-wave coordination would be a stronger fixed-time baseline that I did not test; I list it as a limitation."),
+     ("Why cite a 2007 paper?", "It shows the local practice: Da Nang arterial signals were timed offline from field surveys. The thesis asks whether an adaptive controller can improve on fixed-time logic for that setting.")]))
 
 src_rows = [["Geometry, lanes 2/2/3/3", "p. 7", "Build the SUMO junction"],
             ["Green 32/28/22 s, cycle 103 s", "p. 7, Fig. 4 p. 8", "Published fixed baseline"],
@@ -531,6 +555,32 @@ slide("Data", "Splits and the three kinds of seed", f'''
     "In SUMO, training and validation are both AM and are shared by all five learning seeds. "
     "Note: many demand cases of one checkpoint are not many independent models, and the route-family split is not a new city.",
     ["3 seeds: demand · simulator · learning", "Test = 15 cases (3 × 5)", "Paired ≠ independent models"]))
+
+slide("Data", "Extension: vehicle counts and turning paths from a public camera", f'''
+<div class="small" style="margin-bottom:8px"><b>Public YouTube video</b> → <b>YOLOv8-VisDrone</b> detects every vehicle → <b>ByteTrack</b> keeps its ID → <b>7 count lines</b> log in / out by class → <b>Markov chain</b> P(exit leg | entry leg)</div>
+<div class="row" style="gap:20px">
+ <div style="width:490px;flex:none"><img class="fig" src="{img("cam_frame")}" style="width:490px;height:262px;object-fit:cover">
+  <div class="cap">0511.vn, Tay Cau Rong junction, 11 Jul 2026 17:16–17:31. Box = vehicle, number = ID, trail = path, white line = count line.</div></div>
+ <div class="col"><img class="fig" src="{img("cam_map")}" style="width:100%;height:262px;object-fit:contain">
+  <div class="cap">Cars on an OpenStreetMap base: turning probability at J1 (blue), J2 (orange); OSM one-way streets agree with the counts.</div></div>
+</div>
+<div class="row" style="gap:18px;margin-top:10px;align-items:stretch">
+ <div style="width:250px;flex:none">{stat("4,323", "line crossings / 15 min", "ink", 28)}<div style="height:6px"></div>{stat("75%", "of main-axis cars go onto the bridge; in–out gap 4% / 17%", "go", 28)}</div>
+ <div class="panel go col" style="padding:10px 14px;font-size:13.5px;line-height:1.38"><b>Realtime, measured.</b> <b>One junction:</b> YOLOv8m (1280 input) + tracking + line counting processed <b>180 s of video in 169 s</b> on one Apple M4 Pro laptop (7.5 fps). Near-field cars +8%, motorbikes −10% vs the accurate run. Latency about 0.13 s ≪ the 10 s SUMO decision step. <b>53-junction network:</b> one such edge device per junction, sending only counts every 10 s (<i>not tested at network scale</i>).</div>
+ <div class="note stop" style="width:250px;flex:none;font-size:13.5px;line-height:1.38"><b>Feasibility demo, not thesis data:</b> one camera, 15 minutes, no hand count; far-field motorbikes under-counted. Not used to build simulation demand.</div>
+</div>''', secs=60, source="scripts/count_camera_vehicles.py · scripts/analyze_camera_routes.py · results/camera_counts/README.md", notes=N(
+    "One limit of the data is that the paper's raw video is not public. So I tested whether counts can be extracted automatically from a public camera. "
+    "I used the 0511.vn camera at the Tay Cau Rong junction, 15 minutes of the evening peak on 11 July. A YOLO model trained on top-down imagery detects each vehicle, ByteTrack keeps the vehicle's ID across frames, and seven count lines record entries, exits and vehicle class. "
+    "Joining one vehicle's crossings gives its route, and from routes a Markov chain: the probability of leaving by each leg given the entry leg. For example, 75 percent of cars on the main axis turn onto the Dragon Bridge. "
+    "Two independent checks: car entries and exits at each junction differ by 4 and 17 percent, and the one-way streets in OpenStreetMap match the counted directions. "
+    "On realtime, I measured it: with a smaller model the whole chain processed 180 seconds of video in 169 seconds on one laptop, faster than real time, while the controller only needs a new state every 10 seconds. At network level each junction would need one such device sending only counts; I have not tested that. "
+    "Limits: it is a feasibility demo, one camera and 15 minutes, with no hand count yet, and motorbikes far from the camera are under-counted, so I do not use it to build simulation demand.",
+    ["Public camera → YOLO → ByteTrack → count lines → Markov", "4,323 crossings / 15 min; 75% main-axis cars to the bridge", "Realtime, one junction: 180 s of video in 169 s (M4 Pro laptop)", "Network: one edge device per junction — not tested", "Demo, not thesis data"],
+    ["Do not say this demand was used in SUMO or CityFlow.", "Do not quote a motorbike total: far legs are under-counted.", "Do not claim an accuracy figure: there is no hand count yet.", "Do not say it already runs in realtime for the whole network: only one camera was measured."],
+    [("How accurate is YOLO here?", "Not measured against a hand count yet. Current evidence is the car in–out balance (4% and 17% gaps) and agreement with OSM one-way streets. Far-field motorbikes are under-counted, so I report no motorbike total."),
+     ("Why not use it in the simulation?", "It is 15 minutes at a different junction from the paper, and unverified. The next step is a hand count, several days of video, then demand calibration."),
+     ("Can YOLO run in realtime?", "For one junction, yes, measured: YOLOv8m at 1280 input plus tracking and line counting processed 180 s of video in 169 s on an M4 Pro laptop; latency is about 0.13 s against a 10 s decision step. The trade-off is about 10% fewer motorbikes than the accurate run. For the 53-junction network the design is one edge device per junction sending counts; I have not tested that scale."),
+     ("Why a VisDrone model?", "COCO-trained YOLO finds almost no motorbikes from this height; VisDrone is top-down imagery, so it picks up 10-pixel motorbikes.")]))
 
 # ================================================================== RL
 divider("RL basics", 3, "Learning from consequences", "Which two ideas do both models rely on?", 3)
@@ -844,6 +894,23 @@ slide("Results", "Reading the SUMO result: hypotheses, ablation and simulated sa
     "On simulated safety: 120 main runs had no collisions and no emergency events.",
     ["Best checkpoint ≠ last episode", "MP struggles: partial observation + 7 s clearance", "0 collisions / 0 emergencies in 120 runs"]))
 
+slide("Results", "Is the baseline ranking luck? 1,000 demand realizations, no RL", f'''
+<div class="row" style="gap:0;margin-bottom:12px">
+ <div class="col" style="border-left:6px solid {C["base"]};padding-left:16px"><div class="hero" style="font-size:44px">3,000 / 3,000</div><div class="small">Fixed &lt; <b>Max-Pressure</b> in every paired realization</div></div>
+ <div class="col" style="border-left:6px solid {C["base"]};padding-left:16px"><div class="hero" style="font-size:44px">2,999 / 3,000</div><div class="small">Fixed &lt; <b>Hysteretic MP</b></div></div>
+ <div class="col" style="border-left:6px solid {C["caution"]};padding-left:16px"><div class="hero caution" style="font-size:44px">100 · 76 · 88%</div><div class="small">Hysteretic &lt; raw MP at normal · AM · PM; multimodal at peaks</div></div>
+</div>
+<img class="fig" src="{img("mc")}" style="width:1136px;height:400px;object-fit:contain">
+<div class="cap">9,000 SUMO runs = 1,000 paired (demand seed, SUMO seed) realizations × 3 regimes × 3 baselines, queue + pending (veh-h). Count-preserving departure times of <b>one</b> observed profile, not 1,000 traffic days. Seeds disjoint from train / validation / test. The learned controller is not included (training cost).</div>''', secs=45, kind="results", source="SUMO · scripts/run_danang_baseline_mc.py · results/danang_baseline_mc/summary.json · parity: reproduces test case AM-101 exactly", notes=N(
+    "Is the baseline ranking an accident of the five test realizations? I re-ran only the three non-learning baselines on 1,000 fresh demand realizations per regime: 9,000 SUMO runs, each controller seeing the same departures and the same SUMO seed. "
+    "Fixed beats raw Max-Pressure in all 3,000 pairs and hysteretic Max-Pressure in 2,999 of 3,000. Hysteretic beats raw MP always at normal, 76 percent at AM and 88 percent at PM, but at the peaks it is multimodal: it locks into different phase patterns from run to run. "
+    "The medians, 9.9, 78.5 and 149.3 vehicle-hours for fixed, are close to the 15-case means of 9.9, 79.2 and 152.7, so the main table was not drawn from lucky cases. "
+    "These are realizations of one observed profile, not 1,000 days, and the learned model is not in this experiment.",
+    ["9,000 runs = 1,000 × 3 regimes × 3 baselines", "Fixed < MP 3,000/3,000 · < hysteretic 2,999/3,000", "One observed profile, not 1,000 days · no RL"],
+    ["Do not say the 1,000 runs include the learned model.", "Do not call them 1,000 independent traffic days."],
+    [("Why not run the DQN 1,000 times too?", "Training costs dominate; the learned result stays at 5 seeds × 15 cases. This experiment only tests whether the baseline ranking is stable."),
+     ("Why is hysteretic MP so spread out?", "Its hold rule makes the phase sequence path-dependent, so small departure changes lock it into different cycles; the bands in the plot are those cycles.")]))
+
 cf_rows = [("Tuned fixed", 8339.43, C["base"], "baseline, 0%"), ("Max-Pressure", 6347.00, C["pressure"], "−23.89% vs fixed, best"),
            ("Hysteretic MP", 6739.13, C["pressure2"], "−19.19% vs fixed"), ("Residual DDQN s14", 7829.25, C["go"], "−6.12% vs fixed")]
 slide("Results", "CityFlow: Max-Pressure is still best; the residual cuts 6.12% versus fixed", f'''
@@ -1067,7 +1134,7 @@ qa = [("One model or several?", "Two families: SUMO dueling Double DQN (16 → 3
       ("Why not a GNN, PPO or a bigger model?", "Discrete actions and a small MLP keep the contract checkable. No comparison yet says they would be better or worse."),
       ("Is the residual reward the gain over fixed?", "No. It is −(queue + pending) over the network in the block. Gains over fixed are measured in paired evaluation."),
       ("Loss fell but queueing did not?", "Loss measures fit to TD targets on replay; it does not prove the greedy policy is good, so selection uses validation."),
-      ("Is the system accident-free?", "Phase, transition and anchor rules are simulator logic; 0 collisions in the runs. Not a field safety certificate."),
+      ("Is the system accident-free?", "Phase, transition and anchor rules are simulator logic; 0 collisions in the 120 main and 120 sensitivity SUMO runs (the 1,000-realization baseline batch did not record collisions). Not a field safety certificate."),
       ("Same γ, different behaviour?", "0.99 per 10 s ≠ 0.99 per 300 s. To compare in physical time, raise γ to the number of steps."),
       ("A rejected seed tests well?", "The validation decision stands; it is reported only as a post hoc diagnostic."),
       ("Is this enough for a thesis?", "Enough for system development plus simulation evaluation with failure analysis; not for a deployment claim.")]
@@ -1076,6 +1143,24 @@ slide(B, "B9 · Quick answers to common questions", f'<div style="display:grid;g
       source="docs/defense/thesis-understanding-guide-vi.md §22 · docs/defense/committee-questions-evidence-vi.md", notes=N(
           "The lifeline slide. Each answer: one conclusion sentence, one limit sentence, then point to the evidence.", ["Answer briefly, then stop", "Always add the limit", "Open the artifact if needed"]))
 
+
+cam_rows = [["Tran Phu", "168", "3", "J1: 89% → main axis · 6% → Trung Nu Vuong"],
+            ["Nguyen Van Linh (west)", "160", "126", "J1: 89% → main axis · 10% → Trung Nu Vuong"],
+            ["Trung Nu Vuong", "0", "49", "exit only (OSM: one-way)"],
+            ["2 Thang 9", "182", "101", "J2: 39% → bridge · 37% → Bach Dang · 20% → main axis"],
+            ["Dragon Bridge", "104", "246", "J2: 62% → main axis · 18% → 2 Thang 9 · 13% → Bach Dang"],
+            ["Bach Dang (north)", "3", "236", "exit only (OSM: one-way)"]]
+slide(B, "B10 · Camera YOLO: car counts, checks and limits", f'''
+<div class="row" style="gap:28px">
+ <div style="flex:1.35">{table(["Leg (cars / 15 min)", "In", "Out", "Markov chain from this leg"], cam_rows, cls="t tight")}
+  <div class="xs muted" style="margin-top:8px">Main axis between J1 and J2 (near field, most reliable): cars 323 north / 152 south; motorbikes 1,010 north / 517 south.</div></div>
+ <div class="col">
+  <h3>Checks</h3><ul class="dots small"><li>Car balance: J1 480 in / 501 out; J2 612 / 735</li><li>63% of entries have a completed route (689 routes)</li><li>OSM one-way streets match the counted directions</li></ul>
+  <h3 class="stop" style="margin-top:14px">Limits</h3><ul class="dots stop small"><li>No hand count yet; ID accuracy not measured</li><li>Motorbikes: 174 in / 703 out → far legs (bridge) under-counted</li><li>One camera, one day, 15 min; about 95 machine-minutes per 15 video-minutes</li></ul>
+ </div>
+</div>''', secs=0, kind="backup", source="results/camera_counts/caurong_20260711_1716/only_car/*.csv · results/camera_counts/README.md", notes=N(
+    "Backup for camera questions. Read the table by row: entry leg, cars in and out, then turning probabilities. Always state the limits: no hand count, far-field motorbikes under-counted.",
+    ["Cars are trustworthy: balance 4% / 17%", "Motorbikes: main axis only", "No hand count yet"]))
 
 # ================================================================== render
 def section_secs():

@@ -16,6 +16,9 @@ IMG = {
     "curves": ROOT / "results/danang_protocol_v1/summary/validation-learning-curves.png",
     "sensitivity": ROOT / "results/danang_protocol_v1/summary/demand-sensitivity.png",
     "demo": ROOT / "tmp/thesis-evidence/demo-final-review.png",
+    "mc": ROOT / "results/danang_baseline_mc/baseline-mc-boxplot-deck.png",
+    "cam_frame": ROOT / "results/camera_counts/caurong_20260711_1716/camera_annotated_frame.jpg",
+    "cam_map": ROOT / "results/camera_counts/caurong_20260711_1716/only_car/markov_map_vi_bare.png",
 }
 AUTHOR = "Lương Quang Khang"
 C = dict(asphalt="#16212C", ink="#13202B", body="#34434F", muted="#71808C", rule="#D2D8D5",
@@ -348,7 +351,7 @@ slide("Vì sao", "", f'''
     ["Không mở đầu bằng lời hứa RL luôn thắng."]))
 
 # ================================================================== 02 roadmap
-parts = [("Vì sao", "Bài toán, ba câu hỏi nghiên cứu, thiết kế hai tầng"), ("Dữ liệu", "Nguồn công bố, tầng tin cậy, dựng nhu cầu, các seed"),
+parts = [("Vì sao", "Bài toán, ba câu hỏi nghiên cứu, thiết kế hai tầng"), ("Dữ liệu", "Điểm xuất phát 2007, nguồn công bố, tầng tin cậy, nhu cầu, seed"),
          ("Cơ sở RL", "Giá trị Q, Double DQN, đầu ra dueling"), ("SUMO", "Trạng thái 16 số, huấn luyện, chỉ số và baseline"),
          ("CityFlow", "Residual lịch, neo, 27 đặc trưng, bộ chọn"), ("Kết quả", "Theo chế độ, baseline mạnh, cổng nhiều seed"),
          ("Kết luận", "Demo, câu được nói, đóng góp, bước tiếp")]
@@ -408,7 +411,7 @@ two = table(["", "SUMO: một nút", "CityFlow: mạng Hải Châu"], [
     ["Mô hình", "Dueling <b>Double</b> DQN, lợi tức 3 bước", "<b>Double</b> DQN residual theo lịch"],
     ["Vào → ra", "16 số → 3 giá trị Q", "27 số mỗi macro ứng viên → 1 giá trị Q"],
     ["Nhịp quyết định", "10 giây", "macro 300 giây, yêu cầu mỗi 10 giây"],
-    ["Thưởng", "−(hàng chờ cuối bước 10 giây) × 0,01", "−(hàng chờ mạng + tích phân xe chưa vào) / 100.000"],
+    ["Thưởng", "−(hàng chờ + xe chưa vào cuối bước 10 giây) × 0,01", "−(hàng chờ mạng + tích phân xe chưa vào) / 100.000"],
     ["Huấn luyện", "30 episode × 3.600 giây, seed 11–15", "12 episode × 3.600 giây, seed 12–16"],
     ["Baseline cố định", "Lịch công bố 103 giây", "Xanh danh định 25 giây, chọn trên kiểm định"],
     ["Kiểm tra", "15 ca (3 chế độ × 5)", "15 ca (3 chế độ × 5)"],
@@ -431,7 +434,28 @@ slide("Vì sao", "Hai tầng: hai mô phỏng, hai mô hình, hai câu hỏi", f
     [("Hai tầng liên hệ thế nào?", "Cùng câu hỏi nghiên cứu và cùng hình dạng nhu cầu camera; không dùng chung trọng số.")]))
 
 # ================================================================== DATA
-divider("Dữ liệu", 2, "Dữ liệu đến từ đâu", "Cái gì thực sự được quan sát, và cái gì em phải giả định?", 6)
+divider("Dữ liệu", 2, "Dữ liệu đến từ đâu", "Cái gì thực sự được quan sát, và cái gì em phải giả định?", 8)
+
+slide("Dữ liệu", "Điểm xuất phát: trục chính Đà Nẵng, tính đèn từ khảo sát thực tế", f'''
+<div class="rule-l ink" style="margin-bottom:18px"><div class="small"><b>Trần Trung Việt & Phan Cao Thọ (2007).</b> <i>Nghiên cứu ứng dụng bài toán điều khiển giao thông bằng “Làn sóng xanh” trên các trục giao thông chính ở thành phố Đà Nẵng.</i> Tạp chí Cầu Đường Việt Nam, số 10/2007, tr. 23–28.</div></div>
+{chain([("2007 · trục chính", "khảo sát dòng xe → làn sóng xanh"), ("2025 · một nút", "Phan, Le & Nguyen: lịch, bảng, camera"), ("Luận văn này", "nút SUMO + mạng 53 đèn trên trục chính")])}
+<div class="row" style="gap:30px;margin-top:22px">
+ <div class="col panel go"><h3>Ý tưởng em kế thừa</h3><ul class="small" style="margin-left:18px">
+  <li>Bài toán đèn ở Đà Nẵng bắt đầu từ <b>dòng xe khảo sát</b> trên <b>trục chính có đèn</b>, không phải một thành phố chung chung.</li>
+  <li>Tầng mạng <b>bỏ đường dân cư</b> (OSM highway.residential) để bám các trục chính.</li>
+  <li>Phương pháp của bài là lịch <b>cố định có phối hợp</b>: chu kỳ, thời gian xanh, băng thời gian tính offline từ số đếm.</li></ul></div>
+ <div class="col panel stop"><h3>Điều em không lấy</h3><ul class="small" style="margin-left:18px">
+  <li><b>Không lấy số liệu.</b> Em chỉ đọc tên bài và tóm tắt; chưa có toàn văn và dữ liệu khảo sát.</li>
+  <li>Baseline cố định của luận văn <b>không có offset</b>, nên không phải làn sóng xanh.</li>
+  <li>RL ở đây <b>thích ứng</b>: phản ứng theo hàng chờ quan sát, không theo băng tính sẵn.</li></ul></div>
+</div>''', secs=55, source="https://scv.udn.vn/trantrungviet/BBao/5864 (chỉ tóm tắt; chưa có toàn văn)", notes=N(
+    "Trước nguồn năm 2025, em xin nêu một điểm xuất phát tại địa phương. Năm 2007, tác giả Trần Trung Việt và TS. Phan Cao Thọ đăng trên Tạp chí Cầu Đường Việt Nam nghiên cứu điều khiển phối hợp “Làn sóng xanh” cho các trục giao thông chính ở Đà Nẵng. Bài toán được xây dựng trên cơ sở bài toán băng thời gian và số liệu khảo sát thực tế dòng xe trên các trục có đèn tín hiệu, kèm phần mềm Green Wave Design. "
+    "Em kế thừa ý tưởng, không kế thừa số liệu: ở Đà Nẵng, bài toán đèn nằm trên trục chính và bắt đầu từ dòng xe khảo sát. Vì vậy tầng mạng bỏ đường dân cư và bám trục chính, và nguồn tiếp theo, bài báo 2025, là một nút có số đếm công bố. "
+    "Hai giới hạn em nói thẳng: em mới đọc tên bài và tóm tắt nên không trích số nào; và baseline cố định của em không có offset, nên không phải làn sóng xanh. Lịch phối hợp sẽ là một baseline cố định mạnh hơn mà em chưa thử.",
+    ["2007: trục chính + khảo sát + làn sóng xanh", "Chỉ ý tưởng, không số liệu (chỉ tóm tắt)", "Baseline cố định ≠ làn sóng xanh"],
+    ["Không nói luận văn dùng dữ liệu của bài 2007.", "Không khẳng định liên hệ giữa tác giả bài 2007 và bài 2025."],
+    [("Em có so với điều khiển làn sóng xanh không?", "Không. Baseline cố định là lịch không phối hợp (103 giây công bố trong SUMO, chỉnh trên tập kiểm định trong CityFlow), không có offset. Làn sóng xanh sẽ là baseline cố định mạnh hơn mà em chưa thử; em nêu đây là một giới hạn."),
+     ("Vì sao trích một bài năm 2007?", "Bài cho thấy thực tiễn địa phương: đèn trên trục chính Đà Nẵng được tính offline từ khảo sát. Luận văn hỏi liệu bộ điều khiển thích ứng có cải thiện được logic cố định trong bối cảnh đó không.")]))
 
 src_rows = [["Hình học, làn 2/2/3/3", "tr. 7", "Dựng nút SUMO"],
             ["Xanh 32/28/22 giây, chu kỳ 103 giây", "tr. 7, Hình 4 tr. 8", "Baseline cố định công bố"],
@@ -531,6 +555,32 @@ slide("Dữ liệu", "Cách chia dữ liệu và ba loại seed", f'''
     "Trong SUMO, học và kiểm định đều là AM và dùng chung cho cả năm seed học. "
     "Lưu ý: nhiều ca nhu cầu của một checkpoint không phải nhiều mô hình độc lập, và chia họ lộ trình không phải một thành phố mới.",
     ["3 seed: nhu cầu · mô phỏng · học", "Kiểm tra = 15 ca (3 × 5)", "Ghép cặp khác mô hình độc lập"]))
+
+slide("Dữ liệu", "Mở rộng: tự trích số xe và hướng đi từ camera công khai", f'''
+<div class="small" style="margin-bottom:8px"><b>Video YouTube công khai</b> → <b>YOLOv8-VisDrone</b> nhận dạng từng xe → <b>ByteTrack</b> giữ ID → <b>7 vạch đếm</b> vào / ra theo loại xe → <b>xích Markov</b> P(lối ra | lối vào)</div>
+<div class="row" style="gap:20px">
+ <div style="width:490px;flex:none"><img class="fig" src="{img("cam_frame")}" style="width:490px;height:262px;object-fit:cover">
+  <div class="cap">0511.vn, nút Tây Cầu Rồng, 11/7/2026 17:16–17:31. Khung = xe, số = ID, vệt = đường đi, vạch trắng = vạch đếm.</div></div>
+ <div class="col"><img class="fig" src="{img("cam_map")}" style="width:100%;height:262px;object-fit:contain">
+  <div class="cap">Ô tô trên nền OpenStreetMap: xác suất rẽ ở J1 (xanh), J2 (cam); chiều một chiều trên OSM khớp số đếm.</div></div>
+</div>
+<div class="row" style="gap:18px;margin-top:10px;align-items:stretch">
+ <div style="width:250px;flex:none">{stat("4.323", "lượt qua vạch / 15 phút", "ink", 28)}<div style="height:6px"></div>{stat("75%", "ô tô trục chính lên Cầu Rồng; lệch vào–ra 4% / 17%", "go", 28)}</div>
+ <div class="panel go col" style="padding:10px 14px;font-size:13.5px;line-height:1.38"><b>Realtime, đã đo.</b> <b>Một nút:</b> YOLOv8m (ảnh 1280) + theo vết + đếm vạch xử lý <b>180 giây video trong 169 giây</b> trên một laptop Apple M4 Pro (7,5 khung/giây). Ô tô gần camera lệch +8%, xe máy −10% so với bản chính xác. Độ trễ khoảng 0,13 giây ≪ nhịp quyết định 10 giây của SUMO. <b>Mạng 53 nút:</b> mỗi nút một thiết bị biên như vậy, chỉ gửi số đếm mỗi 10 giây (<i>chưa thử ở quy mô mạng</i>).</div>
+ <div class="note stop" style="width:250px;flex:none;font-size:13.5px;line-height:1.38"><b>Minh họa khả thi, chưa phải dữ liệu luận văn:</b> một camera, 15 phút, chưa đếm tay; xe máy ở xa bị đếm thiếu. Không dùng để dựng nhu cầu mô phỏng.</div>
+</div>''', secs=60, source="scripts/count_camera_vehicles.py · scripts/analyze_camera_routes.py · results/camera_counts/README.md", notes=N(
+    "Một giới hạn của dữ liệu là video gốc của bài báo không công khai. Em thử xem có tự lấy được số liệu từ camera công khai không. "
+    "Em dùng camera của trang 0511.vn tại nút Tây Cầu Rồng, 15 phút cao điểm chiều 11 tháng 7. Mô hình YOLO huấn luyện trên ảnh nhìn từ trên cao nhận dạng từng xe, ByteTrack giữ ID của xe qua các khung hình, và bảy vạch đếm ghi xe vào, xe ra và loại xe. "
+    "Nối các lần qua vạch của cùng một xe cho ra hành trình, và từ đó là xích Markov: xác suất ra ở lối nào khi biết xe vào từ lối nào. Ví dụ 75 phần trăm ô tô đi trên trục chính rẽ lên Cầu Rồng. "
+    "Hai kiểm tra độc lập: số ô tô vào và ra ở mỗi nút lệch 4 và 17 phần trăm, và chiều một chiều trên OpenStreetMap khớp với chiều xe đếm được. "
+    "Về realtime, em đã đo: với model nhỏ hơn, cả chuỗi xử lý 180 giây video trong 169 giây trên một laptop, nhanh hơn thời gian thực, trong khi bộ điều khiển chỉ cần trạng thái mỗi 10 giây. Ở mức mạng, mỗi nút cần một thiết bị như vậy và chỉ gửi số đếm; phần này em chưa thử. "
+    "Giới hạn: đây là minh họa khả thi, một camera và 15 phút, chưa đếm tay đối chiếu, xe máy ở xa camera bị đếm thiếu, nên em không dùng nó để dựng nhu cầu mô phỏng.",
+    ["Camera công khai → YOLO → ByteTrack → vạch đếm → Markov", "4.323 lượt / 15 phút; 75% ô tô trục chính lên cầu", "Realtime 1 nút: 180 giây video trong 169 giây (laptop M4 Pro)", "Mạng: một thiết bị biên mỗi nút — chưa thử", "Minh họa, không phải dữ liệu luận văn"],
+    ["Không nói đây là dữ liệu nhu cầu đã dùng trong SUMO hay CityFlow.", "Không đưa tổng số xe máy: lối xa bị đếm thiếu.", "Không nói “chính xác 95%”: chưa có đếm tay.", "Không nói “đã chạy realtime cho cả mạng”: mới đo một camera."],
+    [("Độ chính xác của YOLO là bao nhiêu?", "Em chưa đo bằng đếm tay. Bằng chứng hiện có là cân bằng vào–ra của ô tô (lệch 4% và 17%) và chiều một chiều khớp OSM. Xe máy ở xa camera bị đếm thiếu nên em không báo tổng xe máy."),
+     ("Sao không dùng nó cho mô phỏng?", "Chỉ có 15 phút ở một nút khác nút trong bài báo và chưa kiểm chứng. Bước tiếp là đếm tay một đoạn, chạy nhiều ngày, rồi mới hiệu chuẩn nhu cầu."),
+     ("YOLO có chạy realtime được không?", "Một nút: được, đã đo — YOLOv8m ảnh 1280 cộng theo vết và đếm vạch xử lý 180 giây video trong 169 giây trên laptop M4 Pro; độ trễ khoảng 0,13 giây so với nhịp quyết định 10 giây. Đổi lại, xe máy đếm thấp hơn khoảng 10% so với bản chính xác. Mạng 53 nút: kiến trúc là mỗi nút một thiết bị biên gửi số đếm; em chưa thử ở quy mô đó."),
+     ("Vì sao dùng model VisDrone?", "YOLO huấn luyện trên COCO gần như không thấy xe máy từ góc cao này; VisDrone là ảnh nhìn từ trên xuống nên bắt được xe máy chỉ 10 pixel.")]))
 
 # ================================================================== RL
 divider("Cơ sở RL", 3, "Học từ hệ quả", "Hai ý nào mà cả hai mô hình đều dựa vào?", 3)
@@ -844,6 +894,23 @@ slide("Kết quả", "Đọc kết quả SUMO: giả thuyết, ablation và an t
     "Về an toàn mô phỏng: 120 lượt chính không có va chạm và không có sự kiện khẩn cấp.",
     ["Checkpoint tốt nhất khác episode cuối", "MP chịu: quan sát thiếu + 7 giây giải tỏa", "0 va chạm / 0 khẩn cấp trong 120 lượt"]))
 
+slide("Kết quả", "Thứ hạng baseline có phải may mắn? 1.000 hiện thực nhu cầu, không RL", f'''
+<div class="row" style="gap:0;margin-bottom:12px">
+ <div class="col" style="border-left:6px solid {C["base"]};padding-left:16px"><div class="hero" style="font-size:44px">3.000 / 3.000</div><div class="small">Cố định &lt; <b>Max-Pressure</b> ở mọi cặp hiện thực</div></div>
+ <div class="col" style="border-left:6px solid {C["base"]};padding-left:16px"><div class="hero" style="font-size:44px">2.999 / 3.000</div><div class="small">Cố định &lt; <b>MP có trễ</b></div></div>
+ <div class="col" style="border-left:6px solid {C["caution"]};padding-left:16px"><div class="hero caution" style="font-size:44px">100 · 76 · 88%</div><div class="small">MP có trễ &lt; MP thường ở normal · AM · PM; đa đỉnh ở cao điểm</div></div>
+</div>
+<img class="fig" src="{img("mc")}" style="width:1136px;height:400px;object-fit:contain">
+<div class="cap">9.000 lượt SUMO = 1.000 hiện thực ghép cặp (seed nhu cầu, seed SUMO) × 3 chế độ × 3 baseline, hàng chờ + chờ vào (xe-giờ). Giờ xuất phát giữ nguyên số xe của <b>một</b> hồ sơ quan sát, không phải 1.000 ngày giao thông. Seed tách khỏi huấn luyện / kiểm định / kiểm tra. Không gồm mô hình học (chi phí huấn luyện).</div>''', secs=45, kind="results", source="SUMO · scripts/run_danang_baseline_mc.py · results/danang_baseline_mc/summary.json · parity: tái lập đúng ca kiểm tra AM-101", notes=N(
+    "Thứ hạng baseline có phải do năm hiện thực kiểm tra tình cờ không? Em chạy lại riêng ba baseline không học trên 1.000 hiện thực nhu cầu mới cho mỗi chế độ: 9.000 lượt SUMO, mỗi bộ điều khiển thấy cùng giờ xuất phát và cùng seed SUMO. "
+    "Cố định thắng Max-Pressure thường ở cả 3.000 cặp và thắng MP có trễ ở 2.999 trên 3.000. MP có trễ thắng MP thường mọi lần ở normal, 76 phần trăm ở AM và 88 phần trăm ở PM, nhưng ở cao điểm nó đa đỉnh: mỗi lượt khóa vào một kiểu chu kỳ pha khác nhau. "
+    "Trung vị của cố định là 9,9, 78,5 và 149,3 xe-giờ, gần với trung bình 15 ca là 9,9, 79,2 và 152,7, nên bảng chính không đến từ các ca may mắn. "
+    "Đây là các hiện thực của một hồ sơ quan sát, không phải 1.000 ngày, và mô hình học không nằm trong thí nghiệm này.",
+    ["9.000 lượt = 1.000 × 3 chế độ × 3 baseline", "Cố định < MP 3.000/3.000 · < MP có trễ 2.999/3.000", "Một hồ sơ quan sát, không phải 1.000 ngày · không RL"],
+    ["Không nói 1.000 lượt có cả mô hình học.", "Không gọi là 1.000 ngày giao thông độc lập."],
+    [("Sao không chạy DQN 1.000 lần?", "Chi phí huấn luyện quá lớn; kết quả mô hình học giữ ở 5 seed × 15 ca. Thí nghiệm này chỉ kiểm tra thứ hạng baseline có ổn định không."),
+     ("Sao MP có trễ phân tán mạnh?", "Luật giữ pha làm chuỗi pha phụ thuộc đường đi, nên thay đổi nhỏ về giờ xuất phát khóa nó vào các chu kỳ khác nhau; các dải trên biểu đồ chính là các chu kỳ đó.")]))
+
 cf_rows = [("Cố định chỉnh", 8339.43, C["base"], "mốc, 0%"), ("Max-Pressure", 6347.00, C["pressure"], "−23,89%, tốt nhất"),
            ("MP có trễ", 6739.13, C["pressure2"], "−19,19%"), ("Residual s14", 7829.25, C["go"], "−6,12%")]
 slide("Kết quả", "CityFlow: Max-Pressure vẫn tốt nhất; residual giảm 6,12% so với cố định", f'''
@@ -1070,7 +1137,7 @@ qa = [("Một mô hình hay nhiều?", "Hai họ: SUMO dueling Double DQN (16 �
       ("Vì sao không dùng mạng đồ thị, PPO hay mô hình lớn hơn?", "Hành động rời rạc và MLP nhỏ giúp hợp đồng kiểm được. Chưa có so sánh nào nói chúng tốt hơn hay xấu hơn."),
       ("Thưởng residual có phải phần hơn so với cố định?", "Không. Đó là −(hàng chờ + xe chưa vào) của cả mạng trong block. Phần hơn so với cố định đo ở đánh giá ghép cặp."),
       ("Mất mát giảm mà hàng chờ không giảm?", "Mất mát đo độ khớp với đích TD trên bộ nhớ; nó không chứng minh chính sách tham là tốt, nên việc chọn dùng kiểm định."),
-      ("Hệ thống không tai nạn chứ?", "Luật pha, chuyển pha và neo là logic mô phỏng; các lượt chạy có 0 va chạm. Không phải giấy chứng nhận an toàn hiện trường."),
+      ("Hệ thống không tai nạn chứ?", "Luật pha, chuyển pha và neo là logic mô phỏng; 120 lượt chính và 120 lượt nhạy cảm SUMO có 0 va chạm (đợt 1.000 hiện thực baseline không ghi va chạm). Không phải giấy chứng nhận an toàn hiện trường."),
       ("Cùng γ mà hành vi khác?", "0,99 mỗi 10 giây khác 0,99 mỗi 300 giây. Muốn so theo thời gian thực thì hãy lũy thừa γ theo số bước."),
       ("Seed bị loại mà kiểm tra vẫn tốt?", "Quyết định kiểm định vẫn giữ; chỉ báo như chẩn đoán hậu nghiệm."),
       ("Thế này đã đủ một luận văn chưa?", "Đủ cho phát triển hệ thống cộng đánh giá mô phỏng có phân tích thất bại; chưa đủ cho kết luận triển khai.")]
@@ -1078,6 +1145,24 @@ qah = "".join(f'<div class="panel" style="padding:13px 18px"><div style="font-we
 slide(B, "B9 · Trả lời nhanh các câu hay gặp", f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">{qah}</div>', secs=0, kind="backup",
       source="docs/defense/thesis-understanding-guide-vi.md mục 22 · docs/defense/committee-questions-evidence-vi.md", notes=N(
           "Slide cứu trợ. Mỗi câu trả lời: một câu kết luận, một câu giới hạn, rồi chỉ vào bằng chứng.", ["Trả lời ngắn rồi dừng", "Luôn thêm giới hạn", "Mở hiện vật nếu cần"]))
+
+cam_rows = [["Trần Phú", "168", "3", "J1: 89% → trục chính · 6% → Trưng Nữ Vương"],
+            ["Nguyễn Văn Linh (tây)", "160", "126", "J1: 89% → trục chính · 10% → Trưng Nữ Vương"],
+            ["Trưng Nữ Vương", "0", "49", "chỉ có xe ra (OSM: một chiều)"],
+            ["2 Tháng 9", "182", "101", "J2: 39% → cầu · 37% → Bạch Đằng · 20% → trục chính"],
+            ["Cầu Rồng", "104", "246", "J2: 62% → trục chính · 18% → 2 Tháng 9 · 13% → Bạch Đằng"],
+            ["Bạch Đằng (bắc)", "3", "236", "chỉ có xe ra (OSM: một chiều)"]]
+slide(B, "B10 · Camera YOLO: số đếm ô tô, kiểm tra và giới hạn", f'''
+<div class="row" style="gap:28px">
+ <div style="flex:1.35">{table(["Lối (ô tô / 15 phút)", "Vào", "Ra", "Xích Markov từ lối này"], cam_rows, cls="t tight")}
+  <div class="xs muted" style="margin-top:8px">Trục chính giữa J1–J2 (gần camera, tin nhất): ô tô 323 lên / 152 xuống; xe máy 1.010 lên / 517 xuống.</div></div>
+ <div class="col">
+  <h3>Kiểm tra</h3><ul class="dots small"><li>Cân bằng ô tô: J1 480 vào / 501 ra; J2 612 / 735</li><li>63% lượt vào có hành trình trọn (689 tuyến)</li><li>Chiều một chiều trên OSM khớp số đếm</li></ul>
+  <h3 class="stop" style="margin-top:14px">Giới hạn</h3><ul class="dots stop small"><li>Chưa đếm tay đối chiếu; chưa đo độ chính xác ID</li><li>Xe máy: 174 vào / 703 ra → lối xa (cầu) đếm thiếu</li><li>Một camera, một ngày, 15 phút; khoảng 95 phút máy cho 15 phút video</li></ul>
+ </div>
+</div>''', secs=0, kind="backup", source="results/camera_counts/caurong_20260711_1716/only_car/*.csv · results/camera_counts/README.md", notes=N(
+    "Slide cứu trợ cho câu hỏi về camera. Đọc bảng theo hàng: lối vào, số ô tô vào và ra, rồi xác suất rẽ. Luôn nói giới hạn: chưa đếm tay, xe máy ở xa bị đếm thiếu.",
+    ["Ô tô tin được: cân bằng 4% / 17%", "Xe máy: chỉ trục chính", "Chưa đếm tay"]))
 
 # ================================================================== render
 def section_secs():
