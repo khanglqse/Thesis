@@ -1,0 +1,15 @@
+line,direction,motorcycle,car,truck,bus,total_veh,veh_per_h,pcu_per_h
+west_road,inbound,122,170,1,1,294,1175,844
+west_road,outbound,8,5,0,0,13,52,30
+boulevard_south,inbound,56,162,1,2,221,884,741
+boulevard_south,outbound,321,128,1,0,450,1799,907
+southeast_road,outbound,303,49,1,0,353,1411,569
+southeast_road,inbound,1,0,0,0,1,4,1
+boulevard_mid,northbound,1011,324,2,6,1343,5369,2576
+boulevard_mid,southbound,518,153,0,0,671,2683,1233
+riverside_east,outbound,6,105,2,2,115,460,463
+riverside_east,inbound,2,186,0,2,190,760,762
+bridge,outbound,16,247,1,5,269,1075,1057
+bridge,inbound,0,105,0,0,105,420,420
+northwest_road,inbound,0,3,0,0,3,12,12
+northwest_road,outbound,56,236,2,1,295,1179,1039

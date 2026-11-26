@@ -1,0 +1,235 @@
+{
+  "metric": "queue_integral_vehicle_hours",
+  "protocol_id": "danang_observed_camera_v1_synthetic_scale_sensitivity",
+  "scales": {
+    "0.75": {
+      "collisions_total": 0,
+      "dqn_minus_published_fixed": {
+        "bootstrap_ci95": [
+          7.486500000000001,
+          43.04601111111111
+        ],
+        "independent_values": [
+          11.703944444444446,
+          4.688944444444445,
+          50.443111111111115,
+          8.175333333333334,
+          51.319944444444445
+        ],
+        "mean_difference": 25.266255555555556,
+        "median": 11.703944444444446,
+        "n_independent": 5,
+        "relative_change_percent": 181.18144334003946,
+        "standard_deviation": 23.516645158421277
+      },
+      "dueling_n3": {
+        "bootstrap_ci95": [
+          21.43177777777778,
+          56.99128888888888
+        ],
+        "independent_values": [
+          25.64922222222222,
+          18.634222222222224,
+          64.38838888888888,
+          22.12061111111111,
+          65.26522222222222
+        ],
+        "mean": 39.211533333333335,
+        "median": 25.64922222222222,
+        "n_independent": 5,
+        "standard_deviation": 23.516645158421273
+      },
+      "emergency_braking_total": 2,
+      "published_fixed": {
+        "bootstrap_ci95": [
+          13.611611111111111,
+          14.359166666666663
+        ],
+        "independent_values": [
+          14.659722222222221,
+          13.506944444444445,
+          14.16611111111111,
+          13.743055555555555,
+          13.650555555555556
+        ],
+        "mean": 13.945277777777777,
+        "median": 13.743055555555555,
+        "n_independent": 5,
+        "standard_deviation": 0.46879882461772715
+      },
+      "scheduled_vehicles": 1747
+    },
+    "1.0": {
+      "collisions_total": 0,
+      "dqn_minus_published_fixed": {
+        "bootstrap_ci95": [
+          -9.468455555555554,
+          8.494422222222221
+        ],
+        "independent_values": [
+          -5.946944444444443,
+          -11.723999999999998,
+          8.274611111111113,
+          -8.973666666666665,
+          14.390388888888888
+        ],
+        "mean_difference": -0.7959222222222211,
+        "median": -5.946944444444443,
+        "n_independent": 5,
+        "relative_change_percent": -1.0048987287434157,
+        "standard_deviation": 11.464401839653448
+      },
+      "dueling_n3": {
+        "bootstrap_ci95": [
+          69.73576666666666,
+          87.69864444444444
+        ],
+        "independent_values": [
+          73.25727777777777,
+          67.48022222222222,
+          87.47883333333334,
+          70.23055555555555,
+          93.5946111111111
+        ],
+        "mean": 78.4083,
+        "median": 73.25727777777777,
+        "n_independent": 5,
+        "standard_deviation": 11.46440183965345
+      },
+      "emergency_braking_total": 0,
+      "published_fixed": {
+        "bootstrap_ci95": [
+          75.89577777777778,
+          83.27886527777777
+        ],
+        "independent_values": [
+          75.79027777777777,
+          75.85222222222222,
+          81.97583333333333,
+          86.2088888888889,
+          76.19388888888889
+        ],
+        "mean": 79.20422222222223,
+        "median": 76.19388888888889,
+        "n_independent": 5,
+        "standard_deviation": 4.70903946442044
+      },
+      "scheduled_vehicles": 2330
+    },
+    "1.25": {
+      "collisions_total": 0,
+      "dqn_minus_published_fixed": {
+        "bootstrap_ci95": [
+          -165.01507444444445,
+          -128.63217777777777
+        ],
+        "independent_values": [
+          -113.04744444444444,
+          -164.01716666666667,
+          -140.0013888888889,
+          -149.3102777777778,
+          -173.8587222222222
+        ],
+        "mean_difference": -148.047,
+        "median": -149.3102777777778,
+        "n_independent": 5,
+        "relative_change_percent": -48.19942584202842,
+        "standard_deviation": 23.519076541287465
+      },
+      "dueling_n3": {
+        "bootstrap_ci95": [
+          142.14003666666667,
+          178.52293333333333
+        ],
+        "independent_values": [
+          194.10766666666666,
+          143.13794444444446,
+          167.15372222222223,
+          157.84483333333333,
+          133.29638888888888
+        ],
+        "mean": 159.1081111111111,
+        "median": 157.84483333333333,
+        "n_independent": 5,
+        "standard_deviation": 23.51907654128746
+      },
+      "emergency_braking_total": 2,
+      "published_fixed": {
+        "bootstrap_ci95": [
+          302.6166111111111,
+          311.60761111111105
+        ],
+        "independent_values": [
+          307.12361111111113,
+          306.915,
+          299.52916666666664,
+          314.6272222222222,
+          307.5805555555556
+        ],
+        "mean": 307.1551111111111,
+        "median": 307.12361111111113,
+        "n_independent": 5,
+        "standard_deviation": 5.343854453892129
+      },
+      "scheduled_vehicles": 2913
+    },
+    "1.5": {
+      "collisions_total": 0,
+      "dqn_minus_published_fixed": {
+        "bootstrap_ci95": [
+          -249.21203333333338,
+          -156.53368888888895
+        ],
+        "independent_values": [
+          -116.74200000000003,
+          -273.093,
+          -192.90722222222223,
+          -233.87394444444445,
+          -216.22122222222225
+        ],
+        "mean_difference": -206.5674777777778,
+        "median": -216.22122222222225,
+        "n_independent": 5,
+        "relative_change_percent": -34.678157612362924,
+        "standard_deviation": 58.13712680036083
+      },
+      "dueling_n3": {
+        "bootstrap_ci95": [
+          346.4582444444444,
+          439.1365888888889
+        ],
+        "independent_values": [
+          478.9282777777778,
+          322.5772777777778,
+          402.7630555555556,
+          361.79633333333334,
+          379.44905555555556
+        ],
+        "mean": 389.1028,
+        "median": 379.44905555555556,
+        "n_independent": 5,
+        "standard_deviation": 58.13712680036084
+      },
+      "emergency_braking_total": 0,
+      "published_fixed": {
+        "bootstrap_ci95": [
+          590.551,
+          602.3523333333333
+        ],
+        "independent_values": [
+          594.2033333333334,
+          596.6086111111111,
+          608.2636111111111,
+          590.3622222222223,
+          588.9136111111111
+        ],
+        "mean": 595.6702777777778,
+        "median": 594.2033333333334,
+        "n_independent": 5,
+        "standard_deviation": 7.672229762547583
+      },
+      "scheduled_vehicles": 3495
+    }
+  },
+  "warning": "Scaled demand is synthetic; scale 1.0 is the observed AM camera profile."
+}
